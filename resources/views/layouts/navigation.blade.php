@@ -106,7 +106,34 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
         </div>
+        <div class="pt-2 pb-3 space-y-1 ml-2">
+            <x-nav-link :href="route('stagiaires.index')" :active="request()->routeIs('stagiaires.index')">
+                {{ __('Stagiaires') }}
+            </x-nav-link>
+            
+            
+        </div>
+        
+        <div class="pt-2 pb-3 space-y-1 ml-2">
+            <x-nav-link :href="route('jours.index')" :active="request()->routeIs('jours.index')">
+                {{ __('Jours') }}
+            </x-nav-link>
+        </div>
 
+        <div class="pt-2 pb-3 space-y-1 ml-2">
+            <x-nav-link :href="route('type_stages.index')" :active="request()->routeIs('type_stages.index')">
+                {{ __('Type de Stage') }}
+            </x-nav-link>
+            
+            
+        </div>
+        <div class="pt-2 pb-3 space-y-1 ml-2">
+            <x-nav-link :href="route('badges.index')" :active="request()->routeIs('badges.index')">
+                {{ __('Numéro des Badges') }}
+            </x-nav-link>
+            
+            
+        </div>
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">

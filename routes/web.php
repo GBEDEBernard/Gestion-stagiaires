@@ -1,16 +1,22 @@
 <?php
 
+use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
+use App\Http\Controllers\Controller;
 use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
 use App\Models\Stagiaire;
 
+
+Route::get('bloglayouts',[AccueilController::class , 'layouts'])->name('bloglayouts');
+
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/welcome',[AccueilController::class, 'acceuil'])->name('welcome');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
