@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="bg-blue-900 hover:opacity-90 min-h-screen py-10">
-    <div class="container max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 bg-white shadow-md rounded-md">
+<div class="bg-blue-900 hover:opacity-90 min-h-screen py-8">
+    <div class="container max-w-10xl mx-auto p-4 sm:p-6 lg:p-8 bg-white shadow-md rounded-md">
         <h1 class="text-3xl font-bold text-blue-600 mb-6">Liste des Stagiaires</h1>
 
         <!-- Bouton pour ajouter un stagiaire -->
@@ -15,7 +15,7 @@
 
         <!-- Tableau responsive -->
         <div class="overflow-x-auto">
-            <table class="min-w-full bg-white border border-gray-200 text-sm rounded-md">
+            <table class="w-full bg-white border border-gray-200 text-sm rounded-md border-2">
                 <thead>
                     <tr class="bg-gray-100 text-left text-blue-600 tracking-wide">
                         <th class="px-2 py-3">Nom</th>
@@ -26,8 +26,7 @@
                         <th class="px-2 py-3">Badge</th>
                         <th class="px-2 py-3">Ecole</th>
                         <th class="px-2 py-3">Thème</th>
-                        <th class="px-2 py-3">Début</th>
-                        <th class="px-2 py-3">Fin</th>
+                        <th class="px-2 py-3">Période</th>
                         <th class="px-2 py-3">Jours</th>
                         <th class="px-2 py-3">Statut</th>
                         <th class="px-2 py-3">Actions</th>
@@ -44,8 +43,7 @@
                             <td class="px-2 py-2">{{ $stagiaire->badge->badge }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->ecole }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->theme }}</td>
-                            <td class="px-2 py-2">{{ $stagiaire->date_debut }}</td>
-                            <td class="px-2 py-2">{{ $stagiaire->date_fin }}</td>
+                            <td class="px-2 py-2">{{ $stagiaire->date_debut }}  <h1 class="text-center font-extabold">à</h1> {{ $stagiaire->date_fin }}</td>
                             <td class="px-2 py-2">
                                 <ul class="list-disc list-inside space-y-1">
                                     @foreach ($stagiaire->jours as $jour)
@@ -60,9 +58,9 @@
                                     <span class="text-red-600 font-semibold">Terminé</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-2 whitespace-nowrap">
+                            <td class="px-4 py-2 whitespace-nowrap ">
                                 <a href="{{ route('stagiaires.edit', $stagiaire->id) }}"
-                                   class="text-blue-600 hover:underline">Modifier</a>
+                                   class="text-blue-600 hover:underline ml-2">Modifier</a> <br><br>
                                 <form action="{{ route('stagiaires.destroy', $stagiaire->id) }}" method="POST"
                                       class="inline ml-2">
                                     @csrf
@@ -70,6 +68,7 @@
                                     <button type="submit"
                                             onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce stagiaire ?')"
                                             class="text-red-500 hover:text-red-600 font-semibold">
+                                            
                                         Supprimer
                                     </button>
                                 </form>
