@@ -52,7 +52,7 @@ class BadgeController extends Controller
     public function update(Request $request, Badge $badges)
     {
         $validated = $request->validate([
-            'niveau' => 'required|string|max:255',
+            'badge' => 'required|string|max:255',
         ]);
 
         $badges->update($validated);

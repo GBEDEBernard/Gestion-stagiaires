@@ -32,7 +32,7 @@
 
                 {{-- Menu desktop --}}
                 <div class="hidden md:flex gap-8 text-sm items-center">
-                    <a href="#" class="hover:text-red-400 transition duration-200">Accueil</a>
+                    <a href="{{ route('welcome') }}" class="hover:text-red-400 transition duration-200">Accueil</a>
                     <a href="#" class="hover:text-red-400 transition duration-200">À propos</a>
                     <a href="#" class="hover:text-red-400 transition duration-200">Contacts</a>
                 </div>
