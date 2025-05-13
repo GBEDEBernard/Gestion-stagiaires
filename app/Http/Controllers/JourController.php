@@ -25,7 +25,7 @@ class JourController extends Controller
     {
         // Valide les données envoyées par le formulaire
         $request->validate([
-            'jour' => 'required|string|max:255',
+            'jour' => 'required|string|max:255|unique:jours,jour',
             
         ]);
 
@@ -47,7 +47,7 @@ class JourController extends Controller
     {
         // Valide les données
         $request->validate([
-            'jour' => 'required|string|max:255'
+            'jour' => 'required|string|max:20|unique:jours,jour,' . $jour->id,
         ]);
         
 

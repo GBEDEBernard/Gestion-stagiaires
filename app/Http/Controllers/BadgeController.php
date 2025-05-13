@@ -30,8 +30,9 @@ class BadgeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'badge' => 'required|string|max:255',
+            'badge' => 'required|string|max:255|unique:badges,badge',
         ]);
+        
 
         Badge::create($validated);
         return redirect()->route('badges.index')
@@ -52,9 +53,9 @@ class BadgeController extends Controller
     public function update(Request $request, Badge $badges)
     {
         $validated = $request->validate([
-            'badge' => 'required|string|max:255',
+            'badge' => 'required|string|max:255|unique:badges,badge,' . $badges->id,
         ]);
-
+        
         $badges->update($validated);
         return redirect()->route('badges.index')
                          ->with('success', 'Badge mis à jour avec succès.');

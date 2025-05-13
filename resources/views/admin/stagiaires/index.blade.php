@@ -18,7 +18,7 @@
             <table class="min-w-full bg-white border border-gray-200 text-sm rounded-md">
                 <thead>
                     <tr class="bg-gray-100 text-left text-blue-600 tracking-wide">
-                        <th class="px-2 py-3 ">Nom</th>
+                        <th class="px-2 py-3">Nom</th>
                         <th class="px-2 py-3">Prénom</th>
                         <th class="px-2 py-3">Email</th>
                         <th class="px-2 py-3">Téléphone</th>
@@ -29,6 +29,7 @@
                         <th class="px-2 py-3">Début</th>
                         <th class="px-2 py-3">Fin</th>
                         <th class="px-2 py-3">Jours</th>
+                        <th class="px-2 py-3">Statut</th>
                         <th class="px-2 py-3">Actions</th>
                     </tr>
                 </thead>
@@ -39,7 +40,7 @@
                             <td class="px-2 py-2">{{ $stagiaire->prenom }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->email }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->telephone }}</td>
-                            <td class="px-2 py-2">{{ $stagiaire->typeStage->libelle }}</td>
+                            <td class="px-2 py-2">{{ $stagiaire->typestage->libelle }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->badge->badge }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->ecole }}</td>
                             <td class="px-2 py-2">{{ $stagiaire->theme }}</td>
@@ -52,6 +53,13 @@
                                     @endforeach
                                 </ul>
                             </td>
+                            <td class="px-2 py-2">
+                                @if (now()->between($stagiaire->date_debut, $stagiaire->date_fin))
+                                    <span class="text-green-600 font-semibold">En cours</span>
+                                @else
+                                    <span class="text-red-600 font-semibold">Terminé</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-2 whitespace-nowrap">
                                 <a href="{{ route('stagiaires.edit', $stagiaire->id) }}"
                                    class="text-blue-600 hover:underline">Modifier</a>
@@ -60,10 +68,10 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                          onclick="return confirm('Tu es sûr de vouloir supprimer ce stagiaire?')"
-                                           class="text-red-500 hover:text-red-600 font-semibold">
-                                       Supprimer
-                                </button>
+                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce stagiaire ?')"
+                                            class="text-red-500 hover:text-red-600 font-semibold">
+                                        Supprimer
+                                    </button>
                                 </form>
                             </td>
                         </tr>

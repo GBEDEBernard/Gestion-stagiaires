@@ -24,7 +24,7 @@ class TypeStageController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255',
+            'libelle' => 'required|string|max:255|unique:typestages,libelle',
         ]);
 
         TypeStage::create($request->all());
@@ -43,7 +43,7 @@ class TypeStageController extends Controller
     public function update(Request $request, TypeStage $type_stages)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255',
+            'libelle' => 'required|string|max:255|unique:typestages,libelle,'.$type_stages->id,
         ]);
 
         $type_stages->update($request->all());

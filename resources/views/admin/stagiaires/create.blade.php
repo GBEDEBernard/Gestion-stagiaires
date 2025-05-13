@@ -71,17 +71,15 @@
 
                 <!-- BADGE -->
                 <div>
-                    <label for="badge_id" class="block text-sm font-semibold text-blue-700">Numéro de Badge</label>
-                    <select name="badge_id" id="badge_id"
-                        class="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 @error('badge_id') border-red-500 @enderror"
-                        required>
-                        <option value="">-- Sélectionner --</option>
+                    <label for="badge_id" class="block text-sm font-medium text-gray-700">Badge</label>
+                    <select name="badge_id" id="badge_id" class="mt-1 block w-full border border-gray-300 rounded-lg p-2" required>
+                        <option value="">Sélectionner un badge</option>
                         @foreach ($badges as $badge)
-                            <option value="{{ $badge->id }}" {{ old('badge_id') == $badge->id ? 'selected' : '' }}>{{ $badge->badge }}</option>
+                            <option value="{{ $badge->id }}">{{ $badge->badge }}</option>
                         @endforeach
                     </select>
                     @error('badge_id')
-                        <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
