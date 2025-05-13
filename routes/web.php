@@ -8,15 +8,14 @@ use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
-use App\Models\Stagiaire;
-
 
 Route::get('bloglayouts',[AccueilController::class , 'layouts'])->name('bloglayouts');
+Route::get('/welcome',[AccueilController::class, 'acceuil'])->name('welcome');
+
 
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('/welcome',[AccueilController::class, 'acceuil'])->name('welcome');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -29,8 +28,6 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
-
 ///la route pour entité ecole
 
 Route::middleware(['auth'])->group(function () {

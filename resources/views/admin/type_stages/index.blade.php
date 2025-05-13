@@ -1,6 +1,5 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
 <div class="bg-blue-900 hover:opacity-90 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-10 h-[700px] shadow">
     <h1 class="text-2xl font-bold text-white mb-6">Types de Stages</h1>
 
@@ -59,4 +58,4 @@
         </table>
     </div>
 </div>
-@endsection
+</x-app-layout>

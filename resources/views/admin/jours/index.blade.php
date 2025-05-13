@@ -1,6 +1,5 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
 <div class="bg-blue-900 hover:opacity-90 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 h-[650px] rounded">
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
         <h1 class="text-2xl font-bold text-white">Liste des Jours</h1>
@@ -60,4 +59,4 @@
         @endforeach
     </div>
 </div>
-@endsection
+</x-app-layout>

@@ -1,6 +1,5 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
 <div class="max-w-lg mx-auto px-4 py-8 bg-blue-900 hover:opacity-90 rounded">
     <h1 class="text-2xl font-bold mb-6">Modifier le numéro de Badge</h1>
 
@@ -23,4 +22,4 @@
         </div>
     </form>
 </div>
-@endsection
+</x-app-layout>

@@ -1,8 +1,7 @@
 <!-- resources/views/type_stages/create.blade.php -->
 
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
     <div class="container mx-auto p-4 bg-blue-900 hover:opacity-90">
         <h1 class="text-xl font-bold">Créer un nouveau type de stage</h1>
 
@@ -19,4 +18,5 @@
             <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Créer</button>
         </form>
     </div>
-@endsection
+</x-app-layout>
+

@@ -1,6 +1,6 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
+
 <div class="bg-blue-900 hover:opacity-90 min-h-screen py-8">
     <div class="container max-w-10xl mx-auto p-4 sm:p-6 lg:p-8 bg-white shadow-md rounded-md">
         <h1 class="text-3xl font-bold text-blue-600 mb-6">Liste des Stagiaires</h1>
@@ -17,7 +17,7 @@
         <div class="overflow-x-auto">
             <table class="w-full bg-white border border-gray-200 text-sm rounded-md border-2">
                 <thead>
-                    <tr class="bg-gray-100 text-left text-blue-600 tracking-wide">
+                    <tr class="bg-gray-100 text-left text-black tracking-wide">
                         <th class="px-2 py-3">Nom</th>
                         <th class="px-2 py-3">Prénom</th>
                         <th class="px-2 py-3">Email</th>
@@ -85,4 +85,4 @@
         </div>
     </div>
 </div>
-@endsection
+</x-app-layout>

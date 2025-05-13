@@ -1,6 +1,5 @@
-@extends('layouts.app')
+<x-app-layout>
 
-@section('content')
 <div class="bg-blue-900 hover:opacity-90 min-h-screen py-10">
     <div class="container max-w-3xl mx-auto p-6 bg-white shadow-md rounded-md">
         <h1 class="text-3xl font-bold text-blue-600 mb-6">Modifier un Stagiaire</h1>
@@ -176,4 +175,4 @@
         </div>
     </div>
 </div>
-@endsection
+</x-app-layout>

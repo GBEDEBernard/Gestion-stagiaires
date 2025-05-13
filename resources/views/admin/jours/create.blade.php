@@ -1,7 +1,6 @@
-@extends('layouts.app')
+<x-app-layout class="">
 
-@section('content')
-<div class="max-w-xl mx-auto p-6 bg-blue-900 hover:opacity-90">
+<div class="max-w-xl mx-auto  p-6 bg-blue-900 hover:opacity-90">
     <h1 class="text-2xl font-bold mb-4">Ajouter une Journée</h1>
 
     @if($errors->any())
@@ -25,4 +24,4 @@
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Enregistrer</button>
     </form>
 </div>
-@endsection
+</x-app-layout>
