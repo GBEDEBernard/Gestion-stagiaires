@@ -14,4 +14,11 @@ class AccueilController extends Controller
     public function layouts(){
         return view('bloglayouts');
     }
+
+    public function apropo(){
+        return view('apropos');
+    }
+    public function fonction(){
+      return view('fonctionalite');
+    }
 }

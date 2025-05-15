@@ -70,7 +70,7 @@
 
                 <!-- BADGE -->
                 <div>
-                    <label for="badge_id" class="block text-sm font-medium text-gray-700">Badge</label>
+                    <label for="badge_id" class="block text-sm font-medium text-blue-600">Badge</label>
                     <select name="badge_id" id="badge_id" class="mt-1 block w-full border border-gray-300 rounded-lg p-2" required>
                         <option value="">Sélectionner un badge</option>
                         @foreach ($badges as $badge)

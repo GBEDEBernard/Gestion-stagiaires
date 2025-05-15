@@ -24,21 +24,162 @@
             </style>
         @endif
     </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] min-h-screen items-center justify-center p-2 lg:p-6">
- 
-        {{-- le banierre de welcome (acceuil) --}}
-         <section class="bg-cover bg-center bg-no-repeat h-[400px] w-full flex items-center justify-center   text-white   text-center"
-                style="background-image: url('/images/1026a2665af8-metier-developpeur-web-ynov.jpg');">
-                    <div>
-                        <h1 class="text-2xl md:text-5xl font-bold bg-black/60 p-4 rounded">
-                            "Accompagnez vos stagiaires vers la réussite avec une gestion fluide et organisée !"</h1>
-                            
-                    </div>
-        </section>
- 
-       
-        
-    </body>
+    <!DOCTYPE html>
+    <html lang="fr" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Accueil - Gestion des Stagiaires</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] min-h-screen p-2 lg:p-6">
+      
     
+                    <!-- Section  de banniere-->
+         <section class="bg-cover bg-center bg-no-repeat h-[500px] w-full flex items-center  justify-center text-white text-center"
+                style="background-image: url('/images/1026a2665af8-metier-developpeur-web-ynov.jpg');"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-1000" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            <div class="bg-black/60 p-8 rounded-xl max-w-3xl mx-4"
+                x-data="{ scale: 0.8 }" x-init="$nextTick(() => scale = 1)" :style="{ transform: `scale(${scale})` }" x-transition:enter="transition ease-out duration-500">
+            <h1 class="text-3xl md:text-5xl font-bold mb-4">
+                Accompagnez vos stagiaires vers la réussite avec une gestion fluide et organisée !
+            </h1>
+            <p class="text-lg md:text-xl mb-6" x-data="{ opacity: 0 }" x-init="$nextTick(() => opacity = 1)" :style="{ opacity }" x-transition:enter="transition ease-out duration-700 delay-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                Simplifiez le suivi,  et l'intégration de vos stagiaires avec notre plateforme intuitive.
+            </p>
+            <a href="#get-started" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105"
+                x-data="{ opacity: 0 }" x-init="$nextTick(() => opacity = 1)" :style="{ opacity }" x-transition:enter="transition ease-out duration-700 delay-400" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                Commencer maintenant
+            </a>
+            </div>
+            </section>
+
+            <!--  Section  pourquoi choisir-->
+            <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12"
+            x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+            x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            Pourquoi choisir notre plateforme ?
+            </h2>
+            <div class="grid gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                    x-transition:enter="transition ease-out duration-500 delay-100" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <h3 class="text-xl font-semibold mb-2">Gestion centralisée</h3>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Regroupez toutes les informations des stagiaires en un seul endroit pour un accès rapide et sécurisé.
+                </p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                    x-transition:enter="transition ease-out duration-500 delay-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <h3 class="text-xl font-semibold mb-2">Suivi en temps réel</h3>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Suivez les progrès, les présences des stagiaires avec des mises à jour instantanées.
+                </p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                    x-transition:enter="transition ease-out duration-500 delay-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <h3 class="text-xl font-semibold mb-2">Rapports personnalisés</h3>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Générez des rapports détaillés pour analyser les performances et optimiser l'encadrement.
+                </p>
+            </div>
+            </div>
+            </section>
+
+            <!-- la section des fonctionnalité -->
+            <section class="py-16 bg-gray-100 dark:bg-gray-900 mb-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                Comment ça fonctionne ?
+            </h2>
+            <div class="grid gap-8 md:grid-cols-3">
+                <div class="text-center"
+                        x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                        x-transition:enter="transition ease-out duration-500 delay-100" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="h-16 w-16 mx-auto bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold transform hover:scale-110 transition duration-400">1</div>
+                    <h3 class="text-xl font-semibold mt-4">Inscription</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">
+                        Créez un compte et configurez votre espace de gestion en quelques minutes.
+                    </p>
+                </div>
+                <div class="text-center"
+                        x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                        x-transition:enter="transition ease-out duration-500 delay-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="h-16 w-16 mx-auto bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold transform hover:scale-110 transition duration-300">2</div>
+                    <h3 class="text-xl font-semibold mt-4">Ajout des stagiaires</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">
+                        Importez ou ajoutez manuellement les profils des stagiaires avec leurs informations clés.
+                    </p>
+                </div>
+                <div class="text-center"
+                        x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                        x-transition:enter="transition ease-out duration-500 delay-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="h-16 w-16 mx-auto bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold transform hover:scale-110 transition duration-300">3</div>
+                    <h3 class="text-xl font-semibold mt-4">Gestion et suivi</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">
+                        Utilisez nos outils pour suivre, évaluer et communiquer avec vos stagiaires efficacement.
+                    </p>
+                </div>
+            </div>
+            </div>
+            </section>
+
+            {{-- <!-- Testimonials Section  pour les utilisateur-->
+            <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12"
+            x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+            x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            Ce que disent nos utilisateurs
+            </h2>
+            <div class="grid gap-8 md:grid-cols-2">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                    x-transition:enter="transition ease-out duration-500 delay-100" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <p class="text-gray-600 dark:text-gray-300 italic">
+                    "Cette plateforme a transformé la façon dont nous gérons nos stagiaires. Tout est plus simple et organisé !"
+                </p>
+                <p class="mt-4 font-semibold">GBEDE Bernard, Responsable RH</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                    x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                    x-transition:enter="transition ease-out duration-500 delay-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <p class="text-gray-600 dark:text-gray-300 italic">
+                    "Les rapports personnalisés nous permettent de mieux encadrer nos stagiaires et d'améliorer leur expérience."
+                </p>
+                <p class="mt-4 font-semibold">TOSSOU Betrant, Manager</p>
+            </div>
+            </div> --}}
+            </section>
+
+            <!--Appel des section-->
+            <section id="get-started" class="py-16 bg-blue-600 text-white text-center mb-2"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-500 delay-100" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                Prêt à optimiser la gestion de vos stagiaires ?
+            </h2>
+            <p class="text-lg mb-6 max-w-2xl mx-auto"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-500 delay-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                Inscrivez-vous dès aujourd'hui et découvrez une nouvelle façon de gérer vos stagiaires efficacement.
+            </p>
+            <a href="#" class="bg-white text-blue-600 hover:bg-gray-100 font-semibold py-3 px-6 rounded-lg transition transform hover:scale-105"
+                x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
+                x-transition:enter="transition ease-out duration-500 delay-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                S'inscrire gratuitement
+            </a>
+            </div>
+            </section>
+
+</body>
 </html>
 @endsection

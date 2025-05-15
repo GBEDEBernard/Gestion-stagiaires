@@ -8,9 +8,12 @@ use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
+use App\Http\Controllers\ContactController;
 
 Route::get('bloglayouts',[AccueilController::class , 'layouts'])->name('bloglayouts');
 Route::get('/welcome',[AccueilController::class, 'acceuil'])->name('welcome');
+
+Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 
 Route::get('/', function () {
@@ -111,4 +114,12 @@ Route::middleware(['auth'])->group(function(){
     // Supprimer l’école
     Route::delete('/admin/badges/{badges}', [BadgeController::class, 'destroy'])->name('badges.destroy');
 
+    // la route des contactes
+    Route::get('/contact', function () {
+        return view('contact'); // ou un vrai controller
+    })->name('contact');
+    Route::get('/admin/contacts/index',[ContactController::class , 'afficher'])->name('contacts.index');
+    
+    Route::get('apropos',[AccueilController::class ,'apropo'])->name('apropos');
+    Route::get('fonctionalite',[AccueilController::class ,'fonction'])->name('fonctionalite');
 });

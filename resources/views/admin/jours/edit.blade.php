@@ -1,6 +1,6 @@
 <x-app-layout>
 
-<div class="max-w-xl mx-auto p-8 h-[650px] shadow bg-gray-100  bg-blue-900 hover:opacity-90 rounded">
+<div class="max-w-xl mx-auto p-8 h-[650px] shadow   bg-blue-900 hover:opacity-90 rounded">
     <h1 class="text-2xl font-bold mb-4">Modifier La journée</h1>
 
     @if($errors->any())

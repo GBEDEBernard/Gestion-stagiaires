@@ -19,101 +19,143 @@
         </style>
     @endif
 </head>
-<body class="flex flex-col min-h-screen">
-    {{-- Header --}}
-    <div class="bg-black text-white w-full">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                {{-- Logo + Titre --}}
-                <div class="flex items-center gap-4">
-                    <a href="{{ route('welcome') }}"><img src="{{ asset('images/TGFpdf.jpg') }}" alt="Gestion_stagiaire" class="w-12 h-12 rounded-full shadow p-1"></a>
-                    <h1 class="text-blue-400 font-bold text-lg"><a href="{{ route('welcome') }}">Gestion des stagiaires</a></h1>
-                </div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Stagiaires - Header</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animation de l'arrière-plan avec un gradient subtil */
+        .animated-bg {
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a, #1a1a1a);
+            background-size: 200% 200%;
+            animation: gradientShift 10s ease infinite;
+        }
 
-                {{-- Menu desktop --}}
-                <div class="hidden md:flex gap-8 text-sm items-center">
-                    <a href="{{ route('welcome') }}" class="hover:text-red-400 transition duration-200">Accueil</a>
-                    <a href="#" class="hover:text-red-400 transition duration-200">À propos</a>
-                    <a href="#" class="hover:text-red-400 transition duration-200">Contacts</a>
-                </div>
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-                {{-- Connexion / Admin --}}
-                @if (Route::has('login'))
-                    <header class="ml-4">
-                        <nav class="hidden md:flex gap-4 text-sm">
+        /* Animation pour les liens du menu au survol */
+        .menu-link:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-[#FDFDFC] text-[#1b1b18]"">
+   <!-- Header -->
+   <header class="animated-bg text-white w-full shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo + Titre -->
+            <div class="flex items-center gap-4" x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <a href="{{ route('welcome') }}">
+                    <img src="{{ asset('images/TGFpdf.jpg') }}" alt="Gestion des stagiaires" class="w-12 h-12 rounded-full shadow p-1 transform hover:scale-110 transition duration-300">
+                </a>
+                <h1 class="text-blue-400 font-bold text-lg">
+                    <a href="{{ route('welcome') }}">Gestion des Stagiaires</a>
+                </h1>
+            </div>
+
+            <!-- Menu (Desktop & Mobile) -->
+            <div class="flex items-center">
+                <!-- Menu Items -->
+                <nav class="flex flex-col md:flex-row md:gap-8 text-sm items-center md:static absolute top-16 left-0 w-full md:w-auto bg-black md:bg-transparent transition-all duration-300 ease-in-out md:opacity-100 opacity-0 md:pointer-events-auto pointer-events-none" id="nav-menu">
+                    <a href="{{ route('welcome') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">Accueil</a>
+                    <a href="{{ route('apropos') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">À propos</a>
+                    <a href="{{ route('fonctionalite') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">Fonctionnalités</a>
+                    <a href="{{ route('contact') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">Contacts</a>
+
+                    <!-- Connexion / Admin -->
+                    @if (Route::has('login'))
+                        <div class="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 px-4 md:px-0">
                             @auth
-                                <a href="{{ url('/dashboard') }}" class="px-5 py-1.5 rounded-xl border bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all">Admin</a>
+                                <a href="{{ url('/dashboard') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">Admin</a>
                             @else
-                                <a href="{{ route('login') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all">Connexion</a>
+                                <a href="{{ route('login') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">Connexion</a>
                                 @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all">S'inscrire</a>
+                                    <a href="{{ route('register') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">S'inscrire</a>
                                 @endif
                             @endauth
-                        </nav>
-                    </header>
-                @endif
+                        </div>
+                    @endif
+                </nav>
 
-                {{-- Bouton menu mobile --}}
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-button" class="text-white focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                    </button>
-                </div>
+                <!-- Bouton menu mobile -->
+                <button id="mobile-menu-button" class="md:hidden flex items-center text-white focus:outline-none">
+                    <svg class="w-6 h-6 transform hover:rotate-90 transition duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
             </div>
         </div>
-
-        {{-- Menu mobile --}}
-        <div id="mobile-menu" class="md:hidden hidden p-1 w-1/5 flex gap-8">
-            <a href="{{ route('welcome') }}" class="block mt-4 hover:text-red-400">Accueil</a>
-            <a href="#" class="block mt-4 hover:text-red-400">À propos</a>
-            <a href="#" class="block mt-4 hover:text-red-400">Contacts</a>
-
-            @if (Route::has('login'))
-                <div class="mt-2 flex flex gap-3">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="py-1 bg-blue-200 hover:bg-blue-600 text-[#1b1b18] rounded-xl h-8 m-2 p-1">Admin</a>
-                    @else
-                        <a href="{{ route('login') }}" class="bg-blue-200 hover:bg-blue-600 text-[#1b1b18] rounded-xl h-8 m-2 p-1">Connexion</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="bg-blue-200 hover:bg-blue-600 text-[#1b1b18] rounded-xl h-8 m-2 p-1">S'inscrire</a>
-                        @endif
-                    @endauth
-                </div>
-            @endif
-        </div>
     </div>
-
-    {{-- Content Section with Spacing --}}
-    <main class="flex-grow  max-w-8xl mx-auto">
+</header>
+    <!-- Content Section -->
+    <main class="flex-grow max-w-8xl mx-auto">
         @yield('contenu')
     </main>
 
-    {{-- Footer --}}
-    <footer class="bg-black text-white py-6">
+    <!-- Footer -->
+    <footer class="bg-gray-800 dark:bg-gray-900 text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-4 md:mb-0">
-                    <p class="text-sm text-gray-400">&copy; 2025 Gestion des Stagiaires. Tous droits réservés.</p>
+            <div class="grid gap-8 md:grid-cols-3">
+                <div>
+                    <h3 class="text-lg font-semibold">Gestion des Stagiaires</h3>
+                    <p class="mt-2 text-gray-400 hover:text-white">
+                        Une solution intuitive pour simplifier la gestion de vos stagiaires.
+                    </p>
                 </div>
-                <div class="flex gap-6 text-sm">
-                    <a href="#" class="hover:text-red-400 transition duration-200">Contact</a>
-                    <a href="#" class="hover:text-red-400 transition duration-200">Conditions d'utilisation</a>
-                    <a href="#" class="hover:text-red-400 transition duration-200">Politique de confidentialité</a>
+                <div>
+                    <h3 class="text-lg font-semibold">Liens rapides</h3>
+                    <ul class="mt-2 space-y-2">
+                        <li><a href="{{ route('welcome') }}" class="text-gray-400 hover:text-white">Accueil</a></li>
+                        <li><a href="{{ route('apropos') }}" class="text-gray-400 hover:text-white">À propos</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-gray-400 hover:text-white">Contact</a></li>
+                        <li><a href="{{ route('fonctionalite') }}" class="text-gray-400 hover:text-white">Fonctionnalités</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold">Contact</h3>
+                    <p class="mt-2 text-gray-400 hover:text-white">
+                        Email: contact@gestionstagiaires.com<br>
+                        Téléphone: +229 01 66 43 90 30
+                    </p>
                 </div>
             </div>
-            <div class=" text-center">
-                <p class="text-sm text-blue-400">Simplifiez la gestion de vos stagiaires avec efficacité !</p>
+            <div class="mt-8 text-center text-gray-300 ">
+                <p class="hover:text-blue-400">© 2025 Gestion des Stagiaires. Tous droits réservés.</p>
             </div>
         </div>
     </footer>
 
+    <!-- JavaScript pour toggle menu mobile -->
     <script>
-        // Script pour activer/désactiver le menu mobile
-        document.getElementById('mobile-menu-button').addEventListener('click', function () {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
+        const menuButton = document.getElementById('mobile-menu-button');
+        const navMenu = document.getElementById('nav-menu');
+
+        menuButton.addEventListener('click', () => {
+            navMenu.classList.toggle('opacity-0');
+            navMenu.classList.toggle('opacity-100');
+            navMenu.classList.toggle('pointer-events-none');
+            navMenu.classList.toggle('pointer-events-auto');
+        });
+    </script>
+     <!-- JavaScript pour toggle menu mobile -->
+     <script>
+        const menuButton = document.getElementById('mobile-menu-button');
+        const navMenu = document.getElementById('nav-menu');
+
+        menuButton.addEventListener('click', () => {
+            navMenu.classList.toggle('opacity-0');
+            navMenu.classList.toggle('opacity-100');
+            navMenu.classList.toggle('pointer-events-none');
+            navMenu.classList.toggle('pointer-events-auto');
         });
     </script>
 </body>
