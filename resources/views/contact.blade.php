@@ -81,7 +81,7 @@
                     {{ __('Vous pouvez également nous contacter directement :') }}
                 </p>
                 <p class="mt-2">
-                    <a href="mailto:contact@gestionstagiaires.com" class="text-indigo-600 dark:text-indigo-400 hover:underline">contact@gestionstagiaires.com</a>
+                    <a href="mailto:gbedebernard60@gmail.com" class="text-indigo-600 dark:text-indigo-400 hover:underline">gbedebernard60@gmail.com</a>
                     | <span>+229 0166439030 /+229 0169580603</span>
                 </p>
             </div>

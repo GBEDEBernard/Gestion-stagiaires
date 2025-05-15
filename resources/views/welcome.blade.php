@@ -154,11 +154,11 @@
                 </p>
                 <p class="mt-4 font-semibold">TOSSOU Betrant, Manager</p>
             </div>
-            </div> --}}
-            </section>
+            </div>
+            </section> --}}
 
             <!--Appel des section-->
-            <section id="get-started" class="py-16 bg-blue-600 text-white text-center mb-2"
+            <section id="get-started" class="py-16 bg-blue-600 text-white text-center mb-8 mt-4"
                 x-data="{ visible: false }" x-init="$nextTick(() => visible = true)" x-show="visible"
                 x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -178,7 +178,7 @@
                 S'inscrire gratuitement
             </a>
             </div>
-            </section>
+  </section>
 
 </body>
 </html>

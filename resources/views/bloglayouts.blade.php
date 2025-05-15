@@ -123,7 +123,7 @@
                 <div>
                     <h3 class="text-lg font-semibold">Contact</h3>
                     <p class="mt-2 text-gray-400 hover:text-white">
-                        Email: contact@gestionstagiaires.com<br>
+                        Email: gbedebernard60@gmail.com<br>
                         Téléphone: +229 01 66 43 90 30
                     </p>
                 </div>

@@ -27,7 +27,7 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+    <!-- pourquoi nous  section -->
     <section class="py-16 bg-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h3 class="text-3xl font-bold text-gray-900 text-center">Pourquoi choisir notre solution ?</h3>
@@ -54,7 +54,7 @@
         </div>
     </section>
 
-    <!-- Team Section -->
+    <!-- group Section -->
     <section class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h3 class="text-3xl font-bold text-gray-900 text-center">Notre Équipe</h3>
