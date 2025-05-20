@@ -44,7 +44,11 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
-    }
+// refuse d'accès au simple utilisateur
+        if ($user->can('access dashboard')) {
+            return redirect()->to('/dashboard');
+        } else {
+            return redirect()->to('/welcome');
+        }
+                }
 }

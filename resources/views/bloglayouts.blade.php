@@ -70,20 +70,29 @@
                     <a href="{{ route('apropos') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">À propos</a>
                     <a href="{{ route('fonctionalite') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">Fonctionnalités</a>
                     <a href="{{ route('contact') }}" class="block py-2 px-4 md:px-0 hover:text-red-400 transition duration-200 menu-link">Contacts</a>
-
-                    <!-- Connexion / Admin -->
+{{-- //les action de mon navigateur une fois utilisateur connecté (admin ou utilisateur simple) --}}
                     @if (Route::has('login'))
-                        <div class="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 px-4 md:px-0">
-                            @auth
+                    <div class="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 px-4 md:px-0">
+                        @auth
+                            @if(auth()->user()->hasRole('admin'))
                                 <a href="{{ url('/dashboard') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">Admin</a>
                             @else
-                                <a href="{{ route('login') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">Connexion</a>
-                                @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">S'inscrire</a>
-                                @endif
-                            @endauth
-                        </div>
-                    @endif
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="px-5 py-1.5 rounded-xl bg-red-200 hover:bg-red-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">
+                                        Déconnexion
+                                    </button>
+                                </form>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">Connexion</a>
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" class="px-5 py-1.5 rounded-xl bg-blue-200 hover:bg-blue-600 text-[#1b1b18] transition-all text-center transform hover:scale-105">S'inscrire</a>
+                            @endif
+                        @endauth
+                    </div>
+                @endif
+                
                 </nav>
 
                 <!-- Bouton menu mobile -->

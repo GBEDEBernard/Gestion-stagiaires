@@ -34,92 +34,92 @@ require __DIR__.'/auth.php';
 ///la route pour entité ecole
 
 Route::middleware(['auth'])->group(function () {
-    // Liste des écoles
-    Route::get('/admin/jours/index', [JourController::class, 'index'])->name('jours.index');
 
-    // Formulaire de création
-    Route::get('/admin/jours/create', [JourController::class, 'create'])->name('jours.create');
+    // === JOURS ===
+    Route::get('/admin/jours/index', [JourController::class, 'index'])
+        ->name('jours.index')->middleware('permission:jours.view');
 
-    // Stocker une nouvelle école
-    Route::post('/admin/jours', [JourController::class, 'store'])->name('jours.store');
+    Route::get('/admin/jours/create', [JourController::class, 'create'])
+        ->name('jours.create')->middleware('permission:jours.create');
 
-    // Formulaire de modification
-    Route::get('/admin/jours/{jour}/edit', [JourController::class, 'edit'])->name('jours.edit');
+    Route::post('/admin/jours', [JourController::class, 'store'])
+        ->name('jours.store')->middleware('permission:jours.create');
 
-    // Mettre à jour l’école
-    Route::put('/admin/jours/{jour}', [JourController::class, 'update'])->name('jours.update');
+    Route::get('/admin/jours/{jour}/edit', [JourController::class, 'edit'])
+        ->name('jours.edit')->middleware('permission:jours.edit');
 
-    // Supprimer l’école
-    Route::delete('/admin/jours/{jour}', [JourController::class, 'destroy'])->name('jours.destroy');
-});
+    Route::put('/admin/jours/{jour}', [JourController::class, 'update'])
+        ->name('jours.update')->middleware('permission:jours.edit');
 
-Route::middleware(['auth'])->group(function(){
-    //route pour creer stagiaire
-    Route::get('/admin/stagiaires/create', [StagiaireController::class, 'create'])->name('stagiaires.create');
+    Route::delete('/admin/jours/{jour}', [JourController::class, 'destroy'])
+        ->name('jours.destroy')->middleware('permission:jours.delete');
 
-    //la route pour afficher les stagiaires  (liste des stagiaires)
-    Route::get('/admin/stagiaires/index', [StagiaireController::class , 'index'])->name('stagiaires.index');
+    // === STAGIAIRES ===
+    Route::get('/admin/stagiaires/index', [StagiaireController::class , 'index'])
+        ->name('stagiaires.index')->middleware('permission:stagiaires.view');
 
-       // Stocker un nouveaux stagiaires
-     Route::post('/admin/stagiaires', [StagiaireController::class, 'store'])->name('stagiaires.store');
+    Route::get('/admin/stagiaires/create', [StagiaireController::class, 'create'])
+        ->name('stagiaires.create')->middleware('permission:stagiaires.create');
 
-     // Formulaire de modification
-    Route::get('/admin/stagiaires/{stagiaire}/edit', [StagiaireController::class, 'edit'])->name('stagiaires.edit');
+    Route::post('/admin/stagiaires', [StagiaireController::class, 'store'])
+        ->name('stagiaires.store')->middleware('permission:stagiaires.create');
 
-    // Mettre à jour l’école
-    Route::put('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'update'])->name('stagiaires.update');
+    Route::get('/admin/stagiaires/{stagiaire}/edit', [StagiaireController::class, 'edit'])
+        ->name('stagiaires.edit')->middleware('permission:stagiaires.edit');
 
-    // Supprimer l’école
-    Route::delete('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'destroy'])->name('stagiaires.destroy');
+    Route::put('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'update'])
+        ->name('stagiaires.update')->middleware('permission:stagiaires.edit');
 
-});
+    Route::delete('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'destroy'])
+        ->name('stagiaires.destroy')->middleware('permission:stagiaires.delete');
 
-Route::middleware(['auth'])->group(function(){
-    //route pour creer stagiaire
-    Route::get('/admin/type_stages/create', [TypeStageController::class, 'create'])->name('type_stages.create');
+    // === TYPE STAGES ===
+    Route::get('/admin/type_stages/index', [TypeStageController::class , 'index'])
+        ->name('type_stages.index')->middleware('permission:type_stages.view');
 
-    //la route pour afficher les stagiaires  (liste des stagiaires)
-    Route::get('/admin/type_stages/index', [TypeStageController::class , 'index'])->name('type_stages.index');
-    
-       // Stocker un nouveaux stagiaires
-     Route::post('/admin/type_stages', [TypeStageController::class, 'store'])->name('type_stages.store');
+    Route::get('/admin/type_stages/create', [TypeStageController::class, 'create'])
+        ->name('type_stages.create')->middleware('permission:type_stages.create');
 
-     // Formulaire de modification
-    Route::get('/admin/type_stages/{type_stages}/edit', [TypeStageController::class, 'edit'])->name('type_stages.edit');
+    Route::post('/admin/type_stages', [TypeStageController::class, 'store'])
+        ->name('type_stages.store')->middleware('permission:type_stages.create');
 
-    // Mettre à jour l’école
-    Route::put('/admin/type_stages/{type_stages}', [TypeStageController::class, 'update'])->name('type_stages.update');
+    Route::get('/admin/type_stages/{type_stages}/edit', [TypeStageController::class, 'edit'])
+        ->name('type_stages.edit')->middleware('permission:type_stages.edit');
 
-    // Supprimer un type de stage
-Route::delete('/admin/type_stages/{type_stages}', [TypeStageController::class, 'destroy'])->name('type_stages.destroy');
+    Route::put('/admin/type_stages/{type_stages}', [TypeStageController::class, 'update'])
+        ->name('type_stages.update')->middleware('permission:type_stages.edit');
 
-});
+    Route::delete('/admin/type_stages/{type_stages}', [TypeStageController::class, 'destroy'])
+        ->name('type_stages.destroy')->middleware('permission:type_stages.delete');
 
-Route::middleware(['auth'])->group(function(){
-    //route pour creer stagiaire
-    Route::get('/admin/badges/create', [BadgeController::class, 'create'])->name('badges.create');
+    // === BADGES ===
+    Route::get('/admin/badges/index', [BadgeController::class , 'index'])
+        ->name('badges.index')->middleware('permission:badges.view');
 
-    //la route pour afficher les stagiaires  (liste des stagiaires)
-    Route::get('/admin/badges/index', [BadgeController::class , 'index'])->name('badges.index');
-    
-       // Stocker un nouveaux stagiaires
-     Route::post('/admin/badges', [BadgeController::class, 'store'])->name('badges.store');
+    Route::get('/admin/badges/create', [BadgeController::class, 'create'])
+        ->name('badges.create')->middleware('permission:badges.create');
 
-     // Formulaire de modification
-    Route::get('/admin/badges/{badges}/edit', [BadgeController::class, 'edit'])->name('badges.edit');
+    Route::post('/admin/badges', [BadgeController::class, 'store'])
+        ->name('badges.store')->middleware('permission:badges.create');
 
-    // Mettre à jour l’école
-    Route::put('/admin/badges/{badges}', [BadgeController::class, 'update'])->name('badges.update');
+    Route::get('/admin/badges/{badges}/edit', [BadgeController::class, 'edit'])
+        ->name('badges.edit')->middleware('permission:badges.edit');
 
-    // Supprimer l’école
-    Route::delete('/admin/badges/{badges}', [BadgeController::class, 'destroy'])->name('badges.destroy');
+    Route::put('/admin/badges/{badges}', [BadgeController::class, 'update'])
+        ->name('badges.update')->middleware('permission:badges.edit');
 
-    // la route des contactes
+    Route::delete('/admin/badges/{badges}', [BadgeController::class, 'destroy'])
+        ->name('badges.destroy')->middleware('permission:badges.delete');
+
+    // === CONTACTS ===
+    Route::get('/admin/contacts/index', [ContactController::class, 'afficher'])
+        ->name('contacts.index')->middleware('permission:contacts.view');
+
     Route::get('/contact', function () {
-        return view('contact'); // ou un vrai controller
+        return view('contact');
     })->name('contact');
-    Route::get('/admin/contacts/index',[ContactController::class , 'afficher'])->name('contacts.index');
-    
-    Route::get('apropos',[AccueilController::class ,'apropo'])->name('apropos');
-    Route::get('fonctionalite',[AccueilController::class ,'fonction'])->name('fonctionalite');
+
+    // === INFOS PUBLIQUES ===
+    Route::get('apropos', [AccueilController::class, 'apropo'])->name('apropos');
+    Route::get('fonctionalite', [AccueilController::class, 'fonction'])->name('fonctionalite');
 });
