@@ -1,225 +1,164 @@
 <?php
 
 namespace App\Http\Controllers;
-// class StagiaireController extends Controller
-// {
-//     // Afficher la liste des stagiaires
-//     public function index()
-//     {
-//         $stagiaires = Stagiaire::with(['jours', 'typestage', 'badge'])->paginate(10); // ou 15, 20…
-//         return view('admin.stagiaires.index', compact('stagiaires'));
-//     }
-    
-
-//     // Formulaire de création
-//     public function create()
-// {
-//     $jours = Jour::all();
-//     $typestages = TypeStage::all();
-//     $badges = Badge::all();
-
-//     return view('admin.stagiaires.create', compact('jours', 'typestages', 'badges'));
-// }
-
-
-//     // Stocker un nouveau stagiaire
-//     public function store(Request $request)
-//     {
-//         $request->validate([
-//             'nom' => 'required|string',
-//             'prenom' => 'required|string',
-//             'email' => 'required|email|unique:stagiaires',
-//             'telephone' => 'required|unique:stagiaires',
-// // les stockage du jour 
-//             'jours_id' => 'required|array',
-//             'jours_id.*' => 'exists:jours,id',
-//            'typestage_id' => 'required|exists:typestages,id',
-//             'badge_id' => 'required|exists:badges,id|unique:stagiaires,badge_id',
-//             'ecole' => 'nullable|string',
-//             'theme' => 'nullable|string',
-//             'date_debut' => 'required|date',
-//            'date_fin' => 'required|date|after_or_equal:date_debut'
-
-            
-//         ]);
-
-//         $stagiaire = Stagiaire::create($request->except('jours_id'));
-
-//         // Association many-to-many
-//         $stagiaire->jours()->attach($request->jours_id);
-//         // Stagiaire::create($request->all());
-//         return redirect()->route('stagiaires.index')->with('success', 'Stagiaire ajouté avec succès');
-//     }
-
-//     // Formulaire de modification
-//     public function edit(Stagiaire $stagiaire)
-//     {
-//         $jours = Jour::all();
-//         $typestages = TypeStage::all();
-//         $badges = Badge::all();
-//         return view('admin.stagiaires.edit', compact('stagiaire', 'jours', 'typestages', 'badges'));
-//     }
-
-//     // Mettre à jour un stagiaire
-//     public function update(Request $request, Stagiaire $stagiaire)
-//     {
-//         $request->validate([
-//             'nom' => 'required|string',
-//             'prenom' => 'required|string',
-//             'email' => 'required|email|unique:stagiaires,email,' . $stagiaire->id,
-//             'telephone' => 'required|unique:stagiaires,telephone,' . $stagiaire->id,
-//               // autres validations...
-//             'jours_id' => 'required|array',
-//             'jours_id.*' => 'exists:jours,id',
-
-//             'typestages_id' => 'required|exists:typestages,id',
-//             'badges_id' => 'required|exists:badges,id|unique:stagiaires,badge_id,'.$stagiaire->id,
-//             'ecole' => 'nullable|string',
-//             'theme' => 'nullable|string',
-//             'date_debut' => 'required|date',
-//             'date_fin' => 'required|date|after_or_equal:date_debut'
-
-//         ]);
-//     //   $stagiaire = Stagiaire::update($request->except('jours_id'));
-
-//       // Association many-to-many
-//       $stagiaire->update($request->except('jours_id'));
-
-//       $stagiaire->jours()->sync($request->jours_id);
-//         // $stagiaire->update($request->all());
-
-//         return redirect()->route('stagiaires.index')->with('success', 'Stagiaire mis à jour avec succès');
-//     }
-
-//     // Supprimer un stagiaire
-//     public function destroy(Stagiaire $stagiaire)
-//     {
-//         $stagiaire->delete();
-//         return redirect()->route('stagiaires.index')->with('success', 'Stagiaire supprimé avec succès');
-//     }
-// }
-
 
 use App\Models\Stagiaire;
-use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Badge;
-use App\Rules\BadgeNotInActiveStage;
+use App\Models\Jour;
 use Illuminate\Http\Request;
 
 class StagiaireController extends Controller
 {
-    // Afficher la liste des stagiaires
+    /**
+     * Affiche la liste paginée des stagiaires avec leurs relations.
+     */
     public function index()
     {
-        $stagiaires = Stagiaire::with(['jours', 'typestage', 'badge'])->paginate(10);
+        // Récupère les stagiaires avec type de stage, badge et jours
+        $stagiaires = Stagiaire::with(['typestage', 'badge', 'jours'])
+            ->latest() // ordre décroissant par date de création
+            ->paginate(10); // pagination 10 par page
+
+        // Retourne la vue index avec les stagiaires
         return view('admin.stagiaires.index', compact('stagiaires'));
     }
 
-    // Formulaire de création
+    /**
+     * Formulaire de création d’un nouveau stagiaire.
+     */
     public function create()
     {
-        $jours = Jour::all();
-        $typestages = TypeStage::all();
-        $badges = Badge::getAvailableBadges();
-        return view('admin.stagiaires.create', compact('jours', 'typestages', 'badges'));
+        $typestages = TypeStage::all(); // tous les types de stage
+        $badges = Badge::all();         // tous les badges
+        $jours = Jour::all();           // tous les jours possibles
+
+        // Retourne la vue create avec toutes les listes nécessaires
+        return view('admin.stagiaires.create', compact('typestages', 'badges', 'jours'));
     }
 
-    // Stocker un nouveau stagiaire
+    /**
+     * Enregistre un nouveau stagiaire en base de données.
+     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nom' => 'required|string',
-            'prenom' => 'required|string',
-            'email' => 'required|email|unique:stagiaires,email',
-            'telephone' => 'required|unique:stagiaires,telephone',
-            'jours_id' => 'required|array',
-            'jours_id.*' => 'exists:jours,id',
+        // Validation des champs du formulaire
+        $request->validate([
+            'nom'          => 'required|string|max:100',
+            'prenom'       => 'required|string|max:100',
+            'email'        => 'required|email|unique:stagiaires,email',
+            'telephone'    => 'nullable|string|max:20',
             'typestage_id' => 'required|exists:typestages,id',
-            'badge_id' => ['required', 'exists:badges,id', new BadgeNotInActiveStage],
-            'ecole' => 'nullable|string',
-            'theme' => 'nullable|string',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date|after_or_equal:date_debut',
-        ], [
-            'nom.required' => 'Le nom est requis.',
-            'prenom.required' => 'Le prénom est requis.',
-            'email.required' => 'L\'email est requis.',
-            'email.email' => 'L\'email doit être valide.',
-            'email.unique' => 'Cet email est déjà utilisé.',
-            'telephone.required' => 'Le téléphone est requis.',
-            'telephone.unique' => 'Ce numéro de téléphone est déjà utilisé.',
-            'jours_id.required' => 'Au moins un jour doit être sélectionné.',
-            'jours_id.*.exists' => 'Un ou plusieurs jours sélectionnés sont invalides.',
-            'typestage_id.required' => 'Le type de stage est requis.',
-            'typestage_id.exists' => 'Le type de stage sélectionné est invalide.',
-            'badge_id.required' => 'Le badge est requis.',
-            'badge_id.exists' => 'Le badge sélectionné est invalide.',
-            'date_debut.required' => 'La date de début est requise.',
-            'date_fin.required' => 'La date de fin est requise.',
-            'date_fin.after_or_equal' => 'La date de fin doit être égale ou postérieure à la date de début.',
+            'badge_id'     => 'required|exists:badges,id',
+            'ecole'        => 'nullable|string|max:150',
+            'theme'        => 'nullable|string|max:200',
+            'date_debut'   => 'required|date',
+            'date_fin'     => 'required|date|after_or_equal:date_debut',
+            'jours_id'     => 'array', // tableau d'IDs de jours
         ]);
 
-        $stagiaire = Stagiaire::create($request->except('jours_id'));
-        $stagiaire->jours()->attach($request->jours_id);
+        // Création du stagiaire
+        $stagiaire = Stagiaire::create($request->only([
+            'nom', 'prenom', 'email', 'telephone',
+            'typestage_id', 'badge_id', 'ecole', 'theme',
+            'date_debut', 'date_fin'
+        ]));
 
-        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire ajouté avec succès');
+        // Association des jours sélectionnés via relation N-N
+        $stagiaire->jours()->sync($request->jours_id ?? []);
+
+        // Redirection vers la liste avec message de succès
+        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire ajouté avec succès.');
     }
 
-    // Formulaire de modification
+    /**
+     * Affiche le profil détaillé d’un stagiaire.
+     */
+    public function show(Stagiaire $stagiaire)
+    {
+        // Charge les relations nécessaires
+        $stagiaire->load(['typestage', 'badge', 'jours']);
+
+        // Vérifie si le stage est en cours
+        $statutEnCours = now()->between($stagiaire->date_debut, $stagiaire->date_fin);
+
+        return view('admin.stagiaires.show', compact('stagiaire', 'statutEnCours'));
+    }
+
+    /**
+     * Formulaire d’édition d’un stagiaire existant.
+     */
     public function edit(Stagiaire $stagiaire)
     {
-        $jours = Jour::all();
-        $typestages = TypeStage::all();
-        $badges = Badge::getAvailableBadges($stagiaire->id);
-        $badges = $badges->merge(Badge::where('id', $stagiaire->badge_id)->get());
-        return view('admin.stagiaires.edit', compact('stagiaire', 'jours', 'typestages', 'badges'));
+        $typeStages = TypeStage::all(); // liste des types de stage
+        $badges = Badge::all();         // liste des badges
+        $jours = Jour::all();           // liste de tous les jours
+
+        // Charge les relations pour pré-remplir le formulaire
+        $stagiaire->load('jours', 'typestage', 'badge');
+
+        return view('admin.stagiaires.edit', compact('stagiaire', 'typeStages', 'badges', 'jours'));
     }
-    // Mettre à jour un stagiaire
+
+    /**
+     * Met à jour un stagiaire existant en base de données.
+     */
     public function update(Request $request, Stagiaire $stagiaire)
     {
-        $validated = $request->validate([
-            'nom' => 'required|string',
-            'prenom' => 'required|string',
-            'email' => 'required|email|unique:stagiaires,email,' . $stagiaire->id,
-            'telephone' => 'required|unique:stagiaires,telephone,' . $stagiaire->id,
-            'jours_id' => 'required|array',
-            'jours_id.*' => 'exists:jours,id',
+        // Validation des champs du formulaire
+        $request->validate([
+            'nom'          => 'required|string|max:100',
+            'prenom'       => 'required|string|max:100',
+            'email'        => 'required|email|unique:stagiaires,email,' . $stagiaire->id,
+            'telephone'    => 'nullable|string|max:20',
             'typestage_id' => 'required|exists:typestages,id',
-            'badge_id' => ['required', 'exists:badges,id', new BadgeNotInActiveStage($stagiaire->id)],
-            'ecole' => 'nullable|string',
-            'theme' => 'nullable|string',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date|after_or_equal:date_debut',
-        ], [
-            'nom.required' => 'Le nom est requis.',
-            'prenom.required' => 'Le prénom est requis.',
-            'email.required' => 'L\'email est requis.',
-            'email.email' => 'L\'email doit être valide.',
-            'email.unique' => 'Cet email est déjà utilisé.',
-            'telephone.required' => 'Le téléphone est requis.',
-            'telephone.unique' => 'Ce numéro de téléphone est déjà utilisé.',
-            'jours_id.required' => 'Au moins un jour doit être sélectionné.',
-            'jours_id.*.exists' => 'Un ou plusieurs jours sélectionnés sont invalides.',
-            'typestage_id.required' => 'Le type de stage est requis.',
-            'typestage_id.exists' => 'Le type de stage sélectionné est invalide.',
-            'badge_id.required' => 'Le badge est requis.',
-            'badge_id.exists' => 'Le badge sélectionné est invalide.',
-            'date_debut.required' => 'La date de début est requise.',
-            'date_fin.required' => 'La date de fin est requise.',
-            'date_fin.after_or_equal' => 'La date de fin doit être égale ou postérieure à la date de début.',
+            'badge_id'     => 'required|exists:badges,id',
+            'ecole'        => 'nullable|string|max:150',
+            'theme'        => 'nullable|string|max:200',
+            'date_debut'   => 'required|date',
+            'date_fin'     => 'required|date|after_or_equal:date_debut',
+            'jours_id'     => 'array',
         ]);
 
-        $stagiaire->update($request->except('jours_id'));
-        $stagiaire->jours()->sync($request->jours_id);
+        // Mise à jour des informations du stagiaire
+        $stagiaire->update($request->only([
+            'nom', 'prenom', 'email', 'telephone',
+            'typestage_id', 'badge_id', 'ecole', 'theme',
+            'date_debut', 'date_fin'
+        ]));
 
-        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire mis à jour avec succès');
+        // Mise à jour de la relation N-N avec les jours
+        $stagiaire->jours()->sync($request->jours_id ?? []);
+
+        // Redirection vers le profil du stagiaire avec message de succès
+        return redirect()->route('stagiaires.show', $stagiaire->id)
+                         ->with('success', 'Profil mis à jour avec succès.');
     }
 
-    // Supprimer un stagiaire
+    /**
+     * Supprime un stagiaire de la base de données.
+     */
     public function destroy(Stagiaire $stagiaire)
     {
         $stagiaire->delete();
-        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire supprimé avec succès');
+
+        return redirect()->route('stagiaires.index')->with('success', 'Stagiaire supprimé.');
     }
+
+
+   /**
+ * Affiche le badge d’un stagiaire pour visualisation et impression.
+ */
+public function badge(Stagiaire $stagiaire)
+{
+    $stagiaire->load(['typestage', 'badge']); // charger relations nécessaires
+
+    $entreprise = [
+        'nom' => 'TECHNOLOGY ROREVER GROUP',
+        'abreviation' => 'TFG'
+    ];
+
+    return view('admin.stagiaires.badge', compact('stagiaire', 'entreprise'));
+}
+
 }

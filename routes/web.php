@@ -9,20 +9,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('bloglayouts',[AccueilController::class , 'layouts'])->name('bloglayouts');
-Route::get('/welcome',[AccueilController::class, 'acceuil'])->name('welcome');
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -72,6 +70,16 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'destroy'])
         ->name('stagiaires.destroy')->middleware('permission:stagiaires.delete');
+
+
+        // la vue show profil route
+        Route::get('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'show'])
+             ->name('stagiaires.show')
+          ->middleware('permission:stagiaires.view');
+    //   route pour afficher les badge
+    
+Route::get('/admin/stagiaires/{stagiaire}/badge', [StagiaireController::class, 'badge'])
+    ->name('stagiaires.badge');
 
     // === TYPE STAGES ===
     Route::get('/admin/type_stages/index', [TypeStageController::class , 'index'])

@@ -49,8 +49,8 @@
                 <h2 class="text-lg font-semibold text-gray-800">{{ $jour->jour }}</h2>
                 
                 <div class="mt-4 flex justify-end gap-2">
-                    <a href="{{ route('jours.edit', $jour->id) }}" class="text-yellow-500 hover:underline">Modifier</a>
-                    <form action="{{ route('jours.destroy', $jour->id) }}" method="POST" onsubmit="return confirm('Supprimer cette école ?')">
+                    <a href="{{ route('jours.edit', $jour->id) }}" class="text-yellow-500 hover:underline " data-confirm-edit>Modifier</a>
+                    <form action="{{ route('jours.destroy', $jour->id) }}" method="POST" data-confirm-delete>
                         @csrf @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline">Supprimer</button>
                     </form>

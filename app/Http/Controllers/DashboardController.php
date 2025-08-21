@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-abstract class Controller
+use App\Models\Stagiaire;
+use App\Models\TypeStage;
+use App\Models\Badge;
+
+class DashboardController extends Controller
 {
-    //
-      public function acceuil()
+    public function index()
     {
         $totalStagiaires = Stagiaire::count();
         $enCours = Stagiaire::where('date_debut', '<=', now())
@@ -14,7 +17,7 @@ abstract class Controller
         $totalBadges = Badge::count();
         $totalTypes = TypeStage::count();
 
-        return view('admin.dashboard', compact(
+        return view('dashboard', compact(
             'totalStagiaires',
             'enCours',
             'totalBadges',

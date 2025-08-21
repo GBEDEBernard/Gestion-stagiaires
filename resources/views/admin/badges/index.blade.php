@@ -28,8 +28,8 @@
                 <td class="border p-2">{{ $badge->id }}</td>
                 <td class="border p-2">{{ $badge->badge }}</td>
                 <td class="border p-2 flex space-x-2">
-                    <a href="{{ route('badges.edit', $badge) }}" class="text-blue-600 hover:underline">Modifier</a>
-                    <form action="{{ route('badges.destroy', $badge) }}" method="POST" onsubmit="return confirm('Supprimer ce Numéro ?')" class="inline">
+                    <a href="{{ route('badges.edit', $badge) }}" class="text-blue-600 hover:underline" data-confirm-edit>Modifier</a>
+                    <form action="{{ route('badges.destroy', $badge) }}" method="POST"  class="inline" data-confirm-delete>
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-red-600 hover:underline">Supprimer</button>

@@ -30,15 +30,15 @@
                         <td class="px-6 py-4 whitespace-nowrap text-gray-700">{{ $typeStage->libelle }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <a href="{{ route('type_stages.edit', $typeStage) }}"
-                               class="text-yellow-500 hover:text-yellow-600 font-semibold mr-4">
+                               class="text-yellow-500 hover:text-yellow-600 font-semibold mr-4" data-confirm-edit>
                                 Modifier
                             </a>
 
-                            <form action="{{ route('type_stages.destroy', $typeStage) }}" method="POST" class="inline">
+                            <form action="{{ route('type_stages.destroy', $typeStage) }}" method="POST" class="inline" data-confirm-delete>
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
-                                        onclick="return confirm('Tu es sûr de vouloir supprimer ce type de stage ?')"
+                                    
                                         class="text-red-500 hover:text-red-600 font-semibold">
                                     Supprimer
                                 </button>
