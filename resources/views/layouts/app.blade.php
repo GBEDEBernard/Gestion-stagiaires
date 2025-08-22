@@ -88,7 +88,40 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+<!-- la redirectionsur la page connexion apres des heure et de minuite -->
+<script>
+(function () {
+    const INACTIVITY_LIMIT = 90 * 1000; // 90 secondes (1min30)
+    let lastActivity = Date.now();
 
+    // Fonction pour mettre à jour l'activité
+    function resetTimer() {
+        lastActivity = Date.now();
+        localStorage.setItem("lastActivity", lastActivity);
+    }
+
+    // Vérifier régulièrement si le temps est dépassé
+    function checkInactivity() {
+        const saved = localStorage.getItem("lastActivity") || Date.now();
+        const now = Date.now();
+
+        if (now - saved > INACTIVITY_LIMIT) {
+            // 🔥 Redirection forcée vers login
+            window.location.href = "{{ route('login') }}";
+        }
+    }
+
+    // On surveille les mouvements/clavier/clics
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeydown = resetTimer;
+    document.onscroll = resetTimer;
+    document.onclick = resetTimer;
+
+    // Vérifie toutes les 10 secondes
+    setInterval(checkInactivity, 10000);
+})();
+</script>
 
 </body>
 </html>

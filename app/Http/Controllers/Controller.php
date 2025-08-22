@@ -4,21 +4,5 @@ namespace App\Http\Controllers;
 
 abstract class Controller
 {
-    //
-      public function acceuil()
-    {
-        $totalStagiaires = Stagiaire::count();
-        $enCours = Stagiaire::where('date_debut', '<=', now())
-                            ->where('date_fin', '>=', now())
-                            ->count();
-        $totalBadges = Badge::count();
-        $totalTypes = TypeStage::count();
-
-        return view('admin.dashboard', compact(
-            'totalStagiaires',
-            'enCours',
-            'totalBadges',
-            'totalTypes'
-        ));
-    }
+   //
 }

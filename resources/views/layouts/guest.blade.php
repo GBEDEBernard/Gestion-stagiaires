@@ -17,13 +17,7 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
-                <a href="{{ route('welcome') }} " class="ml-[70px]">
-                    <img 
-                        src="{{ asset('images/TGFpdf.jpg') }}" 
-                        alt="Logo Stage TFG"
-                        class="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded shadow-md "
-                    >
-                </a>
+               
             </div>
 
             <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">

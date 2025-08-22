@@ -5,22 +5,27 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
-use App\Http\Controllers\Controller;
 use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Auth\RegisteredUserController; // ✅ ajouté
+use App\Models\User;
 
-Route::get('bloglayouts',[AccueilController::class , 'layouts'])->name('bloglayouts');
+Route::get('/', function () {
+    return redirect()->route('login'); // Redirige vers login
+});
 
+// ✅ Autoriser register uniquement si aucun utilisateur
+if (User::count() === 0) {
+    Route::get('/register', [RegisteredUserController::class, 'create'])
+        ->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+}
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
-
-Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
-
-
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -28,8 +33,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// ⚠️ supprime ou commente la ligne suivante dans auth.php :
+// Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+// Route::post('/register', [RegisteredUserController::class, 'store']);
 require __DIR__.'/auth.php';
-///la route pour entité ecole
 
 Route::middleware(['auth'])->group(function () {
 
@@ -71,15 +78,12 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'destroy'])
         ->name('stagiaires.destroy')->middleware('permission:stagiaires.delete');
 
+    // === SHOW + BADGE ===
+    Route::get('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'show'])
+        ->name('stagiaires.show')->middleware('permission:stagiaires.view');
 
-        // la vue show profil route
-        Route::get('/admin/stagiaires/{stagiaire}', [StagiaireController::class, 'show'])
-             ->name('stagiaires.show')
-          ->middleware('permission:stagiaires.view');
-    //   route pour afficher les badge
-    
-Route::get('/admin/stagiaires/{stagiaire}/badge', [StagiaireController::class, 'badge'])
-    ->name('stagiaires.badge');
+    Route::get('/admin/stagiaires/{stagiaire}/badge', [StagiaireController::class, 'badge'])
+        ->name('stagiaires.badge');
 
     // === TYPE STAGES ===
     Route::get('/admin/type_stages/index', [TypeStageController::class , 'index'])
@@ -118,16 +122,4 @@ Route::get('/admin/stagiaires/{stagiaire}/badge', [StagiaireController::class, '
 
     Route::delete('/admin/badges/{badges}', [BadgeController::class, 'destroy'])
         ->name('badges.destroy')->middleware('permission:badges.delete');
-
-    // === CONTACTS ===
-    Route::get('/admin/contacts/index', [ContactController::class, 'afficher'])
-        ->name('contacts.index')->middleware('permission:contacts.view');
-
-    Route::get('/contact', function () {
-        return view('contact');
-    })->name('contact');
-
-    // === INFOS PUBLIQUES ===
-    Route::get('apropos', [AccueilController::class, 'apropo'])->name('apropos');
-    Route::get('fonctionalite', [AccueilController::class, 'fonction'])->name('fonctionalite');
 });

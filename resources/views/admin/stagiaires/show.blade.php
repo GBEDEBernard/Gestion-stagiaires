@@ -23,10 +23,7 @@
                             Supprimer
                         </button>
                     </form>
-                    <button onclick="window.print()"
-                            class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">
-                        Imprimer
-                    </button>
+                   
                     <a href="{{ route('stagiaires.badge', $stagiaire->id) }}" target="_blank"
                         class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">
                         Voir / Imprimer le badge
