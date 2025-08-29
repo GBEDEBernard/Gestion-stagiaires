@@ -12,6 +12,6 @@ class TypeStage extends Model
 
     // Relations si tu veux
     public function stagiaires() {
-        return $this->hasMany(Stagiaire::class);
+        return $this->hasMany(Stage::class);
     }
 }

@@ -7,44 +7,56 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
 
-
 class RolePermissionSeeder extends Seeder
 {
     public function run()
     {
-        // Liste des entités et actions
-        $entities = ['jours', 'stagiaires', 'type_stages', 'badges', 'contacts'];
+        // 🔹 Liste de toutes les entités de ton projet
+        $entities = [
+            'jour_stage',
+            'etudiants',
+            'stages',
+            'type_stages',
+            'badges',
+            'services'
+        ];
+
+        // 🔹 Actions possibles sur chaque entité
         $actions = ['view', 'create', 'edit', 'delete'];
-        
-        // Création des permissions
+
+        // 🔹 Création de toutes les permissions
         foreach ($entities as $entity) {
             foreach ($actions as $action) {
                 Permission::firstOrCreate(['name' => "$entity.$action"]);
             }
         }
 
-        Permission::create(['name' => 'access dashboard']);
+        // 🔹 Permission spécifique pour le dashboard
+        Permission::firstOrCreate(['name' => 'access.dashboard']);
 
-        // Création des rôles
+        // 🔹 Création des rôles
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $userRole = Role::firstOrCreate(['name' => 'user']);
-        
-        // Attribution de toutes les permissions au rôle admin
+
+        // 🔹 Attribution de toutes les permissions au rôle admin
         $adminRole->syncPermissions(Permission::all());
-        
-        // Attribution de permissions spécifiques au rôle user (exemple)
+
+        // 🔹 Exemple de permissions pour le rôle user
         $userRole->syncPermissions([
-            'jours.view',
-            'stagiaires.view',
+            'jour_stage.view',
+            'etudiants.view',
+            'stages.view',
             'type_stages.view',
-            // ... autres permissions pour le rôle user
+            'badges.view',
         ]);
 
-        // Récupérer un user (par exemple id = 1)
+        // 🔹 Assigner le rôle admin au premier utilisateur
         $user = User::find(1);
-        
         if ($user) {
-            $user->assignRole('admin'); // ou 'user'
+            $user->assignRole('admin');
         }
+
+        // 🔹 Nettoyer le cache des permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

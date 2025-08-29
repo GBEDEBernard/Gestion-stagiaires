@@ -7,61 +7,53 @@ use Illuminate\Http\Request;
 
 class JourController extends Controller
 {
-    // 🔍 Affiche la liste de toutes les écoles (page d’index)
+    // Liste des jours
     public function index()
     {
-        $jours = Jour::all(); // Récupère toutes les écoles depuis la base
-        return view('admin.jours.index', compact('jours')); // Envoie à la vue index
+        $jours = Jour::all();
+        return view('admin.jours.index', compact('jours'));
     }
 
-    // ➕ Affiche le formulaire pour créer une nouvelle école
+    // Formulaire de création
     public function create()
     {
-        return view('admin.jours.create'); // Affiche le formulaire "Ajouter une école"
+        return view('admin.jours.create');
     }
 
-    // 💾 Enregistre une nouvelle école en base de données
+    // Enregistrer un nouveau jour
     public function store(Request $request)
     {
-        // Valide les données envoyées par le formulaire
         $request->validate([
             'jour' => 'required|string|max:255|unique:jours,jour',
-            
         ]);
 
-        // Crée une école avec les données validées
-        Jour::create($request->all());
+        Jour::create($request->only('jour'));
 
-        // Redirige avec un message de succès
-        return redirect()->route('jours.index')->with('success', 'jours créée');
+        return redirect()->route('jours.index')->with('success', 'Jour créé avec succès.');
     }
 
-    // ✏️ Affiche le formulaire de modification d’une école existante
+    // Formulaire d'édition
     public function edit(Jour $jour)
     {
-        return view('admin.jours.edit', compact('jour')); // Affiche le formulaire avec les infos de l’école
+        return view('admin.jours.edit', compact('jour'));
     }
 
-    // 🔁 Met à jour une école dans la base
+    // Mettre à jour un jour
     public function update(Request $request, Jour $jour)
     {
-        // Valide les données
         $request->validate([
-            'jour' => 'required|string|max:20|unique:jours,jour,' . $jour->id,
+            'jour' => 'required|string|max:255|unique:jours,jour,' . $jour->id,
         ]);
-        
 
-        // Met à jour l’école avec les nouvelles infos
-        $jour->update($request->all());
+        $jour->update($request->only('jour'));
 
-        // Redirige avec message
-        return redirect()->route('jours.index')->with('success', 'Jour mise à jour');
+        return redirect()->route('jours.index')->with('success', 'Jour mis à jour.');
     }
 
-    // ❌ Supprime une école
+    // Supprimer un jour
     public function destroy(Jour $jour)
     {
-        $jour->delete(); // Supprime dans la base
-        return redirect()->route('jours.index')->with('success', 'Jour supprimée');
+        $jour->delete();
+        return redirect()->route('jours.index')->with('success', 'Jour supprimé.');
     }
 }

@@ -1,6 +1,6 @@
 <x-app-layout>
 
-<div class="bg-blue-800 hover:opacity-85 max-w-5xl mx-auto px-4 py-16 bg-blue-900 hover:opacity-90 rounded h-[680px]">
+<div class="hover:opacity-85 max-w-5xl mx-auto px-4 py-16  rounded h-[680px]">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl text-white font-bold ">Les numéro de Badge</h1>
         <a href="{{ route('badges.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">

@@ -3,70 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\Badge;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 
 class BadgeController extends Controller
 {
-    /**
-     * Afficher la liste des badges.
-     */
     public function index()
     {
         $badges = Badge::all();
         return view('admin.badges.index', compact('badges'));
     }
 
-    /**
-     * Afficher le formulaire de création.
-     */
     public function create()
     {
         return view('admin.badges.create');
     }
 
-    /**
-     * Stocker un nouveau niveau.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'badge' => 'required|string|max:255|unique:badges,badge',
         ]);
-        
 
-        Badge::create($validated);
+        $badge = Badge::create($validated);
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Création badge',
+            'description' => "Badge {$badge->badge} créé"
+        ]);
+
         return redirect()->route('badges.index')
                          ->with('success', 'Badge créé avec succès.');
     }
 
-    /**
-     * Afficher le formulaire d’édition.
-     */
     public function edit(Badge $badges)
     {
         return view('admin.badges.edit', compact('badges'));
     }
 
-    /**
-     * Mettre à jour un niveau existant.
-     */
     public function update(Request $request, Badge $badges)
     {
         $validated = $request->validate([
             'badge' => 'required|string|max:255|unique:badges,badge,' . $badges->id,
         ]);
-        
+
         $badges->update($validated);
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Mise à jour badge',
+            'description' => "Badge {$badges->badge} modifié"
+        ]);
+
         return redirect()->route('badges.index')
                          ->with('success', 'Badge mis à jour avec succès.');
     }
 
-    /**
-     * Supprimer un niveau.
-     */
     public function destroy(Badge $badges)
     {
+        $nom = $badges->badge;
         $badges->delete();
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Suppression badge',
+            'description' => "Badge {$nom} supprimé"
+        ]);
+
         return redirect()->route('badges.index')
                          ->with('success', 'Badge supprimé avec succès.');
     }
