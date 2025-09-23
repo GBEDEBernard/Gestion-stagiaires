@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Badge;
 use App\Models\Activity;
 use Illuminate\Http\Request;
+use App\Models\Stage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BadgeController extends Controller
 {
@@ -74,4 +76,22 @@ class BadgeController extends Controller
         return redirect()->route('badges.index')
                          ->with('success', 'Badge supprimé avec succès.');
     }
+
+    
+   
+
+   public function show(Stage $stage)
+    {
+        $stage->load('etudiant', 'badge', 'service', 'typestage');
+        return view('admin.stages.badge', compact('stage'));
+    }
+
+    public function download(Stage $stage)
+    {
+        $stage->load('etudiant', 'badge', 'service', 'typestage');
+        $pdf = Pdf::loadView('admin.stages.badge_pdf', compact('stage'))
+            ->setPaper([0, 0, 413.3858, 584.252]) // A6 en points
+            ->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
+        return $pdf->download('badge_'.$stage->etudiant->nom.'.pdf');
+    }  
 }

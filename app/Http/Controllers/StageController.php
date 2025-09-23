@@ -10,6 +10,8 @@ use App\Models\Badge;
 use App\Models\Jour;
 use App\Models\Activity;
 use Illuminate\Http\Request;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
 
 class StageController extends Controller
 {
@@ -211,5 +213,15 @@ class StageController extends Controller
 
     return view('admin.stages.badge', compact('stage','statutEnCours'));
 }
-
+    public function site()
+    {
+        return response(
+            QrCode::size(200)
+                ->color(0, 0, 0)          // QR blanc
+                ->backgroundColor(255, 255, 255)  // bleu foncé
+                ->generate('https://www.tfgbusiness.com'),
+            200,
+            ['Content-Type' => 'image/svg+xml']
+        );
+    }
 }

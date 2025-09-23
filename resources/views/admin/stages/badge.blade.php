@@ -1,98 +1,205 @@
-<x-app-layout>
-<div class="bg-gray-100 min-h-screen flex items-center justify-center p-6 font-serif">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Badge Stagiaire</title>
+<style>
+/* Taille A6 exacte pour impression */
+@page { margin: 0; size: 105mm 148mm; }
 
-    <!-- Container principal en row -->
-    <div class="flex items-start gap-6">
+/* Général */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh; /* Centrer le badge sur la page */
+}
 
-        <!-- Badge container -->
-        <div id="badge" class="bg-white shadow-xl rounded-2xl p-6 w-80 print:w-80 print:shadow-none border border-gray-200">
+/* Badge container */
+.badge-container {
+    width: 105mm;
+    height: 148mm;
+    background-color: #ffffff;
+    border: 2px solid #d6dbe9;
+    border-radius: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
 
-            <!-- Header -->
-            <div class="text-center mb-2 bg-blue-200 rounded-t-2xl py-4 border-b border-gray-400">
-                <h1 class="text-xl font-bold text-blue-700">TECHNOLOGY FOREVER GROUP (TFG)</h1>
-            </div>
+/* Header */
+.header {
+    background-color: #b1c7e4;
+    padding: 8px 0;
+    border-bottom: 2px solid #ebebeb;
+    height: 50px;
+}
+.header h1 {
+    margin: 2;
+    font-size: 18px; /* Augmenté */
+    font-weight: bold;
+    color: #0c42d8;
+}
 
-            <!-- Logo -->
-            <div class="text-center mb-6">
-                <img src="{{ asset('images/TGFpdf.jpg') }}" alt="TFG Logo"
-                     class="mx-auto w-32 h-32 rounded-full object-cover -mt-6">
-            </div>
+/* Logo */
+.logo {
+    display: block;
+    width: 95px;
+    height: 95px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 12px auto;
+    
+}
 
-            <!-- Infos stagiaire -->
-            <div class="mb-4 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2 border-b-2 border-gray-200 pb-1">Stagiaire</h2>
-                <div class="text-gray-800 space-y-1 mt-2">
-                    <div class="inline-block rounded px-4 py-2 mt-2">
-                        <span class="text-2xl font-extrabold text-red-800">
-                            {{ str_pad($stage->badge->badge ?? '000000', 6, '0', STR_PAD_LEFT) }}
-                        </span>
-                    </div>
-                    <p><span class="font-semibold">Nom :</span> {{ $stage->etudiant->nom ?? '—' }} {{ $stage->etudiant->prenom ?? '—' }}</p>
-                    <p><span class="font-semibold">École :</span> {{ $stage->etudiant->ecole ?? '—' }}</p>
-                    <p><span class="font-semibold">Type de stage :</span> {{ $stage->typestage->libelle ?? '—' }}</p>
-                    <p><span class="font-semibold">Téléphone :</span> {{ $stage->etudiant->telephone ?? '—' }}</p>
-                    <p><span class="font-semibold">Dates :</span> 
-                        {{ $stage->date_debut ? $stage->date_debut->format('d/m/Y') : '—' }} - 
-                        {{ $stage->date_fin ? $stage->date_fin->format('d/m/Y') : '—' }}
-                    </p>
-                    <p><span class="font-semibold">Email :</span> {{ $stage->etudiant->email ?? '—' }}</p>
-                </div>
-            </div>
+/* Infos stagiaire */
+.infos {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 10px;
+}
+.infos h2 {
+    font-size: 20px; /* Augmenté */
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #1F2937;
+}
+.badge-number {
+    font-size: 24px; /* Augmenté */
+    font-weight: 800;
+    color: #B91C1C;
+    margin-bottom: 8px;
+}
+.infos p {
+    font-size: 14px; /* Augmenté */
+    margin: 3px 0;
+    color: #1F2937;
+}
+.infos p b {
+    font-weight: 600;
+}
 
-            <!-- Footer -->
-            <div class="mt-6 rounded-b-2xl text-white font-bold p-4" style="background: linear-gradient(to right, #0033a0, #d50000); border-top: 2px solid #0033a0;">
-                <div class="flex flex-col items-center space-y-2 text-sm">
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM12 11.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-                        </svg>
-                        <span>Abomey-Calavi (Togoudo)</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21c1.21.48 2.53.74 3.88.74a1 1 0 011 1v3.5a1 1 0 01-1 1C10.07 22 2 13.93 2 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.26 2.67.74 3.88a1 1 0 01-.21 1.11l-2.2 2.2z"/>
-                        </svg>
-                        <span>0166439030 / 0169580603</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm-1 14.93A6.001 6.001 0 016.07 13H11v5.93zM13 19.93V13h4.93a6.001 6.001 0 01-4.93 6.93zM11 11V6.07A6.001 6.001 0 0117.93 11H11z"/>
-                        </svg>
-                        <span>www.tfgbusiness.com</span>
-                    </div>
-                </div>
-            </div>
+/* Footer */
+.footer {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: linear-gradient(to right, #1E3A8A, #B91C1C);
+    color: white;
+    padding: 8px 10px;
+    font-size: 11px; /* Augmenté */
+    border-top: 2px solid #d6dbe9;
+    border-radius: 0 0 20px 20px;
+}
+
+/* QR */
+.footer .qr {
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Infos entreprise bien alignées */
+.footer .company-info {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
+/* Impression : garder les couleurs */
+@media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #ffffff; height: auto; }
+    #print-btn, #back-btn { display: none; } /* Masquer boutons */
+}
+
+/* Boutons */
+button {
+    margin: 10px 5px;
+    padding: 10px 16px;
+    border: none;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+}
+#print-btn {
+    background: #1E3A8A; /* Bleu */
+}
+#print-btn:hover {
+    background: #2563eb;
+}
+#back-btn {
+    background: #B91C1C; /* Rouge */
+}
+#back-btn:hover {
+    background: #dc2626;
+}
+</style>
+</head>
+<body>
+
+<div>
+    <!-- Badge -->
+    <div class="badge-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>TECHNOLOGY FOREVER GROUP (TFG)</h1>
         </div>
 
-        <!-- Boutons à côté du badge -->
-        <div class="flex flex-col gap-4 self-start">
-            <a href="{{ route('stages.show', $stage->id) }}"
-               class="px-6 py-3 rounded-md bg-gray-600 text-white hover:bg-gray-700 transition">
-               ← Retour à la liste
-            </a>
-            <button onclick="window.print()"
-                class="px-6 py-3 rounded-md bg-blue-500 text-white font-bold hover:bg-blue-600 transition">
-                Imprimer le badge
-            </button>
+        <!-- Logo -->
+        <img src="data:image/jpeg;base64,{{ base64_encode(file_get_contents(public_path('images/TGFpdf.jpg'))) }}" class="logo" alt="TFG Logo">
+
+        <!-- Infos stagiaire -->
+        <div class="infos">
+            <h2>Stagiaire</h2>
+            <div class="badge-number">{{ str_pad($stage->badge->badge ?? '000000', 6, '0', STR_PAD_LEFT) }}</div>
+            <p><b>Nom :</b> {{ $stage->etudiant->nom ?? '—' }} {{ $stage->etudiant->prenom ?? '—' }}</p>
+            <p><b>École :</b> {{ $stage->etudiant->ecole ?? '—' }}</p>
+            <p><b>Type :</b> {{ $stage->typestage->libelle ?? '—' }}</p>
+            <p><b>Tél :</b> {{ $stage->etudiant->telephone ?? '—' }}</p>
+            <p><b>Dates :</b> {{ $stage->date_debut?->format('d/m/Y') ?? '—' }} - {{ $stage->date_fin?->format('d/m/Y') ?? '—' }}</p>
+            <p><b>Email :</b> {{ $stage->etudiant->email ?? '—' }}</p>
         </div>
 
+        <!-- Footer -->
+        <div class="footer">
+            <div class="company-info">
+                <div>📍 Abomey-Calavi (Togoudo)</div>
+                <div>📞 0166439030 / 0169580603</div>
+                <div>🌐 www.tfgbusiness.com</div>
+            </div>
+            <div class="qr">
+                {!! QrCode::size(70)->generate('https://www.tfgbusiness.com') !!}
+            </div>
+        </div>
+    </div>
+
+    <!-- Boutons -->
+    <div style="text-align:center;">
+        <button id="back-btn" onclick="window.history.back()">⬅ Retour</button>
+        <button id="print-btn" onclick="window.print()">🖨️ Imprimer</button>
     </div>
 </div>
 
-<style>
-@media print {
-    body * { visibility: hidden; }
-    #badge, #badge * { visibility: visible; }
-    #badge {
-        position: absolute;
-        left: 50%;
-        top: 20px;
-        transform: translateX(-50%);
-        width: 350px;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-    @page { margin: 0; }
-}
-</style>
-</x-app-layout>
+</body>
+</html>

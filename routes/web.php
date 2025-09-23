@@ -1,18 +1,16 @@
 <?php
 
-use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
-use App\Http\Controllers\StagiaireController;
 use App\Http\Controllers\TypeStageController;
-use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\StageController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\AttestationController;
 
 use App\Models\User;
 
@@ -97,8 +95,9 @@ Route::middleware(['auth', 'verified'])->group(function() {
     // Stagiaires show + badge
     Route::get('/admin/stage/{stagiaire}', [StageController::class, 'show'])
         ->name('stage.show');
-    Route::get('/admin/stages/{stage}/badge', [StageController::class, 'badge'])
-    ->name('stage.badge');
+        
+  Route::get('/stages/{stage}/badge/download', [BadgeController::class, 'download'])->name('stages.badge.download');
+
          // Service CRUD
     Route::resource('/admin/services', ServiceController::class)
         ->names([
@@ -113,6 +112,19 @@ Route::middleware(['auth', 'verified'])->group(function() {
 // la route des service non fait par un etudiant
         Route::get('/etudiants/{etudiant}/services', [StageController::class, 'servicesDisponibles']);
 
+
+# la route "simple-qrcode"
+Route::get('/qr-site', [StageController::class, 'site'])->name('qr.site');
+
+// Affichage du badge pour un stagiaire
+Route::get('/admin/stages/{stage}/badge', [BadgeController::class, 'show'])->name('admin.stages.badge.show');
+
+
+Route::get('/admin/stages/{stage}/attestation', [AttestationController::class, 'show'])
+    ->name('stages.attestation.show');
+
+Route::get('/admin/stages/{stage}/attestation/download', [AttestationController::class, 'download'])
+    ->name('stages.attestation.download');
 });
 
 require __DIR__.'/auth.php';
