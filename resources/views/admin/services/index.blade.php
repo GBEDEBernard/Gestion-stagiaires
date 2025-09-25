@@ -25,10 +25,10 @@
                             <td class="px-4 py-2 border border-gray-300">{{ $service->nom }}</td>
                             <td class="px-4 py-2 border border-gray-300 text-center space-x-2">
                                 <a href="{{ route('services.edit', $service->id) }}" 
-                                   class="inline-block px-3 py-1 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">
+                                   class="inline-block px-3 py-1 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition" data-confirm-edit>
                                     Modifier
                                 </a>
-                                <form action="{{ route('services.destroy', $service->id) }}" method="POST" class="inline">
+                                <form action="{{ route('services.destroy', $service->id) }}" method="POST" class="inline" data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" 

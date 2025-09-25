@@ -40,10 +40,65 @@
                             🎫 Voir badge
                         </a>
                     @endif
-                    <a href="{{ route('stages.attestation.show', $stage->id) }}" 
-                    class="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
+                   <!-- Bouton pour attestation -->
+                    <button onclick="document.getElementById('modalAttestation').classList.remove('hidden')"
+                            class="px-4 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700">
                         Générer attestation
-                    </a>
+                    </button>
+
+                    <!-- Modal  pour attestation-->
+                    <div id="modalAttestation" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                        <div class="bg-white p-6 rounded-lg w-1/2">
+                            <h2 class="text-lg font-bold mb-4">Choisir les signataires</h2>
+
+                            <form method="POST" action="{{ route('stages.attestation.store', $stage->id) }}">
+                                @csrf
+                       @foreach($signataires as $signataire)
+    <div class="flex items-center mb-2">
+        <input type="checkbox"
+            name="signataires[{{ $signataire->id }}][selected]"
+            value="1"
+            class="mr-2 signataire-checkbox"
+            id="sign_{{ $signataire->id }}"
+            data-ordre="ordre_{{ $signataire->id }}"
+            data-parordre="parordre_{{ $signataire->id }}">
+
+        <label for="sign_{{ $signataire->id }}" class="mr-4">
+            {{ $signataire->nom }} ({{ $signataire->poste }})
+        </label>
+
+        {{-- L’ordre ne s’affiche pas pour le DG --}}
+        @if(!$signataire->isDG() && $signataire->peut_par_ordre)
+            <input type="number"
+                name="signataires[{{ $signataire->id }}][ordre]"
+                min="1" max="10"
+                placeholder="Ordre"
+                class="border px-2 py-1 w-16 ordre-input"
+                id="ordre_{{ $signataire->id }}"
+                disabled>
+
+            <!-- Case à cocher pour dire "Par ordre du DG" -->
+            <input type="checkbox"
+                name="signataires[{{ $signataire->id }}][par_ordre]"
+                value="1"
+                id="parordre_{{ $signataire->id }}"
+                class="ml-2"
+                disabled>
+            <span class="ml-2 text-sm text-gray-500">Signer P.O DG</span>
+        @endif
+    </div>
+@endforeach
+
+
+                                <div class="mt-4 text-right">
+                                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Valider</button>
+                                    <button type="button" onclick="document.getElementById('modalAttestation').classList.add('hidden')"
+                                            class="ml-2 px-4 py-2 border rounded">Annuler</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
 
                 </div>
             </div>
@@ -53,7 +108,7 @@
                 {{-- En-tête --}}
                 <div class="flex flex-col sm:flex-row sm:items-center gap-6 border-b border-gray-200 pb-6">
                     <div class="h-28 w-28 rounded-full overflow-hidden shadow flex-shrink-0">
-                        <img src="{{ asset('images/TGFpdf.jpg') }}" alt="Photo étudiant" class="h-full w-full object-cover">
+                        <img src="{{ asset('images/TFGLOGO.png') }}" alt="Photo étudiant" class="h-full w-full object-cover">
                     </div>
                     <div class="flex-1">
                         <h2 class="text-2xl font-bold text-gray-800">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</h2>
@@ -111,4 +166,24 @@
 
         </div>
     </div>
+
+    <script>
+    document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+        const ordreInputId = this.dataset.ordre;
+        const parOrdreId = this.dataset.parordre;
+
+        const ordreInput = document.getElementById(ordreInputId);
+        const parOrdreInput = document.getElementById(parOrdreId);
+
+        if (ordreInput) {
+            ordreInput.disabled = !this.checked;
+        }
+        if (parOrdreInput) {
+            parOrdreInput.disabled = !this.checked;
+        }
+    });
+});
+
+</script>
 </x-app-layout>

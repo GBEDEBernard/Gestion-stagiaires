@@ -16,8 +16,45 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* Loader overlay */
+        #loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #loader-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="font-sans antialiased">
+
+    <!-- Loader -->
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+    </div>
     
     <div class="h-screen bg-cover bg-center bg-no-repeat relative"
          style="background-image: url('{{ asset('images/TGFpdf.jpg') }}'); background-size: cover; background-position: center;">
@@ -39,33 +76,58 @@
         </main>
     </div>
 
-  <!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Confirmation suppression
+    const loader = document.getElementById("loader-overlay");
+
+    // 🔹 Loader sur navigation (sauf boutons avec data-confirm)
+    document.querySelectorAll("a").forEach(link => {
+        link.addEventListener("click", function (e) {
+            const href = this.getAttribute("href");
+            if (
+                href &&
+                !href.startsWith("#") &&
+                !href.startsWith("javascript") &&
+                !this.hasAttribute("data-confirm-edit") && 
+                !this.hasAttribute("data-confirm-delete")
+            ) {
+                loader.classList.add("active");
+            }
+        });
+    });
+
+    // 🔹 Loader sur soumission de formulaire (sauf ceux avec data-confirm-delete)
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function (e) {
+            if (!form.hasAttribute("data-confirm-delete")) {
+                loader.classList.add("active");
+            }
+        });
+    });
+
+    // 🔹 Confirmation suppression
     document.querySelectorAll("form[data-confirm-delete]").forEach(form => {
         form.addEventListener("submit", function (e) {
-            e.preventDefault(); // Empêche la soumission immédiate
+            e.preventDefault();
             Swal.fire({
                 title: "Êtes-vous sûr ?",
                 text: "⚠️ Cette action est irréversible.",
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonColor: "#e3342f", // rouge
-                cancelButtonColor: "#6c757d", // gris
+                confirmButtonColor: "#e3342f",
+                cancelButtonColor: "#6c757d",
                 confirmButtonText: "Oui, supprimer",
                 cancelButtonText: "Annuler"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    form.submit(); // Soumettre seulement si confirmé
+                    loader.classList.add("active"); // Loader seulement après confirmation
+                    form.submit();
                 }
             });
         });
     });
 
-    // Confirmation modification
+    // 🔹 Confirmation modification
     document.querySelectorAll("a[data-confirm-edit], button[data-confirm-edit]").forEach(btn => {
         btn.addEventListener("click", function (e) {
             e.preventDefault();
@@ -75,50 +137,42 @@ document.addEventListener("DOMContentLoaded", function () {
                 text: "Vous allez passer en mode édition.",
                 icon: "question",
                 showCancelButton: true,
-                confirmButtonColor: "#3085d6", // bleu
+                confirmButtonColor: "#3085d6",
                 cancelButtonColor: "#6c757d",
                 confirmButtonText: "Oui, modifier",
                 cancelButtonText: "Annuler"
             }).then((result) => {
                 if (result.isConfirmed && url) {
+                    loader.classList.add("active"); // Loader seulement après confirmation
                     window.location.href = url;
                 }
             });
         });
     });
 });
-</script>
-<!-- la redirectionsur la page connexion apres des heure et de minuite -->
-<script>
+
+// 🔹 Déconnexion après inactivité
 (function () {
-    const INACTIVITY_LIMIT = 90 * 1000; // 90 secondes (1min30)
+    const INACTIVITY_LIMIT = 90 * 1000; // 90 sec
     let lastActivity = Date.now();
 
-    // Fonction pour mettre à jour l'activité
     function resetTimer() {
         lastActivity = Date.now();
         localStorage.setItem("lastActivity", lastActivity);
     }
-
-    // Vérifier régulièrement si le temps est dépassé
     function checkInactivity() {
         const saved = localStorage.getItem("lastActivity") || Date.now();
         const now = Date.now();
-
         if (now - saved > INACTIVITY_LIMIT) {
-            // 🔥 Redirection forcée vers login
             window.location.href = "{{ route('login') }}";
         }
     }
-
-    // On surveille les mouvements/clavier/clics
     window.onload = resetTimer;
     document.onmousemove = resetTimer;
     document.onkeydown = resetTimer;
     document.onscroll = resetTimer;
     document.onclick = resetTimer;
 
-    // Vérifie toutes les 10 secondes
     setInterval(checkInactivity, 10000);
 })();
 </script>

@@ -11,6 +11,7 @@ use App\Models\Jour;
 use App\Models\Activity;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Models\Signataire;
 
 
 class StageController extends Controller
@@ -182,19 +183,23 @@ class StageController extends Controller
         return redirect()->route('stages.index')->with('success', 'Stage supprimé.');
     }
 
-    // Vue show
-    public function show(Stage $stage)
-    {
-        $stage->load(['typestage', 'badge', 'jours']);
+    // Vue show 
 
-        if ($stage->date_debut && $stage->date_fin) {
-            $statutEnCours = now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : 'Terminé';
-        } else {
-            $statutEnCours = 'À venir';
+        public function show(Stage $stage)
+        {
+            $stage->load(['typestage', 'badge', 'jours']);
+
+            if ($stage->date_debut && $stage->date_fin) {
+                $statutEnCours = now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : 'Terminé';
+            } else {
+                $statutEnCours = 'À venir';
+            }
+
+            // ⚡ Récupérer tous les signataires pour le modal
+            $signataires = Signataire::orderBy('ordre')->get();
+
+            return view('admin.stages.show', compact('stage', 'statutEnCours', 'signataires'));
         }
-
-        return view('admin.stages.show', compact('stage','statutEnCours'));
-    }
 
     // Vue badge
    public function badge($id)

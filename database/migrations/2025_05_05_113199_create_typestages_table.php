@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('typestages', function (Blueprint $table) {
             $table->id();
+            // le code ref
+             $table->string('code')->unique(); // Exemple: "ATS" ou "ACA"
             $table->string('libelle')->unique();
             $table->timestamps();
         });

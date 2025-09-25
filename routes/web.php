@@ -11,6 +11,7 @@ use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\StageController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AttestationController;
+use App\Http\Controllers\SignataireController;
 
 use App\Models\User;
 
@@ -123,8 +124,27 @@ Route::get('/admin/stages/{stage}/badge', [BadgeController::class, 'show'])->nam
 Route::get('/admin/stages/{stage}/attestation', [AttestationController::class, 'show'])
     ->name('stages.attestation.show');
 
-Route::get('/admin/stages/{stage}/attestation/download', [AttestationController::class, 'download'])
-    ->name('stages.attestation.download');
+Route::get('/stages/{stage}/attestation', [AttestationController::class, 'show'])->name('stages.attestation.show');
+Route::post('/stages/{stage}/attestation/store', [AttestationController::class, 'store'])->name('stages.attestation.store');
+Route::get('/stages/{stage}/attestation/download', [AttestationController::class, 'generatePDF'])
+    ->name('stages.attestation.download')
+    ->defaults('type', 'download');
+
+Route::get('/stages/{stage}/attestation/print', [AttestationController::class, 'generatePDF'])
+    ->name('stages.attestation.print')
+    ->defaults('type', 'print');
+
+    // Route our les signataires
+    Route::resource('/admin/signataires', SignataireController::class)
+    ->names([
+        'index'   => 'signataires.index',
+        'create'  => 'signataires.create',
+        'store'   => 'signataires.store',
+        'edit'    => 'signataires.edit',
+        'update'  => 'signataires.update',
+        'destroy' => 'signataires.destroy',
+    ]);
+
 });
 
 require __DIR__.'/auth.php';

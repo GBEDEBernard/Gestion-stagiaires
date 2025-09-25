@@ -7,8 +7,8 @@ class TypeStage extends Model
 {
     use HasFactory;
     
-    protected $table = 'typestages'; // <-- DIT LUI LA VÉRITÉ
-    protected $fillable = ['libelle']; // ou autres colonnes si besoin
+    protected $table = 'typestages';
+    protected $fillable = ['libelle' ,'code']; 
 
     // Relations si tu veux
     public function stagiaires() {

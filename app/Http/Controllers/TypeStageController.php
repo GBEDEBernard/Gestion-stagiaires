@@ -25,11 +25,16 @@ class TypeStageController extends Controller
     {
         $request->validate([
             'libelle' => 'required|string|max:255|unique:typestages,libelle',
+            'code'    => 'required|string|max:10|unique:typestages,code',
         ]);
 
-        TypeStage::create($request->all());
+        TypeStage::create([
+            'libelle' => $request->libelle,
+            'code'    => $request->code,
+        ]);
 
-        return redirect()->route('type_stages.index')->with('success', 'Type de stage créé avec succès !');
+        return redirect()->route('type_stages.index')
+                         ->with('success', 'Type de stage créé avec succès !');
     }
 
     // Afficher le formulaire d'édition pour un type de stage existant
@@ -37,24 +42,29 @@ class TypeStageController extends Controller
     {
         return view('admin.type_stages.edit', ['typeStage' => $type_stages]);
     }
-    
 
     // Mettre à jour un type de stage existant
     public function update(Request $request, TypeStage $type_stages)
     {
         $request->validate([
             'libelle' => 'required|string|max:255|unique:typestages,libelle,'.$type_stages->id,
+            'code'    => 'required|string|max:10|unique:typestages,code,'.$type_stages->id,
         ]);
 
-        $type_stages->update($request->all());
+        $type_stages->update([
+            'libelle' => $request->libelle,
+            'code'    => $request->code,
+        ]);
 
-        return redirect()->route('type_stages.index')->with('success', 'Type de stage mis à jour avec succès !');
+        return redirect()->route('type_stages.index')
+                         ->with('success', 'Type de stage mis à jour avec succès !');
     }
 
     // Supprimer un type de stage
     public function destroy(TypeStage $type_stages)
     {
         $type_stages->delete();
-        return redirect()->route('type_stages.index')->with('success', 'Type de stage supprimé avec succès !');
+        return redirect()->route('type_stages.index')
+                         ->with('success', 'Type de stage supprimé avec succès !');
     }
 }

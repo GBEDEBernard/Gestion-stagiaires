@@ -39,28 +39,28 @@ class BadgeController extends Controller
                          ->with('success', 'Badge créé avec succès.');
     }
 
-    public function edit(Badge $badges)
-    {
-        return view('admin.badges.edit', compact('badges'));
-    }
+   public function edit(Badge $badge) {
+    return view('admin.badges.edit', compact('badge'));
+}
 
-    public function update(Request $request, Badge $badges)
-    {
-        $validated = $request->validate([
-            'badge' => 'required|string|max:255|unique:badges,badge,' . $badges->id,
-        ]);
+   public function update(Request $request, Badge $badge)
+{
+    $validated = $request->validate([
+        'badge' => 'required|string|max:255|unique:badges,badge,' . $badge->id,
+    ]);
 
-        $badges->update($validated);
+    $badge->update($validated);
 
-        Activity::create([
-            'user_id' => auth()->id(),
-            'action' => 'Mise à jour badge',
-            'description' => "Badge {$badges->badge} modifié"
-        ]);
+    // Optionnel : activité
+    Activity::create([
+        'user_id' => auth()->id(),
+        'action' => 'Mise à jour badge',
+        'description' => "Badge {$badge->badge} modifié"
+    ]);
 
-        return redirect()->route('badges.index')
-                         ->with('success', 'Badge mis à jour avec succès.');
-    }
+    return redirect()->route('badges.index')
+                     ->with('success', 'Badge mis à jour avec succès.');
+}
 
     public function destroy(Badge $badges)
     {

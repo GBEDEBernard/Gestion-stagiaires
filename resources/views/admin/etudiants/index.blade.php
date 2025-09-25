@@ -27,11 +27,14 @@
                     <td class="p-3">{{ $etudiant->telephone }}</td>
                     <td class="p-3">{{ $etudiant->ecole }}</td>
                     <td class="p-3 text-center">
-                        <a href="{{ route('etudiants.edit', $etudiant) }}" class="text-blue-600 hover:underline">Modifier</a> |
-                        <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline-block">
+                        <a href="{{ route('etudiants.edit', $etudiant) }}" class="text-blue-600 hover:underline" data-confirm-edit>
+                            
+                            Modifier
+                        </a> |
+                        <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline-block" data-confirm-delete>
                             @csrf @method('DELETE')
                             <button class="text-red-600 hover:underline" 
-                                    onclick="return confirm('Supprimer cet étudiant ?')">Supprimer</button>
+                                 >Supprimer</button>
                         </form>
                     </td>
                 </tr>

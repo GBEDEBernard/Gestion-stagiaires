@@ -67,5 +67,16 @@ class Stage extends Model
         return 'Terminé';
     }
 }
+// Stage.php
+public function signataires()
+{
+    return $this->belongsToMany(Signataire::class, 'attestation_signataire', 'attestation_id', 'signataire_id')
+                ->withPivot('par_ordre', 'ordre')
+                ->orderBy('pivot_ordre');
+}
+public function attestation()
+{
+    return $this->hasOne(Attestation::class);
+}
 
 }

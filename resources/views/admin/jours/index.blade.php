@@ -36,11 +36,11 @@
                             <td class="px-6 py-4">{{ $jour->jour }}</td>
                             <td class="px-6 py-4 text-center space-x-3">
                                 <a href="{{ route('jours.edit', $jour->id) }}"
-                                   class="text-yellow-600 hover:text-yellow-700 font-medium hover:underline">
+                                   class="text-yellow-600 hover:text-yellow-700 font-medium hover:underline " data-confirm-edit>
                                     Modifier
                                 </a>
                                 <form action="{{ route('jours.destroy', $jour->id) }}" method="POST"
-                                      class="inline-block" onsubmit="return confirm('Voulez-vous vraiment supprimer ce jour ?')">
+                                      class="inline-block"  data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"

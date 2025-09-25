@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
         // D'abord créer les rôles et permissions
         $this->call([
             RolePermissionSeeder::class,
+            SignatairesSeeder::class,
         ]);
 
        

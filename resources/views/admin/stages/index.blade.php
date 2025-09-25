@@ -1,5 +1,5 @@
 <x-app-layout>
-<div class=" min-h-screen py-4 shadow">
+<div class="min-h-screen py-4 shadow">
     <div class="container hover:opacity-85 max-w-10xl mx-auto p-4 sm:p-6 lg:p-8 bg-white shadow-md rounded-md">
         
         <!-- Titre -->
@@ -82,10 +82,11 @@
                                     Voir
                                 </a>
                                 <a href="{{ route('stages.edit', $stage->id) }}"
-                                   class="inline-block px-2 py-1 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">
+                                   class="inline-block px-2 py-1 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition"
+                                   data-confirm-edit>
                                     Modifier
                                 </a>
-                                <form action="{{ route('stages.destroy', $stage->id) }}" method="POST" class="inline">
+                                <form action="{{ route('stages.destroy', $stage->id) }}" method="POST" class="inline" data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
@@ -115,43 +116,32 @@
 
 <!-- Styles pour animations -->
 <style>
-/* Barre verte pour En cours */
 @keyframes loading-short {
     0% { width: 0%; }
     50% { width: 100%; }
     100% { width: 0%; }
 }
 .animate-loading-short {
-    animation: loading-short 2s linear infinite;
+    animation: loading-short 6s linear infinite;
     height: 100%;
     top: 0;
     left: 0;
     position: absolute;
 }
-
-/* Point rouge pour Terminé */
-.dot-red {
+.dot-red, .dot-blue {
     display: inline-block;
     width: 10px;
     height: 10px;
-    background-color: #f87171;
     border-radius: 50%;
 }
-/* Point bleu pour À venir */
-.dot-blue {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background-color: #3b82f6; /* bleu Tailwind */
-    border-radius: 50%;
-}
-
+.dot-red { background-color: #f87171; }
+.dot-blue { background-color: #3b82f6; }
 @keyframes pulse-dot {
     0%, 100% { transform: scale(0.5); opacity: 0.6; }
     50% { transform: scale(1.2); opacity: 1; }
 }
-.animate-pulse-dot {
-    animation: pulse-dot 1s infinite;
-}
+.animate-pulse-dot { animation: pulse-dot 1s infinite; }
 </style>
+
+
 </x-app-layout>

@@ -167,7 +167,7 @@ button {
         </div>
 
         <!-- Logo -->
-        <img src="data:image/jpeg;base64,{{ base64_encode(file_get_contents(public_path('images/TGFpdf.jpg'))) }}" class="logo" alt="TFG Logo">
+        <img src="data:image/jpeg;base64,{{ base64_encode(file_get_contents(public_path('images/TFGLOGO.png'))) }}" class="logo" alt="TFG Logo">
 
         <!-- Infos stagiaire -->
         <div class="infos">

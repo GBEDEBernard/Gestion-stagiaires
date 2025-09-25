@@ -7,9 +7,9 @@
                 <div class="flex items-center justify-center space-y-1 sm:items-start sm:justify-start sm:me-6">
                     <a href="{{ route('dashboard') }}" class="ml-[70px]">
                         <img 
-                            src="{{ asset('images/TGFpdf.jpg') }}" 
+                            src="{{ asset('images/TFGLOGO.png') }}" 
                             alt="Logo Stage TFG"
-                            class="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded shadow-md"
+                            class="w-12 h-12 sm:w-16 sm:h-14 object-contain rounded shadow-md"
                         >
                     </a>
                     <a href="{{ route('dashboard') }}">
@@ -43,6 +43,13 @@
                             <x-nav-link :href="route('services.index')" :active="request()->routeIs('services.index')" class="block px-4 py-2 hover:bg-blue-100">
                                 Services
                             </x-nav-link>
+                            
+                             <x-nav-link :href="route('signataires.index')" :active="request()->routeIs('signataires.index')" class="block px-4 py-2 hover:bg-blue-100">
+                                Les menbres
+                            </x-nav-link>
+                            <x-nav-link :href="route('jours.index')" :active="request()->routeIs('jours.index')" class="block px-4 py-2 hover:bg-blue-100">
+                                Les Jours
+                            </x-nav-link>
                         </div>
                     </div>
 
@@ -51,11 +58,7 @@
                         {{ __('Etudiants') }}
                     </x-nav-link>
 
-                    <!-- Jours -->
-                    <x-nav-link :href="route('jours.index')" :active="request()->routeIs('jours.index')">
-                        {{ __('Jours') }}
-                    </x-nav-link>
-
+                   
                     <!-- Badges -->
                     <x-nav-link :href="route('badges.index')" :active="request()->routeIs('badges.index')">
                         {{ __('Numéro des Badges') }}
