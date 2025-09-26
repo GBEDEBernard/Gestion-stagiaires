@@ -5,10 +5,17 @@
         <h1 class="text-3xl font-bold text-blue-700 mb-6">Liste des Services</h1>
 
         <div class="mb-4 text-right">
-            <a href="{{ route('services.create') }}" 
-               class="inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-               + Ajouter un service
-            </a>
+            <div>
+                <a href="{{route('dashboard')}}"
+                   class="inline-block px-5 py-2 bg-gray-500 text-white font-semibold rounded-md hover:bg-gray-600 transition">
+                    ← Retour
+                </a>
+                 <a href="{{ route('services.create') }}" 
+                    class="inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                    + Ajouter un service
+                    </a>
+            </div>
+           
         </div>
 
         <div class="overflow-x-auto">

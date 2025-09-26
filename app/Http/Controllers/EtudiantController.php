@@ -9,7 +9,7 @@ class EtudiantController extends Controller
 {
     public function index()
     {
-        $etudiants = Etudiant::all();
+        $etudiants = Etudiant::paginate(10);
         return view('admin.etudiants.index', compact('etudiants'));
     }
 
@@ -56,4 +56,31 @@ class EtudiantController extends Controller
         $etudiant->delete();
         return redirect()->route('etudiants.index')->with('success', 'Étudiant supprimé.');
     }
+
+      // la méthode des corbeille
+ // Méthode corbeille
+public function trash()
+{
+    $etudiants = Etudiant::onlyTrashed()->paginate(10); // nom correct
+    return view('admin.etudiants.corbeille', compact('etudiants'));
+}
+
+// restaurer la suppression
+public function restore($id)
+{
+    $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+    $etudiant->restore();
+
+    return redirect()->route('etudiants.index')->with('success', 'Étudiant restauré avec succès 🚀');
+}
+
+// suppression définitive
+public function forceDelete($id)
+{
+    $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+    $etudiant->forceDelete();
+
+    return redirect()->route('etudiants.trash')->with('success', 'Étudiant supprimé définitivement 🗑️');
+}
+
 }

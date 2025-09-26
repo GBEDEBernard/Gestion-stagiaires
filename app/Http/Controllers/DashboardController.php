@@ -7,13 +7,15 @@ use App\Models\Service;
 use App\Models\TypeStage;
 use App\Models\Badge;
 use App\Models\Activity;
+use App\Models\Etudiant;
+use App\Models\Corbeille; // si tu as un modèle central de corbeille (optionnel)
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $today = Carbon::now()->startOfDay(); // On compare uniquement la date
+        $today = Carbon::now()->startOfDay(); 
 
         // Total de tous les stages
         $totalStages = Stage::count();
@@ -26,16 +28,19 @@ class DashboardController extends Controller
         // Stages terminés global
         $terminesGlobal = Stage::whereDate('date_fin', '<', $today)->count();
 
-        // Total badges et types de stages
+        // Stages inscrits global (pas encore commencés)
+        $inscritsGlobal = Stage::whereDate('date_debut', '>', $today)->count();
+
+        // Total badges , types de stages rt service
         $totalBadges = Badge::count();
         $totalTypes  = TypeStage::count();
+         $totalServices = Service::count();
 
         // Dernières activités
         $activities = Activity::latest()->take(5)->get();
 
         // Stats par service
         $servicesStats = Service::all()->map(function ($service) use ($today) {
-
             $stages = Stage::where('service_id', $service->id)->get();
 
             $enCoursService  = $stages->filter(fn($stage) => $today->between($stage->date_debut->startOfDay(), $stage->date_fin->endOfDay()))->count();
@@ -50,14 +55,31 @@ class DashboardController extends Controller
             ];
         });
 
+        // 🔥 Corbeille
+        $stagesTrash    = Stage::onlyTrashed()->get();
+        $etudiantsTrash = Etudiant::onlyTrashed()->get();
+        $badgesTrash    = Badge::onlyTrashed()->get();
+        $servicesTrash  = Service::onlyTrashed()->get();
+
+        // Total éléments corbeille
+        $totalTrash = $stagesTrash->count() + $etudiantsTrash->count() + $badgesTrash->count() + $servicesTrash->count();
+
+        // Retourne la vue avec toutes les variables
         return view('dashboard', compact(
             'totalStages',
             'enCoursGlobal',
             'terminesGlobal',
+            'inscritsGlobal',
             'totalBadges',
+            'totalServices',
             'totalTypes',
             'activities',
-            'servicesStats'
+            'servicesStats',
+            'stagesTrash',
+            'etudiantsTrash',
+            'badgesTrash',
+            'servicesTrash',
+            'totalTrash'
         ));
     }
 }

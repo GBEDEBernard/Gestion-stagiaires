@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\StageController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
+use App\Http\Controllers\CorbeilleController;
 
 use App\Models\User;
 
@@ -111,7 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function() {
         ])
         ->middleware('permission:services.view|create|edit|delete');
 // la route des service non fait par un etudiant
-        Route::get('/etudiants/{etudiant}/services', [StageController::class, 'servicesDisponibles']);
+ Route::get('/etudiants/{etudiant}/services', [StageController::class, 'servicesDisponibles']);
 
 
 # la route "simple-qrcode"
@@ -144,6 +146,56 @@ Route::get('/stages/{stage}/attestation/print', [AttestationController::class, '
         'update'  => 'signataires.update',
         'destroy' => 'signataires.destroy',
     ]);
+
+
+    // les routes pour gerer les corbeilles pour le stage 
+    Route::get('/stages/corbeille', [StageController::class, 'trash'])->name('stages.trash');
+    Route::patch('/stages/{id}/restore', [StageController::class, 'restore'])->name('stages.restore');
+    Route::delete('/stages/{id}/force-delete', [StageController::class, 'forceDelete'])->name('stages.forceDelete');
+
+    // pour les etudiants 
+    // les routes pour gerer les corbeilles
+    Route::get('/etudiants/corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash');
+    Route::patch('/etudiants/{id}/restore', [EtudiantController::class, 'restore'])->name('etudiants.restore');
+    Route::delete('/etudiants/{id}/force-delete', [EtudiantController::class, 'forceDelete'])->name('etudiants.forceDelete');
+
+    Route::get('/corbeille', [DashboardController::class, 'index'])->name('corbeille.index');
+
+
+    // corbeille
+
+
+    // Corbeille globale
+Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index');
+
+// Stages
+Route::patch('/stages/{id}/restore', [CorbeilleController::class, 'restoreStage'])->name('stages.restore');
+Route::delete('/stages/{id}/force-delete', [CorbeilleController::class, 'forceDeleteStage'])->name('stages.forceDelete');
+
+// Étudiants
+Route::patch('/etudiants/{id}/restore', [CorbeilleController::class, 'restoreEtudiant'])->name('etudiants.restore');
+Route::delete('/etudiants/{id}/force-delete', [CorbeilleController::class, 'forceDeleteEtudiant'])->name('etudiants.forceDelete');
+
+// Badges
+Route::patch('/badges/{id}/restore', [CorbeilleController::class, 'restoreBadge'])->name('badges.restore');
+Route::delete('/badges/{id}/force-delete', [CorbeilleController::class, 'forceDeleteBadge'])->name('badges.forceDelete');
+
+// Services
+Route::patch('/services/{id}/restore', [CorbeilleController::class, 'restoreService'])->name('services.restore');
+Route::delete('/services/{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.forceDelete');
+
+// Services
+Route::patch('/users/{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore');
+Route::delete('/users/{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete');
+
+
+//la gestion des user : 
+
+Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+
 
 });
 

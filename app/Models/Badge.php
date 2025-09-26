@@ -5,9 +5,12 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Stage;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class Badge extends Model
 {
+     use SoftDeletes; // ✅ active le soft delete
     // Nom de la table
     protected $table = 'badges';
 

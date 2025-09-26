@@ -20,19 +20,7 @@
                         ← Retour
                     </a>
 
-                    <a href="{{ route('stages.edit', $stage->id) }}" 
-                       class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700">
-                        Modifier
-                    </a>
-
-                    <form action="{{ route('stages.destroy', $stage->id) }}" method="POST" 
-                          onsubmit="return confirm('Voulez-vous vraiment supprimer ce stage ?');">
-                        @csrf @method('DELETE')
-                        <button type="submit" 
-                                class="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700">
-                            Supprimer
-                        </button>
-                    </form>
+                   
 
                     @if($stage->badge)
                         <a href="{{ route('admin.stages.badge.show', $stage->id) }}" 

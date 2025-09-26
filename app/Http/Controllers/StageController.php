@@ -17,13 +17,34 @@ use App\Models\Signataire;
 class StageController extends Controller
 {
     // Liste des stages
-    public function index()
-    {
-        $stages = Stage::with(['etudiant', 'typestage', 'service', 'badge', 'jours'])
-                       ->paginate(10);
+   public function index(Request $request)
+{
+    $query = Stage::with(['etudiant', 'typestage', 'service', 'badge', 'jours']);
 
-        return view('admin.stages.index', compact('stages'));
+    // Filtre statut
+    if ($request->filled('statut')) {
+        if ($request->statut == 'En cours') {
+            $query->whereDate('date_debut', '<=', now())
+                  ->whereDate('date_fin', '>=', now());
+        } elseif ($request->statut == 'Terminé') {
+            $query->whereDate('date_fin', '<', now());
+        } elseif ($request->statut == 'À venir') {
+            $query->whereDate('date_debut', '>', now());
+        }
     }
+
+    // Filtre type de stage
+    if ($request->filled('typestage')) {
+        $query->where('typestage_id', $request->typestage);
+    }
+
+    $stages = $query->paginate(10)->withQueryString();
+
+    $typestages = TypeStage::all(); // pour le select dans le formulaire
+
+    return view('admin.stages.index', compact('stages', 'typestages'));
+}
+
 
     // Formulaire de création
     public function create()
@@ -229,4 +250,29 @@ class StageController extends Controller
             ['Content-Type' => 'image/svg+xml']
         );
     }
+
+    // la méthode des corbeille
+  public function trash()
+{
+    $stages = Stage::onlyTrashed()->with(['etudiant','typestage','badge','jours'])->paginate(10);
+    return view('admin.stages.corbeille', compact('stages'));
+}
+
+// restaurer la supression
+public function restore($id)
+{
+    $stage = Stage::onlyTrashed()->findOrFail($id);
+    $stage->restore();
+
+    return redirect()->route('stages.index')->with('success', 'Stage restauré avec succès 🚀');
+}
+// supression definitive
+public function forceDelete($id)
+{
+    $stage = Stage::onlyTrashed()->findOrFail($id);
+    $stage->forceDelete();
+
+    return redirect()->route('stages.trash')->with('success', 'Stage supprimé définitivement 🗑️');
+}
+
 }

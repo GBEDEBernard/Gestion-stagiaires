@@ -63,6 +63,11 @@
                     <x-nav-link :href="route('badges.index')" :active="request()->routeIs('badges.index')">
                         {{ __('Numéro des Badges') }}
                     </x-nav-link>
+                    {{-- les corbeilles --}}
+                    <x-nav-link :href="route('corbeille.index')" :active="request()->routeIs('corbeille.index')">
+                        🗑️ <span class="ml-2 text-red-600">Corbeille</span>
+                    </x-nav-link>
+
                 </div>
             </div>
 

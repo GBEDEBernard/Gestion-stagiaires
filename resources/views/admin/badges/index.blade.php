@@ -2,10 +2,18 @@
 
 <div class="hover:opacity-85 max-w-5xl mx-auto px-4 py-16  rounded h-[680px]">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl text-white font-bold ">Les numéro de Badge</h1>
+        <h1 class="text-2xl text-black font-bold ">Les numéro de Badge</h1>
+        
+
+        <div>
+             <a href="{{route('dashboard')}}"
+                   class="inline-block px-5 py-2 bg-gray-500 text-white font-semibold rounded-md hover:bg-gray-600 transition">
+                    ← Retour
+                </a>
         <a href="{{ route('badges.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
             + Ajouter un niveau
         </a>
+        </div>
     </div>
 
     @if(session('success'))
