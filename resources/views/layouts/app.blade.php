@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -49,54 +49,69 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased">
+
+<body class="font-sans antialiased transition-colors duration-300 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <!-- Loader -->
     <div id="loader-overlay">
         <div class="spinner"></div>
     </div>
     
-    <div class="h-screen bg-cover bg-center bg-no-repeat relative"
-         style="background-image: url('{{ asset('images/TGFpdf.jpg') }}'); background-size: cover; background-position: center;">
-     
-                <!-- Navigation Fixe -->
-            <nav class="fixed top-0 left-0 w-full bg-white  z-50">
-                @include('layouts.navigation')
-            </nav>
+    <div class="min-h-screen relative">
+
+        <!-- Navigation Fixe -->
+        <div class="fixed top-0 left-0 w-full z-50 shadow-md">
+            @include('layouts.navigation')
+        </div>
+
+        <!-- Bouton de thème séparé (Clair/Sombre) -->
+        <div class="fixed top-4 right-6 z-50" x-data="{ open: false }">
+            <button @click="open = !open"
+                    class="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center space-x-1">
+                🌞 / 🌙
+                <svg :class="{'rotate-180': open}" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" @click.away="open = false"
+                 class="mt-2 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg overflow-hidden">
+                <button @click="document.documentElement.classList.remove('dark'); localStorage.setItem('theme','light'); open=false"
+                        class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    Clair
+                </button>
+                <button @click="document.documentElement.classList.add('dark'); localStorage.setItem('theme','dark'); open=false"
+                        class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    Sombre
+                </button>
+            </div>
+        </div>
 
         <!-- Page Content -->
-<main class="pt-20">
-    {{ $slot }}
-</main>
-
+        <main class="pt-20">
+            {{ $slot }}
+        </main>
     </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const loader = document.getElementById("loader-overlay");
 
-    // 🔹 Loader sur navigation (sauf boutons avec data-confirm)
+    const loader = document.getElementById("loader-overlay");
+    const html = document.documentElement;
+
+    // 🔹 Loader sur navigation et formulaires
     document.querySelectorAll("a").forEach(link => {
-        link.addEventListener("click", function (e) {
+        link.addEventListener("click", function () {
             const href = this.getAttribute("href");
-            if (
-                href &&
-                !href.startsWith("#") &&
-                !href.startsWith("javascript") &&
-                !this.hasAttribute("data-confirm-edit") && 
-                !this.hasAttribute("data-confirm-delete")
-            ) {
+            if (href && !href.startsWith("#") && !href.startsWith("javascript") &&
+                !this.hasAttribute("data-confirm-edit") && !this.hasAttribute("data-confirm-delete")) {
                 loader.classList.add("active");
             }
         });
     });
 
-    // 🔹 Loader sur soumission de formulaire (sauf ceux avec data-confirm-delete)
     document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", function (e) {
-            if (!form.hasAttribute("data-confirm-delete")) {
-                loader.classList.add("active");
-            }
+        form.addEventListener("submit", function () {
+            if (!form.hasAttribute("data-confirm-delete")) loader.classList.add("active");
         });
     });
 
@@ -115,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 cancelButtonText: "Annuler"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    loader.classList.add("active"); // Loader seulement après confirmation
+                    loader.classList.add("active");
                     form.submit();
                 }
             });
@@ -138,16 +153,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 cancelButtonText: "Annuler"
             }).then((result) => {
                 if (result.isConfirmed && url) {
-                    loader.classList.add("active"); // Loader seulement après confirmation
+                    loader.classList.add("active");
                     window.location.href = url;
                 }
             });
         });
     });
-});
 
-// 🔹 Déconnexion après inactivité
-(function () {
+    // 🔹 Appliquer le thème enregistré sur toutes les pages
+    if(localStorage.getItem('theme') === 'dark'){
+        html.classList.add('dark');
+    }
+
+    // 🔹 Déconnexion après inactivité
     const INACTIVITY_LIMIT = 90 * 1000; // 90 sec
     let lastActivity = Date.now();
 
@@ -155,6 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
         lastActivity = Date.now();
         localStorage.setItem("lastActivity", lastActivity);
     }
+
     function checkInactivity() {
         const saved = localStorage.getItem("lastActivity") || Date.now();
         const now = Date.now();
@@ -162,14 +181,14 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "{{ route('login') }}";
         }
     }
+
     window.onload = resetTimer;
     document.onmousemove = resetTimer;
     document.onkeydown = resetTimer;
     document.onscroll = resetTimer;
     document.onclick = resetTimer;
-
     setInterval(checkInactivity, 10000);
-})();
+});
 </script>
 
 </body>

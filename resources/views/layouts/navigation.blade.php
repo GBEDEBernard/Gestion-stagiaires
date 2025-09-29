@@ -1,9 +1,9 @@
 <nav x-data="{ open: false }" class="fixed top-0 left-0 bg-white border-b border-gray-200 shadow-md mb-8 relative">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         <div class="flex justify-between h-16 items-center">
 
             <!-- Logo + Titre -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
                 <a href="{{ route('dashboard') }}">
                     <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo Stage TFG"
                          class="w-12 h-12 sm:w-16 sm:h-14 object-contain rounded-lg shadow-md hover:scale-105 transition-transform">
@@ -16,7 +16,7 @@
             </div>
 
             <!-- Desktop Links -->
-            <div class="hidden sm:flex sm:items-center space-x-6">
+            <div class="hidden sm:flex sm:items-center space-x-4">
 
                 <!-- Stages Dropdown -->
                 <div x-data="{ openStages: false }" class="relative">
@@ -116,7 +116,7 @@
 
         <!-- Responsive Settings -->
         <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
+            <div class="px-2">
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
             </div>

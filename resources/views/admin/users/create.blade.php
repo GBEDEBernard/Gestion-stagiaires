@@ -1,5 +1,5 @@
 <x-app-layout>
-<div class="max-w-3xl mx-auto px-6 py-10 font-serif">
+<div class="max-w-3xl mx-auto px-6 py-10 font-serif bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
     <h1 class="text-3xl font-extrabold mb-8 text-gray-800">Créer un nouvel utilisateur</h1>
 
     @if(session('success'))
