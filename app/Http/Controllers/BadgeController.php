@@ -12,7 +12,7 @@ class BadgeController extends Controller
 {
     public function index()
     {
-        $badges = Badge::all();
+        $badges = Badge::paginate(10);
         return view('admin.badges.index', compact('badges'));
     }
 

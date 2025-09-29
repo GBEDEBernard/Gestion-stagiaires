@@ -1,9 +1,9 @@
 <x-app-layout>
-<div class="bg-blue-900 min-h-screen py-10">
-    <div class="container max-w-4xl mx-auto p-8 bg-white shadow-2xl rounded-2xl border border-blue-200">
+<div class=" min-h-screen py-10">
+    <div class="container max-w-4xl mx-auto p-8 bg-white shadow-2xl rounded-2xl border border-blue-200 hover:opacity-85">
         <h1 class="text-3xl font-bold text-blue-700 mb-8">Ajouter un Stage</h1>
 
-        <form action="{{ route('stages.store') }}" method="POST">
+        <form action="{{ route('stages.store') }}" method="POST" >
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 

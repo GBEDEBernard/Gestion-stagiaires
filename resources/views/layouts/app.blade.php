@@ -59,21 +59,16 @@
     <div class="h-screen bg-cover bg-center bg-no-repeat relative"
          style="background-image: url('{{ asset('images/TGFpdf.jpg') }}'); background-size: cover; background-position: center;">
      
-        @include('layouts.navigation')
-
-        <!-- Page Heading -->
-        @isset($header)
-            <header class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    {{ $header }}
-                </div>
-            </header>
-        @endisset
+                <!-- Navigation Fixe -->
+            <nav class="fixed top-0 left-0 w-full bg-white  z-50">
+                @include('layouts.navigation')
+            </nav>
 
         <!-- Page Content -->
-        <main>
-            {{ $slot }}
-        </main>
+<main class="pt-20">
+    {{ $slot }}
+</main>
+
     </div>
 
 <script>

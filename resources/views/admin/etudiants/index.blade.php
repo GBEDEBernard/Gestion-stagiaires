@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-6xl mx-auto p-6 hover:opacity-85">
+    <div class="max-w-6xl mx-auto p-6 hover:opacity-85 font-serif">
         <!-- Header avec titre et boutons -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
             <h1 class="text-2xl font-bold text-blue-600">Liste des étudiants</h1>

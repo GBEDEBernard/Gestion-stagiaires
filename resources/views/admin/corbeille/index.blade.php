@@ -1,13 +1,15 @@
 <x-app-layout>
-    <div class="bg-gray-100 min-h-screen py-8">
+    <div class="bg-gray-50 min-h-screen py-10">
         <div class="max-w-6xl mx-auto px-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-6">🗑️ Corbeille</h1>
+            <h1 class="text-4xl font-bold text-gray-900 mb-10 flex items-center gap-3">
+                🗑️ Corbeille
+            </h1>
 
             <!-- Stages supprimés -->
             <x-trash-table 
                 :items="$stagesTrash" 
                 title="Stages supprimés"
-                :columns="['Nom', 'Période']"
+                :columns="['Étudiant', 'Période']"
                 :restoreRoute="'stages.restore'"
                 :forceDeleteRoute="'stages.forceDelete'"
                 :periodColumn="['date_debut','date_fin']"
