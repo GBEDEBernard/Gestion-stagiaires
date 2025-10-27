@@ -6,11 +6,11 @@
             <h1 class="text-3xl font-bold text-blue-600 mb-6">Liste des Stages</h1>
 
             <!-- Formulaire de filtre -->
-            <form method="GET" action="{{ route('stages.index') }}" class="mb-6 flex flex-wrap gap-8 items-end p-4 bg-white">
+            <form method="GET" action="{{ route('stages.index') }}" class="mb-6 flex flex-wrap gap-8 items-end p-4 bg-white dark:to-black">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Statut</label>
                     <select name="statut"
-                            class="p-2 rounded-md shadow-md bg-white border border-gray-300 
+                            class="p-2 rounded-md shadow-md bg-white border dark:text-gray-700 border-gray-300 
                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                         <option value="">Tous</option>
                         <option value="En cours" {{ request('statut') == 'En cours' ? 'selected' : '' }}>En cours</option>
@@ -22,7 +22,7 @@
                 <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-1">Type de stage</label>
                     <select name="typestage"
-                            class="p-2 rounded-md shadow-md bg-white border border-gray-300 
+                            class="p-2 rounded-md shadow-md bg-white border-2 border-radius dark:text-gray-700 border-gray-300 
                                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                         <option value="">Tous</option>
                         @foreach($typestages as $type)
@@ -63,13 +63,14 @@
                         <tr class="bg-gray-100 text-left text-black tracking-wide">
                             <th class="px-2 py-3 border border-gray-300">Nom</th>
                             <th class="px-2 py-3 border border-gray-300">Prénom</th>
-                            <th class="px-2 py-3 border border-gray-300">Email</th>
-                            <th class="px-2 py-3 border border-gray-300">Téléphone</th>
+                            <th class="px-2 py-3 border border-gray-300">Emails</th>
+                            <th class="px-2 py-3 border border-gray-300">Téléphones</th>
                             <th class="px-2 py-3 border border-gray-300">Type de stage</th>
-                            <th class="px-2 py-3 border border-gray-300">Badge</th>
-                            <th class="px-2 py-3 border border-gray-300">École</th>
-                            <th class="px-2 py-3 border border-gray-300">Thème</th>
-                            <th class="px-2 py-3 border border-gray-300">Période</th>
+                            <th class="px-2 py-3 border border-gray-300">Badges</th>
+                            <th class="px-2 py-3 border border-gray-300">Écoles</th>
+                            <th class="px-2 py-3 border border-gray-300">Services</th>
+                            <th class="px-2 py-3 border border-gray-300">Thèmes</th>
+                            <th class="px-2 py-3 border border-gray-300">Périodes</th>
                             <th class="px-2 py-3 border border-gray-300 w-40">Jours</th>
                             <th class="px-1 py-3 border border-gray-300 text-center">Statut</th>
                             <th class="px-2 py-3 border border-gray-300 text-center">Actions</th>
@@ -86,6 +87,7 @@
                                 <td class="px-2 py-2 border border-gray-300">{{ $stage->typestage->libelle ?? '-' }}</td>
                                 <td class="px-2 py-2 border border-gray-300">{{ $stage->badge->badge ?? '-' }}</td>
                                 <td class="px-2 py-2 border border-gray-300">{{ $stage->etudiant->ecole }}</td>
+                                <td class="px-2 py-2 border border-gray-300">{{ $stage->service->nom}}</td>
                                 <td class="px-2 py-2 border border-gray-300">{{ $stage->theme }}</td>
                                 <td class="px-2 py-2 border border-gray-300 text-center">
                                     {{ \Carbon\Carbon::parse($stage->date_debut)->format('d/m/Y') }} 
@@ -151,9 +153,12 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-6 text-center">
-                {{ $stages->links() }}
+            <div class="mt-6 flex justify-center">
+                <div class="inline-flex items-center space-x-2 bg-gray-50 p-2 rounded-lg shadow">
+                    {{ $stages->links() }}
+                </div>
             </div>
+
         </div>
     </div>
 

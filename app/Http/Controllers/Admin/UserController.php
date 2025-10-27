@@ -64,23 +64,32 @@ class UserController extends Controller
     }
 
     // ------------------ UPDATE ------------------
-    public function update(Request $request, User $user)
-    {
-        $request->validate([
-            'roles' => 'array',
-            'permissions' => 'array',
-        ]);
+   public function update(Request $request, User $user)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'prenom' => 'nullable|string|max:255',
+        'roles' => 'array',
+        'permissions' => 'array',
+    ]);
 
-        $user->syncRoles($request->roles ?? []);
-        $user->syncPermissions($request->permissions ?? []);
+    // Mise à jour du nom et prénom
+    $user->update([
+        'name' => $request->name,
+        'prenom' => $request->prenom,
+    ]);
 
-        // 🔹 Vider le cache pour que les changements prennent effet immédiatement
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-        $user->forgetCachedPermissions();
+    // Mise à jour des rôles et permissions
+    $user->syncRoles($request->roles ?? []);
+    $user->syncPermissions($request->permissions ?? []);
 
-        return redirect()->route('admin.users.index')
-                         ->with('success', 'Rôles et permissions mis à jour avec succès');
-    }
+    // Vider le cache des permissions
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    $user->forgetCachedPermissions();
+
+    return redirect()->route('admin.users.index')
+                     ->with('success', 'Utilisateur mis à jour avec succès.');
+}
 
     // ------------------ DESTROY ------------------
     public function destroy(User $user)

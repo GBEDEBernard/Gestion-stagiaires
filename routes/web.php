@@ -43,7 +43,7 @@ Route::middleware(['auth','verified'])->group(function() {
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function() {
         Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
@@ -53,7 +53,7 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [JourController::class,'create'])->name('jours.create')->middleware('permission:jour_stage.create');
         Route::post('/', [JourController::class,'store'])->name('jours.store')->middleware('permission:jour_stage.create');
         Route::get('{jour}/edit', [JourController::class,'edit'])->name('jours.edit')->middleware('permission:jour_stage.edit');
-        Route::patch('{jour}', [JourController::class,'update'])->name('jours.update')->middleware('permission:jour_stage.edit');
+        Route::put('{jour}', [JourController::class,'update'])->name('jours.update')->middleware('permission:jour_stage.edit');
         Route::delete('{jour}', [JourController::class,'destroy'])->name('jours.destroy')->middleware('permission:jour_stage.delete');
     });
 
@@ -63,12 +63,12 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [EtudiantController::class,'create'])->name('etudiants.create')->middleware('permission:etudiants.create');
         Route::post('/', [EtudiantController::class,'store'])->name('etudiants.store')->middleware('permission:etudiants.create');
         Route::get('{etudiant}/edit', [EtudiantController::class,'edit'])->name('etudiants.edit')->middleware('permission:etudiants.edit');
-        Route::patch('{etudiant}', [EtudiantController::class,'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
+        Route::put('{etudiant}', [EtudiantController::class,'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class,'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
 
         // Corbeille
         Route::get('corbeille', [EtudiantController::class,'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
-        Route::patch('{id}/restore', [EtudiantController::class,'restore'])->name('etudiants.restore')->middleware('permission:etudiants.restore');
+        Route::put('{id}/restore', [EtudiantController::class,'restore'])->name('etudiants.restore')->middleware('permission:etudiants.restore');
         Route::delete('{id}/force-delete', [EtudiantController::class,'forceDelete'])->name('etudiants.forceDelete')->middleware('permission:etudiants.force-delete');
     });
 
@@ -78,12 +78,12 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [StageController::class,'create'])->name('stages.create')->middleware('permission:stages.create');
         Route::post('/', [StageController::class,'store'])->name('stages.store')->middleware('permission:stages.create');
         Route::get('{stage}/edit', [StageController::class,'edit'])->name('stages.edit')->middleware('permission:stages.edit');
-        Route::patch('{stage}', [StageController::class,'update'])->name('stages.update')->middleware('permission:stages.edit');
+        Route::put('{stage}', [StageController::class,'update'])->name('stages.update')->middleware('permission:stages.edit');
         Route::delete('{stage}', [StageController::class,'destroy'])->name('stages.destroy')->middleware('permission:stages.delete');
 
         // Corbeille stages
         Route::get('corbeille', [StageController::class,'trash'])->name('stages.trash')->middleware('permission:stages.view');
-        Route::patch('{id}/restore', [StageController::class,'restore'])->name('stages.restore')->middleware('permission:stages.restore');
+        Route::put('{id}/restore', [StageController::class,'restore'])->name('stages.restore')->middleware('permission:stages.restore');
         Route::delete('{id}/force-delete', [StageController::class,'forceDelete'])->name('stages.forceDelete')->middleware('permission:stages.force-delete');
 
         // Badge
@@ -103,7 +103,7 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [TypeStageController::class,'create'])->name('type_stages.create')->middleware('permission:type_stages.create');
         Route::post('/', [TypeStageController::class,'store'])->name('type_stages.store')->middleware('permission:type_stages.create');
         Route::get('{type_stage}/edit', [TypeStageController::class,'edit'])->name('type_stages.edit')->middleware('permission:type_stages.edit');
-        Route::patch('{type_stage}', [TypeStageController::class,'update'])->name('type_stages.update')->middleware('permission:type_stages.edit');
+        Route::put('{type_stage}', [TypeStageController::class,'update'])->name('type_stages.update')->middleware('permission:type_stages.edit');
         Route::delete('{type_stage}', [TypeStageController::class,'destroy'])->name('type_stages.destroy')->middleware('permission:type_stages.delete');
     });
 
@@ -113,12 +113,12 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [BadgeController::class,'create'])->name('badges.create')->middleware('permission:badges.create');
         Route::post('/', [BadgeController::class,'store'])->name('badges.store')->middleware('permission:badges.create');
         Route::get('{badge}/edit', [BadgeController::class,'edit'])->name('badges.edit')->middleware('permission:badges.edit');
-        Route::patch('{badge}', [BadgeController::class,'update'])->name('badges.update')->middleware('permission:badges.edit');
+        Route::put('{badge}', [BadgeController::class,'update'])->name('badges.update')->middleware('permission:badges.edit');
         Route::delete('{badge}', [BadgeController::class,'destroy'])->name('badges.destroy')->middleware('permission:badges.delete');
     Route::get('{stage}', [StageController::class,'show'])->name('stages.show')->middleware('permission:stages.view');
 
         // Corbeille badges
-        Route::patch('{id}/restore', [CorbeilleController::class,'restoreBadge'])->name('badges.restore')->middleware('permission:badges.restore');
+        Route::put('{id}/restore', [CorbeilleController::class,'restoreBadge'])->name('badges.restore')->middleware('permission:badges.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class,'forceDeleteBadge'])->name('badges.force-delete')->middleware('permission:badges.force-delete');
     });
 
@@ -128,7 +128,7 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [ServiceController::class,'create'])->name('services.create')->middleware('permission:services.create');
         Route::post('/', [ServiceController::class,'store'])->name('services.store')->middleware('permission:services.create');
         Route::get('{service}/edit', [ServiceController::class,'edit'])->name('services.edit')->middleware('permission:services.edit');
-        Route::patch('{service}', [ServiceController::class,'update'])->name('services.update')->middleware('permission:services.edit');
+        Route::put('{service}', [ServiceController::class,'update'])->name('services.update')->middleware('permission:services.edit');
         Route::delete('{service}', [ServiceController::class,'destroy'])->name('services.destroy')->middleware('permission:services.delete');
 
         // Corbeille services
@@ -142,7 +142,7 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [SignataireController::class,'create'])->name('signataires.create')->middleware('permission:signataires.create');
         Route::post('/', [SignataireController::class,'store'])->name('signataires.store')->middleware('permission:signataires.create');
         Route::get('{signataire}/edit', [SignataireController::class,'edit'])->name('signataires.edit')->middleware('permission:signataires.edit');
-        Route::patch('{signataire}', [SignataireController::class,'update'])->name('signataires.update')->middleware('permission:signataires.edit');
+        Route::put('{signataire}', [SignataireController::class,'update'])->name('signataires.update')->middleware('permission:signataires.edit');
         Route::delete('{signataire}', [SignataireController::class,'destroy'])->name('signataires.destroy')->middleware('permission:signataires.delete');
     });
 
@@ -152,7 +152,7 @@ Route::middleware(['auth','verified'])->group(function() {
         Route::get('create', [UserController::class,'create'])->name('admin.users.create')->middleware('permission:users.create');
         Route::post('/', [UserController::class,'store'])->name('admin.users.store')->middleware('permission:users.create');
         Route::get('{user}/edit', [UserController::class,'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
-        Route::patch('{user}', [UserController::class,'update'])->name('admin.users.update')->middleware('permission:users.edit');
+        Route::put('{user}', [UserController::class,'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class,'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
 
         // Créer une permission

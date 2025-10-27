@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest; // ton FormRequest personnalisé
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
 
 class RegisteredUserController extends Controller
 {
@@ -17,23 +16,20 @@ class RegisteredUserController extends Controller
         return view('auth.register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterRequest $request): RedirectResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        // Pas besoin de $request->validate(), RegisterRequest s'en occupe déjà
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $request->input('name'),   // <-- propre
+            'email' => $request->input('email'), // <-- propre
+            'password' => Hash::make($request->input('password')),
         ]);
 
         event(new Registered($user));
 
-        // Redirection vers login avec message
-        return redirect()->route('login')->with('status', 'Compte créé avec succès. Connectez-vous.');
+        return redirect()
+            ->route('login')
+            ->with('status', 'Compte créé avec succès. Vérifiez votre email pour activer le compte.');
     }
 }

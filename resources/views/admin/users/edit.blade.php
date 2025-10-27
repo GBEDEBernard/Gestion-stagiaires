@@ -4,7 +4,17 @@
 
     <form action="{{ route('admin.users.update', $user) }}" method="POST" class="bg-white shadow-lg rounded-xl p-8 space-y-6">
         @csrf 
-        @method('PATCH')
+        @method('put')
+                <!-- Nom -->
+        <div class="mb-6">
+            <label for="name" class="block text-sm font-medium text-gray-700">Nom</label>
+            <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}"
+                class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500" required>
+            @error('name')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+
 
         <!-- Rôles -->
         <div class="mb-6">
@@ -22,7 +32,7 @@
                 @endforeach
             </div>
         </div>
-
+       
         <!-- Permissions -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">Permissions spécifiques</h2>

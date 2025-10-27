@@ -83,7 +83,7 @@
 
             <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-6 mb-12">
                 <h2 class="text-xl font-semibold text-black dark:text-gray-200">Comparaison Stages / Services</h2>
-                <canvas id="chart-bar" class="w-full h-80"></canvas>
+                <canvas id="chart-bar" class="w-full h-full"></canvas>
             </div>
 
             <!-- Dernières activités -->

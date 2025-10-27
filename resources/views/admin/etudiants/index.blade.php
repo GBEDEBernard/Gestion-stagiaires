@@ -1,8 +1,8 @@
 <x-app-layout>
-    <div class="max-w-6xl mx-auto p-6 hover:opacity-85 font-serif">
+    <div class=" max-w-6xl mx-auto p-6 hover:opacity-85 bg-gray-400 font-serif">
         <!-- Header avec titre et boutons -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
-            <h1 class="text-2xl font-bold text-blue-600">Liste des étudiants</h1>
+            <h1 class="text-2xl font-bold dark:text-white dark:text-2xl text-blue-600">Liste des étudiants</h1>
             <div class="flex gap-2">
                 <a href="{{ url()->previous() }}" 
                    class="bg-gray-500 text-white px-4 py-2 rounded-xl shadow hover:bg-gray-600 transition">
@@ -20,9 +20,9 @@
         </div>
 
         <!-- Tableau -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto ">
             <table class="w-full mt-2 border-collapse bg-white shadow rounded-xl">
-                <thead class="bg-blue-100 text-blue-700">
+                <thead class="bg-blue-100 text-blue-700 dark:bg-transparent">
                     <tr>
                         <th class="p-3 text-left">Nom</th>
                         <th class="p-3 text-left">Prénom</th>

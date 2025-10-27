@@ -1,7 +1,7 @@
 <x-app-layout>
-<div class="max-w-5xl mx-auto px-6 py-16 font-serif">
+<div class="max-w-5xl mx-auto px-6 py-4 font-serif">
 
-    <div class="flex justify-between items-center mb-8">
+    <div class="flex justify-between items-center mb-4">
         <h1 class="text-3xl font-extrabold text-gray-800">Numéros de Badge</h1>
         <div class="flex gap-3">
             <a href="{{ route('dashboard') }}"
@@ -37,7 +37,7 @@
                     <td class="px-6 py-4 text-gray-800 font-medium">{{ $badge->badge }}</td>
                     <td class="px-6 py-4 text-center flex justify-center gap-3">
                         <a href="{{ route('badges.edit', $badge) }}" 
-                           class="bg-yellow-500 text-white px-3 py-1 rounded shadow hover:bg-yellow-600 transition">
+                           class="bg-yellow-500 text-white px-3 py-1 rounded shadow hover:bg-yellow-600 transition" data-confirm-edit>
                             Modifier
                         </a>
                         <form action="{{ route('badges.destroy', $badge) }}" method="POST" data-confirm-delete>

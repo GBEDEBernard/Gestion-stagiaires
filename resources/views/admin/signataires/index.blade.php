@@ -1,7 +1,7 @@
 <x-app-layout>
-<div class="py-10 max-w-6xl mx-auto px-6">
+<div class="py-10 max-w-6xl mx-auto px-6 dark:text-gray-700">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Signataires</h1>
+        <h1 class="text-2xl font-bold dark:text-gray-200">Les responsable de la Technologie forever group</h1>
         <a href="{{ route('signataires.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded">+ Ajouter</a>
     </div>
 

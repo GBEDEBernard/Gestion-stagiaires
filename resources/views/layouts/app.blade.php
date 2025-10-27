@@ -50,7 +50,7 @@
     </style>
 </head>
 
-<body class="font-sans antialiased transition-colors duration-300 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<body class="font-sans antialiased transition-colors duration-300 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <!-- Loader -->
     <div id="loader-overlay">
@@ -60,7 +60,7 @@
     <div class="min-h-screen relative">
 
         <!-- Navigation Fixe -->
-        <div class="fixed top-0 left-0 w-full z-50 shadow-md">
+        <div class="fixed top-0 left-0 w-full z-50">
             @include('layouts.navigation')
         </div>
 
