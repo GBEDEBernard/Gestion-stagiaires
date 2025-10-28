@@ -23,7 +23,9 @@ use App\Models\User;
 */
 
 // 🔹 Routes publiques (login, register)
-Route::get('/', fn() => redirect()->route('login'));
+Route::get('/', function() {
+    return 'App Laravel en ligne !';
+});
 
 // routes/web.php
 Route::get('/register', [RegisteredUserController::class,'create'])->name('register');
