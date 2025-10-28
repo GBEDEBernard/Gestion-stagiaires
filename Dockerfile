@@ -31,4 +31,5 @@ RUN php artisan key:generate --force || true && php artisan config:clear || true
 
 EXPOSE 8080
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
+# Production : serveur PHP intégré, dossier public comme root
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
