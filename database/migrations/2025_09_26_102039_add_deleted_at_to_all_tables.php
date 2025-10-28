@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // liste toutes tes tables
         $tables = [
             'users',
             'stages',
@@ -23,23 +22,23 @@ return new class extends Migration {
             'roles',
             'permissions',
             'signataires',
-            
-            // 👉 ajoute ici toutes tes tables !
         ];
 
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                if (!Schema::hasColumn($table->getTable(), 'deleted_at')) {
-                    $table->softDeletes();
-                }
-            });
+        foreach ($tables as $tbl) {
+            if (Schema::hasTable($tbl)) { // ⚡ vérifie si la table existe
+                Schema::table($tbl, function (Blueprint $table) {
+                    if (!Schema::hasColumn($table->getTable(), 'deleted_at')) {
+                        $table->softDeletes();
+                    }
+                });
+            }
         }
     }
 
     public function down(): void
     {
         $tables = [
-           'users',
+            'users',
             'stages',
             'services',
             'typestages',
@@ -55,10 +54,12 @@ return new class extends Migration {
             'signataires',
         ];
 
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                $table->dropSoftDeletes();
-            });
+        foreach ($tables as $tbl) {
+            if (Schema::hasTable($tbl)) {
+                Schema::table($tbl, function (Blueprint $table) {
+                    $table->dropSoftDeletes();
+                });
+            }
         }
     }
 };
