@@ -1,28 +1,17 @@
+version: '3.8'
 services:
   app:
     build: .
-    container_name: gestion-stagiaires-app
     ports:
-      - "8000:8000"
-    environment:
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: gestion_stagiaires
-      DB_USERNAME: Bernard
-      DB_PASSWORD: password
-    depends_on:
-      - db
+      - "8080:8080"
     volumes:
-      - .:/var/www
-    working_dir: /var/www
-
-  db:
-    image: mysql:8.0
+      - .:/var/www/html
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: gestion_stagiaires
-      MYSQL_USER: Bernard
-      MYSQL_PASSWORD: password
-    ports:
-      - "33061:3306"
+      APP_ENV: production
+      APP_DEBUG: false
+      DB_CONNECTION: mysql
+      DB_HOST: mysql.railway.internal
+      DB_PORT: 3306
+      DB_DATABASE: railway
+      DB_USERNAME: root
+      DB_PASSWORD: xixPfeaXiRYctcWPkIKGcnuyfamHohpV
