@@ -25,10 +25,9 @@ use App\Models\User;
 // 🔹 Routes publiques (login, register)
 Route::get('/', fn() => redirect()->route('login'));
 
-if (User::count() === 0) {
-    Route::get('/register', [RegisteredUserController::class,'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class,'store']);
-}
+// routes/web.php
+Route::get('/register', [RegisteredUserController::class,'create'])->name('register');
+Route::post('/register', [RegisteredUserController::class,'store']);
 
 require __DIR__.'/auth.php'; // ✅ Doit rester en dehors du middleware auth
 

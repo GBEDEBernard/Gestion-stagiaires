@@ -1,36 +1,33 @@
+# Dockerfile simplifié pour PHP/Laravel
 FROM php:8.2-fpm
 
-# Installer dépendances système
 RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git curl libonig-dev libxml2-dev \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
+    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git curl libonig-dev libxml2-dev nodejs npm \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql mbstring bcmath xml \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Installer Composer
+
+# Installe Composer
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Installer Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
+# Définit le dossier de travail
 WORKDIR /var/www/html
+
+# Copie tous les fichiers du projet
 COPY . .
 
-# Installer dépendances PHP & JS
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-RUN npm ci
-RUN npm run build
+# Autoriser le dossier comme sûr pour Git (évite les warnings)
+RUN git config --global --add safe.directory /var/www/html
 
-# Permissions Laravel
-RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && chmod -R 777 storage bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+RUN composer install --no-dev --no-scripts --optimize-autoloader
+RUN npm install && npm run build
+RUN mkdir -p storage/framework/{sessions,views,cache} bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache
 
-# Clé d'application & storage link
-RUN php artisan key:generate || true
-RUN php artisan storage:link || true
+# Génère les fichiers Laravel après l'installation
+RUN php artisan key:generate --force || true && php artisan config:clear || true
 
 EXPOSE 8080
 

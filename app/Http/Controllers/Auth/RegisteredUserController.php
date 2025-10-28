@@ -12,9 +12,14 @@ use Illuminate\Support\Facades\Hash;
 class RegisteredUserController extends Controller
 {
     public function create()
-    {
-        return view('auth.register');
+{
+    if (User::count() > 0) {
+        return redirect()->route('login'); // si un user existe, on redirige vers login
     }
+
+    return view('auth.register');
+}
+
 
     public function store(RegisterRequest $request): RedirectResponse
     {
