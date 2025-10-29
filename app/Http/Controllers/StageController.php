@@ -41,7 +41,7 @@ class StageController extends Controller
         return view('admin.stages.index', compact('stages', 'typestages'));
     }
 
-    // Formulaire de création
+    // Formulaire de création des stagiaire
     public function create()
     {
         $now = now();

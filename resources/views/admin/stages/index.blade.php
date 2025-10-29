@@ -1,6 +1,6 @@
 <x-app-layout>
-    <div class="min-h-screen  shadow">
-        <div class="container hover:opacity-85 max-w-10xl mx-auto p-4 sm:p-6 lg:p-4 bg-white shadow-md rounded-md">
+    <div class="min-h-screen  ">
+        <div class="container hover:opacity-85  mx-auto p-4 sm:p-6 lg:p-4 bg-white rounded-md">
 
             <!-- Titre -->
             <h1 class="text-3xl font-bold text-blue-600 mb-6">Liste des Stages</h1>

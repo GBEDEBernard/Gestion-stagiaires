@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Carbon;
 
 class UserSeeder extends Seeder
 {
@@ -35,6 +36,7 @@ class UserSeeder extends Seeder
                     'name' => $userData['name'],
                     'password' => $userData['password'],
                     'status' => $userData['status'],
+                    'email_verified_at' => Carbon::now(), // <-- ajoute ça
                 ]
             );
 
