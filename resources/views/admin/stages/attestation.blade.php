@@ -272,7 +272,7 @@ if($serviceNom === '—') {
     <div class="content">
         @if($stage->typestage->code === '003')
             <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
-            <p>Durant cette période, {{ $textePro }}</p>
+            <p>Durant cette période,il/elle {{ $textePro }}</p>
         @else
             <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l’année académique <b>{{ $academicYear }}</b>.</p>
             <p>Durant cette période,il/elle {{ $texteAcad }}</p>
