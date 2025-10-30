@@ -275,7 +275,7 @@ if($serviceNom === '—') {
             <p>Durant cette période, {{ $textePro }}</p>
         @else
             <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l’année académique <b>{{ $academicYear }}</b>.</p>
-            <p>Durant cette période, {{ $texteAcad }}</p>
+            <p>Durant cette période,il/elle {{ $texteAcad }}</p>
         @endif
 
         <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
