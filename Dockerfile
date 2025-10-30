@@ -2,11 +2,10 @@
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git curl libonig-dev libxml2-dev nodejs npm \
+    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git curl libonig-dev libxml2-dev libicu-dev nodejs npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql mbstring bcmath xml \
+    && docker-php-ext-install gd pdo pdo_mysql mbstring bcmath xml intl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 
 # Installe Composer
 
