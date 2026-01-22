@@ -26,14 +26,14 @@
         <!-- PIN -->
         <div>
             <x-input-label for="pin" :value="__('Code PIN (6 chiffres)')" class="font-medium text-gray-700" />
-            <x-text-input 
-                id="pin" 
+            <x-text-input
+                id="pin"
                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-center text-2xl tracking-widest"
-                type="text" 
-                name="pin" 
-                :value="old('pin')" 
-                required 
-                autofocus 
+                type="text"
+                name="pin"
+                :value="old('pin')"
+                required
+                autofocus
                 maxlength="6"
                 inputmode="numeric"
                 pattern="[0-9]{6}"

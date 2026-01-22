@@ -25,12 +25,12 @@
         <div>
             <x-input-label for="password" :value="__('Nouveau mot de passe')" class="font-medium text-gray-700" />
             <div class="relative">
-                <x-text-input 
-                    id="password" 
+                <x-text-input
+                    id="password"
                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
-                    type="password" 
-                    name="password" 
-                    required 
+                    type="password"
+                    name="password"
+                    required
                     autocomplete="new-password" />
                 <button type="button" class="absolute right-3 top-3 text-gray-600 hover:text-gray-900 focus:outline-none" onclick="togglePassword('password')">
                     <svg id="password-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,12 +46,12 @@
         <div>
             <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" class="font-medium text-gray-700" />
             <div class="relative">
-                <x-text-input 
-                    id="password_confirmation" 
+                <x-text-input
+                    id="password_confirmation"
                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
-                    type="password" 
-                    name="password_confirmation" 
-                    required 
+                    type="password"
+                    name="password_confirmation"
+                    required
                     autocomplete="new-password" />
                 <button type="button" class="absolute right-3 top-3 text-gray-600 hover:text-gray-900 focus:outline-none" onclick="togglePassword('password_confirmation')">
                     <svg id="password_confirmation-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
