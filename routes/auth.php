@@ -8,7 +8,9 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\UpdatePasswordWithPinController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\VerifyPinController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -22,12 +24,28 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    // Réinitialisation avec PIN
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
         ->name('password.email');
 
+    // Vérifier le PIN
+    Route::get('verify-pin', [VerifyPinController::class, 'show'])
+        ->name('password.verify-pin-show');
+
+    Route::post('verify-pin', [VerifyPinController::class, 'verify'])
+        ->name('password.verify-pin');
+
+    // Réinitialiser le mot de passe avec PIN
+    Route::get('reset-password-with-pin', [UpdatePasswordWithPinController::class, 'show'])
+        ->name('password.reset-form');
+
+    Route::post('reset-password-with-pin', [UpdatePasswordWithPinController::class, 'update'])
+        ->name('password.update-with-pin');
+
+    // Anciennes routes (optionnel, pour compatibilité)
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 

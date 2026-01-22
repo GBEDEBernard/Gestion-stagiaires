@@ -1,6 +1,6 @@
 <x-guest-layout>
     <!-- Header avec logo rond -->
-    <div class="bg-blue-600 py-6 flex justify-center -mx-6 -mt-4 mb-6">
+    <div class="bg-blue-600 py-6 flex justify-center -mx-6 -mt-4 mb-6 rounded-t-lg">
         <img src="{{ asset('images/TGFpdf.jpg') }}"
             alt="Logo Stage TFG"
             class="h-32 w-32 object-cover rounded-full border-4 border-white shadow-md">
@@ -11,29 +11,27 @@
 
     <!-- Description -->
     <p class="text-sm text-gray-600 text-center mb-6">
-        Entrez votre email et votre nouveau mot de passe pour réinitialiser votre compte.
+        Entrez votre nouveau mot de passe ci-dessous.
     </p>
 
-    <form method="POST" action="{{ route('password.store') }}" class="space-y-4">
+    <form method="POST" action="{{ route('password.update-with-pin') }}" class="space-y-4">
         @csrf
 
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" class="font-medium text-gray-700" />
-            <x-text-input id="email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-1 text-sm text-red-600" />
-        </div>
+        <!-- Email Hidden -->
+        <input type="hidden" name="email" value="{{ $email }}">
+        <input type="hidden" name="pin" value="{{ $pin }}">
 
         <!-- Password -->
         <div>
-            <x-input-label for="password" :value="__('Mot de passe')" class="font-medium text-gray-700" />
+            <x-input-label for="password" :value="__('Nouveau mot de passe')" class="font-medium text-gray-700" />
             <div class="relative">
-                <x-text-input id="password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
-                    type="password" name="password" required autocomplete="new-password" />
+                <x-text-input 
+                    id="password" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
+                    type="password" 
+                    name="password" 
+                    required 
+                    autocomplete="new-password" />
                 <button type="button" class="absolute right-3 top-3 text-gray-600 hover:text-gray-900 focus:outline-none" onclick="togglePassword('password')">
                     <svg id="password-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -48,8 +46,13 @@
         <div>
             <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" class="font-medium text-gray-700" />
             <div class="relative">
-                <x-text-input id="password_confirmation" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
-                    type="password" name="password_confirmation" required autocomplete="new-password" />
+                <x-text-input 
+                    id="password_confirmation" 
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 pr-10"
+                    type="password" 
+                    name="password_confirmation" 
+                    required 
+                    autocomplete="new-password" />
                 <button type="button" class="absolute right-3 top-3 text-gray-600 hover:text-gray-900 focus:outline-none" onclick="togglePassword('password_confirmation')">
                     <svg id="password_confirmation-eye" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -63,7 +66,7 @@
         <!-- Bouton Réinitialiser -->
         <div class="mt-6">
             <x-primary-button class="w-full text-center py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md font-semibold transition">
-                Réinitialiser le mot de passe
+                Changer le mot de passe
             </x-primary-button>
         </div>
     </form>
