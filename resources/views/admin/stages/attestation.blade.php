@@ -24,31 +24,28 @@
             font-family: "Times New Roman", Times, serif;
             box-sizing: border-box;
             border: 1px solid rgba(218, 218, 218, 1);
-            /* 🔹 noir, 3px d'épaisseur */
-            /* Logo en filigrane */
-            background-image: url('{{ url(' images/TFGLOGO.png') }}');
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-size: 450px auto;
-            background-attachment: local;
-            background-blend-mode: lighten;
-            opacity: 0.95;
+            overflow: hidden;
         }
 
+        /* 🎨 Logo en filigrane centré et stylé */
         .a4-container::before {
             content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('{{ url(' images/TFGLOGO.png') }}') center center no-repeat;
-            background-size: 450px auto;
-            opacity: 0.25;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            background-image: url('{{ url('images/TFGLOGO.png') }}');
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.15;
             z-index: 0;
+            pointer-events: none;
         }
 
-        .a4-container>* {
+        .a4-container > * {
             position: relative;
             z-index: 1;
         }
@@ -159,9 +156,9 @@
         }
 
         .buttons-container {
-            position: absolute;
+            position: fixed;
             top: 50%;
-            right: 15mm;
+            right: 20px;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
@@ -171,32 +168,36 @@
 
         .buttons-container a,
         .buttons-container button {
-            padding: 10px 25px;
+            padding: 12px 30px;
             font-size: 16px;
             font-weight: 600;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             border: none;
             color: white;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
             text-align: center;
             width: 200px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            display: block;
         }
 
         .buttons-container a:hover,
         .buttons-container button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
         .back {
-            background: #6b7280;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .print {
-            background: #2563eb;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         }
 
-        /* ✅ Impression parfaite */
+        /* ✅ Impression parfaite avec filigrane */
         @media print {
             body {
                 margin: 0 !important;
@@ -215,17 +216,25 @@
                 width: 210mm;
                 height: 297mm;
                 padding: 15mm;
-                background-image: url('{{ url(' images/TFGLOGO.png') }}');
-                background-position: center center !important;
-                background-repeat: no-repeat;
-                background-size: 450px auto;
-                background-attachment: local !important;
                 page-break-after: avoid;
+                border: none;
+            }
+
+            /* Filigrane visible à l'impression */
+            .a4-container::before {
+                opacity: 0.15 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             * {
                 overflow: visible !important;
             }
+        }
+
+        @page {
+            margin: 0;
+            size: A4;
         }
     </style>
 </head>
@@ -243,119 +252,114 @@
 
     // Helper function to convert numbers to French text
     $numberToFrench = function($num) {
-    $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-    $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-    $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+        $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+        $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+        $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
 
-    if ($num < 10) return $ones[$num];
+        if ($num < 10) return $ones[$num];
         if ($num < 20) return $teens[$num - 10];
         if ($num < 100) {
-        $ten=floor($num / 10);
-        $one=$num % 10;
-        return $tens[$ten] . ($one> 0 ? '-' . $ones[$one] : '');
+            $ten = floor($num / 10);
+            $one = $num % 10;
+            return $tens[$ten] . ($one > 0 ? '-' . $ones[$one] : '');
         }
         return (string)$num;
-        };
+    };
 
-        if($diffDays < 30){
-            if($diffDays < 7){
-            $duréeTexte=ucfirst($numberToFrench($diffDays)) . " ($diffDays) jour" . ($diffDays> 1 ? 's' : '');
-            } else {
+    if($diffDays < 30){
+        if($diffDays < 7){
+            $duréeTexte = ucfirst($numberToFrench($diffDays)) . " ($diffDays) jour" . ($diffDays > 1 ? 's' : '');
+        } else {
             $semaines = round($diffDays / 7);
             $duréeTexte = ucfirst($numberToFrench($semaines)) . " ($semaines) semaine" . ($semaines > 1 ? 's' : '');
-            }
-            } else {
-            $mois = floor($diffDays / 30);
-            $joursRestants = $diffDays % 30;
-            $moisLettre = ucfirst($numberToFrench($mois));
-            $duréeTexte = "$moisLettre ($mois) mois";
-            }
+        }
+    } else {
+        $mois = floor($diffDays / 30);
+        $joursRestants = $diffDays % 30;
+        $moisLettre = ucfirst($numberToFrench($mois));
+        $duréeTexte = "$moisLettre ($mois) mois";
+    }
 
-            $year = $now->year;
-            $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
+    $year = $now->year;
+    $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
 
-            $genre = strtolower($stage->etudiant->genre ?? 'masculin');
-            $pronomSujet = $genre === 'féminin' ? 'Elle' : 'Il';
-            $textePro = " a effectué des travaux : " . ucfirst($stage->theme) . ".";
-            $texteAcad = "$pronomSujet a travaillé sur : " . ucfirst($stage->theme) . ".";
-            @endphp
+    $genre = strtolower($stage->etudiant->genre ?? 'masculin');
+    $textePro = " a effectué des travaux : " . ucfirst($stage->theme) . ".";
+    $texteAcad = " a travaillé sur : " . ucfirst($stage->theme) . ".";
+    @endphp
 
-            @php
-            $serviceNom = $stage->service->nom ?? '—';
+    @php
+    $serviceNom = $stage->service->nom ?? '—';
 
-            // Vérifier si le service commence par une voyelle (a, e, i, o, u, y) ou H muet
-            $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
+    // Vérifier si le service commence par une voyelle
+    $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
+    $firstChar = mb_substr($serviceNom, 0, 1);
 
-            $firstChar = mb_substr($serviceNom, 0, 1);
+    if($serviceNom === '—') {
+        $prepositionService = 'de';
+    } elseif(in_array($firstChar, $voyelles)) {
+        $prepositionService = "d'";
+    } else {
+        $prepositionService = "de";
+    }
+    @endphp
 
-            if($serviceNom === '—') {
-            $prepositionService = 'de'; // si pas de service, on garde "de"
-            } elseif(in_array($firstChar, $voyelles)) {
-            $prepositionService = "d'"; // si commence par voyelle → d'
-            } else {
-            $prepositionService = "de"; // sinon → de
-            }
-            @endphp
+    <div class="a4-container">
 
-            <div class="a4-container">
-
-                <div class="header">
-                    <img src="{{ url('images/TFGLOGO.png') }}" alt="Logo">
-                    <div class="text-header">
-                        <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
-                        <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
-                        <p class="p1">
-                            Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
-                        </p>
-                    </div>
-                </div>
-
-                <div class="rcf">Réf : {{ $reference }}</div>
-                <h1 class="title">ATTESTATION DE STAGE</h1>
-
-                <div class="content">
-                    @if($stage->typestage->code === '003')
-                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
-                    <p>Durant cette période,il/elle {{ $textePro }}</p>
-                    @else
-                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l’année académique <b>{{ $academicYear }}</b>.</p>
-                    <p>Durant cette période,il/elle {{ $texteAcad }}</p>
-                    @endif
-
-                    <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
-                </div>
-
-                <div class="signatures">
-                    @foreach($signataires as $signataire)
-                    <div class="sign director">
-                        <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
-                        @php
-                        // Récupérer par_ordre du pivot
-                        $parOrdre = $signataire->pivot->par_ordre ?? false;
-                        @endphp
-                        @if($parOrdre)
-                        <p style="margin-top:15px;"><b>Le Directeur Général et P.O</b></p>
-                        @endif
-                        <p style="margin-top:{{ $parOrdre ? '15px' : '15px' }};"><b>{{ $signataire->poste }}</b></p>
-                        <p style="margin-top:50px;"><u><b>{{ $signataire->nom }}</b></u></p>
-                    </div>
-                    @endforeach
-                </div>
-
-                <div class="company">
-                    <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
-                        Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
-                        Site Web : www.tfgbusiness.com
-                        Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
-                </div>
+        <div class="header">
+            <img src="{{ url('images/TFGLOGO.png') }}" alt="Logo">
+            <div class="text-header">
+                <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
+                <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
+                <p class="p1">
+                    Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
+                </p>
             </div>
+        </div>
 
-            <div class="buttons-container">
-                <a href="{{ route('stages.show', $stage->id) }}">
-                    <button type="button" class="back">Retour</button>
-                </a>
-                <button type="button" class="print" onclick="window.print()">Imprimer</button>
+        <div class="rcf">Réf : {{ $reference }}</div>
+        <h1 class="title">ATTESTATION DE STAGE</h1>
+
+        <div class="content">
+            @if($stage->typestage->code === '003')
+            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
+            <p>Durant cette période, il/elle {{ $textePro }}</p>
+            @else
+            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
+            <p>Durant cette période, il/elle {{ $texteAcad }}</p>
+            @endif
+
+            <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
+        </div>
+
+        <div class="signatures">
+            @foreach($signataires as $signataire)
+            <div class="sign director">
+                <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                @php
+                $parOrdre = $signataire->pivot->par_ordre ?? false;
+                @endphp
+                @if($parOrdre)
+                <p style="margin-top:15px;"><b>Le Directeur Général et P.O</b></p>
+                @endif
+                <p style="margin-top:{{ $parOrdre ? '15px' : '15px' }};"><b>{{ $signataire->poste }}</b></p>
+                <p style="margin-top:50px;"><u><b>{{ $signataire->nom }}</b></u></p>
             </div>
+            @endforeach
+        </div>
+
+        <div class="company">
+            <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
+                Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
+                Site Web : www.tfgbusiness.com
+                Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
+        </div>
+    </div>
+
+    <div class="buttons-container">
+        <a href="{{ route('stages.show', $stage->id) }}" class="back">Retour</a>
+        <button type="button" class="print" onclick="window.print()">Imprimer</button>
+    </div>
 
 </body>
 
