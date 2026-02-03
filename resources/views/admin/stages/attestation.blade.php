@@ -40,7 +40,7 @@
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.15;
+            opacity: 0.40;
             z-index: 0;
             pointer-events: none;
         }
@@ -55,7 +55,7 @@
             align-items: center;
             border-bottom: 4px solid #b90912da;
             padding-bottom: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 40px;
         }
 
         .header img {
@@ -73,7 +73,7 @@
         .text-header h1 {
             font-size: 20px;
             color: #3c57a1;
-            margin: 6px 0;
+            margin: 2px;
             font-family: Arial, Helvetica, sans-serif;
         }
 
@@ -83,7 +83,8 @@
             font-weight: 600;
             opacity: 0.75;
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            margin-top: 4px;
         }
 
         .text-header .i span {
@@ -91,7 +92,7 @@
             vertical-align: text-bottom;
             line-height: 1;
             position: relative;
-            bottom: -2px;
+            bottom: -1px;
         }
 
         .text-header .p1 {
@@ -101,7 +102,7 @@
         }
 
         .rcf {
-            margin: 8px 0 15px 0;
+            margin: 8px 0 35px 0;
             font-weight: 600;
             font-size: 16px;
         }
@@ -111,7 +112,7 @@
             font-weight: 900;
             color: #000;
             text-align: center;
-            margin: 15px 0;
+            margin: 15px 0 15px 0;
         }
 
         .title::after {
@@ -124,19 +125,21 @@
 
         .content {
             text-align: justify;
-            line-height: 1.8;
+            line-height: 1.6;
             font-size: 18px;
+            margin-top: 50px;
         }
 
         .signatures {
             display: flex;
             justify-content: center;
-            margin-top: 120px;
             flex-wrap: wrap;
         }
 
         .sign {
-            width: 48%;
+            margin: 90px;
+            width: 60%;
+            line-height: 0.5;
         }
 
         .sign.director {
@@ -222,7 +225,7 @@
 
             /* Filigrane visible à l'impression */
             .a4-container::before {
-                opacity: 0.15 !important;
+                opacity: 0.25 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -340,10 +343,10 @@
                 $parOrdre = $signataire->pivot->par_ordre ?? false;
                 @endphp
                 @if($parOrdre)
-                <p style="margin-top:15px;"><b>Le Directeur Général et P.O</b></p>
+                <p style="margin-top:8px;"><b>Le Directeur Général et P.O</b></p>
                 @endif
-                <p style="margin-top:{{ $parOrdre ? '15px' : '15px' }};"><b>{{ $signataire->poste }}</b></p>
-                <p style="margin-top:50px;"><u><b>{{ $signataire->nom }}</b></u></p>
+                <p style="margin-top:{{ $parOrdre ? '8px' : '8px' }};"><b>{{ $signataire->poste }}</b></p>
+                <p style="margin-top:90px;"><u><b>{{ $signataire->nom }}</b></u></p>
             </div>
             @endforeach
         </div>
