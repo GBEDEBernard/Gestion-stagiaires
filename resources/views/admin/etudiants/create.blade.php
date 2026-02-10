@@ -14,6 +14,13 @@
                 <label class="block text-red-600">Prénom</label>
                 <input type="text" name="prenom" value="{{ old('prenom') }}" class="w-full border rounded-xl p-2" required>
             </div>
+             <div>
+                <label class="block text-red-600">Sexe</label>
+                <select name="genre" id="genre" class="w-full border rounded-xl p-2">
+                    <option value="Masculin" {{ old('genre') == 'Masculin' ? 'selected' : '' }}>Masculin</option>
+                    <option value="Féminin" {{ old('genre') == 'Féminin' ? 'selected' : '' }}>Féminin</option>
+                </select>
+            </div>
 
             <div>
                 <label class="block text-red-600">Email</label>

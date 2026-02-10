@@ -15,6 +15,14 @@
                 <label class="block text-red-600">Prénom</label>
                 <input type="text" name="prenom" value="{{ old('prenom', $etudiant->prenom) }}" class="w-full border rounded-xl p-2" required>
             </div>
+           
+            <div>
+                <label class="block text-red-600">Sexe</label>
+                <select name="genre" class="w-full border rounded-xl p-2">
+                    <option value="Masculin" {{ old('genre', $etudiant->genre) == 'Masculin' ? 'selected' : '' }}>Masculin</option>
+                    <option value="Féminin" {{ old('genre', $etudiant->genre) == 'Féminin' ? 'selected' : '' }}>Féminin</option>
+                </select>
+            </div>
 
             <div>
                 <label class="block text-red-600">Email</label>

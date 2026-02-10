@@ -23,6 +23,7 @@ class EtudiantController extends Controller
         $data = $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
+            'genre'=>'required',
             'email' => 'required|email|unique:etudiants,email',
             'telephone' => 'nullable|string|max:20',
             'ecole' => 'nullable|string|max:255',
@@ -42,6 +43,7 @@ class EtudiantController extends Controller
         $data = $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
+             'genre'=>'required',
             'email' => 'required|email|unique:etudiants,email,' . $etudiant->id,
             'telephone' => 'nullable|string|max:20',
             'ecole' => 'nullable|string|max:255',

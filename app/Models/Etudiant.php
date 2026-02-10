@@ -13,7 +13,7 @@ use HasFactory;
  use SoftDeletes; // ✅ active le soft delete
 
 protected $fillable = [
-'nom','prenom','email','telephone','ecole'
+'nom','prenom','email','telephone','ecole','genre'
 ];
 
 

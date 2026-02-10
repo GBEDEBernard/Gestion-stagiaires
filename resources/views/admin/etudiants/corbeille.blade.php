@@ -18,6 +18,7 @@
                     <tr>
                         <th class="p-3 text-left">Nom</th>
                         <th class="p-3 text-left">Prénom</th>
+                         <th class="p-3 text-left">Sexe</th>
                         <th class="p-3 text-left">Email</th>
                         <th class="p-3 text-left">Téléphone</th>
                         <th class="p-3 text-left">École</th>
@@ -29,6 +30,7 @@
                         <tr class="border-b hover:bg-gray-50 transition">
                             <td class="p-3">{{ $etudiant->nom }}</td>
                             <td class="p-3">{{ $etudiant->prenom }}</td>
+                            <td class="p-3">{{ $etudiant->genre }}</td>
                             <td class="p-3">{{ $etudiant->email }}</td>
                             <td class="p-3">{{ $etudiant->telephone ?? '-' }}</td>
                             <td class="p-3">{{ $etudiant->ecole ?? '-' }}</td>

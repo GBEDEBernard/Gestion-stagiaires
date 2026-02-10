@@ -27,7 +27,7 @@
             overflow: hidden;
         }
 
-        /* 🎨 Logo en filigrane centré et stylé */
+        /* Logo en filigrane centré et stylé */
         .a4-container::before {
             content: "";
             position: absolute;
@@ -40,7 +40,7 @@
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.40;
+            opacity: 0.4;
             z-index: 0;
             pointer-events: none;
         }
@@ -200,7 +200,7 @@
             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         }
 
-        /* ✅ Impression parfaite avec filigrane */
+        /* Impression parfaite avec filigrane */
         @media print {
             body {
                 margin: 0 !important;
@@ -225,7 +225,7 @@
 
             /* Filigrane visible à l'impression */
             .a4-container::before {
-                opacity: 0.25 !important;
+                opacity: 0.50 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -254,7 +254,7 @@
     $diffDays = $dateDebut->diffInDays($dateFin) + 1;
 
     // Helper function to convert numbers to French text
-    $numberToFrench = function($num) {
+       $numberToFrench = function($num) {
         $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
         $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
         $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
@@ -279,7 +279,7 @@
     } else {
         $mois = floor($diffDays / 30);
         $joursRestants = $diffDays % 30;
-        $moisLettre = ucfirst($numberToFrench($mois));
+        $moisLettre = $numberToFrench($mois);
         $duréeTexte = "$moisLettre ($mois) mois";
     }
 
@@ -287,8 +287,11 @@
     $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
 
     $genre = strtolower($stage->etudiant->genre ?? 'masculin');
-    $textePro = " a effectué des travaux : " . ucfirst($stage->theme) . ".";
-    $texteAcad = " a travaillé sur : " . ucfirst($stage->theme) . ".";
+    $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
+    $pronom = $genre === 'feminin' ? 'elle' : 'il';
+
+    $texteTheme = ($stage->theme) . ".";
+
     @endphp
 
     @php
@@ -325,11 +328,11 @@
 
         <div class="content">
             @if($stage->typestage->code === '003')
-            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
-            <p>Durant cette période, il/elle {{ $textePro }}</p>
+            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein   {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du  <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
+            <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
             @else
-            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de <b>Technology Forever Group SARL</b>, atteste que Mme/Mr <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein du service {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
-            <p>Durant cette période, il/elle {{ $texteAcad }}</p>
+            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein   {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du  <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
+            <p>Durant cette période,{{ $pronom }} {{ $texteTheme }}</p>
             @endif
 
             <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
