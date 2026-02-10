@@ -29,7 +29,7 @@
                         <th class="p-3 text-left">Email</th>
                         <th class="p-3 text-left">Téléphone</th>
                         <th class="p-3 text-left">École</th>
-                        <th class="p-3 text-right">Actions</th>
+                        <th class="p-5 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-700">
@@ -42,7 +42,7 @@
                             <td class="p-3">{{ $etudiant->ecole ?? '-' }}</td>
                             <td class="p-3 text-right space-x-2">
                                 <a href="{{ route('etudiants.edit', $etudiant) }}" 
-                                   class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition" data-confirm-edit> 
+                                   class="px-3 py-2 mb-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition" data-confirm-edit> 
                                     Modifier
                                 </a>
                                 <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline-block" data-confirm-delete>

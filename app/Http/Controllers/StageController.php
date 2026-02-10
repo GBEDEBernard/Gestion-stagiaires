@@ -99,19 +99,21 @@ class StageController extends Controller
         }
 
         // Vérification des conflits de badge
-        $conflictBadge = $badge->stages()
-            ->where(function($q) use ($dateDebut, $dateFin) {
-                $q->whereBetween('date_debut', [$dateDebut, $dateFin])
-                  ->orWhereBetween('date_fin', [$dateDebut, $dateFin])
-                  ->orWhere(function($q2) use ($dateDebut, $dateFin) {
-                      $q2->where('date_debut', '<=', $dateDebut)
-                         ->where('date_fin', '>=', $dateFin);
-                  });
-            })->exists();
+                $conflictBadge = $badge->stages()
+                ->where(function($q) use ($dateDebut, $dateFin) {
+                    $q->whereBetween('date_debut', [$dateDebut, $dateFin])
+                    ->orWhereBetween('date_fin', [$dateDebut, $dateFin])
+                    ->orWhere(function($q2) use ($dateDebut, $dateFin) {
+                        $q2->where('date_debut', '<=', $dateDebut)
+                            ->where('date_fin', '>=', $dateFin);
+                    });
+                })->exists();
 
-        if ($conflictBadge) {
-            return back()->withErrors(['badge_id' => 'Ce badge est déjà attribué à un autre stage pour ces dates.'])->withInput();
-        }
+            if ($conflictBadge) {
+                return back()->withErrors([
+                    'badge_id' => 'Ce badge est déjà attribué à un autre stage pour ces dates.'
+                ])->withInput();
+            }
 
         $stage = Stage::create($request->only([
             'etudiant_id', 'typestage_id', 'service_id', 'badge_id',
