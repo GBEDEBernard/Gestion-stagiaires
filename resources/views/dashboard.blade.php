@@ -10,25 +10,25 @@
 
             <!-- KPIs Principaux -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Stagiaires Inscrits -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <!-- Total Stages -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Stagiaires Inscrits</p>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ \App\Models\Etudiant::count() }}</h3>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Stages</p>
+                            <h3 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ $totalStages }}</h3>
                         </div>
-                        <span class="text-3xl">👥</span>
+                        <span class="text-3xl">📚</span>
                     </div>
-                    <div class="flex items-center text-green-600 text-sm">
+                    <div class="flex items-center text-blue-600 text-sm">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M12 7a1 1 0 110-2h.01a1 1 0 110 2H12zm-4 4a1 1 0 110-2h.01a1 1 0 110 2H8z"></path>
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
                         </svg>
-                        +12% ce mois
+                        Tous les stages
                     </div>
                 </div>
 
                 <!-- Stages en Cours -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-green-500">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Stages en Cours</p>
@@ -38,14 +38,14 @@
                     </div>
                     <div class="flex items-center text-green-600 text-sm">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M12 7a1 1 0 110-2h.01a1 1 0 110 2H12z"></path>
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16z"></path>
                         </svg>
-                        Actif maintenant
+                        Actifs maintenant
                     </div>
                 </div>
 
                 <!-- Stages Terminés -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Stages Terminés</p>
@@ -53,25 +53,25 @@
                         </div>
                         <span class="text-3xl">✅</span>
                     </div>
-                    <div class="flex items-center text-blue-600 text-sm">
+                    <div class="flex items-center text-purple-600 text-sm">
                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z"></path>
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path>
                         </svg>
                         Complétés
                     </div>
                 </div>
 
                 <!-- Taux de Présence -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-orange-500 hover:shadow-lg transition-shadow">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Taux de Présence</p>
-                            <h3 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">87%</h3>
+                            <h3 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ $tauxPresence }}%</h3>
                         </div>
                         <span class="text-3xl">📈</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div class="bg-orange-500 h-2 rounded-full" style="width: 87%"></div>
+                        <div class="bg-orange-500 h-2 rounded-full transition-all" style="width: {{ $tauxPresence }}%"></div>
                     </div>
                 </div>
             </div>
@@ -82,11 +82,18 @@
                 <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">📈 Évolution des Inscriptions</h2>
-                        <select class="text-sm bg-blue-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded">
-                            <option>Cette semaine</option>
-                            <option>Ce mois</option>
-                            <option>Cette année</option>
-                        </select>
+                   
+                        <div class="flex gap-2">
+                            <button onclick="changeChartPeriod('jour')" id="btn-jour" class="px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition">
+                                Par Jour
+                            </button>
+                            <button onclick="changeChartPeriod('semaine')" id="btn-semaine" class="px-3 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                                Par Semaine
+                            </button>
+                            <button onclick="changeChartPeriod('mois')" id="btn-mois" class="px-3 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                                Par Mois
+                            </button>
+                        </div>
                     </div>
                     <canvas id="chart-inscriptions" height="80"></canvas>
                 </div>
@@ -99,10 +106,10 @@
                     <div class="mb-4">
                         <div class="flex justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taux de Réussite</span>
-                            <span class="text-sm font-bold text-green-600">92%</span>
+                            <span class="text-sm font-bold text-green-600">{{ $tauxReussite }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                            <div class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: {{ $tauxReussite }}%"></div>
                         </div>
                     </div>
 
@@ -110,10 +117,10 @@
                     <div class="mb-4">
                         <div class="flex justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taux de Présence</span>
-                            <span class="text-sm font-bold text-blue-600">87%</span>
+                            <span class="text-sm font-bold text-blue-600">{{ $tauxPresence }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: 87%"></div>
+                            <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: {{ $tauxPresence }}%"></div>
                         </div>
                     </div>
 
@@ -121,10 +128,10 @@
                     <div class="mb-4">
                         <div class="flex justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taux d'Abandon</span>
-                            <span class="text-sm font-bold text-red-600">8%</span>
+                            <span class="text-sm font-bold text-red-600">{{ $tauxAbandon }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-red-500 h-2 rounded-full" style="width: 8%"></div>
+                            <div class="bg-red-500 h-2 rounded-full transition-all duration-500" style="width: {{ $tauxAbandon }}%"></div>
                         </div>
                     </div>
 
@@ -132,32 +139,36 @@
                     <div>
                         <div class="flex justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Taux de Conversion</span>
-                            <span class="text-sm font-bold text-purple-600">78%</span>
+                            <span class="text-sm font-bold text-purple-600">{{ $tauxConversion }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-purple-500 h-2 rounded-full" style="width: 78%"></div>
+                            <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: {{ $tauxConversion }}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Comparaisons et Activités -->
+            <!-- Comparaisons et Distribution -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <!-- Comparaison Période -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📊 Comparaison Période</h2>
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-gray-700 rounded">
+                        <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-gray-700 rounded hover:shadow transition">
                             <span class="text-gray-700 dark:text-gray-300">Inscriptions ce mois</span>
-                            <span class="text-xl font-bold text-green-600">+23%</span>
+                            <span class="text-xl font-bold {{ $evolutionInscriptionsMois >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $evolutionInscriptionsMois >= 0 ? '+' : '' }}{{ $evolutionInscriptionsMois }}%
+                            </span>
                         </div>
-                        <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-gray-700 rounded">
+                        <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-gray-700 rounded hover:shadow transition">
                             <span class="text-gray-700 dark:text-gray-300">Stages actuels vs mois dernier</span>
-                            <span class="text-xl font-bold text-green-600">+15%</span>
+                            <span class="text-xl font-bold {{ $evolutionStages >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $evolutionStages >= 0 ? '+' : '' }}{{ $evolutionStages }}%
+                            </span>
                         </div>
-                        <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-700 rounded">
+                        <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-gray-700 rounded hover:shadow transition">
                             <span class="text-gray-700 dark:text-gray-300">Taux de complétion</span>
-                            <span class="text-xl font-bold text-blue-600">↑ 8%</span>
+                            <span class="text-xl font-bold text-blue-600">↑ {{ $tauxCompletion }}%</span>
                         </div>
                     </div>
                 </div>
@@ -165,18 +176,18 @@
                 <!-- Distribution par Type de Stage -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">🎯 Distribution par Type</h2>
-                    <canvas id="chart-types" height="80"></canvas>
+                    <canvas id="chart-types" height="280"></canvas>
                 </div>
             </div>
 
             <!-- Statistiques par Service -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">📊 Répartition par Service</h2>
-                <canvas id="chart-bar" height="80"></canvas>
+                <canvas id="chart-services" height="90"></canvas>
             </div>
 
             <!-- Tableau des Derniers Stagiaires -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">👥 Derniers Stagiaires Inscrits</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -190,9 +201,9 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse(\App\Models\Etudiant::latest()->take(5)->get() as $etudiant)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ $etudiant->nom }}</td>
+                            @forelse($derniersEtudiants as $etudiant)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ $etudiant->nom }}</td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $etudiant->email }}</td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $etudiant->stages->first()->titre ?? 'N/A' }}</td>
                                 <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $etudiant->created_at->format('d/m/Y') }}</td>
@@ -204,178 +215,307 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">Aucun stagiaire inscrit</td>
+                                <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    <p class="mt-2">Aucun stagiaire inscrit</p>
+                                </td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- Corbeille -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">🗑️ Corbeille</h2>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        {{ $totalTrash }} éléments
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow transition">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Stages</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $stagesTrash->count() }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow transition">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Étudiants</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $etudiantsTrash->count() }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow transition">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Badges</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $badgesTrash->count() }}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow transition">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Services</span>
+                        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $servicesTrash->count() }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script>
-        // Graphique d'évolution des inscriptions
-        const ctx1 = document.getElementById('chart-inscriptions').getContext('2d');
-        new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-                datasets: [{
-                    label: 'Nouvelles Inscriptions',
-                    data: [12, 19, 8, 15, 22, 18, 14],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        // Configuration globale
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#e5e7eb' : '#374151';
+        const gridColor = isDark ? 'rgba(107, 114, 128, 0.2)' : 'rgba(107, 114, 128, 0.1)';
+
+        // Données des trois périodes
+        const dataJour = {
+            labels: @json($labelsJour),
+            data: @json($evolutionJour),
+            title: '30 derniers jours'
+        };
+
+        const dataSemaine = {
+            labels: @json($labelsSemaine),
+            data: @json($evolutionSemaine),
+            title: '12 dernières semaines'
+        };
+
+        const dataMois = {
+            labels: @json($labelsMois),
+            data: @json($evolutionMois),
+            title: '12 derniers mois'
+        };
+
+        let chartInscriptions;
+        let currentPeriod = 'jour';
+
+        // 1. Fonction pour créer/mettre à jour le graphique
+        function createOrUpdateChart(period) {
+            const ctxInscriptions = document.getElementById('chart-inscriptions');
+            if (!ctxInscriptions) return;
+
+            const periodData = period === 'jour' ? dataJour : 
+                              period === 'semaine' ? dataSemaine : dataMois;
+
+            // Détruire le graphique existant
+            if (chartInscriptions) {
+                chartInscriptions.destroy();
+            }
+
+            // Créer nouveau graphique
+            chartInscriptions = new Chart(ctxInscriptions, {
+                type: 'line',
+                data: {
+                    labels: periodData.labels,
+                    datasets: [{
+                        label: 'Nouvelles Inscriptions',
+                        data: periodData.data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: '#6b7280'
-                        },
-                        grid: {
-                            color: 'rgba(107, 114, 128, 0.1)'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return value + ' inscription' + (value > 1 ? 's' : '');
+                                }
+                            }
                         }
                     },
-                    x: {
-                        ticks: {
-                            color: '#6b7280'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor,
+                                font: { size: 11 },
+                                stepSize: 1
+                            },
+                            grid: { color: gridColor }
                         },
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-
-        // Graphique distribution par type de stage
-        const ctx2 = document.getElementById('chart-types').getContext('2d');
-        new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['Technique', 'Commercial', 'Administratif', 'Support'],
-                datasets: [{
-                    data: [35, 25, 20, 20],
-                    backgroundColor: [
-                        '#3b82f6',
-                        '#10b981',
-                        '#f59e0b',
-                        '#ef4444'
-                    ],
-                    borderColor: '#fff',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Graphique en barres services / stages
-        const ctx3 = document.getElementById('chart-bar').getContext('2d');
-        new Chart(ctx3, {
-            type: 'bar',
-            data: {
-                labels: {!! json_encode($servicesStats->pluck('service') ?? []) !!},
-                datasets: [{
-                    label: 'Inscrits',
-                    data: {!! json_encode($servicesStats->pluck('inscrits') ?? []) !!},
-                    backgroundColor: '#3b82f6'
-                },
-                {
-                    label: 'En cours',
-                    data: {!! json_encode($servicesStats->pluck('enCours') ?? []) !!},
-                    backgroundColor: '#22c55e'
-                },
-                {
-                    label: 'Terminés',
-                    data: {!! json_encode($servicesStats->pluck('termines') ?? []) !!},
-                    backgroundColor: '#ef4444'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: '#6b7280'
-                        },
-                        grid: {
-                            color: 'rgba(107, 114, 128, 0.1)'
+                        x: {
+                            ticks: {
+                                color: textColor,
+                                font: { size: 10 },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { display: false }
                         }
                     },
-                    x: {
-                        ticks: {
-                            color: '#6b7280'
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+                    animation: {
+                        duration: 750,
+                        easing: 'easeInOutQuart'
                     }
                 }
-            }
-        });
-
-        // Gestion du thème Dark Mode
-        const html = document.documentElement;
-        const menuBtn = document.getElementById("theme-menu-btn");
-        const menu = document.getElementById("theme-menu");
-
-        if (menuBtn && menu) {
-            menuBtn.addEventListener("click", () => {
-                menu.classList.toggle("hidden");
-            });
-
-            menu.querySelectorAll("button[data-theme]").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const theme = btn.getAttribute("data-theme");
-                    if (theme === "dark") {
-                        html.classList.add("dark");
-                        localStorage.setItem("theme", "dark");
-                    } else {
-                        html.classList.remove("dark");
-                        localStorage.setItem("theme", "light");
-                    }
-                    menu.classList.add("hidden");
-                });
             });
         }
 
-        // Initialisation du thème au chargement
+        // 2. Fonction pour changer de période
+        function changeChartPeriod(period) {
+            currentPeriod = period;
+            
+            // Mettre à jour les boutons
+            ['jour', 'semaine', 'mois'].forEach(p => {
+                const btn = document.getElementById('btn-' + p);
+                if (p === period) {
+                    btn.className = 'px-3 py-1 text-xs font-medium rounded bg-blue-500 text-white hover:bg-blue-600 transition';
+                } else {
+                    btn.className = 'px-3 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition';
+                }
+            });
+
+            // Recréer le graphique
+            createOrUpdateChart(period);
+        }
+
+        // Initialiser le graphique au chargement
+        createOrUpdateChart('jour');
+
+        // 2. Graphique Distribution par Type
+        const ctxTypes = document.getElementById('chart-types');
+        if (ctxTypes) {
+            const typesLabelsData = @json($typesLabels);
+            const typesValuesData = @json($typesData);
+            
+            new Chart(ctxTypes, {
+                type: 'doughnut',
+                data: {
+                    labels: typesLabelsData,
+                    datasets: [{
+                        data: typesValuesData,
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#8b5cf6',
+                            '#ec4899'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. Graphique Répartition par Service
+        const ctxServices = document.getElementById('chart-services');
+        if (ctxServices) {
+            const servicesLabels = @json($servicesStats->pluck('service'));
+            const enCoursData = @json($servicesStats->pluck('enCours'));
+            const terminesData = @json($servicesStats->pluck('termines'));
+            const inscritsData = @json($servicesStats->pluck('inscrits'));
+            
+            new Chart(ctxServices, {
+                type: 'bar',
+                data: {
+                    labels: servicesLabels,
+                    datasets: [
+                        {
+                            label: 'En Cours',
+                            data: enCoursData,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Terminés',
+                            data: terminesData,
+                            backgroundColor: '#a855f7',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'À Venir',
+                            data: inscritsData,
+                            backgroundColor: '#f97316',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor,
+                                font: { size: 11 },
+                                stepSize: 1
+                            },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor,
+                                font: { size: 11 }
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                padding: 15,
+                                font: { size: 12 },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gestion du thème Dark Mode
         if (localStorage.getItem("theme") === "dark") {
-            html.classList.add("dark");
+            document.documentElement.classList.add("dark");
         }
     </script>
     @endpush

@@ -16,4 +16,10 @@ class TypeStage extends Model
     public function stagiaires() {
         return $this->hasMany(Stage::class);
     }
+
+    public function stages()
+{
+    return $this->hasMany(Stage::class, 'typestage_id');
+}
+
 }

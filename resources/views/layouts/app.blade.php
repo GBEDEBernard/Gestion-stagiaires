@@ -215,5 +215,7 @@
             setInterval(checkInactivity, 10000);
         });
     </script>
+    
+    @stack('scripts')
 </body>
 </html>
