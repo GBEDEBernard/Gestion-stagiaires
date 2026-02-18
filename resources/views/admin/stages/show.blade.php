@@ -21,7 +21,7 @@
                     </a>
 
                     @if($stage->badge)
-                        <a href="{{ route('admin.stages.badge.show', $stage->id) }}" 
+                        <a href="{{ encrypted_route('admin.stages.badge.show', $stage) }}" 
                            class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
                             🎫 Voir badge
                         </a>
@@ -40,7 +40,7 @@
                 <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">Choisir les signataires</h2>
 
-                    <form method="POST" action="{{ route('stages.attestation.store', $stage->id) }}" class="space-y-4">
+                    <form method="POST" action="{{ encrypted_route('stages.attestation.store', $stage) }}" class="space-y-4">
                         @csrf
 
                         @foreach($signataires as $signataire)

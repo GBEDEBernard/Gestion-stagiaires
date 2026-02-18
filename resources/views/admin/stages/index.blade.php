@@ -122,16 +122,16 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-2 border border-gray-300 text-center space-y-2">
-                                    <a href="{{ route('stages.show', $stage->id) }}"
+                                    <a href="{{ encrypted_route('stages.show', $stage) }}"
                                        class="inline-block px-2 py-1 bg-indigo-600 text-white font-semibold rounded hover:bg-indigo-700 transition">
                                         Voir
                                     </a>
-                                    <a href="{{ route('stages.edit', $stage->id) }}"
+                                    <a href="{{ encrypted_route('stages.edit', $stage) }}"
                                        class="inline-block px-2 py-1 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition"
                                        data-confirm-edit>
                                         Modifier
                                     </a>
-                                    <form action="{{ route('stages.destroy', $stage->id) }}" method="POST" class="inline" data-confirm-delete>
+                                    <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" class="inline" data-confirm-delete>
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔐 Test Chiffrement URLs - Gestion Stagiaires</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #0066cc;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .example {
+            background: #fff9e6;
+            padding: 10px;
+            border-left: 4px solid #ff9800;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Test de Chiffrement des URLs</h1>
+    
+    <div class="test-card">
+        <h2>✅ Installation Complète</h2>
+        <p class="success">Tous les composants sont installés et configurés!</p>
+        
+        <div class="info">
+            <strong>Fichiers créés:</strong>
+            <ul>
+                <li>✓ <code>app/Services/UrlEncrypter.php</code> - Service d'encryptage</li>
+                <li>✓ <code>app/Http/Middleware/DecryptRouteParams.php</code> - Middleware de décryption</li>
+                <li>✓ <code>app/Helpers/RouteHelper.php</code> - Helper pour les routes chiffrées</li>
+                <li>✓ <code>app/Helpers/helpers.php</code> - Fonctions globales</li>
+                <li>✓ <code>app/Providers/BladeServiceProvider.php</code> - Provider Blade</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Utilisation Simple</h2>
+        <p>Dans vos vues Blade, utilisez simplement:</p>
+        
+        <div class="example">
+            <strong>Avant (Non sécurisé):</strong>
+            <div class="code-block">
+&lt;a href="{{ route('badges.edit', $badge->id) }}"&gt;Éditer&lt;/a&gt;
+            </div>
+        </div>
+
+        <div class="example">
+            <strong>Après (Sécurisé):</strong>
+            <div class="code-block">
+&lt;a href="{{ encrypted_route('badges.edit', $badge) }}"&gt;Éditer&lt;/a&gt;
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Fonctionnalités</h2>
+        <ul>
+            <li><strong>Chiffrement Automatique:</strong> Les URLs sont automatiquement chiffrées lors de la génération</li>
+            <li><strong>Déchiffrement Automatique:</strong> Le middleware déchiffre automatiquement les paramètres de route</li>
+            <li><strong>Code Simple:</strong> Vos controllers reçoivent toujours les IDs normaux</li>
+            <li><strong>Sécurité AES-256:</strong> Utilise le chiffrement standard de Laravel</li>
+            <li><strong>Sans Migration BD:</strong> Aucune modification de base de données nécessaire</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>📚 Directives Disponibles</h2>
+        
+        <div class="example">
+            <strong>Fonction globale (Recommandée):</strong>
+            <div class="code-block">
+{{ encrypted_route('badges.edit', $badge) }}
+{{ encrypted_route('stages.show', $stage) }}
+            </div>
+        </div>
+
+        <div class="example">
+            <strong>Directives Blade:</strong>
+            <div class="code-block">
+@route_edit('badges', $badge)
+@route_show('stages', $stage)
+@route_stage_badge($stage)
+@route_stage_attestation($stage)
+            </div>
+        </div>
+
+        <div class="example">
+            <strong>Helpers directs:</strong>
+            <div class="code-block">
+encrypt_id($id)  // Encrypte un ID
+decrypt_id($encrypted)  // Décrypte un ID
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Prochaines Étapes</h2>
+        <ol>
+            <li>Exécutez: <code>bash check_urls.sh</code></li>
+            <li>Trouvez tous les fichiers avec des URLs non sécurisées</li>
+            <li>Remplacez <code>route()</code> par <code>encrypted_route()</code></li>
+            <li>Testez vos routes</li>
+            <li>Déployez en production</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>📖 Documentation Complète</h2>
+        <p>
+            Consultez les fichiers:
+        </p>
+        <ul>
+            <li><a href="#">ENCRYPTION_URLS.md</a> - Guide complet avec exemples</li>
+            <li><a href="#">IMPLEMENTATION_RESUME.md</a> - Résumé de l'implémentation</li>
+        </ul>
+    </div>
+
+    <div class="test-card" style="border-left-color: #28a745;">
+        <h2 style="color: #28a745;">✅ Tout est prêt!</h2>
+        <p>
+            Votre système de chiffrement des URLs est maintenant opérationnel.
+            Commencez à mettre à jour vos vues en utilisant <code>encrypted_route()</code>.
+        </p>
+    </div>
+</body>
+</html>

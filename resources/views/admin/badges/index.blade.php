@@ -36,11 +36,11 @@
                     <td class="px-6 py-4 text-gray-700">{{ $badge->id }}</td>
                     <td class="px-6 py-4 text-gray-800 font-medium">{{ $badge->badge }}</td>
                     <td class="px-6 py-4 text-center flex justify-center gap-3">
-                        <a href="{{ route('badges.edit', $badge) }}" 
+                        <a href="{{ encrypted_route('badges.edit', $badge) }}" 
                            class="bg-yellow-500 text-white px-3 py-1 rounded shadow hover:bg-yellow-600 transition" data-confirm-edit>
                             Modifier
                         </a>
-                        <form action="{{ route('badges.destroy', $badge) }}" method="POST" data-confirm-delete>
+                        <form action="{{ encrypted_route('badges.destroy', $badge) }}" method="POST" data-confirm-delete>
                             @csrf
                             @method('DELETE')
                             <button type="submit" 
