@@ -15,32 +15,32 @@ class AttestationController extends Controller
     /**
      * Affiche l'attestation avec référence incrémentale annuelle
      */
-  public function show(Stage $stage)
-{
-    // Charger relations
-    $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
+    public function show(Stage $stage)
+    {
+        // Charger relations
+        $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
 
-    // Attestation existante ou création
-    $attestation = $stage->attestation;
-    if (!$attestation) {
-        $reference = $this->generateReference();
-        $attestation = $stage->attestation()->create([
-            'typestage_id' => $stage->typestage?->id,
-            'reference' => $reference,
-            'date_delivrance' => now(),
-        ]);
-    } else {
-        $reference = $attestation->reference;
+        // Attestation existante ou création
+        $attestation = $stage->attestation;
+        if (!$attestation) {
+            $reference = $this->generateReference();
+            $attestation = $stage->attestation()->create([
+                'typestage_id' => $stage->typestage?->id,
+                'reference' => $reference,
+                'date_delivrance' => now(),
+            ]);
+        } else {
+            $reference = $attestation->reference;
+        }
+
+        // Récupérer uniquement les signataires sélectionnés pour cette attestation
+        // Tri par ordre si défini
+        $signataires = $attestation->signataires()
+            ->orderBy('pivot_ordre', 'asc')
+            ->get();
+
+        return view('admin.stages.attestation', compact('stage', 'signataires', 'reference'));
     }
-
-    // Récupérer uniquement les signataires sélectionnés pour cette attestation
-    // Tri par ordre si défini
-    $signataires = $attestation->signataires()
-                               ->orderBy('pivot_ordre', 'asc')
-                               ->get();
-
-    return view('admin.stages.attestation', compact('stage', 'signataires', 'reference'));
-}
 
     /**
      * Générer la référence ATS incrémentale annuelle
@@ -97,49 +97,48 @@ class AttestationController extends Controller
         $attestation->signataires()->sync($syncData);
 
         return redirect(encrypted_route('stages.attestation.show', $stage))
-                         ->with('success', 'Signataires enregistrés. Vous pouvez maintenant générer l’attestation.');
+            ->with('success', 'Signataires enregistrés. Vous pouvez maintenant générer l’attestation.');
     }
 
     /**
      * Génère le PDF pour impression ou téléchargement
      */
 
-public function generatePDF(Stage $stage, $type = 'download')
-{
-    $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
+    public function generatePDF(Stage $stage, $type = 'download')
+    {
+        $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
 
-    $attestation = $stage->attestation ?? $stage->attestation()->create([
-        'typestage_id' => $stage->typestage?->id,
-        'reference' => $this->generateReference(),
-        'date_delivrance' => now(),
-    ]);
+        $attestation = $stage->attestation ?? $stage->attestation()->create([
+            'typestage_id' => $stage->typestage?->id,
+            'reference' => $this->generateReference(),
+            'date_delivrance' => now(),
+        ]);
 
-    $reference = $attestation->reference;
-    $signataires = $attestation->signataires()->orderBy('pivot_ordre')->get();
+        $reference = $attestation->reference;
+        $signataires = $attestation->signataires()->orderBy('pivot_ordre')->get();
 
-    foreach ($signataires as $signataire) {
-        if (!$signataire->pivot) {
-            $signataire->setRelation('pivot', (object)[
-                'par_ordre' => false,
-                'ordre' => null
-            ]);
+        foreach ($signataires as $signataire) {
+            if (!$signataire->pivot) {
+                $signataire->setRelation('pivot', (object)[
+                    'par_ordre' => false,
+                    'ordre' => null
+                ]);
+            }
         }
+
+        // Génération HTML
+        $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
+
+        // Création du PDF avec mPDF
+        $mpdf = new Mpdf(['format' => 'A4']);
+        $mpdf->WriteHTML($html);
+
+        if ($type === 'print') {
+            // Affiche directement dans le navigateur pour impression
+            return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::INLINE);
+        }
+
+        // Pour téléchargement
+        return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::DOWNLOAD);
     }
-
-    // Génération HTML
-    $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
-
-    // Création du PDF avec mPDF
-    $mpdf = new Mpdf(['format' => 'A4']);
-    $mpdf->WriteHTML($html);
-
-    if ($type === 'print') {
-        // Affiche directement dans le navigateur pour impression
-        return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::INLINE);
-    }
-
-    // Pour téléchargement
-    return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::DOWNLOAD);
-}
-
 }

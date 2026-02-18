@@ -15,28 +15,28 @@
 
                 {{-- Actions --}}
                 <div class="flex gap-2 flex-wrap">
-                    <a href="{{ route('stages.index') }}" 
-                       class="px-4 py-2 rounded-lg bg-gray-600 text-white font-medium shadow hover:bg-gray-700 transition">
+                    <a href="{{ route('stages.index') }}"
+                        class="px-4 py-2 rounded-lg bg-gray-600 text-white font-medium shadow hover:bg-gray-700 transition">
                         ← Retour
                     </a>
 
                     @if($stage->badge)
-                        <a href="{{ encrypted_route('admin.stages.badge.show', $stage) }}" 
-                           class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
-                            🎫 Voir badge
-                        </a>
+                    <a href="{{ encrypted_route('admin.stages.badge.show', $stage) }}"
+                        class="px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition">
+                        🎫 Voir badge
+                    </a>
                     @endif
 
                     <button onclick="document.getElementById('modalAttestation').classList.remove('hidden')"
-                            class="px-4 py-2 rounded-lg bg-purple-600 text-white font-medium shadow hover:bg-purple-700 transition">
+                        class="px-4 py-2 rounded-lg bg-purple-600 text-white font-medium shadow hover:bg-purple-700 transition">
                         Générer attestation
                     </button>
                 </div>
             </div>
 
             {{-- Modal Attestation --}}
-            <div id="modalAttestation" 
-                 class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div id="modalAttestation"
+                class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                 <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">Choisir les signataires</h2>
 
@@ -44,50 +44,50 @@
                         @csrf
 
                         @foreach($signataires as $signataire)
-                            <div class="flex items-center gap-3 border-b border-gray-100 pb-2">
+                        <div class="flex items-center gap-3 border-b border-gray-100 pb-2">
+                            <input type="checkbox"
+                                name="signataires[{{ $signataire->id }}][selected]"
+                                value="1"
+                                class="signataire-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                id="sign_{{ $signataire->id }}"
+                                data-ordre="ordre_{{ $signataire->id }}"
+                                data-parordre="parordre_{{ $signataire->id }}">
+
+                            <label for="sign_{{ $signataire->id }}" class="flex-1 text-gray-700">
+                                {{ $signataire->nom }} <span class="text-sm text-gray-500">({{ $signataire->poste }})</span>
+                            </label>
+
+                            {{-- Ordre sauf DG --}}
+                            @if(!$signataire->isDG() && $signataire->peut_par_ordre)
+                            <input type="number"
+                                name="signataires[{{ $signataire->id }}][ordre]"
+                                min="1" max="2"
+                                placeholder="Ordre"
+                                class="border px-2 py-1 w-16 rounded-md text-sm text-black focus:ring focus:ring-blue-200"
+                                id="ordre_{{ $signataire->id }}"
+                                disabled>
+
+                            <div class="flex items-center text-sm text-gray-600 ml-2">
                                 <input type="checkbox"
-                                    name="signataires[{{ $signataire->id }}][selected]"
+                                    name="signataires[{{ $signataire->id }}][par_ordre]"
                                     value="1"
-                                    class="signataire-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    id="sign_{{ $signataire->id }}"
-                                    data-ordre="ordre_{{ $signataire->id }}"
-                                    data-parordre="parordre_{{ $signataire->id }}">
-
-                                <label for="sign_{{ $signataire->id }}" class="flex-1 text-gray-700">
-                                    {{ $signataire->nom }} <span class="text-sm text-gray-500">({{ $signataire->poste }})</span>
-                                </label>
-
-                                {{-- Ordre sauf DG --}}
-                                @if(!$signataire->isDG() && $signataire->peut_par_ordre)
-                                    <input type="number"
-                                        name="signataires[{{ $signataire->id }}][ordre]"
-                                        min="1" max="2"
-                                        placeholder="Ordre"
-                                        class="border px-2 py-1 w-16 rounded-md text-sm text-black focus:ring focus:ring-blue-200"
-                                        id="ordre_{{ $signataire->id }}"
-                                        disabled>
-
-                                    <div class="flex items-center text-sm text-gray-600 ml-2">
-                                        <input type="checkbox"
-                                            name="signataires[{{ $signataire->id }}][par_ordre]"
-                                            value="1"
-                                            id="parordre_{{ $signataire->id }}"
-                                            class="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            disabled>
-                                        <span class="ml-1">P.O DG</span>
-                                    </div>
-                                @endif
+                                    id="parordre_{{ $signataire->id }}"
+                                    class="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    disabled>
+                                <span class="ml-1">P.O DG</span>
                             </div>
+                            @endif
+                        </div>
                         @endforeach
 
                         <div class="pt-4 flex justify-end gap-3">
-                            <button type="button" 
-                                    onclick="document.getElementById('modalAttestation').classList.add('hidden')"
-                                    class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                            <button type="button"
+                                onclick="document.getElementById('modalAttestation').classList.add('hidden')"
+                                class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition">
                                 Annuler
                             </button>
-                            <button type="submit" 
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition">
+                            <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition">
                                 Valider
                             </button>
                         </div>
@@ -109,11 +109,11 @@
                     </div>
                     <div>
                         @if($statutEnCours == 'En cours')
-                            <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-green-100 text-green-700">● En cours</span>
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-green-100 text-green-700">● En cours</span>
                         @elseif($statutEnCours == 'À venir')
-                            <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-yellow-100 text-yellow-700">● À venir</span>
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-yellow-100 text-yellow-700">● À venir</span>
                         @else
-                            <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-red-100 text-red-700">● Terminé</span>
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-red-100 text-red-700">● Terminé</span>
                         @endif
                     </div>
                 </div>
