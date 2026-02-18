@@ -29,7 +29,7 @@ Route::post('/register', [RegisteredUserController::class, 'store']);
 require __DIR__ . '/auth.php';
 
 // Routes protégées
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])

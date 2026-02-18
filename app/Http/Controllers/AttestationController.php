@@ -96,7 +96,7 @@ class AttestationController extends Controller
 
         $attestation->signataires()->sync($syncData);
 
-        return redirect()->route('stages.attestation.show', $stage->id)
+        return redirect(encrypted_route('stages.attestation.show', $stage))
                          ->with('success', 'Signataires enregistrés. Vous pouvez maintenant générer l’attestation.');
     }
 
