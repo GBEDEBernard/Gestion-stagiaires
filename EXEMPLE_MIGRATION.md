@@ -107,16 +107,19 @@
 ## 🔍 Changements Effectués
 
 ### 1. URL d'édition
+
 ```diff
 - <a href="{{ route('jours.edit', $jour->id) }}" ...>
 + <a href="{{ encrypted_route('jours.edit', $jour) }}" ...>
 ```
 
 **Explication:**
+
 - ❌ `route('jours.edit', $jour->id)` - Génère: `/admin/jours/1`
 - ✅ `encrypted_route('jours.edit', $jour)` - Génère: `/admin/jours/eyJpdiI6IlpkdGVDM0...`
 
 ### 2. URL de delete
+
 ```diff
 - <form action="{{ route('jours.destroy', $jour->id) }}" ...>
 + <form action="{{ encrypted_route('jours.destroy', $jour) }}" ...>
@@ -222,18 +225,18 @@ Pour chaque fichier à migrer:
 ## 🎯 Fichiers à Migrer en Priorité
 
 1. **Critiques (URLs publiques):**
-   - `resources/views/admin/badges/index.blade.php` ✅ (Déjà fait)
-   - `resources/views/admin/stages/index.blade.php` ✅ (Déjà fait)
+    - `resources/views/admin/badges/index.blade.php` ✅ (Déjà fait)
+    - `resources/views/admin/stages/index.blade.php` ✅ (Déjà fait)
 
 2. **Importants (APIs internes):**
-   - `resources/views/admin/etudiants/index.blade.php`
-   - `resources/views/admin/services/index.blade.php`
-   - `resources/views/admin/jours/index.blade.php`
+    - `resources/views/admin/etudiants/index.blade.php`
+    - `resources/views/admin/services/index.blade.php`
+    - `resources/views/admin/jours/index.blade.php`
 
 3. **Secondaires:**
-   - Tous les fichiers `edit.blade.php`
-   - Tous les fichiers `show.blade.php`
-   - Les modals et popups
+    - Tous les fichiers `edit.blade.php`
+    - Tous les fichiers `show.blade.php`
+    - Les modals et popups
 
 ---
 

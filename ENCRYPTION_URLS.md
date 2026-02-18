@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Ce système chiffre les IDs dans les URLs pour empêcher les utilisateurs de deviner facilement les identifiants. 
+Ce système chiffre les IDs dans les URLs pour empêcher les utilisateurs de deviner facilement les identifiants.
 
 **Avant:** `http://127.0.0.1:8000/admin/badges/1`  
 **Après:** `http://127.0.0.1:8000/admin/badges/eyJpdiI6ImdrcDJuVDVmZEdQYzBaMng...`
@@ -12,6 +12,7 @@ Ce système chiffre les IDs dans les URLs pour empêcher les utilisateurs de dev
 ## 🔧 Configuration
 
 Le système est **automatiquement** intégré grâce à:
+
 1. ✅ Service d'encryptage: `App\Services\UrlEncrypter`
 2. ✅ Middleware de décryption: `App\Http\Middleware\DecryptRouteParams`
 3. ✅ Helpers: `App\Helpers\RouteHelper` et fonctions globales
@@ -116,7 +117,7 @@ class BadgeController extends Controller
     public function store(Request $request)
     {
         $badge = Badge::create($request->validated());
-        
+
         // Redirection avec lien chiffré
         return redirect(RouteHelper::show('badges', $badge));
     }
@@ -128,6 +129,7 @@ class BadgeController extends Controller
 ## 🔐 Utilisation des Helpers Directement
 
 ### Encrypter un ID
+
 ```php
 // Dans une vue
 {{ encrypt_id($badge->id) }}
@@ -138,6 +140,7 @@ $encrypted = UrlEncrypter::encrypt($badge->id);
 ```
 
 ### Déchiffrer un ID
+
 ```php
 // Utile en cas de besoin manuel
 use App\Services\UrlEncrypter;
@@ -159,7 +162,7 @@ $id = decrypt_id($encryptedValue);
 @section('content')
 <div class="container">
     <h1>Badges</h1>
-    
+
     <table class="table">
         <thead>
             <tr>
@@ -178,12 +181,12 @@ $id = decrypt_id($encryptedValue);
                     <a href="{{ encrypted_route('badges.show', $badge) }}" class="btn btn-sm btn-info">
                         Voir
                     </a>
-                    
+
                     <!-- Éditer -->
                     <a href="{{ encrypted_route('badges.edit', $badge) }}" class="btn btn-sm btn-primary">
                         Éditer
                     </a>
-                    
+
                     <!-- Supprimer -->
                     <form action="{{ encrypted_route('badges.destroy', $badge) }}" method="POST" style="display:inline;">
                         @csrf
@@ -208,12 +211,14 @@ $id = decrypt_id($encryptedValue);
 Pour mettreà jour une vue existante, remplacez:
 
 ### ❌ Avant (URLs non sécurisées)
+
 ```blade
 <a href="{{ route('badges.edit', $badge->id) }}">Éditer</a>
 <a href="/admin/badges/{{ $badge->id }}">Voir</a>
 ```
 
 ### ✅ Après (URLs sécurisées)
+
 ```blade
 <a href="{{ encrypted_route('badges.edit', $badge) }}">Éditer</a>
 <a href="@route_show('badges', $badge)">Voir</a>
@@ -226,24 +231,24 @@ Pour mettreà jour une vue existante, remplacez:
 ### Comment ça fonctionne ?
 
 1. **Vue genère URL chiffrée:**
-   - `{{ encrypted_route('badges.edit', $badge) }}`
-   - Résultat: `/admin/badges/eyJpdiI6Ijh...` (ID chiffré)
+    - `{{ encrypted_route('badges.edit', $badge) }}`
+    - Résultat: `/admin/badges/eyJpdiI6Ijh...` (ID chiffré)
 
 2. **Navigateur envoie requête** avec URL chiffrée
 
 3. **Middleware DecryptRouteParams:**
-   - Intercepte la requête
-   - Détecte les paramètres chiffrés
-   - Les déchiffre automatiquement
-   - Le controller reçoit l'ID normal
+    - Intercepte la requête
+    - Détecte les paramètres chiffrés
+    - Les déchiffre automatiquement
+    - Le controller reçoit l'ID normal
 
 4. **Controller traite l'ID normal:**
-   ```php
-   public function edit($id) // $id est déjà l'ID réel
-   {
-       $badge = Badge::findOrFail($id);
-   }
-   ```
+    ```php
+    public function edit($id) // $id est déjà l'ID réel
+    {
+        $badge = Badge::findOrFail($id);
+    }
+    ```
 
 ### Chiffrement / Déchiffrement
 
@@ -286,7 +291,7 @@ Modifiez `app/Services/UrlEncrypter.php` pour changer l'algorithme (ex: utiliser
 Remplacez les URLs dans ces fichiers:
 
 - [ ] `resources/views/admin/badges/` - Utiliser `encrypted_route()` dans les liens
-- [ ] `resources/views/admin/stages/` - Utiliser `encrypted_route()` 
+- [ ] `resources/views/admin/stages/` - Utiliser `encrypted_route()`
 - [ ] `resources/views/admin/etudiants/` - Utiliser `encrypted_route()`
 - [ ] `resources/views/admin/jours/` - Utiliser `encrypted_route()`
 - [ ] Tous les autres modèles...

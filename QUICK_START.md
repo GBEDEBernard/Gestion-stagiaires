@@ -3,12 +3,14 @@
 ## 30 Secondes pour Comprendre
 
 ### Avant (❌ Non sécurisé)
+
 ```
 URL visible: http://localhost:8000/admin/badges/1
 Un hacker peut deviner les IDs: /admin/badges/2, /admin/badges/3...
 ```
 
 ### Après (✅ Sécurisé)
+
 ```
 URL chiffrée: http://localhost:8000/admin/badges/eyJpdiI6IlpkdGVDM0...
 Impossible de deviner les IDs
@@ -19,6 +21,7 @@ Impossible de deviner les IDs
 ## 5 Minutess pour Implémenter
 
 ### ✅ Déjà Fait
+
 Tous les composants sont installés et configurés. Le système est **actif maintenant**.
 
 ### 🔄 Ce que Vous Devez Faire
@@ -40,12 +43,14 @@ C'est tout! C'est aussi simple que ça.
 ## Les 3 Façons d'Utiliser
 
 ### 1️⃣ **Fonction Helper (Recommandée)**
+
 ```blade
 {{ encrypted_route('badges.edit', $badge) }}
 {{ encrypted_route('stages.show', $stage) }}
 ```
 
 ### 2️⃣ **Directives Blade**
+
 ```blade
 @route_edit('badges', $badge)
 @route_show('stages', $stage)
@@ -53,6 +58,7 @@ C'est tout! C'est aussi simple que ça.
 ```
 
 ### 3️⃣ **Helpers Directs (Rarement utilisé)**
+
 ```php
 encrypt_id($id)     // Encrypte un ID
 decrypt_id($str)    // Décrypte un ID
@@ -85,12 +91,15 @@ bash check_urls.sh
 ## Pour les Impatients 📚
 
 **5 minutes de lecture:**
+
 - [IMPLEMENTATION_RESUME.md](IMPLEMENTATION_RESUME.md) - Résumé complet
 
 **30 minutes de lectures:**
+
 - [ENCRYPTION_URLS.md](ENCRYPTION_URLS.md) - Guide complet avec tous les exemples
 
 **1 heure de lectures:**
+
 - [EXEMPLE_MIGRATION.md](EXEMPLE_MIGRATION.md) - Exemple détaillé de migration
 
 ---
@@ -127,6 +136,7 @@ R: Oui, supprimez simplement les `encrypted_route()` et remettez les `route()` n
 ```
 
 ### Résultat:
+
 - **Avant:** `/admin/badges/1`
 - **Après:** `/admin/badges/eyJpdiI6IjEiLCJtYWMiOiIyNDc1OTY3YzliY2I0ZjhhZDBm...`
 
@@ -193,6 +203,7 @@ bash check_urls.sh
 ## Besoin d'Aide?
 
 Consultez le document approprié:
+
 - **Confus?** → [IMPLEMENTATION_RESUME.md](IMPLEMENTATION_RESUME.md)
 - **Par où commencer?** → [EXEMPLE_MIGRATION.md](EXEMPLE_MIGRATION.md)
 - **Détails techniques?** → [ENCRYPTION_URLS.md](ENCRYPTION_URLS.md)

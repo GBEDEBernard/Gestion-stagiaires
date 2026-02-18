@@ -9,11 +9,11 @@
             <div>
                 <label for="badge" class="block text-sm font-medium text-gray-700">Numéro de Badge</label>
                 <input type="text" name="badge" id="badge"
-                       value="{{ old('badge', $badge->badge) }}"
-                       class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500"
-                       required>
+                    value="{{ old('badge', $badge->badge) }}"
+                    class="mt-1 block w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500"
+                    required>
                 @error('badge')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -22,7 +22,7 @@
                     Annuler
                 </a>
                 <button type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg">
+                    class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg">
                     Mettre à jour
                 </button>
             </div>

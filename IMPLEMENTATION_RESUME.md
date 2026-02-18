@@ -10,12 +10,14 @@
 Vous avez maintenant un système complet de chiffrement des IDs dans les URLs. Les identifiants sont automatiquement chiffrés lors de la génération des liens et déchiffrés upon arrival au serveur.
 
 ### Avant
+
 ```
 http://127.0.0.1:8000/admin/badges/1
 http://127.0.0.1:8000/admin/stages/5
 ```
 
 ### Après
+
 ```
 http://127.0.0.1:8000/admin/badges/eyJpdiI6ImpGNGlaZkF...
 http://127.0.0.1:8000/admin/stages/eyJpdiI6Ijh4VDkr...
@@ -26,24 +28,30 @@ http://127.0.0.1:8000/admin/stages/eyJpdiI6Ijh4VDkr...
 ## 🛠️ Fichiers Créés
 
 ### 1. **Service d'Encryptage**
+
 - 📄 `app/Services/UrlEncrypter.php` - Gère le chiffrement/déchiffrement des IDs
 
 ### 2. **Middleware**
+
 - 📄 `app/Http/Middleware/DecryptRouteParams.php` - Déchiffre automatiquement les IDs des routes
 
 ### 3. **Helpers & Helpers Globaux**
+
 - 📄 `app/Helpers/RouteHelper.php` - Classe statique pour générer les URLs chiffrées
 - 📄 `app/Helpers/helpers.php` - Fonctions globales PHP pour utilisation facile
 
 ### 4. **Provider Blade**
+
 - 📄 `app/Providers/BladeServiceProvider.php` - Enregistre les directives Blade
 
 ### 5. **Configuration**
+
 - ✅ `bootstrap/app.php` - Middleware enregistré automatiquement
 - ✅ `bootstrap/providers.php` - BladeServiceProvider enregistré
 - ✅ `composer.json` - helpers.php ajouté à l'autoload
 
 ### 6. **Documentation**
+
 - 📄 `ENCRYPTION_URLS.md` - Guide complet d'utilisation
 - 📄 `check_urls.sh` - Script pour trouver les URLs à migrer
 
@@ -54,7 +62,7 @@ http://127.0.0.1:8000/admin/stages/eyJpdiI6Ijh4VDkr...
 ✅ Badge Index - URLs chiffrées pour edit et destroy  
 ✅ Badge Edit - URL chiffrée pour update  
 ✅ Stages Index - URLs chiffrées pour show, edit et destroy  
-✅ Stages Show - URLs chiffrées pour les badges et attestations  
+✅ Stages Show - URLs chiffrées pour les badges et attestations
 
 ---
 
@@ -82,7 +90,7 @@ public function show($id)
     // Le middleware déchiffre automatiquement l'ID
     // Donc $id est déjà l'ID réel (pas chiffré)
     $badge = Badge::findOrFail($id);
-    
+
     // Les utilisateurs reçoivent une URL chiffrée
     // Mais votre code travaille avec l'ID normal
 }
@@ -93,6 +101,7 @@ public function show($id)
 ## 🚀 Prochaines Étapes
 
 ### 1️⃣ Exécuter le script de vérification
+
 ```bash
 bash check_urls.sh
 ```
@@ -103,12 +112,12 @@ Cela listera tous les fichiers avec des URLs non sécurisées.
 
 Pour chaque fichier trouvé, remplacez les patterns:
 
-| ❌ À Remplacer | ✅ Remplacer Par |
-|---|---|
-| `route('badges.edit', $badge->id)` | `encrypted_route('badges.edit', $badge)` |
-| `route('badges.destroy', $badge->id)` | `encrypted_route('badges.destroy', $badge)` |
-| `route('stages.show', $stage->id)` | `encrypted_route('stages.show', $stage)` |
-| `route('admin.stages.badge.show', $stage->id)` | `@route_stage_badge($stage)` |
+| ❌ À Remplacer                                  | ✅ Remplacer Par                                      |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| `route('badges.edit', $badge->id)`              | `encrypted_route('badges.edit', $badge)`              |
+| `route('badges.destroy', $badge->id)`           | `encrypted_route('badges.destroy', $badge)`           |
+| `route('stages.show', $stage->id)`              | `encrypted_route('stages.show', $stage)`              |
+| `route('admin.stages.badge.show', $stage->id)`  | `@route_stage_badge($stage)`                          |
 | `route('stages.attestation.store', $stage->id)` | `encrypted_route('stages.attestation.store', $stage)` |
 
 ### 3️⃣ Tester les Routes
@@ -133,6 +142,7 @@ php artisan route:list | grep admin
 ### Configuration
 
 Votre `.env` contient déjà la clé d'encryptage:
+
 ```
 APP_KEY=base64:xxxxxxxxxxxxx
 APP_CIPHER=AES-256-GCM
@@ -191,7 +201,7 @@ Aucun changement n'est nécessaire.
 ✅ Simplicité - Les controllers reçoivent toujours des IDs normaux  
 ✅ Flexibilité - Changer le modèle d'encryptage facilement  
 ✅ Performance - Aucun impact sur la performance  
-✅ Réversibilité - Pas de modification de la base de données  
+✅ Réversibilité - Pas de modification de la base de données
 
 ---
 
