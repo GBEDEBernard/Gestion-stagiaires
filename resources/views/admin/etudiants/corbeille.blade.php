@@ -76,7 +76,7 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">
                                 <!-- Restaurer -->
-                                <form action="{{ route('etudiants.restore', $etudiant->id) }}" method="POST" class="inline">
+                                <form action="{{ encrypted_route('etudiants.restore', $etudiant->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit"
@@ -88,7 +88,7 @@
                                 </form>
 
                                 <!-- Supprimer définitivement -->
-                                <form action="{{ route('etudiants.forceDelete', $etudiant->id) }}" method="POST" class="inline" data-confirm-delete>
+                                <form action="{{ encrypted_route('etudiants.forceDelete', $etudiant->id) }}" method="POST" class="inline" data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"

@@ -7,6 +7,7 @@ use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 
 class NavigationComposer
@@ -27,6 +28,9 @@ class NavigationComposer
         // Compter les utilisateurs
         $usersCount = User::count();
 
+        // Compter les rôles
+        $rolesCount = Role::count();
+
         // Compter les éléments dans la corbeille (toutes tables confondues)
         $trashCount = Stage::onlyTrashed()->count()
             + Etudiant::onlyTrashed()->count()
@@ -38,6 +42,7 @@ class NavigationComposer
             'etudiantsCount' => $etudiantsCount,
             'badgesCount' => $badgesCount,
             'usersCount' => $usersCount,
+            'rolesCount' => $rolesCount,
             'trashCount' => $trashCount,
         ]);
     }

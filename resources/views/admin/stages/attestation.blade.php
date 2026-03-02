@@ -36,7 +36,7 @@
             transform: translate(-50%, -50%);
             width: 500px;
             height: 500px;
-            background-image: url('{{ url('images/TFGLOGO.png') }}');
+            background-image: url('{{ url(' images/TFGLOGO.png') }}');
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
@@ -45,7 +45,7 @@
             pointer-events: none;
         }
 
-        .a4-container > * {
+        .a4-container>* {
             position: relative;
             z-index: 1;
         }
@@ -254,118 +254,118 @@
     $diffDays = $dateDebut->diffInDays($dateFin) + 1;
 
     // Helper function to convert numbers to French text
-       $numberToFrench = function($num) {
-        $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-        $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-        $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+    $numberToFrench = function($num) {
+    $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+    $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
 
-        if ($num < 10) return $ones[$num];
+    if ($num < 10) return $ones[$num];
         if ($num < 20) return $teens[$num - 10];
         if ($num < 100) {
-            $ten = floor($num / 10);
-            $one = $num % 10;
-            return $tens[$ten] . ($one > 0 ? '-' . $ones[$one] : '');
+        $ten=floor($num / 10);
+        $one=$num % 10;
+        return $tens[$ten] . ($one> 0 ? '-' . $ones[$one] : '');
         }
         return (string)$num;
-    };
+        };
 
-    if($diffDays < 30){
-        if($diffDays < 7){
-            $duréeTexte = ucfirst($numberToFrench($diffDays)) . " ($diffDays) jour" . ($diffDays > 1 ? 's' : '');
-        } else {
+        if($diffDays < 30){
+            if($diffDays < 7){
+            $duréeTexte=ucfirst($numberToFrench($diffDays)) . " ($diffDays) jour" . ($diffDays> 1 ? 's' : '');
+            } else {
             $semaines = round($diffDays / 7);
             $duréeTexte = ucfirst($numberToFrench($semaines)) . " ($semaines) semaine" . ($semaines > 1 ? 's' : '');
-        }
-    } else {
-        $mois = floor($diffDays / 30);
-        $joursRestants = $diffDays % 30;
-        $moisLettre = $numberToFrench($mois);
-        $duréeTexte = "$moisLettre ($mois) mois";
-    }
+            }
+            } else {
+            $mois = floor($diffDays / 30);
+            $joursRestants = $diffDays % 30;
+            $moisLettre = $numberToFrench($mois);
+            $duréeTexte = "$moisLettre ($mois) mois";
+            }
 
-    $year = $now->year;
-    $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
+            $year = $now->year;
+            $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
 
-    $genre = strtolower($stage->etudiant->genre ?? 'masculin');
-    $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
-    $pronom = $genre === 'feminin' ? 'elle' : 'il';
+            $genre = strtolower($stage->etudiant->genre ?? 'masculin');
+            $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
+            $pronom = $genre === 'feminin' ? 'elle' : 'il';
 
-    $texteTheme = ($stage->theme) . ".";
+            $texteTheme = ($stage->theme) . ".";
 
-    @endphp
+            @endphp
 
-    @php
-    $serviceNom = $stage->service->nom ?? '—';
+            @php
+            $serviceNom = $stage->service->nom ?? '—';
 
-    // Vérifier si le service commence par une voyelle
-    $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
-    $firstChar = mb_substr($serviceNom, 0, 1);
+            // Vérifier si le service commence par une voyelle
+            $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
+            $firstChar = mb_substr($serviceNom, 0, 1);
 
-    if($serviceNom === '—') {
-        $prepositionService = 'de';
-    } elseif(in_array($firstChar, $voyelles)) {
-        $prepositionService = "d'";
-    } else {
-        $prepositionService = "de";
-    }
-    @endphp
+            if($serviceNom === '—') {
+            $prepositionService = 'de';
+            } elseif(in_array($firstChar, $voyelles)) {
+            $prepositionService = "d'";
+            } else {
+            $prepositionService = "de";
+            }
+            @endphp
 
-    <div class="a4-container">
+            <div class="a4-container">
 
-        <div class="header">
-            <img src="{{ url('images/TFGLOGO.png') }}" alt="Logo">
-            <div class="text-header">
-                <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
-                <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
-                <p class="p1">
-                    Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
-                </p>
+                <div class="header">
+                    <img src="{{ url('images/TFGLOGO.png') }}" alt="Logo">
+                    <div class="text-header">
+                        <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
+                        <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
+                        <p class="p1">
+                            Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
+                        </p>
+                    </div>
+                </div>
+
+                <div class="rcf">Réf : {{ $reference }}</div>
+                <h1 class="title">ATTESTATION DE STAGE</h1>
+
+                <div class="content">
+                    @if($stage->typestage->code === '003')
+                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
+                    <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
+                    @else
+                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
+                    <p>Durant cette période,{{ $pronom }} {{ $texteTheme }}</p>
+                    @endif
+
+                    <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
+                </div>
+
+                <div class="signatures">
+                    @foreach($signataires as $signataire)
+                    <div class="sign director">
+                        <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                        @php
+                        $parOrdre = $signataire->pivot->par_ordre ?? false;
+                        @endphp
+                        @if($parOrdre)
+                        <p style="margin-top:8px;"><b>Le Directeur Général et P.O</b></p>
+                        @endif
+                        <p style="margin-top:{{ $parOrdre ? '8px' : '8px' }};"><b>{{ $signataire->poste }}</b></p>
+                        <p style="margin-top:90px;"><u><b>{{ $signataire->nom }}</b></u></p>
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="company">
+                    <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
+                        Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
+                        Site Web : www.tfgbusiness.com
+                        Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
+                </div>
             </div>
-        </div>
 
-        <div class="rcf">Réf : {{ $reference }}</div>
-        <h1 class="title">ATTESTATION DE STAGE</h1>
-
-        <div class="content">
-            @if($stage->typestage->code === '003')
-            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein   {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du  <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
-            <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
-            @else
-            <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein   {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du  <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
-            <p>Durant cette période,{{ $pronom }} {{ $texteTheme }}</p>
-            @endif
-
-            <p>En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>
-        </div>
-
-        <div class="signatures">
-            @foreach($signataires as $signataire)
-            <div class="sign director">
-                <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
-                @php
-                $parOrdre = $signataire->pivot->par_ordre ?? false;
-                @endphp
-                @if($parOrdre)
-                <p style="margin-top:8px;"><b>Le Directeur Général et P.O</b></p>
-                @endif
-                <p style="margin-top:{{ $parOrdre ? '8px' : '8px' }};"><b>{{ $signataire->poste }}</b></p>
-                <p style="margin-top:90px;"><u><b>{{ $signataire->nom }}</b></u></p>
+            <div class="buttons-container">
+                <a href="{{ encrypted_route('stages.show', $stage->id) }}" class="back">Retour</a>
+                <button type="button" class="print" onclick="window.print()">Imprimer</button>
             </div>
-            @endforeach
-        </div>
-
-        <div class="company">
-            <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
-                Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
-                Site Web : www.tfgbusiness.com
-                Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
-        </div>
-    </div>
-
-    <div class="buttons-container">
-        <a href="{{ route('stages.show', $stage->id) }}" class="back">Retour</a>
-        <button type="button" class="print" onclick="window.print()">Imprimer</button>
-    </div>
 
 </body>
 

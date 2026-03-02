@@ -156,6 +156,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
     });
 
+    // ---------------- Roles ----------------
+    Route::prefix('admin/roles')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
+        Route::get('create', [\App\Http\Controllers\Admin\RoleController::class, 'create'])->name('admin.roles.create')->middleware('permission:roles.create');
+        Route::post('/', [\App\Http\Controllers\Admin\RoleController::class, 'store'])->name('admin.roles.store')->middleware('permission:roles.create');
+        Route::get('{role}/edit', [\App\Http\Controllers\Admin\RoleController::class, 'edit'])->name('admin.roles.edit')->middleware('permission:roles.edit');
+        Route::put('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'update'])->name('admin.roles.update')->middleware('permission:roles.edit');
+        Route::delete('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('admin.roles.destroy')->middleware('permission:roles.delete');
+    });
+
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
 });

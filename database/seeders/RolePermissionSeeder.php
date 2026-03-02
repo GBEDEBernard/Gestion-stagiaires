@@ -21,6 +21,7 @@ class RolePermissionSeeder extends Seeder
             'services',
             'signataires',
             'users',
+            'roles',
             'attestation',
             'dashboard',
             'corbeille',
@@ -51,7 +52,7 @@ class RolePermissionSeeder extends Seeder
 
         // 🔹 Permissions limitées pour le rôle user
         $userRole->syncPermissions([
-           
+
             'etudiants.view',
             'attestation.view',
             'dashboard.view',
