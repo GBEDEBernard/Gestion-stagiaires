@@ -15,7 +15,7 @@
 
         <!-- Formulaire -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <form action="{{ route('etudiants.update', $etudiant) }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ encrypted_route('etudiants.update', $etudiant) }}" method="POST" class="p-6 space-y-5">
                 @csrf
                 @method('PUT')
 

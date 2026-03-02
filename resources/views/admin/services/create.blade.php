@@ -15,7 +15,7 @@
 
         <!-- Formulaire -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <form action="{{ isset($service) ? route('services.update', $service) : route('services.store') }}" method="POST" class="p-6 space-y-6">
+            <form action="{{ isset($service) ? encrypted_route('services.update', $service) : route('services.store') }}" method="POST" class="p-6 space-y-6">
                 @csrf
                 @if(isset($service))
                 @method('PUT')
