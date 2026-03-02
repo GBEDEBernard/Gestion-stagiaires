@@ -26,6 +26,15 @@ class RegisterRequest extends FormRequest
                 'regex:/[@$!%*?&]/',   // au moins un caractère spécial
                 'confirmed'            // doit correspondre à password_confirmation
             ],
+            'terms' => ['accepted'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.regex' => 'Le mot de passe doit contenir au moins : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&).',
+            'terms.accepted' => 'Vous devez accepter les conditions d\'utilisation pour créer un compte.',
         ];
     }
 }

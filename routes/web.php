@@ -23,9 +23,6 @@ use App\Http\Controllers\CorbeilleController;
 
 Route::get('/', fn() => redirect()->route('login'));
 
-Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-Route::post('/register', [RegisteredUserController::class, 'store']);
-
 require __DIR__ . '/auth.php';
 
 // Routes protégées
