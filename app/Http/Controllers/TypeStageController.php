@@ -10,7 +10,7 @@ class TypeStageController extends Controller
     // Afficher la liste des types de stages
     public function index()
     {
-        $type_stages = TypeStage::all();
+        $type_stages = TypeStage::paginate(10);
         return view('admin.type_stages.index', compact('type_stages'));
     }
 
@@ -34,7 +34,7 @@ class TypeStageController extends Controller
         ]);
 
         return redirect()->route('type_stages.index')
-                         ->with('success', 'Type de stage créé avec succès !');
+            ->with('success', 'Type de stage créé avec succès !');
     }
 
     // Afficher le formulaire d'édition pour un type de stage existant
@@ -47,8 +47,8 @@ class TypeStageController extends Controller
     public function update(Request $request, TypeStage $type_stages)
     {
         $request->validate([
-            'libelle' => 'required|string|max:255|unique:typestages,libelle,'.$type_stages->id,
-            'code'    => 'required|string|max:10|unique:typestages,code,'.$type_stages->id,
+            'libelle' => 'required|string|max:255|unique:typestages,libelle,' . $type_stages->id,
+            'code'    => 'required|string|max:10|unique:typestages,code,' . $type_stages->id,
         ]);
 
         $type_stages->update([
@@ -57,7 +57,7 @@ class TypeStageController extends Controller
         ]);
 
         return redirect()->route('type_stages.index')
-                         ->with('success', 'Type de stage mis à jour avec succès !');
+            ->with('success', 'Type de stage mis à jour avec succès !');
     }
 
     // Supprimer un type de stage
@@ -65,6 +65,6 @@ class TypeStageController extends Controller
     {
         $type_stages->delete();
         return redirect()->route('type_stages.index')
-                         ->with('success', 'Type de stage supprimé avec succès !');
+            ->with('success', 'Type de stage supprimé avec succès !');
     }
 }

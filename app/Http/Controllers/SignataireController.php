@@ -12,7 +12,7 @@ class SignataireController extends Controller
      */
     public function index()
     {
-        $signataires = Signataire::orderBy('ordre')->get();
+        $signataires = Signataire::orderBy('ordre')->paginate(10);
         return view('admin.signataires.index', compact('signataires'));
     }
 
@@ -39,7 +39,7 @@ class SignataireController extends Controller
         Signataire::create($validated);
 
         return redirect()->route('signataires.index')
-                         ->with('success', 'Signataire ajouté avec succès.');
+            ->with('success', 'Signataire ajouté avec succès.');
     }
 
     /**
@@ -65,7 +65,7 @@ class SignataireController extends Controller
         $signataire->update($validated);
 
         return redirect()->route('signataires.index')
-                         ->with('success', 'Signataire modifié avec succès.');
+            ->with('success', 'Signataire modifié avec succès.');
     }
 
     /**
@@ -76,6 +76,6 @@ class SignataireController extends Controller
         $signataire->delete();
 
         return redirect()->route('signataires.index')
-                         ->with('success', 'Signataire supprimé avec succès.');
+            ->with('success', 'Signataire supprimé avec succès.');
     }
 }

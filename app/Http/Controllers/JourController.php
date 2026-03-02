@@ -10,7 +10,7 @@ class JourController extends Controller
     // Liste des jours
     public function index()
     {
-        $jours = Jour::all();
+        $jours = Jour::paginate(10);
         return view('admin.jours.index', compact('jours'));
     }
 
