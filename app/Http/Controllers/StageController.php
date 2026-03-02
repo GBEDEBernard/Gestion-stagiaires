@@ -147,7 +147,53 @@ class StageController extends Controller
 
         $signataires = Signataire::orderBy('ordre')->get();
 
-        return view('admin.stages.show', compact('stage', 'statutEnCours', 'signataires'));
+        // === NOUVELLE DONNÉE : Historique de l'étudiant ===
+        $etudiant = $stage->etudiant;
+
+        // Nombre total de stages de l'étudiant
+        $nombreStages = $etudiant->stages()->count();
+
+        // Stages complétés (terminés) - en excluant le stage actuel
+        $stagesTermines = $etudiant->stages()
+            ->where('id', '!=', $stage->id)
+            ->where('date_fin', '<', now())
+            ->with(['typestage', 'service'])
+            ->orderBy('date_fin', 'desc')
+            ->get();
+
+        // Toutes les attestations de l'étudiant (via ses stages)
+        $attestations = \App\Models\Attestation::whereHas('stage', function ($query) use ($etudiant) {
+            $query->where('etudiant_id', $etudiant->id);
+        })
+            ->with(['stage.typestage', 'signataires'])
+            ->orderBy('date_delivrance', 'desc')
+            ->get()
+            ->map(function ($attestation) {
+                // Convertir la date en objet Carbon si c'est une chaîne
+                if ($attestation->date_delivrance && is_string($attestation->date_delivrance)) {
+                    $attestation->date_delivrance = \Carbon\Carbon::parse($attestation->date_delivrance);
+                }
+                return $attestation;
+            });
+
+        // Durée totale des stages (en jours)
+        $dureeTotale = $etudiant->stages()
+            ->whereNotNull('date_debut')
+            ->whereNotNull('date_fin')
+            ->get()
+            ->sum(function ($s) {
+                return $s->date_debut->diffInDays($s->date_fin);
+            });
+
+        return view('admin.stages.show', compact(
+            'stage',
+            'statutEnCours',
+            'signataires',
+            'nombreStages',
+            'stagesTermines',
+            'attestations',
+            'dureeTotale'
+        ));
     }
 
     // Formulaire d'édition avec model binding
