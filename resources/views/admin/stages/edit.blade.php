@@ -109,7 +109,11 @@
                 </div>
             </div>
 
-            <div class="mt-8 text-right">
+            <div class="mt-8 mr-4 text-right">
+                    <a href="{{ route('stages.index') }}" 
+                    class="bg-gray-500 text-white mr-4 px-4 py-2 rounded-xl shadow hover:bg-gray-600 transition">
+                        ← Retour
+                    </a>
                 <button type="submit"
                     class="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
                     Modifier
