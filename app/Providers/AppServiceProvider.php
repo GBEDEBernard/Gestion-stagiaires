@@ -15,6 +15,8 @@ use App\Models\Service;
 use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Signataire;
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 use App\Http\ViewComposers\NavigationComposer;
 
 class AppServiceProvider extends ServiceProvider
@@ -52,6 +54,16 @@ class AppServiceProvider extends ServiceProvider
         Route::model('signataire', Signataire::class);
 
         // Personalized route binding - décrypter les paramètres automatiquement
+        // User binding with encryption support
+        Route::bind('user', function ($value) {
+            return $this->resolveEncryptedModel($value, User::class);
+        });
+
+        // Role binding with encryption support
+        Route::bind('role', function ($value) {
+            return $this->resolveEncryptedModel($value, Role::class);
+        });
+
         Route::bind('stage', function ($value) {
             return $this->resolveEncryptedModel($value, Stage::class);
         });
