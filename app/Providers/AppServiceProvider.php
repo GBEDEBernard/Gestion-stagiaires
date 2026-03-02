@@ -7,6 +7,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\View;
 use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
@@ -14,6 +15,7 @@ use App\Models\Service;
 use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Signataire;
+use App\Http\ViewComposers\NavigationComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,6 +37,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Paginator::useTailwind();
+
+        // Enregistrer le ViewComposer pour la navigation
+        View::composer('layouts.navigation', NavigationComposer::class);
 
         // Route Model Binding personnalisé pour le décryptage
         // Ce binding s'exécute automatiquement quand une route contient {stage}, {etudiant}, etc.

@@ -18,6 +18,12 @@
 
 - [x] Ajouter le lien "Corbeille" dans le sous-menu Stages de `navigation.blade.php`
 
+### 5. Improve Sidebar with Counters & Animations
+
+- [x] Créer `NavigationComposer.php` pour les compteurs dynamiques
+- [x] Mettre à jour `AppServiceProvider.php` pour enregistrer le ViewComposer
+- [x] Redesigner le sidebar avec des animations professionnelles et des compteurs
+
 ---
 
 ## STATUT: TERMINÉ ✅
@@ -28,6 +34,10 @@
 - BadgeController - utilise `paginate(10)`
 - EtudiantController - utilise `paginate(10)`
 - StageController - utilise `paginate(5)`
+
+## Nouveaux fichiers créés:
+
+- `app/Http/ViewComposers/NavigationComposer.php` - Gestion des compteurs
 
 ## Détails des modifications:
 
@@ -60,4 +70,10 @@ $type_stages = TypeStage::paginate(10);
 
 ### navigation.blade.php
 
-- Ajouté un lien "Corbeille" dans le sous-menu Stages avec route `stages.trash`
+- Ajouté le lien "Corbeille" dans le sous-menu Stages avec route `stages.trash`
+- Redesign complet avec:
+    - Compteurs dynamiques (stages, etudiants, badges, utilisateurs, corbeille)
+    - Animations professionnelles (hover, pulse, transitions)
+    - Design moderne avec gradients et effets de survol
+    - Scrollbar personnalisée
+    - Icônes avec couleurs cohérentes
