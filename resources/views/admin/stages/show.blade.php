@@ -279,7 +279,7 @@
                             <div class="flex flex-wrap gap-1">
                                 @forelse($stage->jours as $jour)
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400">
-                                    {{ substr($jour->libelle, 0, 3) }}
+                                    {{ substr($jour->jour, 0, 3) }}
                                 </span>
                                 @empty
                                 <span class="text-gray-500 dark:text-gray-400">—</span>
