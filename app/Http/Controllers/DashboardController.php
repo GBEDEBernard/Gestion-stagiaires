@@ -9,14 +9,25 @@ use App\Models\Badge;
 use App\Models\Activity;
 use App\Models\Etudiant;
 use App\Models\Attestation;
+use App\Models\AppNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         $today = Carbon::now()->startOfDay();
+
+        // ==================== Notifications ====================
+        $notifications = AppNotification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+        $notificationCount = AppNotification::where('user_id', Auth::id())
+            ->whereNull('read_at')
+            ->count();
 
         // ==================== KPIs Principaux ====================
         $totalStages = Stage::count();
@@ -219,6 +230,11 @@ class DashboardController extends Controller
 
         // ==================== Retour à la Vue ====================
         return view('dashboard', compact(
+            // Notifications
+            'notifications',
+            'notificationCount',
+
+            // KPIs Principaux
             'totalStages',
             'totalEtudiants',
             'enCoursGlobal',
