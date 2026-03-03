@@ -18,6 +18,7 @@ use App\Models\Signataire;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use App\Http\ViewComposers\NavigationComposer;
+use App\Http\ViewComposers\NotificationComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +43,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Enregistrer le ViewComposer pour la navigation
         View::composer('layouts.navigation', NavigationComposer::class);
+
+        // Enregistrer le ViewComposer pour les notifications (pour toutes les vues)
+        View::composer('layouts.app', NotificationComposer::class);
 
         // Route Model Binding personnalisé pour le décryptage
         // Ce binding s'exécute automatiquement quand une route contient {stage}, {etudiant}, etc.

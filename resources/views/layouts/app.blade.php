@@ -168,13 +168,85 @@
                             </div>
                         </div>
 
-                        <!-- Notifications (placeholder) -->
-                        <button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition relative">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                        </button>
+                        <!-- Notifications -->
+                        <div class="relative" x-data="{ notifyOpen: false }">
+                            <button @click="notifyOpen = !notifyOpen"
+                                class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition relative">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                @if($notificationCount > 0)
+                                <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                    {{ $notificationCount > 9 ? '9+' : $notificationCount }}
+                                </span>
+                                @endif
+                            </button>
+
+                            <!-- Dropdown Notifications -->
+                            <div x-show="notifyOpen" @click.away="notifyOpen = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
+                                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                                    <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Notifications</h3>
+                                </div>
+
+                                <div class="max-h-80 overflow-y-auto">
+                                    @forelse($notifications as $notification)
+                                    <a href="{{ $notification['url'] }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center 
+                                                @if($notification['color'] === 'blue') bg-blue-100 dark:bg-blue-900/30 text-blue-600
+                                                @elseif($notification['color'] === 'amber') bg-amber-100 dark:bg-amber-900/30 text-amber-600
+                                                @else bg-green-100 dark:bg-green-900/30 text-green-600
+                                                @endif">
+                                                @if($notification['icon'] === 'user-plus')
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                                </svg>
+                                                @elseif($notification['icon'] === 'clock')
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                @else
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                                    {{ $notification['title'] }}
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                    {{ $notification['message'] }}
+                                                </p>
+                                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                                    {{ $notification['time']->diffForHumans() }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    @empty
+                                    <div class="px-4 py-8 text-center">
+                                        <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Aucune notification</p>
+                                    </div>
+                                    @endforelse
+                                </div>
+
+                                @if($notificationCount > 0)
+                                <div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                                    <a href="#" class="text-xs text-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                                        Voir toutes les notifications →
+                                    </a>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
 
                         <!-- Nom Utilisateur (Mobile) -->
                         <div class="flex items-center gap-2 lg:hidden">
