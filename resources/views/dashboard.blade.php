@@ -272,7 +272,7 @@
         </div>
 
         {{-- ── CHART 3 : Répartition services + Stages à venir ────── --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-10">
             <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -287,7 +287,7 @@
                 </div>
             </div>
 
-            <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl shadow-lg overflow-hidden text-white">
+            <!-- <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl shadow-lg overflow-hidden text-white">
                 <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                     <h3 class="text-base font-bold flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,8 +322,8 @@
                         <p class="text-sm font-medium">Aucun stage à venir</p>
                     </div>
                     @endforelse
-                </div>
-            </div>
+                </div> 
+            </div> -->
         </div>
 
         {{-- ── Activités + Indicateurs ─────────────────────────────── --}}
