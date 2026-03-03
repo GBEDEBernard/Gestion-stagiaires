@@ -188,24 +188,36 @@
                                 x-transition:enter-start="opacity-0 scale-95"
                                 x-transition:enter-end="opacity-100 scale-100"
                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
-                                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center">
                                     <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Notifications</h3>
+                                    @if($notificationCount > 0)
+                                    <form action="{{ route('notifications.markAllRead') }}" method="POST" class="text-xs">
+                                        @csrf
+                                        <button type="submit" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+                                            Tout marquer lu
+                                        </button>
+                                    </form>
+                                    @endif
                                 </div>
 
                                 <div class="max-h-80 overflow-y-auto">
                                     @forelse($notifications as $notification)
-                                    <a href="{{ $notification['url'] }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                    <a href="{{ $notification->url }}"
+                                        onclick="event.preventDefault(); document.getElementById('mark-read-form-{{ $notification->id }}').submit();"
+                                        class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                        <form id="mark-read-form-{{ $notification->id }}" action="{{ route('notifications.markRead', $notification->id) }}" method="GET" style="display: none;">
+                                        </form>
                                         <div class="flex items-start gap-3">
                                             <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center 
-                                                @if($notification['color'] === 'blue') bg-blue-100 dark:bg-blue-900/30 text-blue-600
-                                                @elseif($notification['color'] === 'amber') bg-amber-100 dark:bg-amber-900/30 text-amber-600
+                                                @if($notification->color === 'blue') bg-blue-100 dark:bg-blue-900/30 text-blue-600
+                                                @elseif($notification->color === 'amber') bg-amber-100 dark:bg-amber-900/30 text-amber-600
                                                 @else bg-green-100 dark:bg-green-900/30 text-green-600
                                                 @endif">
-                                                @if($notification['icon'] === 'user-plus')
+                                                @if($notification->icon === 'user-plus')
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                                 </svg>
-                                                @elseif($notification['icon'] === 'clock')
+                                                @elseif($notification->icon === 'clock')
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
@@ -217,13 +229,13 @@
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                                                    {{ $notification['title'] }}
+                                                    {{ $notification->title }}
                                                 </p>
                                                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                    {{ $notification['message'] }}
+                                                    {{ $notification->message }}
                                                 </p>
                                                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                                    {{ $notification['time']->diffForHumans() }}
+                                                    {{ $notification->created_at->diffForHumans() }}
                                                 </p>
                                             </div>
                                         </div>

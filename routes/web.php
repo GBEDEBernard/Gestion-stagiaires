@@ -14,6 +14,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
 use App\Http\Controllers\CorbeilleController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -168,4 +169,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
+
+    // ---------------- Notifications ----------------
+    Route::prefix('notifications')->group(function () {
+        Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    });
 });
