@@ -1,6 +1,6 @@
 <x-app-layout>
     <!-- En-tête avec statistiques -->
-    <div class="mb-8 pt-2">
+    <div class="mb-8 pt-2 ml-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Stages</h1>
@@ -60,7 +60,7 @@
     </div>
 
     <!-- Tableau moderne -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white  ml-4 dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 dark:bg-gray-900/50">

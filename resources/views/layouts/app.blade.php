@@ -127,10 +127,10 @@
 
                         <!-- Titre dynamique -->
                         <div>
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 ml-4">
                                 {{ Route::currentRouteName() ? ucfirst(str_replace(['admin.', '.', '_'], ' ', Route::currentRouteName())) : 'Dashboard' }}
                             </h2>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block ml-4">
                                 {{ now()->format('d/m/Y') }} • Gestion des Stagiaires TFG
                             </p>
                         </div>

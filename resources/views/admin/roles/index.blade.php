@@ -1,6 +1,6 @@
 <x-app-layout>
     <!-- En-tête -->
-    <div class="mb-8">
+    <div class="mb-8 ml-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Gestion des Rôles</h1>
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Statistiques des rôles -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 ml-4">
             <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-500/30">
                 <div class="flex items-center justify-between">
                     <div>
@@ -82,7 +82,7 @@
     </div>
 
     <!-- Tableau moderne -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white ml-4 dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 dark:bg-gray-900/50">
