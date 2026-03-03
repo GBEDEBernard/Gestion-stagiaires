@@ -30,7 +30,8 @@
                     @enderror
                 </div>
 
-                <!-- Rôles -->
+                <!-- Rôles - Réservé aux administrateurs -->
+                @can('users.edit')
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Rôles</label>
                     <div class="flex flex-wrap gap-3">
@@ -45,7 +46,7 @@
                     </div>
                 </div>
 
-                <!-- Permissions -->
+                <!-- Permissions - Réservé aux administrateurs -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Permissions</label>
                     <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -61,6 +62,7 @@
                         @endforeach
                     </div>
                 </div>
+                @endcan
 
                 <!-- Boutons -->
                 <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">

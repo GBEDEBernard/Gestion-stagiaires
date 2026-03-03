@@ -52,7 +52,7 @@ class UserController extends Controller
         $user->forgetCachedPermissions();
 
         return redirect()->route('admin.users.index')
-                         ->with('success', 'Utilisateur créé avec succès.');
+            ->with('success', 'Utilisateur créé avec succès.');
     }
 
     // ------------------ EDIT ------------------
@@ -64,32 +64,34 @@ class UserController extends Controller
     }
 
     // ------------------ UPDATE ------------------
-   public function update(Request $request, User $user)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'prenom' => 'nullable|string|max:255',
-        'roles' => 'array',
-        'permissions' => 'array',
-    ]);
+    public function update(Request $request, User $user)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'roles' => 'array',
+            'permissions' => 'array',
+        ]);
 
-    // Mise à jour du nom et prénom
-    $user->update([
-        'name' => $request->name,
-        'prenom' => $request->prenom,
-    ]);
+        // Mise à jour du nom et prénom
+        $user->update([
+            'name' => $request->name,
+            'prenom' => $request->prenom,
+        ]);
 
-    // Mise à jour des rôles et permissions
-    $user->syncRoles($request->roles ?? []);
-    $user->syncPermissions($request->permissions ?? []);
+        // Seul l'admin peut modifier les rôles et permissions
+        if (auth()->user()->hasRole('admin')) {
+            $user->syncRoles($request->roles ?? []);
+            $user->syncPermissions($request->permissions ?? []);
+        }
 
-    // Vider le cache des permissions
-    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-    $user->forgetCachedPermissions();
+        // Vider le cache des permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        $user->forgetCachedPermissions();
 
-    return redirect()->route('admin.users.index')
-                     ->with('success', 'Utilisateur mis à jour avec succès.');
-}
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Utilisateur mis à jour avec succès.');
+    }
 
     // ------------------ DESTROY ------------------
     public function destroy(User $user)
