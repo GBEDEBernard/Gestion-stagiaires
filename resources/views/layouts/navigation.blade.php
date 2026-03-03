@@ -160,7 +160,7 @@
         @endcan
 
         <!-- Utilisateurs (Admin only) -->
-        @can('users.view')
+        @role('admin')
         <a href="{{ route('admin.users.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -182,7 +182,7 @@
         @endcan
 
         <!-- Rôles (Admin only) -->
-        @can('roles.view')
+        @role('admin')
         <a href="{{ route('admin.roles.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
