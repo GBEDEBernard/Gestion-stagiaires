@@ -30,8 +30,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard')
-        ->middleware('permission:dashboard.view');
+        ->name('dashboard');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
