@@ -24,7 +24,8 @@
     <!-- Navigation Principale -->
     <div class="flex flex-col h-full px-3 py-4 overflow-y-auto custom-scrollbar">
 
-        <!-- Menu Stages avec Sous-menu -->
+        <!-- Menu Stages avec Sous-menu (Admin only) -->
+        @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
         <div class="mb-3" x-data="{ open: false }">
             <button @click="open = !open"
                 class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden"
@@ -52,6 +53,7 @@
             <!-- Sous-menu Stages -->
             <div x-show="open" x-collapse @click.outside="open = false"
                 class="mt-3 ml-4 space-y-2 overflow-hidden">
+                @can('stages.view')
                 <a href="{{ route('stages.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
@@ -60,6 +62,8 @@
                     </svg>
                     <span>Liste des stages</span>
                 </a>
+                @endcan
+                @can('type_stages.view')
                 <a href="{{ route('type_stages.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:bg-purple-400 transition-colors"></div>
@@ -68,6 +72,8 @@
                     </svg>
                     <span>Types de stage</span>
                 </a>
+                @endcan
+                @can('services.view')
                 <a href="{{ route('services.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-green-500 group-hover:bg-green-400 transition-colors"></div>
@@ -76,6 +82,8 @@
                     </svg>
                     <span>Services</span>
                 </a>
+                @endcan
+                @can('signataires.view')
                 <a href="{{ route('signataires.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-orange-500 group-hover:bg-orange-400 transition-colors"></div>
@@ -84,6 +92,8 @@
                     </svg>
                     <span>Signataires</span>
                 </a>
+                @endcan
+                @can('jour_stage.view')
                 <a href="{{ route('jours.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-yellow-500 group-hover:bg-yellow-400 transition-colors"></div>
@@ -92,6 +102,8 @@
                     </svg>
                     <span>Jours</span>
                 </a>
+                @endcan
+                @can('stages.view')
                 <a href="{{ route('stages.trash') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group hover:translate-x-1">
                     <div class="w-1.5 h-1.5 rounded-full bg-red-500 group-hover:bg-red-400 transition-colors"></div>
@@ -100,10 +112,13 @@
                     </svg>
                     <span>Corbeille</span>
                 </a>
+                @endcan
             </div>
         </div>
+        @endcanany
 
         <!-- Étudiants -->
+        @can('etudiants.view')
         <a href="{{ route('etudiants.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -121,8 +136,10 @@
             </span>
             @endif
         </a>
+        @endcan
 
         <!-- Badges -->
+        @can('badges.view')
         <a href="{{ route('badges.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -140,8 +157,10 @@
             </span>
             @endif
         </a>
+        @endcan
 
-        <!-- Utilisateurs -->
+        <!-- Utilisateurs (Admin only) -->
+        @can('users.view')
         <a href="{{ route('admin.users.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -160,8 +179,10 @@
             </span>
             @endif
         </a>
+        @endcan
 
-        <!-- Rôles -->
+        <!-- Rôles (Admin only) -->
+        @can('roles.view')
         <a href="{{ route('admin.roles.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -179,8 +200,10 @@
             </span>
             @endif
         </a>
+        @endcan
 
-        <!-- Corbeille -->
+        <!-- Corbeille Globale (Admin only) -->
+        @can('corbeille.view')
         <a href="{{ route('corbeille.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-4 rounded-2xl text-sm font-semibold text-red-400/80 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -198,8 +221,10 @@
             </span>
             @endif
         </a>
+        @endcan
 
         <!-- Divider -->
+        @can('dashboard.view')
         <div class="border-t border-slate-700/50 my-3"></div>
 
         <!-- Lien Dashboard -->
@@ -218,15 +243,21 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </a>
+        @endcan
     </div>
 
     <!-- Profil Utilisateur en bas du Sidebar -->
     <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm" x-data="{ userMenuOpen: false }">
         <button @click="userMenuOpen = !userMenuOpen"
             class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 group">
+            @if(Auth::user()->avatar)
+            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar"
+                class="w-10 h-10 rounded-2xl object-cover shadow-lg group-hover:scale-110 transition-transform duration-300">
+            @else
             <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {{ substr(Auth::user()->name, 0, 1) }}
             </div>
+            @endif
             <div class="flex-1 text-left">
                 <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>
                 <p class="text-xs text-slate-400 truncate">{{ Auth::user()->email }}</p>

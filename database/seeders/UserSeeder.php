@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'GBEDE Bernard',
                 'email' => 'gbedebernard60@gmail.com',
-                'password' => Hash::make('aqwzsxedc'),
+                'password' => Hash::make('VisaBernard6142@'),
                 'status' => 'actif',
                 'role' => 'admin',
             ],

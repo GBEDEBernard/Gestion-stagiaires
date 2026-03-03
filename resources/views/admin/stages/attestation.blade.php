@@ -36,15 +36,14 @@
             transform: translate(-50%, -50%);
             width: 500px;
             height: 500px;
-            background-image: url('{{ url(' images/TFGLOGO.png') }}');
+            background-image: url('{{ url('images/TFGLOGO.png') }}');
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.4;
+            opacity: 0.35;
             z-index: 0;
             pointer-events: none;
         }
-
         .a4-container>* {
             position: relative;
             z-index: 1;

@@ -52,9 +52,9 @@ class RolePermissionSeeder extends Seeder
 
         // 🔹 Permissions limitées pour le rôle user
         $userRole->syncPermissions([
-
             'etudiants.view',
             'attestation.view',
+            'badges.view',
             'dashboard.view',
         ]);
 

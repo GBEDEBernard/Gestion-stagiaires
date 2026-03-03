@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\RegisterPinVerificationController;
 use App\Http\Controllers\Auth\UpdatePasswordWithPinController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\VerifyPinController;
@@ -18,6 +19,16 @@ Route::middleware('guest')->group(function () {
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
+
+    // Vérification du PIN lors de l'inscription
+    Route::get('verify-register-pin', [RegisterPinVerificationController::class, 'show'])
+        ->name('verification.pin.show');
+
+    Route::post('verify-register-pin', [RegisterPinVerificationController::class, 'verify'])
+        ->name('verification.pin.verify');
+
+    Route::post('resend-register-pin', [RegisterPinVerificationController::class, 'resend'])
+        ->name('verification.pin.resend');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -31,7 +42,7 @@ Route::middleware('guest')->group(function () {
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
         ->name('password.email');
 
-    // Vérifier le PIN
+    // Vérifier le PIN (mot de passe)
     Route::get('verify-pin', [VerifyPinController::class, 'show'])
         ->name('password.verify-pin-show');
 

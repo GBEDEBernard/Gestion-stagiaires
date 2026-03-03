@@ -151,6 +151,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
 
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
+
+        // Corbeille - User restore and force delete
+        Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
+        Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
     });
 
     // ---------------- Roles ----------------
