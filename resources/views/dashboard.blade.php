@@ -285,59 +285,19 @@
             </div>
         </div>
 
-        {{-- ── CHART 3 : Répartition services + Stages à venir ────── --}}
-        <div class="grid grid-cols-1 lg:grid-cols-1 gap-10">
-            <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Répartition par service
-                    </h3>
-                </div>
-                <div class="p-6" style="position:relative;height:280px;">
-                    <canvas id="chart-services"></canvas>
-                </div>
+        {{-- ── CHART 3 : Répartition services ────── --}}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Répartition par service
+                </h3>
             </div>
-
-            <!-- <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl shadow-lg overflow-hidden text-white">
-                <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                    <h3 class="text-base font-bold flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Stages à venir
-                    </h3>
-                    <span class="bg-white/20 text-xs font-bold rounded-full px-2.5 py-1">{{ count($stagesUpcoming) }}</span>
-                </div>
-                <div class="p-4 space-y-3 max-h-72 overflow-y-auto">
-                    @forelse($stagesUpcoming as $stage)
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 hover:bg-white/20 transition">
-                        <div class="flex items-center gap-3">
-                            <div class="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                {{ strtoupper(substr($stage->etudiant->prenom ?? 'N', 0, 1)) }}{{ strtoupper(substr($stage->etudiant->nom ?? 'A', 0, 1)) }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-sm truncate">{{ $stage->etudiant->nom ?? 'N/A' }} {{ $stage->etudiant->prenom ?? '' }}</p>
-                                <p class="text-xs text-violet-200 truncate">{{ $stage->service->nom ?? 'Service' }}</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <p class="text-sm font-bold">{{ $stage->date_debut?->format('d/m') }}</p>
-                                <p class="text-xs text-violet-200">{{ $stage->date_debut?->diffForHumans(['short' => true]) }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="text-center py-8 text-violet-200">
-                        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p class="text-sm font-medium">Aucun stage à venir</p>
-                    </div>
-                    @endforelse
-                </div> 
-            </div> -->
+            <div class="p-6" style="position:relative;height:280px;">
+                <canvas id="chart-services"></canvas>
+            </div>
         </div>
 
         {{-- ── Activités + Indicateurs ─────────────────────────────── --}}
@@ -443,136 +403,58 @@
     </div>{{-- /space-y-6 --}}
 
     {{-- ════════════════════════════════════════════════════════
-         DONNÉES PHP → JS
-         IMPORTANT : {{ Js::from() }} doit être sur UNE SEULE LIGNE
-    Ne jamais mettre les {{ }} sur plusieurs lignes
+         DONNÉES PHP → JS  (chaque Js::from sur UNE seule ligne)
     ════════════════════════════════════════════════════════ --}}
     <script>
         window.__DASHBOARD__ = {
-            labelsJour: {
-                {
-                    Js::from($labelsJour)
-                }
-            },
-            evolutionJour: {
-                {
-                    Js::from($evolutionJour)
-                }
-            },
-            labelsSemaine: {
-                {
-                    Js::from($labelsSemaine)
-                }
-            },
-            evolutionSemaine: {
-                {
-                    Js::from($evolutionSemaine)
-                }
-            },
-            labelsMois: {
-                {
-                    Js::from($labelsMois)
-                }
-            },
-            evolutionMois: {
-                {
-                    Js::from($evolutionMois)
-                }
-            },
-            typesLabels: {
-                {
-                    Js::from($typesLabels)
-                }
-            },
-            typesData: {
-                {
-                    Js::from($typesData)
-                }
-            },
-            stagesMoisLabels: {
-                {
-                    Js::from($labelsMoisAnnee)
-                }
-            },
-            stagesMoisData: {
-                {
-                    Js::from($stagesParMois)
-                }
-            },
-            svcLabels: {
-                {
-                    Js::from($servicesStats - > pluck('service') - > values())
-                }
-            },
-            svcEnCours: {
-                {
-                    Js::from($servicesStats - > pluck('enCours') - > values())
-                }
-            },
-            svcTermines: {
-                {
-                    Js::from($servicesStats - > pluck('termines') - > values())
-                }
-            },
-            svcInscrits: {
-                {
-                    Js::from($servicesStats - > pluck('inscrits') - > values())
-                }
-            }
+            labelsJour:      {{ Js::from($labelsJour) }},
+            evolutionJour:   {{ Js::from($evolutionJour) }},
+            labelsSemaine:   {{ Js::from($labelsSemaine) }},
+            evolutionSemaine:{{ Js::from($evolutionSemaine) }},
+            labelsMois:      {{ Js::from($labelsMois) }},
+            evolutionMois:   {{ Js::from($evolutionMois) }},
+            typesLabels:     {{ Js::from($typesLabels) }},
+            typesData:       {{ Js::from($typesData) }},
+            stagesMoisLabels:{{ Js::from($labelsMoisAnnee) }},
+            stagesMoisData:  {{ Js::from($stagesParMois) }},
+            svcLabels:       {{ Js::from($servicesStats->pluck('service')->values()) }},
+            svcEnCours:      {{ Js::from($servicesStats->pluck('enCours')->values()) }},
+            svcTermines:     {{ Js::from($servicesStats->pluck('termines')->values()) }},
+            svcInscrits:     {{ Js::from($servicesStats->pluck('inscrits')->values()) }}
         };
     </script>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
-            /* ── Config ───────────────────────────────────────────── */
             Chart.defaults.font.family = "'Figtree', sans-serif";
-            var isDark = document.documentElement.classList.contains('dark');
-            var TXT = isDark ? '#e5e7eb' : '#374151';
-            var GRID = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+            var isDark   = document.documentElement.classList.contains('dark');
+            var TXT      = isDark ? '#e5e7eb' : '#374151';
+            var GRID     = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
             var BORDER_BG = isDark ? '#1f2937' : '#ffffff';
 
-            /* ── Données ──────────────────────────────────────────── */
-            var D = window.__DASHBOARD__;
-            var LABELS_JOUR = D.labelsJour;
-            var DATA_JOUR = D.evolutionJour;
-            var LABELS_SEM = D.labelsSemaine;
-            var DATA_SEM = D.evolutionSemaine;
-            var LABELS_MOIS = D.labelsMois;
-            var DATA_MOIS = D.evolutionMois;
+            var D            = window.__DASHBOARD__;
+            var LABELS_JOUR  = D.labelsJour;
+            var DATA_JOUR    = D.evolutionJour;
+            var LABELS_SEM   = D.labelsSemaine;
+            var DATA_SEM     = D.evolutionSemaine;
+            var LABELS_MOIS  = D.labelsMois;
+            var DATA_MOIS    = D.evolutionMois;
             var TYPES_LABELS = D.typesLabels;
-            var TYPES_DATA = D.typesData;
-            var SM_LABELS = D.stagesMoisLabels;
-            var SM_DATA = D.stagesMoisData;
-            var SVC_LABELS = D.svcLabels;
-            var SVC_ENCOURS = D.svcEnCours;
+            var TYPES_DATA   = D.typesData;
+            var SM_LABELS    = D.stagesMoisLabels;
+            var SM_DATA      = D.stagesMoisData;
+            var SVC_LABELS   = D.svcLabels;
+            var SVC_ENCOURS  = D.svcEnCours;
             var SVC_TERMINES = D.svcTermines;
             var SVC_INSCRITS = D.svcInscrits;
 
-            /* ── Helpers ──────────────────────────────────────────── */
             function xyScales() {
                 return {
-                    x: {
-                        ticks: {
-                            color: TXT,
-                            maxRotation: 45
-                        },
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: TXT,
-                            precision: 0
-                        },
-                        grid: {
-                            color: GRID
-                        }
-                    }
+                    x: { ticks: { color: TXT, maxRotation: 45 }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: TXT, precision: 0 }, grid: { color: GRID } }
                 };
             }
 
@@ -586,18 +468,13 @@
                 };
             }
 
-            /* ══════════════════════════════════════════════════════
-               1. ÉVOLUTION DES INSCRIPTIONS
-            ══════════════════════════════════════════════════════ */
+            /* ── 1. ÉVOLUTION DES INSCRIPTIONS ── */
             var inscChart = null;
 
             function buildInscriptions(labels, data) {
                 var ctx = document.getElementById('chart-inscriptions');
                 if (!ctx) return;
-                if (inscChart) {
-                    inscChart.destroy();
-                    inscChart = null;
-                }
+                if (inscChart) { inscChart.destroy(); inscChart = null; }
                 inscChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -620,35 +497,29 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: tip()
-                        },
+                        plugins: { legend: { display: false }, tooltip: tip() },
                         scales: xyScales()
                     }
                 });
             }
 
-            window.switchPeriod = function(period) {
-                ['jour', 'semaine', 'mois'].forEach(function(p) {
+            window.switchPeriod = function (period) {
+                ['jour','semaine','mois'].forEach(function (p) {
                     var btn = document.getElementById('btn-' + p);
                     if (!btn) return;
-                    btn.className = p === period ?
-                        'px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-500 text-white transition-all' :
-                        'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
+                    btn.className = p === period
+                        ? 'px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-500 text-white transition-all'
+                        : 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
                 });
-                if (period === 'jour') buildInscriptions(LABELS_JOUR, DATA_JOUR);
-                if (period === 'semaine') buildInscriptions(LABELS_SEM, DATA_SEM);
-                if (period === 'mois') buildInscriptions(LABELS_MOIS, DATA_MOIS);
+                if (period === 'jour')    buildInscriptions(LABELS_JOUR, DATA_JOUR);
+                if (period === 'semaine') buildInscriptions(LABELS_SEM,  DATA_SEM);
+                if (period === 'mois')    buildInscriptions(LABELS_MOIS, DATA_MOIS);
             };
+
             buildInscriptions(LABELS_JOUR, DATA_JOUR);
 
-            /* ══════════════════════════════════════════════════════
-               2. PAR TYPE — Doughnut
-            ══════════════════════════════════════════════════════ */
-            (function() {
+            /* ── 2. PAR TYPE — Doughnut ── */
+            (function () {
                 var ctx = document.getElementById('chart-types');
                 if (!ctx) return;
                 new Chart(ctx, {
@@ -657,7 +528,7 @@
                         labels: TYPES_LABELS.length ? TYPES_LABELS : ['Aucun type'],
                         datasets: [{
                             data: TYPES_DATA.length ? TYPES_DATA : [1],
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'],
+                            backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'],
                             borderColor: BORDER_BG,
                             borderWidth: 3,
                             hoverOffset: 6
@@ -668,27 +539,15 @@
                         maintainAspectRatio: false,
                         cutout: '62%',
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: TXT,
-                                    padding: 14,
-                                    usePointStyle: true,
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            },
+                            legend: { position: 'bottom', labels: { color: TXT, padding: 14, usePointStyle: true, font: { size: 11 } } },
                             tooltip: tip()
                         }
                     }
                 });
             }());
 
-            /* ══════════════════════════════════════════════════════
-               3. STAGES 12 MOIS — Barres
-            ══════════════════════════════════════════════════════ */
-            (function() {
+            /* ── 3. STAGES 12 MOIS — Barres ── */
+            (function () {
                 var ctx = document.getElementById('chart-stages-mois');
                 if (!ctx) return;
                 new Chart(ctx, {
@@ -706,65 +565,31 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: tip()
-                        },
+                        plugins: { legend: { display: false }, tooltip: tip() },
                         scales: xyScales()
                     }
                 });
             }());
 
-            /* ══════════════════════════════════════════════════════
-               4. RÉPARTITION PAR SERVICE — Barres groupées
-            ══════════════════════════════════════════════════════ */
-            (function() {
+            /* ── 4. RÉPARTITION PAR SERVICE — Barres groupées ── */
+            (function () {
                 var ctx = document.getElementById('chart-services');
                 if (!ctx) return;
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: SVC_LABELS.length ? SVC_LABELS : ['Aucun service'],
-                        datasets: [{
-                                label: 'En cours',
-                                data: SVC_ENCOURS.length ? SVC_ENCOURS : [0],
-                                backgroundColor: '#22c55e',
-                                borderRadius: 4,
-                                borderSkipped: false
-                            },
-                            {
-                                label: 'Terminés',
-                                data: SVC_TERMINES.length ? SVC_TERMINES : [0],
-                                backgroundColor: '#a855f7',
-                                borderRadius: 4,
-                                borderSkipped: false
-                            },
-                            {
-                                label: 'À venir',
-                                data: SVC_INSCRITS.length ? SVC_INSCRITS : [0],
-                                backgroundColor: '#f97316',
-                                borderRadius: 4,
-                                borderSkipped: false
-                            }
+                        datasets: [
+                            { label: 'En cours',  data: SVC_ENCOURS.length  ? SVC_ENCOURS  : [0], backgroundColor: '#22c55e', borderRadius: 4, borderSkipped: false },
+                            { label: 'Terminés',  data: SVC_TERMINES.length ? SVC_TERMINES : [0], backgroundColor: '#a855f7', borderRadius: 4, borderSkipped: false },
+                            { label: 'À venir',   data: SVC_INSCRITS.length ? SVC_INSCRITS : [0], backgroundColor: '#f97316', borderRadius: 4, borderSkipped: false }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: TXT,
-                                    usePointStyle: true,
-                                    padding: 15,
-                                    font: {
-                                        size: 11
-                                    }
-                                }
-                            },
+                            legend: { position: 'bottom', labels: { color: TXT, usePointStyle: true, padding: 15, font: { size: 11 } } },
                             tooltip: tip()
                         },
                         scales: xyScales()
