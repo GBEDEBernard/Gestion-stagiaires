@@ -13,13 +13,8 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Favicons avec bordures arrondies via SVG -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon-rounded.svg') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon-rounded.png') }}">
-
-    <!-- Fallback pour les navigateurs plus anciens -->
-    <link rel="icon" type="image/png" sizes="32x32" style="border:radius " href="{{ asset('images/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
-
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
