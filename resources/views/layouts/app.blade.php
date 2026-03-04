@@ -202,11 +202,8 @@
 
                                 <div class="max-h-80 overflow-y-auto">
                                     @forelse($notifications as $notification)
-                                    <a href="{{ $notification->url }}"
-                                        onclick="event.preventDefault(); document.getElementById('mark-read-form-{{ $notification->id }}').submit();"
+                                    <a href="{{ route('notifications.index') }}"
                                         class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                        <form id="mark-read-form-{{ $notification->id }}" action="{{ route('notifications.markRead', $notification->id) }}" method="GET" style="display: none;">
-                                        </form>
                                         <div class="flex items-start gap-3">
                                             <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center 
                                                 @if($notification->color === 'blue') bg-blue-100 dark:bg-blue-900/30 text-blue-600
@@ -252,7 +249,7 @@
 
                                 @if($notificationCount > 0)
                                 <div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                    <a href="#" class="text-xs text-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                                    <a href="{{ route('notifications.index') }}" class="text-xs text-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
                                         Voir toutes les notifications →
                                     </a>
                                 </div>
