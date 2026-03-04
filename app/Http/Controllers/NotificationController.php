@@ -9,6 +9,22 @@ use Illuminate\Support\Facades\Auth;
 class NotificationController extends Controller
 {
     /**
+     * Afficher toutes les notifications
+     */
+    public function index()
+    {
+        $notifications = AppNotification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        $unreadCount = AppNotification::where('user_id', Auth::id())
+            ->whereNull('read_at')
+            ->count();
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
+    }
+
+    /**
      * Marquer une notification comme lue
      */
     public function markAsRead($id)

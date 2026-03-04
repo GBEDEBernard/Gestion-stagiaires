@@ -172,6 +172,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     });

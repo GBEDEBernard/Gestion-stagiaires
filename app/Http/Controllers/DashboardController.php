@@ -23,7 +23,7 @@ class DashboardController extends Controller
         // ==================== Notifications ====================
         $notifications = AppNotification::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
-            ->take(10)
+            ->take(2)
             ->get();
         $notificationCount = AppNotification::where('user_id', Auth::id())
             ->whereNull('read_at')
