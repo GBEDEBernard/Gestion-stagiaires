@@ -3,26 +3,28 @@
     stagesOpen: false,
     mobileMenuOpen: false 
 }"
-    class="fixed inset-y-0 left-0 z-40 w-72 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl"
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+    class="fixed inset-y-0 left-0 z-40 w-72 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl flex flex-col">
 
     <!-- Logo et Titre -->
-    <div class="flex items-center gap-3 px-6 py-6 border-b border-slate-700/50 bg-slate-900/30">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
-            <div class="relative">
-                <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
-                    class="w-12 h-12 rounded-2xl shadow-lg ring-2 ring-blue-500/30 group-hover:ring-blue-500/80 group-hover:scale-110 transition-all duration-300">
-                <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            </div>
-            <div class="flex flex-col">
-                <h1 class="text-lg font-bold text-white tracking-wide">Gestion</h1>
-                <p class="text-xs text-slate-400 font-medium">Stagiaires TFG</p>
-            </div>
-        </a>
+    <div class="flex-shrink-0">
+        <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50 bg-slate-900/30">
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
+                <div class="relative">
+                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
+                        class="w-12 h-12 rounded-2xl shadow-lg ring-2 ring-blue-500/30 group-hover:ring-blue-500/80 group-hover:scale-110 transition-all duration-300">
+                    <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-lg font-bold text-white tracking-wide">Gestion</h1>
+                    <p class="text-xs text-slate-400 font-medium">Stagiaires TFG</p>
+                </div>
+            </a>
+        </div>
     </div>
 
-    <!-- Navigation Principale -->
-    <div class="flex flex-col h-full px-3 py-4 overflow-y-auto custom-scrollbar">
+    <!-- Navigation Principale - Zone scrollable -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-4">
+        <!-- Contenu du menu ici... (inchangé) -->
 
         <!-- Menu Stages avec Sous-menu (Admin only) -->
         @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
@@ -247,7 +249,7 @@
     </div>
 
     <!-- Profil Utilisateur en bas du Sidebar -->
-    <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm" x-data="{ userMenuOpen: false }">
+    <div class="flex-shrink-0 p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm" x-data="{ userMenuOpen: false }">
         <button @click="userMenuOpen = !userMenuOpen"
             class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 group">
             @if(Auth::user()->avatar)
