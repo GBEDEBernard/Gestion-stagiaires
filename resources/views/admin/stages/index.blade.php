@@ -70,7 +70,7 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Service</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Thème</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Période</th>
-                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jours</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jours</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -107,17 +107,13 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex flex-wrap gap-1">
-                                @if($stage->jours->count() > 0)
-                                @foreach($stage->jours as $jour)
-                                <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
-                                    {{ substr($jour->jour, 0, 3) }}
-                                </span>
-                                @endforeach
-                                @else
-                                <span class="text-gray-400">-</span>
-                                @endif
-                            </div>
+                            @if($stage->jours->count() > 0)
+                            <span class="text-sm text-gray-900 dark:text-gray-100">
+                                {{ $stage->jours->pluck('jour')->implode(', ') }}
+                            </span>
+                            @else
+                            <span class="text-gray-400">-</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-center">
                             @if($stage->statut == 'En cours')
