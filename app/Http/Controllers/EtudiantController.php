@@ -9,7 +9,7 @@ class EtudiantController extends Controller
 {
     public function index()
     {
-        $etudiants = Etudiant::paginate(10);
+        $etudiants = Etudiant::paginate(5);
         return view('admin.etudiants.index', compact('etudiants'));
     }
 
@@ -23,7 +23,7 @@ class EtudiantController extends Controller
         $data = $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'genre'=>'required',
+            'genre' => 'required',
             'email' => 'required|email|unique:etudiants,email',
             'telephone' => 'nullable|string|max:20',
             'ecole' => 'nullable|string|max:255',
@@ -43,7 +43,7 @@ class EtudiantController extends Controller
         $data = $request->validate([
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-             'genre'=>'required',
+            'genre' => 'required',
             'email' => 'required|email|unique:etudiants,email,' . $etudiant->id,
             'telephone' => 'nullable|string|max:20',
             'ecole' => 'nullable|string|max:255',
@@ -59,30 +59,29 @@ class EtudiantController extends Controller
         return redirect()->route('etudiants.index')->with('success', 'Étudiant supprimé.');
     }
 
-      // la méthode des corbeille
- // Méthode corbeille
-public function trash()
-{
-    $etudiants = Etudiant::onlyTrashed()->paginate(10); // nom correct
-    return view('admin.etudiants.corbeille', compact('etudiants'));
-}
+    // la méthode des corbeille
+    // Méthode corbeille
+    public function trash()
+    {
+        $etudiants = Etudiant::onlyTrashed()->paginate(5); // nom correct
+        return view('admin.etudiants.corbeille', compact('etudiants'));
+    }
 
-// restaurer la suppression
-public function restore($id)
-{
-    $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
-    $etudiant->restore();
+    // restaurer la suppression
+    public function restore($id)
+    {
+        $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+        $etudiant->restore();
 
-    return redirect()->route('etudiants.index')->with('success', 'Étudiant restauré avec succès 🚀');
-}
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant restauré avec succès 🚀');
+    }
 
-// suppression définitive
-public function forceDelete($id)
-{
-    $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
-    $etudiant->forceDelete();
+    // suppression définitive
+    public function forceDelete($id)
+    {
+        $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+        $etudiant->forceDelete();
 
-    return redirect()->route('etudiants.trash')->with('success', 'Étudiant supprimé définitivement 🗑️');
-}
-
+        return redirect()->route('etudiants.trash')->with('success', 'Étudiant supprimé définitivement 🗑️');
+    }
 }
