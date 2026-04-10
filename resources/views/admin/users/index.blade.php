@@ -15,6 +15,36 @@
                 Nouvel Utilisateur
             </a>
         </div>
+
+        {{-- jb -> Les identifiants temporaires ne sont affiches qu'au retour
+        immediat de creation pour que l'admin puisse les transmettre une fois,
+        sans laisser trainer ce secret partout dans l'interface. --}}
+        @if (session('generated_account'))
+        <div class="max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 space-y-2">
+            <p class="font-semibold">Compte cree avec mot de passe temporaire</p>
+            <p class="text-sm">Le mot de passe a ete defini par l'admin. Un mail unique d'activation a ete prepare pour expliquer clairement l'email de connexion, le mot de passe temporaire et la verification de l'adresse.</p>
+            <div class="grid gap-2 text-sm sm:grid-cols-3">
+                <div><span class="font-medium">Nom:</span> {{ session('generated_account.name') }}</div>
+                <div><span class="font-medium">Email:</span> {{ session('generated_account.email') }}</div>
+                <div><span class="font-medium">Mot de passe:</span> {{ session('generated_account.password') }}</div>
+            </div>
+            <p class="text-sm">
+                {{ session('generated_account.account_email_sent') ? 'Mail unique d\'activation envoye automatiquement.' : 'Le mail unique d\'activation n\'a pas pu etre envoye automatiquement. Pense a verifier la configuration mail.' }}
+            </p>
+        </div>
+        @endif
+
+        @if (session('updated_account'))
+        <div class="mt-4 max-w-3xl rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-blue-800 text-sm">
+            @if (session('updated_account.temporary_password_reset'))
+                Le compte <span class="font-semibold">{{ session('updated_account.email') }}</span> a recu un nouveau mot de passe temporaire.
+                {{ session('updated_account.account_email_sent') ? 'Le mail unique d\'onboarding a ete renvoye.' : 'Le mail d\'onboarding n\'a pas pu etre envoye automatiquement.' }}
+            @else
+                L'email du compte a ete mis a jour vers <span class="font-semibold">{{ session('updated_account.email') }}</span>.
+                {{ session('updated_account.verification_email_sent') ? 'Un nouveau mail de verification a ete envoye.' : 'Le mail de verification n\'a pas pu etre envoye automatiquement.' }}
+            @endif
+        </div>
+        @endif
     </div>
 
     <!-- Tableau moderne -->
@@ -57,6 +87,14 @@
                                 Inactif
                             </span>
                             @endif
+                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {{ $user->hasVerifiedEmail() ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' }}">
+                                    {{ $user->hasVerifiedEmail() ? 'Email verifie' : 'Email a verifier' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {{ $user->must_change_password ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' }}">
+                                    {{ $user->must_change_password ? 'Mot de passe temporaire' : 'Mot de passe personnalise' }}
+                                </span>
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
@@ -73,7 +111,7 @@
                             <div class="flex flex-wrap gap-1 max-w-xs">
                                 @forelse($user->getAllPermissions()->take(3) as $permission)
                                 <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs" title="{{ $permission->name }}">
-                                    {{ Str::limit($permission->name, 12) }}
+                                    {{ \Illuminate\Support\Str::limit($permission->name, 12) }}
                                 </span>
                                 @empty
                                 <span class="text-gray-400">-</span>

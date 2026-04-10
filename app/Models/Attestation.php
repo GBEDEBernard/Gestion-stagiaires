@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Attestation extends Model
 {
     use HasFactory;
-    use SoftDeletes; // ✅ active le soft delete
+    use SoftDeletes;
+
     protected $fillable = [
         'stage_id',
         'typestage_id',
@@ -18,7 +19,10 @@ class Attestation extends Model
         'fichier_pdf',
     ];
 
-    // Relations
+    protected $casts = [
+        'date_delivrance' => 'date',
+    ];
+
     public function stage()
     {
         return $this->belongsTo(Stage::class);
@@ -30,10 +34,24 @@ class Attestation extends Model
     }
 
     public function signataires()
-{
-    return $this->belongsToMany(Signataire::class, 'attestation_signataire')
-                ->withPivot('par_ordre','ordre')
-                ->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Signataire::class, 'attestation_signataire')
+            ->withPivot('par_ordre', 'ordre')
+            ->withTimestamps();
+    }
 
+    public function approvals()
+    {
+        return $this->hasMany(AttestationApproval::class);
+    }
+
+    public function versions()
+    {
+        return $this->hasMany(AttestationVersion::class);
+    }
+
+    public function audits()
+    {
+        return $this->hasMany(AttestationAudit::class);
+    }
 }

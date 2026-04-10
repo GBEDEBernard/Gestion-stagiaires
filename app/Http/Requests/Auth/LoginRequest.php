@@ -11,17 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
-    /**
-     * Autoriser la requête
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Règles de validation
-     */
     public function rules(): array
     {
         return [
@@ -30,11 +24,6 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    /**
-     * Authentifier l'utilisateur
-     *
-     * @throws ValidationException
-     */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
@@ -42,50 +31,30 @@ class LoginRequest extends FormRequest
         $credentials = $this->only('email', 'password');
         $remember = $this->boolean('remember');
 
-        if (! Auth::attempt($credentials, $remember)) {
+        if (!Auth::attempt($credentials, $remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'), // message en français défini dans auth.php
+                'email' => trans('auth.failed'),
             ]);
         }
 
         $user = Auth::user();
 
-        // Admin ne peut jamais être bloqué
-        if ($user->role !== 'admin') {
-            // Vérifier si le compte est actif
-            if ($user->status !== 'actif') {
-                Auth::logout();
-                throw ValidationException::withMessages([
-                    'email' => 'Votre compte est désactivé.',
-                ]);
-            }
+        if ($user->status !== 'actif') {
+            Auth::logout();
 
-            // Vérifier si l’email est validé
-            if (method_exists($user, 'hasVerifiedEmail') && ! $user->hasVerifiedEmail()) {
-                Auth::logout();
-                throw ValidationException::withMessages([
-                    'email' => 'Vous devez vérifier votre email avant de vous connecter.',
-                ]);
-            }
+            throw ValidationException::withMessages([
+                'email' => 'Votre compte est desactive.',
+            ]);
         }
 
-        // Tout est OK → réinitialiser le compteur de tentatives
         RateLimiter::clear($this->throttleKey());
-
-        // Régénérer la session pour la sécurité
-        $this->session()->regenerate();
     }
 
-    /**
-     * Vérifier la limitation des tentatives
-     *
-     * @throws ValidationException
-     */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
+        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
             return;
         }
 
@@ -101,9 +70,6 @@ class LoginRequest extends FormRequest
         ]);
     }
 
-    /**
-     * Clé pour limiter les tentatives
-     */
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());

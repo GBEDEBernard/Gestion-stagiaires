@@ -10,13 +10,24 @@ use Illuminate\Support\Facades\Auth;
 class NotificationService
 {
     /**
-     * Générer les notifications automatiquement
+     * Generer les notifications automatiquement.
      */
     public function generateNotifications()
     {
         $userId = Auth::id();
+        $user = Auth::user();
 
-        // 1. Nouveaux étudiants inscrits ces 7 derniers jours
+        if (!$userId) {
+            return;
+        }
+
+        // jb -> Les alertes generees ici servent au pilotage global
+        // du back-office. Les comptes etudiants ne doivent donc pas
+        // recevoir ces notifications d'administration generale.
+        if ($user && $user->hasRole('etudiant')) {
+            return;
+        }
+
         $nouveauxEtudiants = Etudiant::where('created_at', '>=', now()->subDays(7))
             ->orderBy('created_at', 'desc')
             ->get();
@@ -26,7 +37,7 @@ class NotificationService
                 'etudiant_' . $etudiant->id,
                 $userId,
                 'nouveau',
-                'Nouvel étudiant',
+                'Nouvel etudiant',
                 $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit',
                 'user-plus',
                 'blue',
@@ -37,21 +48,20 @@ class NotificationService
             );
         }
 
-        // 2. Stages qui finissent dans moins d'une semaine
         $stagesFinSemaine = Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
-            ->where('date_fin', '>=', now())
             ->with('etudiant')
             ->orderBy('date_fin', 'asc')
             ->get();
 
         foreach ($stagesFinSemaine as $stage) {
             $joursRestants = now()->diffInDays($stage->date_fin, false);
+
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
                 $userId,
                 'stage_fin_semaine',
-                'Stage bientôt terminé',
+                'Stage bientot termine',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
                 'clock',
                 'amber',
@@ -62,7 +72,6 @@ class NotificationService
             );
         }
 
-        // 3. Stages récemment terminés (ces 7 derniers jours)
         $stagesTermines = Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
             ->with('etudiant')
@@ -74,8 +83,8 @@ class NotificationService
                 'stage_termine_' . $stage->id,
                 $userId,
                 'stage_termine',
-                'Stage terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage',
+                'Stage termine',
+                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a termine son stage',
                 'check-circle',
                 'green',
                 encrypted_route('stages.show', $stage),
@@ -87,17 +96,18 @@ class NotificationService
     }
 
     /**
-     * Créer une notification si elle n'existe pas déjà
+     * Creer une notification si elle n'existe pas deja.
      */
     private function createNotificationIfNotExists($uniqueId, $userId, $type, $title, $message, $icon, $color, $url, $referenceId = null, $referenceType = null, $time = null)
     {
-        $exists = AppNotification::where('unique_id', $uniqueId)
-            ->where('user_id', $userId)
-            ->exists();
+        // jb -> La base impose un unique_id global. On le scope donc
+        // explicitement par utilisateur pour eviter qu'une meme alerte
+        // "metier" explose quand plusieurs comptes doivent la recevoir.
+        $scopedUniqueId = $this->buildScopedUniqueId($uniqueId, $userId);
 
-        if (!$exists) {
-            AppNotification::create([
-                'unique_id' => $uniqueId,
+        AppNotification::firstOrCreate(
+            ['unique_id' => $scopedUniqueId],
+            [
                 'user_id' => $userId,
                 'type' => $type,
                 'title' => $title,
@@ -108,23 +118,30 @@ class NotificationService
                 'reference_id' => $referenceId,
                 'reference_type' => $referenceType,
                 'created_at' => $time ?? now(),
-            ]);
-        }
+                'updated_at' => $time ?? now(),
+            ]
+        );
+    }
+
+    private function buildScopedUniqueId(string $uniqueId, int|string|null $userId): string
+    {
+        return "{$uniqueId}_user_{$userId}";
     }
 
     /**
-     * Marquer une notification comme lue
+     * Marquer une notification comme lue.
      */
     public function markAsRead($notificationId)
     {
         $notification = AppNotification::find($notificationId);
+
         if ($notification && $notification->user_id === Auth::id()) {
             $notification->markAsRead();
         }
     }
 
     /**
-     * Marquer toutes les notifications comme lues
+     * Marquer toutes les notifications comme lues.
      */
     public function markAllAsRead()
     {
@@ -134,7 +151,7 @@ class NotificationService
     }
 
     /**
-     * Obtenir les notifications non lues
+     * Obtenir les notifications non lues.
      */
     public function getUnreadNotifications()
     {
@@ -145,7 +162,7 @@ class NotificationService
     }
 
     /**
-     * Obtenir le nombre de notifications non lues
+     * Obtenir le nombre de notifications non lues.
      */
     public function getUnreadCount()
     {

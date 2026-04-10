@@ -4,14 +4,16 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+use App\Services\RolePermissionPresetService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $presetService = app(RolePermissionPresetService::class);
+
         $users = [
             [
                 'name' => 'GBEDE Bernard',
@@ -25,7 +27,14 @@ class UserSeeder extends Seeder
                 'email' => 'gbedebernard61@gmail.com',
                 'password' => Hash::make('aqwzsxedc'),
                 'status' => 'actif',
-                'role' => 'user',
+                'role' => 'etudiant',
+            ],
+            [
+                'name' => 'Superviseur Test',
+                'email' => 'superviseur@gst.local',
+                'password' => Hash::make('Superviseur123!'),
+                'status' => 'actif',
+                'role' => 'superviseur',
             ],
         ];
 
@@ -41,7 +50,11 @@ class UserSeeder extends Seeder
             );
 
             // Assigner le rôle via Spatie
-            $user->assignRole($userData['role']);
+            $presetService->assignRolesAndPermissions(
+                $user,
+                [$userData['role']],
+                $presetService->permissionsForRoles([$userData['role']])
+            );
         }
     }
 }
