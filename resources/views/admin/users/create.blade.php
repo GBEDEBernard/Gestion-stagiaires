@@ -1,6 +1,10 @@
 <x-app-layout>
+<<<<<<< HEAD
     <div class="max-w-2xl mx-auto">
         <!-- En-tête -->
+=======
+    <div class="max-w-5xl mx-auto">
+>>>>>>> e9635ab
         <div class="mb-8">
             <div class="flex items-center gap-4 mb-2">
                 <a href="{{ route('admin.users.index') }}" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition">
@@ -10,6 +14,7 @@
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nouvel Utilisateur</h1>
             </div>
+<<<<<<< HEAD
             <p class="text-gray-500 dark:text-gray-400 ml-14">Créez un nouvel utilisateur avec rôles et permissions</p>
         </div>
 
@@ -110,3 +115,14 @@
         </div>
     </div>
 </x-app-layout>
+=======
+            <p class="text-gray-500 dark:text-gray-400 ml-14">Formulaire unique pour creer un admin, un superviseur ou un etudiant.</p>
+        </div>
+
+        @include('admin.users.partials.form', [
+            'formAction' => route('admin.users.store'),
+            'submitLabel' => "Creer l'utilisateur",
+        ])
+    </div>
+</x-app-layout>
+>>>>>>> e9635ab

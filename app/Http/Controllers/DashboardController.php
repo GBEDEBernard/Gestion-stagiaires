@@ -18,6 +18,20 @@ class DashboardController extends Controller
 {
     public function index()
     {
+<<<<<<< HEAD
+=======
+        if (Auth::user()?->hasRole('etudiant')) {
+            // jb -> Le dashboard global reste reserve au pilotage admin.
+            // Un stagiaire qui tape l'URL ou garde un ancien lien est
+            // renvoye vers son espace dedie pour eviter toute confusion.
+            return redirect()
+                ->route('student.stage')
+                ->with('info', "L'espace stagiaire remplace le dashboard global pour votre compte.");
+        }
+
+        abort_unless(Auth::user()?->can('dashboard.view'), 403);
+
+>>>>>>> e9635ab
         $today = Carbon::now()->startOfDay();
 
         // ==================== Notifications ====================

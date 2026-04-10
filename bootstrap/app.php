@@ -4,6 +4,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+<<<<<<< HEAD
+=======
+use App\Http\Middleware\EnsurePasswordIsChanged;
+>>>>>>> e9635ab
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -21,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+<<<<<<< HEAD
+=======
+            'password.changed' => EnsurePasswordIsChanged::class,
+>>>>>>> e9635ab
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

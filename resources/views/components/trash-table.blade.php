@@ -4,6 +4,10 @@
 'columns',
 'restoreRoute',
 'forceDeleteRoute',
+<<<<<<< HEAD
+=======
+'restoreMethod' => 'PUT',
+>>>>>>> e9635ab
 'fields' => [],
 'periodColumn' => null,
 'relationColumn' => null,
@@ -133,7 +137,11 @@ default => 'text-red-500',
                                 <!-- Restaurer -->
                                 <form action="{{ route($restoreRoute, $item->id) }}" method="POST" class="inline">
                                     @csrf
+<<<<<<< HEAD
                                     @method('PATCH')
+=======
+                                    @method($restoreMethod)
+>>>>>>> e9635ab
                                     <button type="submit"
                                         class="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all duration-200"
                                         onclick="return confirm('Voulez-vous restaurer cet élément ?')">
@@ -184,4 +192,8 @@ default => 'text-red-500',
         </div>
         @endif
     </div>
+<<<<<<< HEAD
 </div>
+=======
+</div>
+>>>>>>> e9635ab

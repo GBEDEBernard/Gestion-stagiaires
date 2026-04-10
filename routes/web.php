@@ -15,6 +15,14 @@ use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
 use App\Http\Controllers\CorbeilleController;
 use App\Http\Controllers\NotificationController;
+<<<<<<< HEAD
+=======
+use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\StudentStageController;
+use App\Http\Controllers\TaskController;
+>>>>>>> e9635ab
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +35,13 @@ Route::get('/', fn() => redirect()->route('login'));
 require __DIR__ . '/auth.php';
 
 // Routes protégées
+<<<<<<< HEAD
 Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
+=======
+// jb -> Toute la partie metier du projet reste derriere 3 verrous:
+// connexion, email verifie et mot de passe temporaire remplace.
+Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
+>>>>>>> e9635ab
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -55,9 +69,17 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [EtudiantController::class, 'index'])->name('etudiants.index')->middleware('permission:etudiants.view');
         Route::get('create', [EtudiantController::class, 'create'])->name('etudiants.create')->middleware('permission:etudiants.create');
         Route::post('/', [EtudiantController::class, 'store'])->name('etudiants.store')->middleware('permission:etudiants.create');
+<<<<<<< HEAD
         Route::get('{etudiant}/edit', [EtudiantController::class, 'edit'])->name('etudiants.edit')->middleware('permission:etudiants.edit');
         Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
+=======
+        Route::post('sync-accounts', [EtudiantController::class, 'syncAccounts'])->name('etudiants.syncAccounts')->middleware('permission:etudiants.edit');
+        Route::get('{etudiant}/edit', [EtudiantController::class, 'edit'])->name('etudiants.edit')->middleware('permission:etudiants.edit');
+        Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
+        Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
+        Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
+>>>>>>> e9635ab
 
         // Corbeille
         Route::get('corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
@@ -131,6 +153,29 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
+<<<<<<< HEAD
+=======
+    // ---------------- Sites ----------------
+    Route::prefix('admin/sites')->group(function () {
+        Route::get('/', [SiteController::class, 'index'])->name('sites.index')->middleware('permission:sites.view');
+        Route::get('create', [SiteController::class, 'create'])->name('sites.create')->middleware('permission:sites.create');
+        Route::post('/', [SiteController::class, 'store'])->name('sites.store')->middleware('permission:sites.create');
+        Route::get('{site}/edit', [SiteController::class, 'edit'])->name('sites.edit')->middleware('permission:sites.edit');
+        Route::put('{site}', [SiteController::class, 'update'])->name('sites.update')->middleware('permission:sites.edit');
+        Route::delete('{site}', [SiteController::class, 'destroy'])->name('sites.destroy')->middleware('permission:sites.delete');
+    });
+
+    // ---------------- Taches ----------------
+    Route::prefix('admin/tasks')->group(function () {
+        Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
+        Route::get('create', [TaskController::class, 'create'])->name('tasks.create')->middleware('permission:tasks.create');
+        Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
+        Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');
+        Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
+        Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
+    });
+
+>>>>>>> e9635ab
     // ---------------- Signataires ----------------
     Route::prefix('admin/signataires')->group(function () {
         Route::get('/', [SignataireController::class, 'index'])->name('signataires.index')->middleware('permission:signataires.view');
@@ -170,6 +215,26 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
 
+<<<<<<< HEAD
+=======
+    // ---------------- Espace stagiaire ----------------
+    Route::get('/mon-stage', [StudentStageController::class, 'show'])
+        ->name('student.stage');
+
+    // ---------------- Presence ----------------
+    Route::prefix('presence')->group(function () {
+        Route::get('/', [PresenceController::class, 'index'])->name('presence.index')->middleware('permission:presence.view');
+        Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
+        Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
+    });
+
+    // ---------------- Rapports journaliers ----------------
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [DailyReportController::class, 'index'])->name('reports.index')->middleware('permission:daily_reports.view');
+        Route::post('/', [DailyReportController::class, 'store'])->name('reports.store')->middleware('permission:daily_reports.create');
+    });
+
+>>>>>>> e9635ab
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');

@@ -29,6 +29,12 @@ class VerifyEmailNotification extends Notification
     {
         $verificationUrl = $this->verificationUrl($notifiable);
 
+<<<<<<< HEAD
+=======
+        // jb -> Ce mail est reserve au renvoi du lien de verification
+        // apres la creation initiale du compte. Le mail initial d'onboarding
+        // est gere a part pour inclure aussi les identifiants temporaires.
+>>>>>>> e9635ab
         return (new MailMessage)
             ->subject('Activation de votre compte - Gestion Stagiaires')
             ->greeting('Bonjour ' . $notifiable->name . ' !')

@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+=======
+@php
+    $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
+@endphp
+
+>>>>>>> e9635ab
 <nav x-data="{ 
     sidebarOpen: false, 
     stagesOpen: false,
@@ -8,7 +15,11 @@
     <!-- Logo et Titre -->
     <div class="flex-shrink-0">
         <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50 bg-slate-900/30">
+<<<<<<< HEAD
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
+=======
+            <a href="{{ $homeRoute }}" class="flex items-center gap-3 group">
+>>>>>>> e9635ab
                 <div class="relative">
                     <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
                         class="w-12 h-12 rounded-2xl shadow-lg ring-2 ring-blue-500/30 group-hover:ring-blue-500/80 group-hover:scale-110 transition-all duration-300">
@@ -26,8 +37,54 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-4">
         <!-- Contenu du menu ici... (inchangé) -->
 
+<<<<<<< HEAD
         <!-- Menu Stages avec Sous-menu (Admin only) -->
         @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
+=======
+        @role('etudiant')
+        <div class="mb-4 rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 shadow-lg shadow-cyan-950/20">
+            <div class="px-3 py-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Espace stagiaire</p>
+                <p class="mt-1 text-sm text-slate-300">Les 3 acces utiles pour suivre ton stage sans detour.</p>
+            </div>
+
+            <div class="mt-2 space-y-2">
+                <a href="{{ route('student.stage') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    <div class="p-2 rounded-xl bg-cyan-500/20">
+                        <svg class="w-5 h-5 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7l9-4 9 4-9 4-9-4zm0 10l9 4 9-4M3 12l9 4 9-4" />
+                        </svg>
+                    </div>
+                    <span>Mon stage</span>
+                </a>
+
+                <a href="{{ route('presence.index') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    <div class="p-2 rounded-xl bg-emerald-500/20">
+                        <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <span>Presence</span>
+                </a>
+
+                <a href="{{ route('reports.index') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    <div class="p-2 rounded-xl bg-amber-500/20">
+                        <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <span>Rapport journalier</span>
+                </a>
+            </div>
+        </div>
+        @endrole
+
+        <!-- Menu Stages avec Sous-menu (Admin only) -->
+        @canany(['stages.view', 'type_stages.view', 'services.view', 'sites.view', 'tasks.view', 'signataires.view', 'jour_stage.view'])
+>>>>>>> e9635ab
         <div class="mb-3" x-data="{ open: false }">
             <button @click="open = !open"
                 class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden"
@@ -85,6 +142,30 @@
                     <span>Services</span>
                 </a>
                 @endcan
+<<<<<<< HEAD
+=======
+                @can('sites.view')
+                <a href="{{ route('sites.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Sites</span>
+                </a>
+                @endcan
+                @can('tasks.view')
+                <a href="{{ route('tasks.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
+                    </svg>
+                    <span>Taches</span>
+                </a>
+                @endcan
+>>>>>>> e9635ab
                 @can('signataires.view')
                 <a href="{{ route('signataires.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
@@ -121,6 +202,10 @@
 
         <!-- Étudiants -->
         @can('etudiants.view')
+<<<<<<< HEAD
+=======
+        @unlessrole('etudiant')
+>>>>>>> e9635ab
         <a href="{{ route('etudiants.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -138,10 +223,18 @@
             </span>
             @endif
         </a>
+<<<<<<< HEAD
+=======
+        @endunlessrole
+>>>>>>> e9635ab
         @endcan
 
         <!-- Badges -->
         @can('badges.view')
+<<<<<<< HEAD
+=======
+        @unlessrole('etudiant')
+>>>>>>> e9635ab
         <a href="{{ route('badges.index') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
             <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -159,6 +252,10 @@
             </span>
             @endif
         </a>
+<<<<<<< HEAD
+=======
+        @endunlessrole
+>>>>>>> e9635ab
         @endcan
 
         <!-- Utilisateurs (Admin only) -->
@@ -227,6 +324,10 @@
 
         <!-- Divider -->
         @can('dashboard.view')
+<<<<<<< HEAD
+=======
+        @unlessrole('etudiant')
+>>>>>>> e9635ab
         <div class="border-t border-slate-700/50 my-3"></div>
 
         <!-- Lien Dashboard -->
@@ -245,6 +346,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </a>
+<<<<<<< HEAD
+=======
+        @endunlessrole
+>>>>>>> e9635ab
         @endcan
     </div>
 
@@ -329,4 +434,8 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(148, 163, 184, 0.5);
     }
+<<<<<<< HEAD
 </style>
+=======
+</style>
+>>>>>>> e9635ab

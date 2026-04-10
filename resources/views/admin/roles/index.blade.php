@@ -66,9 +66,15 @@
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
+<<<<<<< HEAD
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Utilisateur</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                             {{ $roles->filter(fn($r) => $r->name === 'user')->count() }}
+=======
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">Etudiant</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                            {{ $roles->filter(fn($r) => $r->name === 'etudiant')->count() }}
+>>>>>>> e9635ab
                         </p>
                     </div>
                     <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
@@ -209,4 +215,8 @@
             {{ $roles->links() }}
         </div>
     </div>
+<<<<<<< HEAD
 </x-app-layout>
+=======
+</x-app-layout>
+>>>>>>> e9635ab

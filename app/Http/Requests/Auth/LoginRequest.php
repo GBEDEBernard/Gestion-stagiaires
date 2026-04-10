@@ -11,17 +11,23 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+<<<<<<< HEAD
     /**
      * Autoriser la requête
      */
+=======
+>>>>>>> e9635ab
     public function authorize(): bool
     {
         return true;
     }
 
+<<<<<<< HEAD
     /**
      * Règles de validation
      */
+=======
+>>>>>>> e9635ab
     public function rules(): array
     {
         return [
@@ -30,11 +36,14 @@ class LoginRequest extends FormRequest
         ];
     }
 
+<<<<<<< HEAD
     /**
      * Authentifier l'utilisateur
      *
      * @throws ValidationException
      */
+=======
+>>>>>>> e9635ab
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
@@ -42,16 +51,25 @@ class LoginRequest extends FormRequest
         $credentials = $this->only('email', 'password');
         $remember = $this->boolean('remember');
 
+<<<<<<< HEAD
         if (! Auth::attempt($credentials, $remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'), // message en français défini dans auth.php
+=======
+        if (!Auth::attempt($credentials, $remember)) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.failed'),
+>>>>>>> e9635ab
             ]);
         }
 
         $user = Auth::user();
 
+<<<<<<< HEAD
         // Admin ne peut jamais être bloqué
         if ($user->role !== 'admin') {
             // Vérifier si le compte est actif
@@ -86,6 +104,22 @@ class LoginRequest extends FormRequest
     public function ensureIsNotRateLimited(): void
     {
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
+=======
+        if ($user->status !== 'actif') {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Votre compte est desactive.',
+            ]);
+        }
+
+        RateLimiter::clear($this->throttleKey());
+    }
+
+    public function ensureIsNotRateLimited(): void
+    {
+        if (!RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
+>>>>>>> e9635ab
             return;
         }
 
@@ -101,9 +135,12 @@ class LoginRequest extends FormRequest
         ]);
     }
 
+<<<<<<< HEAD
     /**
      * Clé pour limiter les tentatives
      */
+=======
+>>>>>>> e9635ab
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
