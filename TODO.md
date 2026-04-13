@@ -1,11 +1,18 @@
-# TODO: Ajout modal alerte distance pointage
+# TODO: Benin Timezone & Presence Status Implementation
 
-## Étapes complétées: 0/5
+## Progress
 
-- [ ]   1. Créer TODO.md ✅
-- [x] 2. Modifier PresenceController.php pour passer rejection_reason en session ✅
-- [x] 3. Modifier resources/views/presence/pointage.blade.php (ajouter modal SweetAlert + JS trigger) ✅
-- [x] 4. Modifier resources/views/presence/index.blade.php (ajouter modal SweetAlert + JS trigger) ✅
- - [x] 5. Fix validation + JS complet en pointage.blade.php (device fingerprint, full bootPresenceForms) ✅
+- [x] Step 1: Update config/app.php for Africa/Lagos timezone
+- [x] Step 2: Update AppServiceProvider.php boot method (no changes needed)
+- [x] Step 3: Migration created: 2026_04_13_142254_add_departure_status_to_attendance_days_table.php
+- [x] Step 4: Run migration (completed, column added)\n - [x] Step 5: Update AttendanceDay model (fillable/casts)
+- [ ] Step 6: Enhance PresenceService.php (departure_status logic)
+- [ ] Step 7: Update AdminPresenceService.php (stats)
+- [ ] Step 8: Update PresenceController.php (TZ-aware data)
+- [ ] Step 9: Update resources/views/presence/validate.blade.php (Benin time + preview status)
+- [ ] Step 10: Update resources/views/presence/historique.blade.php (TZ formats, enhanced badges/stats)
+- [ ] Step 11: Update resources/views/components/presence-history-table.blade.php
+- [ ] Step 12: Test pointage at different times
+- [ ] Step 13: Update admin views if needed
 
-**Task terminée** Tous fichiers modifiés, modal prêt pour distance reject !
+**Next:** Execute Step 1-2 (configs), then migration.

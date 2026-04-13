@@ -46,9 +46,9 @@ class PresenceController extends Controller
     }
 
     /**
-     * Enregistre l'arrivée (check-in).
+     * Prépare la validation du check-in (stocke en session, affiche page validation).
      */
-    public function checkIn(Request $request)
+    public function prepareCheckIn(Request $request)
     {
         $request->validate([
             'stage_id' => 'required|exists:stages,id',
@@ -58,11 +58,179 @@ class PresenceController extends Controller
             'device_fingerprint' => 'required|string',
         ]);
 
+        $user = $request->user();
+        $etudiant = $user->etudiant;
+        $stage = $etudiant->stages()->findOrFail($request->stage_id);
+
+        $previewData = [
+            'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
+            'site_name' => $stage->site?->name ?? 'Site principal',
+            'theme' => $stage->theme,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy' => $request->accuracy_meters ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => 'arrivée',
+        ];
+
+        // Calculer distance si geofence disponible
+        $geofence = $stage->site?->geofences()->where('is_active', true)->first();
+        if ($geofence) {
+            $distance = $this->calculateDistance(
+                $request->latitude,
+                $request->longitude,
+                $geofence->center_latitude,
+                $geofence->center_longitude
+            );
+            $previewData['distance'] = $distance;
+        }
+
+        // Stocker données complètes pour confirmation
+        session(['pending_pointage' => [
+            'type' => 'check_in',
+            'stage_id' => $request->stage_id,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy_meters' => $request->accuracy_meters,
+            'device_fingerprint' => $request->device_fingerprint,
+            'device_uuid' => $request->device_uuid ?? '',
+            'device_label' => $request->device_label ?? '',
+            'platform' => $request->platform ?? '',
+            'browser' => $request->browser ?? '',
+            'app_version' => $request->app_version ?? '',
+        ]]);
+
+        return view('presence.validate', $previewData);
+    }
+
+    /**
+     * Prépare la validation du check-out (stocke en session, affiche page validation).
+     */
+    public function prepareCheckOut(Request $request)
+    {
+        $request->validate([
+            'stage_id' => 'required|exists:stages,id',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'accuracy_meters' => 'nullable|numeric|min:0',
+            'device_fingerprint' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        $etudiant = $user->etudiant;
+        $stage = $etudiant->stages()->findOrFail($request->stage_id);
+
+        $previewData = [
+            'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
+            'site_name' => $stage->site?->name ?? 'Site principal',
+            'theme' => $stage->theme,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy' => $request->accuracy_meters ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => 'départ',
+        ];
+
+        // Calculer distance si geofence disponible
+        $geofence = $stage->site?->geofences()->where('is_active', true)->first();
+        if ($geofence) {
+            $distance = $this->calculateDistance(
+                $request->latitude,
+                $request->longitude,
+                $geofence->center_latitude,
+                $geofence->center_longitude
+            );
+            $previewData['distance'] = $distance;
+        }
+
+        // Stocker données complètes pour confirmation
+        session(['pending_pointage' => [
+            'type' => 'check_out',
+            'stage_id' => $request->stage_id,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy_meters' => $request->accuracy_meters,
+            'device_fingerprint' => $request->device_fingerprint,
+            'device_uuid' => $request->device_uuid ?? '',
+            'device_label' => $request->device_label ?? '',
+            'platform' => $request->platform ?? '',
+            'browser' => $request->browser ?? '',
+            'app_version' => $request->app_version ?? '',
+        ]]);
+
+        return view('presence.validate', $previewData);
+    }
+
+    /**
+     * Affiche la page de validation (récupère depuis session).
+     */
+    public function validate(Request $request)
+    {
+        $pending = session('pending_pointage');
+        if (!$pending) {
+            return redirect()->route('presence.pointage')->with('error', 'Aucune donnée de pointage en attente.');
+        }
+
+        $user = $request->user();
+        $etudiant = $user->etudiant;
+        $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
+
+        $previewData = [
+            'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
+            'site_name' => $stage->site?->name ?? 'Site principal',
+            'theme' => $stage->theme,
+            'latitude' => $pending['latitude'],
+            'longitude' => $pending['longitude'],
+            'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
+            'form_data' => $pending,
+        ];
+
+        // Distance
+        $geofence = $stage->site?->geofences()->where('is_active', true)->first();
+        if ($geofence) {
+            $distance = $this->calculateDistance(
+                $pending['latitude'],
+                $pending['longitude'],
+                $geofence->center_latitude,
+                $geofence->center_longitude
+            );
+            $previewData['distance'] = $distance;
+        }
+
+        return view('presence.validate', $previewData);
+    }
+
+    /**
+     * Confirme et enregistre le pointage depuis session.
+     */
+    public function confirm(Request $request)
+    {
+        $pending = session('pending_pointage');
+        if (!$pending) {
+            return redirect()->route('presence.pointage')->with('error', 'Données de pointage expirées.');
+        }
+
         try {
             $user = $request->user();
-            $stage = $user->etudiant->stages()->findOrFail($request->stage_id);
+            $stage = $user->etudiant->stages()->findOrFail($pending['stage_id']);
 
-            $event = $this->presenceService->registerCheckIn($stage, $user, $request->all());
+            $data = $pending;
+            $data['device_uuid'] = $pending['device_uuid'];
+            $data['device_label'] = $pending['device_label'];
+            $data['platform'] = $pending['platform'];
+            $data['browser'] = $pending['browser'];
+            $data['app_version'] = $pending['app_version'];
+
+            if ($pending['type'] === 'check_in') {
+                $event = $this->presenceService->registerCheckIn($stage, $user, $data);
+            } else {
+                $event = $this->presenceService->registerCheckOut($stage, $user, $data);
+            }
+
+            // Nettoyer session
+            request()->session()->forget('pending_pointage');
 
             if ($event->status === 'rejected') {
                 return redirect()->route('presence.pointage')
@@ -70,59 +238,33 @@ class PresenceController extends Controller
                     ->with('reason_code', $event->reason_code);
             }
 
-            return redirect()->route('presence.pointage')
-                ->with(
-                    'success',
-                    $event->status === 'approved'
-                        ? '✅ Pointage d\'arrivée enregistré avec succès.'
-                        : '⚠️ Pointage enregistré mais nécessite validation.'
-                );
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors());
+            $message = $event->status === 'approved'
+                ? '✅ Pointage confirmé et enregistré !'
+                : '⚠️ Pointage enregistré mais nécessite validation admin.';
+
+            return redirect()->route('presence.historique')
+                ->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('Check-in failed', ['error' => $e->getMessage(), 'user_id' => $request->user()->id]);
-            return redirect()->back()->with('error', 'Erreur lors du pointage. Réessayez.');
+            Log::error('Pointage confirm failed', ['error' => $e->getMessage()]);
+            request()->session()->forget('pending_pointage');
+            return redirect()->route('presence.pointage')->with('error', 'Erreur lors de la confirmation.');
         }
     }
 
     /**
-     * Enregistre le départ (check-out).
+     * Enregistre l'arrivée (check-in) - Ancienne méthode (compatibilité).
+     */
+    public function checkIn(Request $request)
+    {
+        return $this->prepareCheckIn($request);
+    }
+
+    /**
+     * Enregistre le départ (check-out) - Ancienne méthode (compatibilité).
      */
     public function checkOut(Request $request)
     {
-        $request->validate([
-            'stage_id' => 'required|exists:stages,id',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'accuracy_meters' => 'nullable|numeric|min:0',
-            'device_fingerprint' => 'required|string',
-        ]);
-
-        try {
-            $user = $request->user();
-            $stage = $user->etudiant->stages()->findOrFail($request->stage_id);
-
-            $event = $this->presenceService->registerCheckOut($stage, $user, $request->all());
-
-            if ($event->status === 'rejected') {
-                return redirect()->route('presence.pointage')
-                    ->with('rejection_reason', $event->rejection_reason)
-                    ->with('reason_code', $event->reason_code);
-            }
-
-            return redirect()->route('presence.pointage')
-                ->with(
-                    'success',
-                    $event->status === 'approved'
-                        ? '✅ Pointage de départ enregistré avec succès.'
-                        : '⚠️ Pointage enregistré mais nécessite validation.'
-                );
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors());
-        } catch (\Exception $e) {
-            Log::error('Check-out failed', ['error' => $e->getMessage(), 'user_id' => $request->user()->id]);
-            return redirect()->back()->with('error', 'Erreur lors du pointage. Réessayez.');
-        }
+        return $this->prepareCheckOut($request);
     }
 
     /**
@@ -144,18 +286,30 @@ class PresenceController extends Controller
             default => now()->subWeek()
         };
 
-        $filters = [
-            'date_from' => $dateFrom->format('Y-m-d'),
-            'date_to' => now()->format('Y-m-d'),
-            'etudiant_id' => $etudiant->id,
-        ];
+        $attendanceEvents = \App\Models\AttendanceEvent::where('etudiant_id', $etudiant->id)
+            ->whereBetween('occurred_at', [$dateFrom, now()])
+            ->with(['user', 'site', 'stage'])
+            ->orderByDesc('occurred_at')
+            ->get();
 
-        $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-            ->with(['stage.site', 'anomalies']);
+        return view('presence.historique', compact('attendanceEvents', 'period'));
+    }
 
-        $attendanceDays = $attendanceDaysQuery->get()
-            ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
+    /**
+     * Calcule distance entre 2 points GPS (mètres).
+     */
+    private function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): int
+    {
+        $earthRadius = 6371000; // Rayon Terre en mètres
 
-        return view('presence.historique', compact('attendanceDays', 'period'));
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lngDelta = deg2rad($lng2 - $lng1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lngDelta / 2) * sin($lngDelta / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return (int) round($earthRadius * $c);
     }
 }

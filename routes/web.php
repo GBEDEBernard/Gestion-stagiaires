@@ -214,6 +214,10 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::prefix('presence')->group(function () {
         Route::get('/pointage', [PresenceController::class, 'pointage'])->name('presence.pointage')->middleware('permission:presence.view');
         Route::get('/historique', [PresenceController::class, 'historique'])->name('presence.historique')->middleware('permission:presence.view');
+        Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('presence.prepareCheckin')->middleware('permission:presence.checkin');
+        Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
+        Route::get('/validate', [PresenceController::class, 'validate'])->name('presence.validate');
+        Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });

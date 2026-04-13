@@ -78,7 +78,7 @@
                 <div class="space-y-4">
 
                     {{-- CHECKIN --}}
-                    <form method="POST" action="{{ route('presence.checkin') }}" class="presence-form" data-action="arrivée" novalidate>
+                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="presence-form" data-action="arrivée" novalidate>
                         @csrf
                         <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
                         <input type="hidden" name="latitude">
@@ -97,7 +97,7 @@
                     </form>
 
                     {{-- CHECKOUT --}}
-                    <form method="POST" action="{{ route('presence.checkout') }}" class="presence-form" data-action="départ" novalidate>
+                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="presence-form" data-action="départ" novalidate>
                         @csrf
                         <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
                         <input type="hidden" name="latitude">
@@ -131,9 +131,9 @@
                 const key = 'jb_presence_device_uuid';
                 let uuid = localStorage.getItem(key);
                 if (!uuid) {
-                    uuid = (crypto.randomUUID)
-                        ? crypto.randomUUID()
-                        : `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    uuid = (crypto.randomUUID) ?
+                        crypto.randomUUID() :
+                        `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
                     localStorage.setItem(key, uuid);
                 }
                 return uuid;
@@ -158,26 +158,26 @@
 
             function detectBrowser() {
                 const ua = navigator.userAgent;
-                if (ua.includes('Edg/'))     return 'Edge';
-                if (ua.includes('Chrome/'))  return 'Chrome';
+                if (ua.includes('Edg/')) return 'Edge';
+                if (ua.includes('Chrome/')) return 'Chrome';
                 if (ua.includes('Firefox/')) return 'Firefox';
-                if (ua.includes('Safari/'))  return 'Safari';
+                if (ua.includes('Safari/')) return 'Safari';
                 return 'Unknown';
             }
 
             // ─── Init ────────────────────────────────────────────────────────
-            const forms  = document.querySelectorAll('.presence-form');
+            const forms = document.querySelectorAll('.presence-form');
             const status = document.getElementById('presence-status');
 
             // Pré-calcul des valeurs device (une seule fois)
-            const deviceUuid    = getOrCreateDeviceUuid();
-            const fingerprint   = generateFingerprint(deviceUuid);
-            const browserName   = detectBrowser();
-            const platformName  = navigator.userAgentData?.platform || navigator.platform || 'unknown';
-            const deviceLabel   = `${browserName} / ${platformName}`;
+            const deviceUuid = getOrCreateDeviceUuid();
+            const fingerprint = generateFingerprint(deviceUuid);
+            const browserName = detectBrowser();
+            const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
+            const deviceLabel = `${browserName} / ${platformName}`;
 
             // ─── Vérification SweetAlert (rejet serveur) ────────────────────
-            @if (session('rejection_reason'))
+            @if(session('rejection_reason'))
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'error',
@@ -200,7 +200,7 @@
 
             // ─── Bind click sur chaque formulaire ───────────────────────────
             forms.forEach(form => {
-                const btn        = form.querySelector('.presence-submit');
+                const btn = form.querySelector('.presence-submit');
                 const actionName = form.dataset.action || 'présence';
 
                 btn.addEventListener('click', () => {
@@ -212,16 +212,16 @@
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
                             // ── Coordonnées GPS ──────────────────────────────
-                            form.querySelector('[name="latitude"]').value        = pos.coords.latitude;
-                            form.querySelector('[name="longitude"]').value       = pos.coords.longitude;
+                            form.querySelector('[name="latitude"]').value = pos.coords.latitude;
+                            form.querySelector('[name="longitude"]').value = pos.coords.longitude;
                             form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy || 0);
 
                             // ── Informations device (CORRECTION PRINCIPALE) ──
                             form.querySelector('[name="device_fingerprint"]').value = fingerprint;
-                            form.querySelector('[name="device_uuid"]').value        = deviceUuid;
-                            form.querySelector('[name="device_label"]').value       = deviceLabel;
-                            form.querySelector('[name="platform"]').value           = platformName;
-                            form.querySelector('[name="browser"]').value            = browserName;
+                            form.querySelector('[name="device_uuid"]').value = deviceUuid;
+                            form.querySelector('[name="device_label"]').value = deviceLabel;
+                            form.querySelector('[name="platform"]').value = platformName;
+                            form.querySelector('[name="browser"]').value = browserName;
 
                             status.textContent = `✅ Position capturée (précision: ${Math.round(pos.coords.accuracy)}m) — envoi en cours...`;
                             status.className = 'p-4 bg-green-50 text-green-700 rounded-xl text-center text-sm';
@@ -230,16 +230,15 @@
                         },
                         (err) => {
                             let msg = 'Impossible de récupérer votre position.';
-                            if (err.code === err.PERMISSION_DENIED)    msg = '🔒 Autorise la localisation dans ton navigateur.';
-                            if (err.code === err.TIMEOUT)              msg = '⏱️ GPS trop lent. Essaie en plein air ou près d\'une fenêtre.';
+                            if (err.code === err.PERMISSION_DENIED) msg = '🔒 Autorise la localisation dans ton navigateur.';
+                            if (err.code === err.TIMEOUT) msg = '⏱️ GPS trop lent. Essaie en plein air ou près d\'une fenêtre.';
                             if (err.code === err.POSITION_UNAVAILABLE) msg = '📡 Position indisponible pour le moment.';
 
                             status.textContent = msg;
                             status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
                             btn.disabled = false;
                             btn.textContent = actionName === 'arrivée' ? 'Pointer arrivée' : 'Pointer départ';
-                        },
-                        {
+                        }, {
                             enableHighAccuracy: true,
                             timeout: 15000,
                             maximumAge: 0,
