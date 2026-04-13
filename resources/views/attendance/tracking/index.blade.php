@@ -27,7 +27,7 @@
                 </div>
 
                 <div class="flex flex-wrap gap-3 items-center">
-                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" class="px-4 py-2  dark:bg-slate-800 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all">
                         📥 Exporter CSV
                     </a>
@@ -170,7 +170,7 @@
                             <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Retard total</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    <tbody class="divide-y divide-slate-200">
                         @forelse($weekData as $days)
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                             <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
