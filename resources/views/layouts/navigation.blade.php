@@ -1,5 +1,5 @@
 @php
-    $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
+$homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
 @endphp
 
 <nav x-data="{ 
@@ -70,6 +70,27 @@
             </div>
         </div>
         @endrole
+
+        <!-- Menu Présences (Admin + Users) -->
+        @can('presence.view')
+        <a href="{{ route('presence.index') }}"
+            class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 group relative overflow-hidden border-l-4 border-emerald-500/30">
+            <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="p-2 rounded-xl bg-emerald-500/20">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span>Pointage Présence</span>
+            </div>
+            @if(auth()->user()->can('presence.admin.view') && ($anomaliesCount ?? 0) > 0)
+            <span class="px-2.5 py-0.5 text-xs font-bold bg-rose-500 text-white rounded-full shadow-lg animate-pulse">
+                {{ $anomaliesCount }}
+            </span>
+            @endif
+        </a>
+        @endcan
 
         <!-- Menu Stages avec Sous-menu (Admin only) -->
         @canany(['stages.view', 'type_stages.view', 'services.view', 'sites.view', 'tasks.view', 'signataires.view', 'jour_stage.view'])

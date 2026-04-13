@@ -17,8 +17,7 @@ class DatabaseSeeder extends Seeder
             JoursSeeder::class,
             TypeStageSeeder::class,
             UserSeeder::class,
+            EtudiantsPresenceSeeder::class,
         ]);
-
-       
     }
 }

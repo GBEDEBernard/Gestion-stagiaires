@@ -31,6 +31,9 @@ class NavigationComposer
         // Compter les rôles
         $rolesCount = Role::count();
 
+        // Compter les anomalies ouvertes
+        $anomaliesCount = \App\Models\AttendanceAnomaly::where('status', 'open')->count();
+
         // Compter les éléments dans la corbeille (toutes tables confondues)
         $trashCount = Stage::onlyTrashed()->count()
             + Etudiant::onlyTrashed()->count()
@@ -44,6 +47,7 @@ class NavigationComposer
             'usersCount' => $usersCount,
             'rolesCount' => $rolesCount,
             'trashCount' => $trashCount,
+            'anomaliesCount' => $anomaliesCount,
         ]);
     }
 }
