@@ -133,7 +133,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         </div>
         @endrole
 
-        <!-- Menu Présences (Admin + Users) -->
+        <!-- Menu Présences (Admin + Users)
         @can('presence.view')
         <a href="{{ route('presence.pointage') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 group relative overflow-hidden border-l-4 border-emerald-500/30">
@@ -151,7 +151,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 {{ $anomaliesCount }}
             </span>
             @endif
-        </a>
+        </a> -->
 
         {{-- Suivi Pointages pour Admins --}}
         @if(auth()->user()->can('presence.view') && auth()->user()->hasRole('admin'))
@@ -229,27 +229,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <span>Services</span>
                 </a>
                 @endcan
-                @can('sites.view')
-                <a href="{{ route('sites.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Sites</span>
-                </a>
-                @endcan
-                @can('tasks.view')
-                <a href="{{ route('tasks.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
-                    </svg>
-                    <span>Taches</span>
-                </a>
-                @endcan
+               
                 @can('signataires.view')
                 <a href="{{ route('signataires.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
@@ -393,7 +373,27 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             @endif
         </a>
         @endcan
-
+ @can('sites.view')
+                <a href="{{ route('sites.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Sites</span>
+                </a>
+                @endcan
+                @can('tasks.view')
+                <a href="{{ route('tasks.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
+                    </svg>
+                    <span>Taches</span>
+                </a>
+                @endcan
         <!-- Divider -->
         @can('dashboard.view')
         @unlessrole('etudiant')

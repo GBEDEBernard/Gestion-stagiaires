@@ -78,7 +78,7 @@ class AdminAttendanceTrackingController extends Controller
         foreach ($attendanceDays as $etudiantId => $days) {
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
-            
+
             $weekSummary[$etudiantId] = [
                 'present_days' => $presentDays,
                 'total_late_minutes' => $totalLateMinutes,
@@ -114,7 +114,7 @@ class AdminAttendanceTrackingController extends Controller
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
             $totalWorkedMinutes = $days->sum('worked_minutes');
-            
+
             $monthlySummary[$etudiantId] = [
                 'present_days' => $presentDays,
                 'total_late_minutes' => $totalLateMinutes,
@@ -152,7 +152,7 @@ class AdminAttendanceTrackingController extends Controller
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
             $totalWorkedMinutes = $days->sum('worked_minutes');
             $anomalies = $days->sum(fn($d) => $d->anomalies->count());
-            
+
             $yearlySummary[$etudiantId] = [
                 'present_days' => $presentDays,
                 'total_late_minutes' => $totalLateMinutes,
@@ -180,7 +180,7 @@ class AdminAttendanceTrackingController extends Controller
         $filterDate = Carbon::createFromFormat('Y-m-d', $dateFilter);
 
         $filename = 'suivi-pointages-' . $period . '-' . $filterDate->format('Y-m-d') . '.csv';
-        
+
         $headers = [
             "Content-type" => "text/csv; charset=utf-8",
             "Content-Disposition" => "attachment; filename=$filename",

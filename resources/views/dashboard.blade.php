@@ -486,54 +486,127 @@
     ════════════════════════════════════════════════════════ --}}
     <script>
         window.__DASHBOARD__ = {
-            labelsJour:      {{ Js::from($labelsJour) }},
-            evolutionJour:   {{ Js::from($evolutionJour) }},
-            labelsSemaine:   {{ Js::from($labelsSemaine) }},
-            evolutionSemaine:{{ Js::from($evolutionSemaine) }},
-            labelsMois:      {{ Js::from($labelsMois) }},
-            evolutionMois:   {{ Js::from($evolutionMois) }},
-            typesLabels:     {{ Js::from($typesLabels) }},
-            typesData:       {{ Js::from($typesData) }},
-            stagesMoisLabels:{{ Js::from($labelsMoisAnnee) }},
-            stagesMoisData:  {{ Js::from($stagesParMois) }},
-            svcLabels:       {{ Js::from($servicesStats->pluck('service')->values()) }},
-            svcEnCours:      {{ Js::from($servicesStats->pluck('enCours')->values()) }},
-            svcTermines:     {{ Js::from($servicesStats->pluck('termines')->values()) }},
-            svcInscrits:     {{ Js::from($servicesStats->pluck('inscrits')->values()) }}
+            labelsJour: {
+                {
+                    Js::from($labelsJour)
+                }
+            },
+            evolutionJour: {
+                {
+                    Js::from($evolutionJour)
+                }
+            },
+            labelsSemaine: {
+                {
+                    Js::from($labelsSemaine)
+                }
+            },
+            evolutionSemaine: {
+                {
+                    Js::from($evolutionSemaine)
+                }
+            },
+            labelsMois: {
+                {
+                    Js::from($labelsMois)
+                }
+            },
+            evolutionMois: {
+                {
+                    Js::from($evolutionMois)
+                }
+            },
+            typesLabels: {
+                {
+                    Js::from($typesLabels)
+                }
+            },
+            typesData: {
+                {
+                    Js::from($typesData)
+                }
+            },
+            stagesMoisLabels: {
+                {
+                    Js::from($labelsMoisAnnee)
+                }
+            },
+            stagesMoisData: {
+                {
+                    Js::from($stagesParMois)
+                }
+            },
+            svcLabels: {
+                {
+                    Js::from($servicesStats - > pluck('service') - > values())
+                }
+            },
+            svcEnCours: {
+                {
+                    Js::from($servicesStats - > pluck('enCours') - > values())
+                }
+            },
+            svcTermines: {
+                {
+                    Js::from($servicesStats - > pluck('termines') - > values())
+                }
+            },
+            svcInscrits: {
+                {
+                    Js::from($servicesStats - > pluck('inscrits') - > values())
+                }
+            }
         };
     </script>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
             Chart.defaults.font.family = "'Figtree', sans-serif";
-            var isDark   = document.documentElement.classList.contains('dark');
-            var TXT      = isDark ? '#e5e7eb' : '#374151';
-            var GRID     = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+            var isDark = document.documentElement.classList.contains('dark');
+            var TXT = isDark ? '#e5e7eb' : '#374151';
+            var GRID = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
             var BORDER_BG = isDark ? '#1f2937' : '#ffffff';
 
-            var D            = window.__DASHBOARD__;
-            var LABELS_JOUR  = D.labelsJour;
-            var DATA_JOUR    = D.evolutionJour;
-            var LABELS_SEM   = D.labelsSemaine;
-            var DATA_SEM     = D.evolutionSemaine;
-            var LABELS_MOIS  = D.labelsMois;
-            var DATA_MOIS    = D.evolutionMois;
+            var D = window.__DASHBOARD__;
+            var LABELS_JOUR = D.labelsJour;
+            var DATA_JOUR = D.evolutionJour;
+            var LABELS_SEM = D.labelsSemaine;
+            var DATA_SEM = D.evolutionSemaine;
+            var LABELS_MOIS = D.labelsMois;
+            var DATA_MOIS = D.evolutionMois;
             var TYPES_LABELS = D.typesLabels;
-            var TYPES_DATA   = D.typesData;
-            var SM_LABELS    = D.stagesMoisLabels;
-            var SM_DATA      = D.stagesMoisData;
-            var SVC_LABELS   = D.svcLabels;
-            var SVC_ENCOURS  = D.svcEnCours;
+            var TYPES_DATA = D.typesData;
+            var SM_LABELS = D.stagesMoisLabels;
+            var SM_DATA = D.stagesMoisData;
+            var SVC_LABELS = D.svcLabels;
+            var SVC_ENCOURS = D.svcEnCours;
             var SVC_TERMINES = D.svcTermines;
             var SVC_INSCRITS = D.svcInscrits;
 
             function xyScales() {
                 return {
-                    x: { ticks: { color: TXT, maxRotation: 45 }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { color: TXT, precision: 0 }, grid: { color: GRID } }
+                    x: {
+                        ticks: {
+                            color: TXT,
+                            maxRotation: 45
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: TXT,
+                            precision: 0
+                        },
+                        grid: {
+                            color: GRID
+                        }
+                    }
                 };
             }
 
@@ -553,7 +626,10 @@
             function buildInscriptions(labels, data) {
                 var ctx = document.getElementById('chart-inscriptions');
                 if (!ctx) return;
-                if (inscChart) { inscChart.destroy(); inscChart = null; }
+                if (inscChart) {
+                    inscChart.destroy();
+                    inscChart = null;
+                }
                 inscChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -576,29 +652,34 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: tip() },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: tip()
+                        },
                         scales: xyScales()
                     }
                 });
             }
 
-            window.switchPeriod = function (period) {
-                ['jour','semaine','mois'].forEach(function (p) {
+            window.switchPeriod = function(period) {
+                ['jour', 'semaine', 'mois'].forEach(function(p) {
                     var btn = document.getElementById('btn-' + p);
                     if (!btn) return;
-                    btn.className = p === period
-                        ? 'px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-500 text-white transition-all'
-                        : 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
+                    btn.className = p === period ?
+                        'px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-500 text-white transition-all' :
+                        'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
                 });
-                if (period === 'jour')    buildInscriptions(LABELS_JOUR, DATA_JOUR);
-                if (period === 'semaine') buildInscriptions(LABELS_SEM,  DATA_SEM);
-                if (period === 'mois')    buildInscriptions(LABELS_MOIS, DATA_MOIS);
+                if (period === 'jour') buildInscriptions(LABELS_JOUR, DATA_JOUR);
+                if (period === 'semaine') buildInscriptions(LABELS_SEM, DATA_SEM);
+                if (period === 'mois') buildInscriptions(LABELS_MOIS, DATA_MOIS);
             };
 
             buildInscriptions(LABELS_JOUR, DATA_JOUR);
 
             /* ── 2. PAR TYPE — Doughnut ── */
-            (function () {
+            (function() {
                 var ctx = document.getElementById('chart-types');
                 if (!ctx) return;
                 new Chart(ctx, {
@@ -607,7 +688,7 @@
                         labels: TYPES_LABELS.length ? TYPES_LABELS : ['Aucun type'],
                         datasets: [{
                             data: TYPES_DATA.length ? TYPES_DATA : [1],
-                            backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'],
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'],
                             borderColor: BORDER_BG,
                             borderWidth: 3,
                             hoverOffset: 6
@@ -618,7 +699,17 @@
                         maintainAspectRatio: false,
                         cutout: '62%',
                         plugins: {
-                            legend: { position: 'bottom', labels: { color: TXT, padding: 14, usePointStyle: true, font: { size: 11 } } },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: TXT,
+                                    padding: 14,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
                             tooltip: tip()
                         }
                     }
@@ -626,7 +717,7 @@
             }());
 
             /* ── 3. STAGES 12 MOIS — Barres ── */
-            (function () {
+            (function() {
                 var ctx = document.getElementById('chart-stages-mois');
                 if (!ctx) return;
                 new Chart(ctx, {
@@ -644,31 +735,63 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: tip() },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: tip()
+                        },
                         scales: xyScales()
                     }
                 });
             }());
 
             /* ── 4. RÉPARTITION PAR SERVICE — Barres groupées ── */
-            (function () {
+            (function() {
                 var ctx = document.getElementById('chart-services');
                 if (!ctx) return;
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: SVC_LABELS.length ? SVC_LABELS : ['Aucun service'],
-                        datasets: [
-                            { label: 'En cours',  data: SVC_ENCOURS.length  ? SVC_ENCOURS  : [0], backgroundColor: '#22c55e', borderRadius: 4, borderSkipped: false },
-                            { label: 'Terminés',  data: SVC_TERMINES.length ? SVC_TERMINES : [0], backgroundColor: '#a855f7', borderRadius: 4, borderSkipped: false },
-                            { label: 'À venir',   data: SVC_INSCRITS.length ? SVC_INSCRITS : [0], backgroundColor: '#f97316', borderRadius: 4, borderSkipped: false }
+                        datasets: [{
+                                label: 'En cours',
+                                data: SVC_ENCOURS.length ? SVC_ENCOURS : [0],
+                                backgroundColor: '#22c55e',
+                                borderRadius: 4,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'Terminés',
+                                data: SVC_TERMINES.length ? SVC_TERMINES : [0],
+                                backgroundColor: '#a855f7',
+                                borderRadius: 4,
+                                borderSkipped: false
+                            },
+                            {
+                                label: 'À venir',
+                                data: SVC_INSCRITS.length ? SVC_INSCRITS : [0],
+                                backgroundColor: '#f97316',
+                                borderRadius: 4,
+                                borderSkipped: false
+                            }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'bottom', labels: { color: TXT, usePointStyle: true, padding: 15, font: { size: 11 } } },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: TXT,
+                                    usePointStyle: true,
+                                    padding: 15,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
                             tooltip: tip()
                         },
                         scales: xyScales()

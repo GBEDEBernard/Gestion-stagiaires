@@ -1,15 +1,15 @@
 <x-app-layout title="Suivi des Pointages - Présence">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-slate-900 dark:text-slate-100">
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Suivi des Pointages</h1>
-                <p class="mt-2 text-lg text-slate-600">Gestion complète des présences et absences</p>
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Suivi des Pointages</h1>
+                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Gestion complète des présences et absences</p>
             </div>
         </div>
 
         {{-- Period Selector --}}
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
             <div class="flex flex-col gap-4">
                 <div class="flex flex-wrap gap-2">
                     <a href="?period=day" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
@@ -25,7 +25,7 @@
                         📊 Année
                     </a>
                 </div>
-                
+
                 <div class="flex flex-wrap gap-3 items-center">
                     <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                     <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all">
@@ -37,41 +37,41 @@
 
         {{-- Daily View --}}
         @if(request('period', 'day') === 'day')
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h2 class="text-xl font-bold text-slate-900">Pointages du {{ $displayDate }}</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }}</h2>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead>
-                        <tr class="bg-slate-50">
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Nom</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Arrivée</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Départ</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Position</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Statut</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Retard</th>
+                        <tr class="bg-slate-50 dark:bg-slate-800">
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Arrivée</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Départ</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Position</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Statut</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Retard</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($attendanceDays as $day)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $day->etudiant->user->name ?? 'N/A' }}
                             </td>
-                            <td class="px-6 py-3 text-sm text-slate-700">
+                            <td class="px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                                 @if($day->first_check_in_at)
-                                    <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
+                                <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
                                 @else
-                                    <span class="text-slate-400">—</span>
+                                <span class="text-slate-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-3 text-sm text-slate-700">
+                            <td class="px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
                                 @if($day->last_check_out_at)
-                                    <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
+                                <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
                                 @else
-                                    <span class="text-slate-400">—</span>
+                                <span class="text-slate-400">—</span>
                                 @endif
                             </td>
                             <td class="px-6 py-3 text-sm">
@@ -87,33 +87,33 @@
                             </td>
                             <td class="px-6 py-3 text-sm">
                                 @php
-                                    $hour = $day->first_check_in_at?->hour ?? null;
-                                    $minute = $day->first_check_in_at?->minute ?? null;
-                                    $statusClass = 'bg-gray-100 text-gray-800';
-                                    $statusText = 'Absent';
-                                    
-                                    if ($hour !== null) {
-                                        if ($hour < 8 || ($hour == 7 && $minute <= 45)) {
-                                            $statusClass = 'bg-emerald-100 text-emerald-800';
-                                            $statusText = '👍 À l\'heure';
-                                        } elseif ($hour == 7 && $minute > 45 && $minute < 60) {
-                                            $statusClass = 'bg-amber-100 text-amber-800';
-                                            $statusText = '⚠️ Tard';
+                                $hour = $day->first_check_in_at?->hour ?? null;
+                                $minute = $day->first_check_in_at?->minute ?? null;
+                                $statusClass = 'bg-gray-100 text-gray-800';
+                                $statusText = 'Absent';
+
+                                if ($hour !== null) {
+                                if ($hour < 8 || ($hour==7 && $minute <=45)) {
+                                    $statusClass='bg-emerald-100 text-emerald-800' ;
+                                    $statusText='👍 À l\' heure';
+                                    } elseif ($hour==7 && $minute> 45 && $minute < 60) {
+                                        $statusClass='bg-amber-100 text-amber-800' ;
+                                        $statusText='⚠️ Tard' ;
                                         } else {
-                                            $statusClass = 'bg-red-100 text-red-800';
-                                            $statusText = '👎 Retard';
+                                        $statusClass='bg-red-100 text-red-800' ;
+                                        $statusText='👎 Retard' ;
                                         }
-                                    }
-                                @endphp
-                                <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
-                                    {{ $statusText }}
-                                </span>
+                                        }
+                                        @endphp
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
+                                        {{ $statusText }}
+                                        </span>
                             </td>
                             <td class="px-6 py-3 text-sm font-semibold">
                                 @if($day->late_minutes > 0)
-                                    <span class="text-red-600">{{ $day->late_minutes }} min</span>
+                                <span class="text-red-600">{{ $day->late_minutes }} min</span>
                                 @else
-                                    <span class="text-emerald-600">0 min</span>
+                                <span class="text-emerald-600">0 min</span>
                                 @endif
                             </td>
                         </tr>
@@ -129,25 +129,25 @@
             </div>
 
             {{-- Daily Summary --}}
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 grid grid-cols-5 gap-4">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 grid grid-cols-5 gap-4">
                 <div class="text-center">
-                    <p class="text-sm text-slate-600 font-medium">Total</p>
-                    <p class="text-2xl font-bold text-slate-900">{{ $summary['total'] }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Total</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ $summary['total'] }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-sm text-slate-600 font-medium">Présents</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Présents</p>
                     <p class="text-2xl font-bold text-emerald-600">{{ $summary['present'] }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-sm text-slate-600 font-medium">Absents</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Absents</p>
                     <p class="text-2xl font-bold text-red-600">{{ $summary['absent'] }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-sm text-slate-600 font-medium">En retard</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">En retard</p>
                     <p class="text-2xl font-bold text-amber-600">{{ $summary['late'] }}</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-sm text-slate-600 font-medium">Tard</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Tard</p>
                     <p class="text-2xl font-bold text-orange-600">{{ $summary['warning'] }}</p>
                 </div>
             </div>
@@ -156,24 +156,24 @@
 
         {{-- Weekly View --}}
         @if(request('period', 'day') === 'week')
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h2 class="text-xl font-bold text-slate-900">Pointages - {{ $displayDate }}</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Pointages - {{ $displayDate }}</h2>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead>
-                        <tr class="bg-slate-50">
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Nom</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Jours présents</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Retard total</th>
+                        <tr class="bg-slate-50 dark:bg-slate-800">
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Jours présents</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Retard total</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($weekData as $days)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $days['days']->first()->etudiant->user->name ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-3 text-sm">
@@ -183,9 +183,9 @@
                             </td>
                             <td class="px-6 py-3 text-sm font-semibold">
                                 @if($days['total_late_minutes'] > 0)
-                                    <span class="text-red-600">{{ $days['total_late_minutes'] }} min</span>
+                                <span class="text-red-600">{{ $days['total_late_minutes'] }} min</span>
                                 @else
-                                    <span class="text-emerald-600">0 min</span>
+                                <span class="text-emerald-600">0 min</span>
                                 @endif
                             </td>
                         </tr>
@@ -204,25 +204,25 @@
 
         {{-- Monthly View --}}
         @if(request('period', 'day') === 'month')
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h2 class="text-xl font-bold text-slate-900">Suivi - {{ $displayDate }}</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Suivi - {{ $displayDate }}</h2>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead>
-                        <tr class="bg-slate-50">
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Nom</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Jours présents</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Heures travaillées</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Retard cumulé</th>
+                        <tr class="bg-slate-50 dark:bg-slate-800">
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Jours présents</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Heures travaillées</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Retard cumulé</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($monthlySummary as $summary)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $summary['etudiant']->user->name ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-3 text-sm">
@@ -230,14 +230,14 @@
                                     {{ $summary['present_days'] }} jours
                                 </span>
                             </td>
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $summary['total_worked_hours'] }}h
                             </td>
                             <td class="px-6 py-3 text-sm font-semibold">
                                 @if($summary['total_late_minutes'] > 0)
-                                    <span class="text-red-600">{{ $summary['total_late_minutes'] }} min</span>
+                                <span class="text-red-600">{{ $summary['total_late_minutes'] }} min</span>
                                 @else
-                                    <span class="text-emerald-600">0 min</span>
+                                <span class="text-emerald-600">0 min</span>
                                 @endif
                             </td>
                         </tr>
@@ -256,26 +256,26 @@
 
         {{-- Yearly View --}}
         @if(request('period', 'day') === 'year')
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h2 class="text-xl font-bold text-slate-900">Suivi Annuel - {{ $displayDate }}</h2>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Suivi Annuel - {{ $displayDate }}</h2>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead>
-                        <tr class="bg-slate-50">
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Nom</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Jours présents</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Heures travaillées</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Retard cumulé</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase">Anomalies</th>
+                        <tr class="bg-slate-50 dark:bg-slate-800">
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Nom</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Jours présents</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Heures travaillées</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Retard cumulé</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Anomalies</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($yearlySummary as $summary)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $summary['etudiant']->user->name ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-3 text-sm">
@@ -283,25 +283,25 @@
                                     {{ $summary['present_days'] }} jours
                                 </span>
                             </td>
-                            <td class="px-6 py-3 text-sm font-semibold text-slate-900">
+                            <td class="px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $summary['total_worked_hours'] }}h
                             </td>
                             <td class="px-6 py-3 text-sm font-semibold">
                                 @if($summary['total_late_minutes'] > 0)
-                                    <span class="text-red-600">{{ $summary['total_late_minutes'] }} min</span>
+                                <span class="text-red-600">{{ $summary['total_late_minutes'] }} min</span>
                                 @else
-                                    <span class="text-emerald-600">0 min</span>
+                                <span class="text-emerald-600">0 min</span>
                                 @endif
                             </td>
                             <td class="px-6 py-3 text-sm">
                                 @if($summary['anomalies_count'] > 0)
-                                    <span class="px-3 py-1 bg-red-100 text-red-800 font-semibold rounded-full">
-                                        {{ $summary['anomalies_count'] }}
-                                    </span>
+                                <span class="px-3 py-1 bg-red-100 text-red-800 font-semibold rounded-full">
+                                    {{ $summary['anomalies_count'] }}
+                                </span>
                                 @else
-                                    <span class="px-3 py-1 bg-emerald-100 text-emerald-800 font-semibold rounded-full">
-                                        0
-                                    </span>
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 font-semibold rounded-full">
+                                    0
+                                </span>
                                 @endif
                             </td>
                         </tr>
