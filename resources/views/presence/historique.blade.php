@@ -41,8 +41,8 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">Pointages</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceEvents->count() }}</p>
+                        <p class="text-sm font-medium text-slate-600">Jours pointés</p>
+                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceDays->flatten()->count() }}</p>
                     </div>
                 </div>
             </div>
@@ -54,8 +54,8 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">Validés</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceEvents->where('status', 'approved')->count() }}</p>
+                        <p class="text-sm font-medium text-slate-600">Taux présence</p>
+                        <p class="text-3xl font-bold text-slate-900">{{ number_format(($attendanceDays->flatten()->where('day_status', '!=', 'late')->count() / max(1, $attendanceDays->flatten()->count())) * 100, 0) }}%</p>
                     </div>
                 </div>
             </div>
@@ -67,8 +67,8 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">En attente</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceEvents->where('status', 'pending')->count() }}</p>
+                        <p class="text-sm font-medium text-slate-600">Retards</p>
+                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceDays->flatten()->where('late_minutes', '>', 0)->sum('late_minutes') }} min</p>
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                 <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                     Pointages récents
                     <span class="px-2 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-full">
-                        {{ $attendanceEvents->count() }} pointages
+                        {{ $attendanceDays->flatten()->count() }} jours
                     </span>
                 </h3>
             </div>
@@ -89,38 +89,32 @@
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead>
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Date & Heure</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Utilisateur</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Heure d'arrivée</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Heure de départ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Position</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Statut</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
-                        @forelse($attendanceEvents as $event)
-                        <tr class="hover:bg-slate-50 group transition-colors">
+                        @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $day)
+                        <tr class="hover:bg-slate-50 group transition-colors {{ $day->attendance_date->isToday() ? 'bg-emerald-50 border-l-4 border-emerald-400' : '' }}">
                             <td class="px-6 py-4">
-                                <div class="font-semibold text-slate-900">{{ $event->occurred_at->format('d MMM Y') }}</div>
-                                <div class="text-sm text-slate-500">{{ $event->occurred_at->format('H:i') }}</div>
+                                <div class="font-semibold text-slate-900">{{ $day->attendance_date->format('d MMM Y') }}</div>
+                                <div class="text-xs text-slate-500">{{ $day->attendance_date->translatedFormat('l') }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                @if($event->event_type === 'check_in')
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full">
-                                    Arrivée
-                                </span>
-                                @else
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-full">
-                                    Départ
-                                </span>
-                                @endif
+                                <div class="text-sm font-semibold">
+                                    {{ $day->first_check_in_at?->format('H:i') ?? '—' }}
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-sm font-semibold text-slate-900">
-                                {{ $event->user->name ?? 'N/A' }}
+                            <td class="px-6 py-4 text-sm font-semibold">
+                                {{ $day->last_check_out_at?->format('H:i') ?? '—' }}
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-700">
-                                @if($event->site)
+                                @if($day->stage && $day->stage->site)
                                 <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
-                                    {{ $event->site->name }}
+                                    TFG SARL (TECHNOLOGY FOREVER GROUP)
                                 </span>
                                 @else
                                 <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-semibold rounded-full">
@@ -129,29 +123,62 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4">
-                                @if($event->status === 'approved')
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full">
-                                    Validé
-                                </span>
-                                @elseif($event->status === 'pending')
-                                <span class="px-3 py-1 bg-amber-100 text-amber-800 text-sm font-semibold rounded-full">
-                                    En attente
-                                </span>
-                                @elseif($event->status === 'rejected')
-                                <span class="px-3 py-1 bg-red-100 text-red-800 text-sm font-semibold rounded-full">
-                                    Rejeté
+                                @php
+                                    $arrivalTime = $day->first_check_in_at;
+                                    $status = 'inconnu';
+                                    $color = 'gray';
+                                    $icon = 'question';
+                                    if ($arrivalTime) {
+                                        $hour = $arrivalTime->hour;
+                                        $minute = $arrivalTime->minute;
+                                        $timeInMinutes = $hour * 60 + $minute;
+                                        if ($timeInMinutes >= 7*60 && $timeInMinutes <= 7*60 + 45) {
+                                            $status = 'À l\'heure';
+                                            $color = 'emerald';
+                                            $icon = 'thumbs-up';
+                                        } elseif ($timeInMinutes >= 7*60 + 46 && $timeInMinutes <= 7*60 + 59) {
+                                            $status = 'Tard vers retard';
+                                            $color = 'amber';
+                                            $icon = 'thumbs-up';
+                                        } elseif ($timeInMinutes >= 8*60 && $timeInMinutes <= 13*60) {
+                                            $status = 'En retard';
+                                            $color = 'rose';
+                                            $icon = 'thumbs-down';
+                                        }
+                                    }
+                                @endphp
+                                @if($status !== 'inconnu')
+                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg">
+                                    @if($icon === 'thumbs-up')
+                                    👍
+                                    @elseif($icon === 'thumbs-down')
+                                    👎
+                                    @endif
+                                    {{ $status }}
                                 </span>
                                 @else
-                                <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-semibold rounded-full">
-                                    {{ $event->status }}
+                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 text-slate-800">
+                                    Inconnu
                                 </span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-slate-500">
-                                Aucun pointage trouvé pour cette période.
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                <svg class="mx-auto h-16 w-16 mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <h3 class="text-lg font-semibold text-slate-900 mb-2">Aucun pointage trouvé</h3>
+                                <p class="text-slate-500">Tes premiers pointages apparaîtront ici.</p>
+                                <div class="mt-6">
+                                    <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg transition-all">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Faire mon premier pointage
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @endforelse

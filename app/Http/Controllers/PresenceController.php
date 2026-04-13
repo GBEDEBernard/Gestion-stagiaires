@@ -286,13 +286,19 @@ class PresenceController extends Controller
             default => now()->subWeek()
         };
 
-        $attendanceEvents = \App\Models\AttendanceEvent::where('etudiant_id', $etudiant->id)
-            ->whereBetween('occurred_at', [$dateFrom, now()])
-            ->with(['user', 'site', 'stage'])
-            ->orderByDesc('occurred_at')
-            ->get();
+        $filters = [
+            'date_from' => $dateFrom->format('Y-m-d'),
+            'date_to' => now()->format('Y-m-d'),
+            'etudiant_id' => $etudiant->id,
+        ];
 
-        return view('presence.historique', compact('attendanceEvents', 'period'));
+        $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
+            ->with(['stage.site', 'anomalies']);
+
+        $attendanceDays = $attendanceDaysQuery->get()
+            ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
+
+        return view('presence.historique', compact('attendanceDays', 'period'));
     }
 
     /**

@@ -66,7 +66,7 @@ class AdminPresenceService
             $query->whereDate('attendance_date', '<=', $filters['date_to']);
         }
         if (!empty($filters['etudiant_id'])) {
-            $query->whereHas('stage.etudiant', fn($q) => $q->where('id', $filters['etudiant_id']));
+            $query->where('etudiant_id', $filters['etudiant_id']);
         }
         if (!empty($filters['site_id'])) {
             $query->where('site_id', $filters['site_id']);

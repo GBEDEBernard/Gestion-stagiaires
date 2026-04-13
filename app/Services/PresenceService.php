@@ -209,7 +209,7 @@ class PresenceService
             ];
         }
 
-        $day = AttendanceDay::where('stage_id', $stage->id)
+        $day = AttendanceDay::where('etudiant_id', $etudiant->id)
             ->whereDate('attendance_date', today())
             ->first();
 
@@ -255,16 +255,16 @@ class PresenceService
     protected function syncAttendanceDay(Stage $stage, Etudiant $etudiant, AttendanceEvent $event): void
     {
         $day = AttendanceDay::firstOrNew([
-            'stage_id' => $stage->id,
+            'etudiant_id' => $etudiant->id,
             'attendance_date' => today()->toDateString(),
         ]);
 
         $day->fill([
-            'etudiant_id' => $etudiant->id,
+            'stage_id' => $stage->id,
             'site_id' => $stage->site_id,
         ]);
 
-        if ($event->event_type === 'check_in' && $event->status === 'approved') {
+        if ($event->event_type === 'check_in' && in_array($event->status, ['approved', 'flagged'])) {
             $day->check_in_event_id = $event->id;
             $day->first_check_in_at = $event->occurred_at;
             $day->late_minutes = $this->computeLateMinutes($stage, $event->occurred_at);
@@ -278,7 +278,7 @@ class PresenceService
             $day->validation_status = 'auto_approved';
         }
 
-        if ($event->event_type === 'check_out' && $event->status === 'approved') {
+        if ($event->event_type === 'check_out' && in_array($event->status, ['approved', 'flagged'])) {
             $day->check_out_event_id = $event->id;
             $day->last_check_out_at = $event->occurred_at;
             $day->worked_minutes = $day->first_check_in_at
