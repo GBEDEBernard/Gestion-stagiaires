@@ -63,7 +63,13 @@ class User extends Authenticatable implements MustVerifyEmail
         // jb -> Cette methode centralise la destination post-authentification
         // selon le role principal pour eviter les redirections dupliquees
         // dans plusieurs controlleurs.
-        return $this->hasRole('etudiant') ? 'student.stage' : 'dashboard';
+        if ($this->hasRole('etudiant')) {
+            return 'student.stage';
+        }
+        if ($this->hasRole('superviseur')) {
+            return 'superviseur.dashboard';
+        }
+        return 'dashboard';
     }
 
     public function sendPasswordResetNotification($token)

@@ -27,6 +27,7 @@ class AttendanceDay extends Model
         'validated_by',
         'validated_at',
         'summary_notes',
+        'arrival_status',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class AttendanceDay extends Model
         'first_check_in_at' => 'datetime',
         'last_check_out_at' => 'datetime',
         'validated_at' => 'datetime',
+        'arrival_status' => 'string',
     ];
 
     public function stage()

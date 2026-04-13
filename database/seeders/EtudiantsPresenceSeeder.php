@@ -11,6 +11,7 @@ use App\Models\Stage;
 use App\Models\TypeStage;
 use App\Models\User;
 use App\Services\EtudiantAccountService;
+use App\Services\RolePermissionPresetService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -27,6 +28,8 @@ class EtudiantsPresenceSeeder extends Seeder
         $this->ensureSites();
         $this->ensureTypeStages();
         $this->ensureJours();
+
+        $presetService = app(RolePermissionPresetService::class);
 
         $etudiantsData = [
             [
@@ -83,6 +86,7 @@ class EtudiantsPresenceSeeder extends Seeder
                 ]
             );
             $user->assignRole('etudiant');
+            $presetService->ensureRoleDefaults($user, ['etudiant']);
             $etudiant->user_id = $user->id;
             $etudiant->save();
 
@@ -193,6 +197,8 @@ class EtudiantsPresenceSeeder extends Seeder
 
     protected function createPersonnelUsers(): void
     {
+        $presetService = app(RolePermissionPresetService::class);
+
         $personnelData = [
             ['name' => 'Dupuis Marc', 'email' => 'marc.dupuis@tfg.fr', 'service' => 'Technique'],
             ['name' => 'Leroy Sophie', 'email' => 'sophie.leroy@tfg.fr', 'service' => 'Opérationnel'],
@@ -209,6 +215,7 @@ class EtudiantsPresenceSeeder extends Seeder
                 ]
             );
             $user->assignRole('superviseur');
+            $presetService->ensureRoleDefaults($user, ['superviseur']);
         }
     }
 }

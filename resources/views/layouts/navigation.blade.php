@@ -31,7 +31,59 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         <!-- Contenu du menu ici... (inchangé) -->
 
         @role('etudiant')
-        <div class="mb-4 rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 shadow-lg shadow-cyan-950/20">
+        @if($activeStage)
+        <div class="mb-4 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-600/5 to-emerald-500/10 p-4 shadow-xl shadow-emerald-950/20 backdrop-blur-sm">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300/90">Stage Actif</p>
+                    <p class="text-sm font-semibold text-white mt-1 truncate">{{ Str::limit($activeStage->theme ?: $activeStage->typestage?->nom_type_stage ?? 'Stage TFG', 40) }}</p>
+                </div>
+                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between text-slate-300">
+                    <span>Site:</span>
+                    <span class="font-semibold text-white">{{ $activeStage->site?->name ?? 'Non défini' }}</span>
+                </div>
+                <div class="flex justify-between text-slate-300">
+                    <span>Dates:</span>
+                    <span class="font-semibold text-white">
+                        {{ $activeStage->date_debut?->format('d/m') }} - {{ $activeStage->date_fin?->format('d/m/Y') }}
+                    </span>
+                </div>
+            </div>
+
+            @if($activeStage->todayAttendance)
+            <div class="mt-3 pt-3 border-t border-emerald-500/20">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs text-slate-400">Aujourd'hui:</span>
+                    <span class="text-xs font-semibold">
+                        {{ $activeStage->todayAttendance->first_check_in_at?->format('H:i') ?? '--:--' }} -
+                        {{ $activeStage->todayAttendance->last_check_out_at?->format('H:i') ?? '--:--' }}
+                    </span>
+                </div>
+                @php
+                $todayAtt = $activeStage->todayAttendance;
+                $statusClass = $todayAtt && $todayAtt->day_status === 'late' ? 'bg-amber-500/30 text-amber-300 border-amber-500/50' :
+                ($todayAtt && $todayAtt->day_status === 'incomplete' ? 'bg-rose-500/30 text-rose-300 border-rose-500/50' :
+                'bg-emerald-500/30 text-emerald-300 border-emerald-500/50');
+                $statusText = $todayAtt && $todayAtt->day_status === 'late' ? 'Retard (' . $todayAtt->late_minutes . 'min)' :
+                ($todayAtt && $todayAtt->day_status === 'incomplete' ? 'Départ anticipé' : 'À l\'heure');
+                @endphp
+                <span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold {{ $statusClass }} border">
+                    {{ $statusText }}
+                </span>
+            </div>
+            @else
+            <div class="mt-3 pt-3 border-t border-emerald-500/20 text-center">
+                <span class="text-xs text-emerald-300/80 font-medium">Pas encore pointé</span>
+            </div>
+            @endif
+        </div>
+        @endif
+
+        <div class="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 shadow-lg shadow-cyan-950/20">
             <div class="px-3 py-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Espace stagiaire</p>
                 <p class="mt-1 text-sm text-slate-300">Les 3 acces utiles pour suivre ton stage sans detour.</p>
@@ -48,14 +100,24 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <span>Mon stage</span>
                 </a>
 
-                <a href="{{ route('presence.index') }}"
+                <a href="{{ route('presence.pointage') }}"
                     class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
                     <div class="p-2 rounded-xl bg-emerald-500/20">
                         <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <span>Presence</span>
+                    <span>Pointage</span>
+                </a>
+
+                <a href="{{ route('presence.historique') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    <div class="p-2 rounded-xl bg-blue-500/20">
+                        <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <span>Historique</span>
                 </a>
 
                 <a href="{{ route('reports.index') }}"
@@ -73,7 +135,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
         <!-- Menu Présences (Admin + Users) -->
         @can('presence.view')
-        <a href="{{ route('presence.index') }}"
+        <a href="{{ route('presence.pointage') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 group relative overflow-hidden border-l-4 border-emerald-500/30">
             <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div class="flex items-center gap-3 relative z-10">

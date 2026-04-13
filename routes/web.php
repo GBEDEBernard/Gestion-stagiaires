@@ -20,6 +20,7 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AdminPresenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -203,9 +204,16 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::get('/mon-stage', [StudentStageController::class, 'show'])
         ->name('student.stage');
 
+    // ---------------- Dashboard Superviseur ----------------
+    Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\SuperviseurDashboardController::class, 'index'])
+            ->name('superviseur.dashboard');
+    });
+
     // ---------------- Presence ----------------
     Route::prefix('presence')->group(function () {
-        Route::get('/', [PresenceController::class, 'index'])->name('presence.index')->middleware('permission:presence.view');
+        Route::get('/pointage', [PresenceController::class, 'pointage'])->name('presence.pointage')->middleware('permission:presence.view');
+        Route::get('/historique', [PresenceController::class, 'historique'])->name('presence.historique')->middleware('permission:presence.view');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });

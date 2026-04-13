@@ -268,7 +268,13 @@ class PresenceService
             $day->check_in_event_id = $event->id;
             $day->first_check_in_at = $event->occurred_at;
             $day->late_minutes = $this->computeLateMinutes($stage, $event->occurred_at);
-            $day->day_status = $day->late_minutes > 0 ? 'late' : 'present';
+            $day->arrival_status = $this->computeArrivalStatus($event->occurred_at);
+            $day->day_status = match ($day->arrival_status) {
+                'late' => 'late',
+                'warning' => 'warning',
+                'ontime' => 'present',
+                default => 'present',
+            };
             $day->validation_status = 'auto_approved';
         }
 
@@ -340,6 +346,25 @@ class PresenceService
         return $occurredAt->lessThan($effectiveExpected)
             ? $occurredAt->diffInMinutes($effectiveExpected)
             : 0;
+    }
+
+    /**
+     * Calcule le statut d'arrivée: ontime (7h00-7h45), warning (7h50-7h59), late (>=8h00)
+     */
+    protected function computeArrivalStatus($occurredAt): string
+    {
+        $hour = $occurredAt->hour;
+        $minute = $occurredAt->minute;
+
+        $timeMinutes = $hour * 60 + $minute;
+
+        if ($timeMinutes <= (7 * 60 + 45)) {
+            return 'ontime'; // Vert: à l'heure
+        } elseif ($timeMinutes <= (7 * 60 + 59)) {
+            return 'warning'; // Jaune: tend vers le retard
+        } else {
+            return 'late'; // Rouge: en retard
+        }
     }
 
     protected function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int

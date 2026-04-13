@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             TypeStageSeeder::class,
             UserSeeder::class,
             EtudiantsPresenceSeeder::class,
+            SiteGeofenceSeeder::class,  // ✅ Ajouter ici
+
         ]);
     }
 }
