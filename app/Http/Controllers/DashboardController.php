@@ -10,6 +10,7 @@ use App\Models\Activity;
 use App\Models\Etudiant;
 use App\Models\Attestation;
 use App\Models\AppNotification;
+use App\Models\AttendanceDay;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -239,6 +240,24 @@ class DashboardController extends Controller
         $totalTrash = $stagesTrash->count() + $etudiantsTrash->count() +
             $badgesTrash->count() + $servicesTrash->count();
 
+        // ==================== SUIVI DES POINTAGES ====================
+        $todayAttendance = AttendanceDay::whereDate('attendance_date', $today)
+            ->with(['etudiant.user', 'stage.site'])
+            ->count();
+
+        $todayPresent = AttendanceDay::whereDate('attendance_date', $today)
+            ->whereNotNull('first_check_in_at')
+            ->count();
+
+        $todayLate = AttendanceDay::whereDate('attendance_date', $today)
+            ->where('arrival_status', 'late')
+            ->count();
+
+        $weekStart = now()->startOfWeek();
+        $weekEnd = now()->endOfWeek();
+        $weekLateMinutes = AttendanceDay::whereBetween('attendance_date', [$weekStart, $weekEnd])
+            ->sum('late_minutes');
+
         // ==================== Retour à la Vue ====================
         return view('dashboard', compact(
             // Notifications
@@ -296,7 +315,13 @@ class DashboardController extends Controller
             'etudiantsTrash',
             'badgesTrash',
             'servicesTrash',
-            'totalTrash'
+            'totalTrash',
+
+            // Suivi pointages
+            'todayAttendance',
+            'todayPresent',
+            'todayLate',
+            'weekLateMinutes'
         ));
     }
 }

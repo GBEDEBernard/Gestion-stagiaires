@@ -195,6 +195,85 @@
             @endforeach
         </div>
 
+        {{-- ── SUIVI DES POINTAGES (Admins uniquement) ──────────── --}}
+        @can('presence.view')
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Suivi des Pointages
+                </h3>
+                <a href="{{ route('attendance.tracking.index') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition-all">
+                    Voir le détail
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-900/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-emerald-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h-2m-2-2H8m6 0h2m2-2h2m-2 2v2m0 2v2m0 2h-4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase">Aujourd'hui</p>
+                            <p class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{{ $todayAttendance }}</p>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">pointages</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-blue-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">Présents</p>
+                            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ $todayPresent }}</p>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">aujourd'hui</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-900/30 rounded-xl p-4 border border-amber-200 dark:border-amber-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-amber-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase">En retard</p>
+                            <p class="text-2xl font-bold text-amber-900 dark:text-amber-100">{{ $todayLate }}</p>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">aujourd'hui</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-900/30 rounded-xl p-4 border border-rose-200 dark:border-rose-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-rose-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-rose-700 dark:text-rose-300 uppercase">Retard cumulé</p>
+                            <p class="text-2xl font-bold text-rose-900 dark:text-rose-100">{{ $weekLateMinutes }}</p>
+                            <p class="text-xs text-rose-600 dark:text-rose-400 mt-1">min cette semaine</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+
         {{-- ── CHART 1 : Évolution inscriptions + Types ──────────── --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">

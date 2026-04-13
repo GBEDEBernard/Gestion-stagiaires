@@ -152,6 +152,22 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </span>
             @endif
         </a>
+
+        {{-- Suivi Pointages pour Admins --}}
+        @if(auth()->user()->can('presence.view') && auth()->user()->hasRole('admin'))
+        <a href="{{ route('attendance.tracking.index') }}"
+            class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 transition-all duration-300 group relative overflow-hidden border-l-4 border-blue-500/30">
+            <div class="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="p-2 rounded-xl bg-blue-500/20">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <span>Suivi Pointages</span>
+            </div>
+        </a>
+        @endif
         @endcan
 
         <!-- Menu Stages avec Sous-menu (Admin only) -->

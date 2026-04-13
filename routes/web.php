@@ -21,6 +21,7 @@ use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminPresenceController;
+use App\Http\Controllers\AdminAttendanceTrackingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -237,6 +238,12 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
             ->name('admin.presence.anomalies.resolve')
             ->middleware('permission:presence.admin.anomalies.review');
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
+    });
+
+    // ---------------- Suivi des Pointages Admin ----------------
+    Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
+        Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
+        Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
     });
 
 
