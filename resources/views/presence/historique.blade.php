@@ -124,43 +124,43 @@
                             </td>
                             <td class="px-6 py-4">
                                 @php
-                                    $arrivalTime = $day->first_check_in_at;
-                                    $status = 'inconnu';
-                                    $color = 'gray';
-                                    $icon = 'question';
-                                    if ($arrivalTime) {
-                                        $hour = $arrivalTime->hour;
-                                        $minute = $arrivalTime->minute;
-                                        $timeInMinutes = $hour * 60 + $minute;
-                                        if ($timeInMinutes >= 7*60 && $timeInMinutes <= 7*60 + 45) {
-                                            $status = 'À l\'heure';
-                                            $color = 'emerald';
-                                            $icon = 'thumbs-up';
-                                        } elseif ($timeInMinutes >= 7*60 + 46 && $timeInMinutes <= 7*60 + 59) {
-                                            $status = 'Tard vers retard';
-                                            $color = 'amber';
-                                            $icon = 'thumbs-up';
-                                        } elseif ($timeInMinutes >= 8*60 && $timeInMinutes <= 13*60) {
-                                            $status = 'En retard';
-                                            $color = 'rose';
-                                            $icon = 'thumbs-down';
-                                        }
-                                    }
-                                @endphp
-                                @if($status !== 'inconnu')
-                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg">
-                                    @if($icon === 'thumbs-up')
-                                    👍
-                                    @elseif($icon === 'thumbs-down')
-                                    👎
-                                    @endif
-                                    {{ $status }}
-                                </span>
-                                @else
-                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 text-slate-800">
-                                    Inconnu
-                                </span>
-                                @endif
+                                $arrivalTime = $day->first_check_in_at;
+                                $status = 'inconnu';
+                                $color = 'gray';
+                                $icon = 'question';
+                                if ($arrivalTime) {
+                                $hour = $arrivalTime->hour;
+                                $minute = $arrivalTime->minute;
+                                $timeInMinutes = $hour * 60 + $minute;
+                                if ($timeInMinutes >= 7*60 && $timeInMinutes <= 7*60 + 45) {
+                                    $status='À l\' heure';
+                                    $color='emerald' ;
+                                    $icon='thumbs-up' ;
+                                    } elseif ($timeInMinutes>= 7*60 + 46 && $timeInMinutes <= 7*60 + 59) {
+                                        $status='Tard vers retard' ;
+                                        $color='amber' ;
+                                        $icon='thumbs-up' ;
+                                        } elseif ($timeInMinutes>= 8*60 && $timeInMinutes <= 13*60) {
+                                            $status='En retard' ;
+                                            $color='rose' ;
+                                            $icon='thumbs-down' ;
+                                            }
+                                            }
+                                            @endphp
+                                            @if($status !=='inconnu' )
+                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg">
+                                            @if($icon === 'thumbs-up')
+                                            👍
+                                            @elseif($icon === 'thumbs-down')
+                                            👎
+                                            @endif
+                                            {{ $status }}
+                                            </span>
+                                            @else
+                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 text-slate-800">
+                                                Inconnu
+                                            </span>
+                                            @endif
                             </td>
                         </tr>
                         @empty
