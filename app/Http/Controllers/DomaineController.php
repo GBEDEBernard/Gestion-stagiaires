@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Domaine;
-use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\Activity;
+use Illuminate\Http\Request;
 
 class DomaineController extends Controller
 {
@@ -59,12 +60,13 @@ class DomaineController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
+        $old_nom = $domaine->nom;
         $domaine->update($request->only(['nom', 'description']));
 
         Activity::create([
             'user_id' => auth()->id(),
             'action' => 'Mise à jour domaine',
-            'description' => "Domaine {$domaine->nom} modifié"
+            'description' => "Domaine {$old_nom} → {$domaine->nom} modifié"
         ]);
 
         return redirect()->route('domaines.index')->with('success', 'Domaine mis à jour.');
@@ -83,5 +85,19 @@ class DomaineController extends Controller
         ]);
 
         return redirect()->route('domaines.index')->with('success', 'Domaine supprimé.');
+    }
+
+    // Afficher les détails d'un domaine
+    public function show(Domaine $domaine)
+    {
+        $domaine->loadCount(['users', 'stages']);
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Consultation domaine',
+            'description' => "Domaine {$domaine->nom} consulté"
+        ]);
+
+        return view('admin.domaines.show', compact('domaine'));
     }
 }

@@ -125,7 +125,7 @@
                         @forelse($domaines as $domaine)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                             <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white">
-                                <a href="{{ route('domaines.show', $domaine) }}" class="hover:text-indigo-600 dark:hover:text-indigo-300">{{ $domaine->nom }}</a>
+                                <a href="{{ encrypted_route('domaines.edit', $domaine) }}" class="hover:text-indigo-600 dark:hover:text-indigo-300">{{ $domaine->nom }}</a>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $domaine->description ?? '—' }}</td>
                             <td class="px-6 py-4">
@@ -141,7 +141,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </a>
-                                    <form action="{{ route('domaines.destroy', $domaine) }}" method="POST" class="inline" data-confirm-delete>
+                                    <form action="{{ encrypted_route('domaines.destroy', $domaine) }}" method="POST" class="inline" data-confirm-delete>
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition" title="Supprimer">

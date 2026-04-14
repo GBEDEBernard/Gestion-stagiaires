@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
         Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
         Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
+        Route::get('{domaine}', [DomaineController::class, 'show'])->name('domaines.show')->middleware('permission:domaines.view');
         Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
         Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
     });
