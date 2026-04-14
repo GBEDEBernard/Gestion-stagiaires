@@ -141,7 +141,7 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'duplicate_checkout',
-                'message' => 'Le départ a déjà été enregistré aujourd'hui.',
+                'message' => 'Le départ a déjà été enregistré aujourd\'hui.',
                 'anomaly' => 'duplicate_checkout',
                 'severity' => 'medium',
             ];
@@ -349,6 +349,81 @@ class PresenceService
         ]);
     }
 
+    protected function evaluateEmployeeEvent(User $user, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
+    {
+        if (!$geofence) {
+            return [
+                'status' => 'flagged',
+                'reason_code' => 'missing_geofence',
+                'message' => 'Aucune zone de présence active n\'est configurée pour ce site.',
+                'anomaly' => 'missing_geofence',
+                'severity' => 'high',
+            ];
+        }
+
+        if (!empty($payload['accuracy_meters']) && $payload['accuracy_meters'] > $geofence->allowed_accuracy_meters) {
+            return [
+                'status' => 'rejected',
+                'reason_code' => 'gps_accuracy_low',
+                'message' => 'La précision GPS est insuffisante pour valider votre présence.',
+                'anomaly' => 'gps_accuracy_low',
+                'severity' => 'medium',
+            ];
+        }
+
+        if ($distance !== null && $distance > $geofence->radius_meters) {
+            return [
+                'status' => 'rejected',
+                'reason_code' => 'outside_geofence',
+                'message' => "Vous êtes hors de la zone autorisée pour ce domaine.",
+                'anomaly' => 'outside_geofence',
+                'severity' => 'high',
+            ];
+        }
+
+        $day = AttendanceDay::where('user_id', $user->id)
+            ->whereDate('attendance_date', today())
+            ->first();
+
+        if ($eventType === 'check_in' && $day?->first_check_in_at) {
+            return [
+                'status' => 'rejected',
+                'reason_code' => 'duplicate_checkin',
+                'message' => "L'arrivée a déjà été enregistrée aujourd'hui.",
+                'anomaly' => 'duplicate_checkin',
+                'severity' => 'medium',
+            ];
+        }
+
+        if ($eventType === 'check_out' && !$day?->first_check_in_at) {
+            return [
+                'status' => 'rejected',
+                'reason_code' => 'checkout_without_checkin',
+                'message' => "Impossible d'enregistrer le départ sans arrivée.",
+                'anomaly' => 'checkout_without_checkin',
+                'severity' => 'medium',
+            ];
+        }
+
+        if ($eventType === 'check_out' && $day?->last_check_out_at) {
+            return [
+                'status' => 'rejected',
+                'reason_code' => 'duplicate_checkout',
+                'message' => 'Le départ a déjà été enregistré aujourd\'hui.',
+                'anomaly' => 'duplicate_checkout',
+                'severity' => 'medium',
+            ];
+        }
+
+        return [
+            'status' => 'approved',
+            'reason_code' => 'ok',
+            'message' => $eventType === 'check_in'
+                ? "Présence d'arrivée enregistrée."
+                : 'Présence de départ enregistrée.',
+        ];
+    }
+
     protected function evaluateEvent(Stage $stage, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
     {
         if (!$this->isStageActive($stage)) {
@@ -365,7 +440,7 @@ class PresenceService
             return [
                 'status' => 'flagged',
                 'reason_code' => 'missing_geofence',
-                'message' => 'Aucune zone de presence active n'est configurée pour ce site.',
+                'message' => 'Aucune zone de présence active n\'est configurée pour ce site.',
                 'anomaly' => 'missing_geofence',
                 'severity' => 'high',
             ];
@@ -375,7 +450,7 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'gps_accuracy_low',
-                'message' => 'La precision GPS est insuffisante pour valider votre presence.',
+                'message' => 'La précision GPS est insuffisante pour valider votre présence.',
                 'anomaly' => 'gps_accuracy_low',
                 'severity' => 'medium',
             ];
@@ -385,13 +460,13 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'outside_geofence',
-                'message' => "Vous etes hors de la zone autorisee pour ce stage.",
+                'message' => "Vous êtes hors de la zone autorisée pour ce stage.",
                 'anomaly' => 'outside_geofence',
                 'severity' => 'high',
             ];
         }
 
-        $day = AttendanceDay::where('etudiant_id', $etudiant->id)
+        $day = AttendanceDay::where('etudiant_id', $stage->etudiant_id)
             ->whereDate('attendance_date', today())
             ->first();
 
@@ -399,7 +474,7 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'duplicate_checkin',
-                'message' => "L'arrivee a deja ete enregistree aujourd'hui.",
+                'message' => "L'arrivée a déjà été enregistrée aujourd'hui.",
                 'anomaly' => 'duplicate_checkin',
                 'severity' => 'medium',
             ];
@@ -409,7 +484,7 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'checkout_without_checkin',
-                'message' => "Impossible d'enregistrer le depart sans arrivee.",
+                'message' => "Impossible d'enregistrer le départ sans arrivée.",
                 'anomaly' => 'checkout_without_checkin',
                 'severity' => 'medium',
             ];
@@ -419,7 +494,7 @@ class PresenceService
             return [
                 'status' => 'rejected',
                 'reason_code' => 'duplicate_checkout',
-                'message' => 'Le depart a deja ete enregistre aujourd'hui.',
+                'message' => 'Le départ a déjà été enregistré aujourd\'hui.',
                 'anomaly' => 'duplicate_checkout',
                 'severity' => 'medium',
             ];
@@ -429,8 +504,8 @@ class PresenceService
             'status' => 'approved',
             'reason_code' => 'ok',
             'message' => $eventType === 'check_in'
-                ? "Presence d'arrivee enregistree."
-                : 'Presence de depart enregistree.',
+                ? "Présence d'arrivée enregistrée."
+                : 'Présence de départ enregistrée.',
         ];
     }
 
@@ -472,6 +547,41 @@ class PresenceService
                 $day->day_status = 'incomplete';
                 $day->validation_status = 'needs_review';
             }
+        }
+
+        $day->save();
+    }
+
+    protected function syncEmployeeAttendanceDay(User $user, AttendanceEvent $event): void
+    {
+        $day = AttendanceDay::firstOrNew([
+            'user_id' => $user->id,
+            'attendance_date' => today()->toDateString(),
+        ]);
+
+        $day->fill([
+            'site_id' => $event->site_id,
+            'domaine_id' => $user->domaine_id,
+        ]);
+
+        if ($event->event_type === 'check_in' && in_array($event->status, ['approved', 'flagged'])) {
+            $day->check_in_event_id = $event->id;
+            $day->first_check_in_at = $event->occurred_at;
+            // For employees, we don't have stage schedules, so no late computation
+            $day->late_minutes = 0;
+            $day->arrival_status = 'ontime';
+            $day->day_status = 'present';
+            $day->validation_status = 'auto_approved';
+        }
+
+        if ($event->event_type === 'check_out' && in_array($event->status, ['approved', 'flagged'])) {
+            $day->check_out_event_id = $event->id;
+            $day->last_check_out_at = $event->occurred_at;
+            $day->worked_minutes = $day->first_check_in_at
+                ? max(0, $day->first_check_in_at->diffInMinutes($event->occurred_at))
+                : 0;
+            // For employees, no early departure rules
+            $day->early_departure_minutes = 0;
         }
 
         $day->save();

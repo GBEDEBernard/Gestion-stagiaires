@@ -48,6 +48,61 @@
                     <h3 class="font-semibold text-lg">Pointage employé</h3>
                     <p class="text-sm text-gray-600 mt-2">Domaine : {{ $domaine->nom }}</p>
                 </div>
+
+                {{-- Status du jour --}}
+                <div class="p-4 bg-black text-white rounded-xl text-center">
+                    <p class="text-sm opacity-70">Aujourd'hui</p>
+                    <div class="flex justify-center gap-6 mt-3 text-lg font-bold flex-wrap">
+                        <span>Arrivée: --</span>
+                        <span>Départ: --</span>
+                    </div>
+                </div>
+
+                {{-- GPS STATUS --}}
+                <div id="presence-status" class="p-4 bg-gray-100 rounded-xl text-center text-sm">
+                    📍 En attente de localisation...
+                </div>
+
+                {{-- BUTTONS --}}
+                <div class="space-y-4">
+
+                    {{-- CHECKIN --}}
+                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="presence-form" data-action="arrivée" novalidate>
+                        @csrf
+                        <input type="hidden" name="latitude">
+                        <input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters">
+                        <input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid">
+                        <input type="hidden" name="device_label">
+                        <input type="hidden" name="platform">
+                        <input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+
+                        <button type="button" class="presence-btn w-full bg-black text-white py-4 rounded-xl text-lg font-bold presence-submit">
+                            Pointer arrivée
+                        </button>
+                    </form>
+
+                    {{-- CHECKOUT --}}
+                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="presence-form" data-action="départ" novalidate>
+                        @csrf
+                        <input type="hidden" name="latitude">
+                        <input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters">
+                        <input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid">
+                        <input type="hidden" name="device_label">
+                        <input type="hidden" name="platform">
+                        <input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+
+                        <button type="button" class="presence-btn w-full bg-green-600 text-white py-4 rounded-xl text-lg font-bold presence-submit">
+                            Pointer départ
+                        </button>
+                    </form>
+
+                </div>
                 @else
 
                 {{-- Cards --}}

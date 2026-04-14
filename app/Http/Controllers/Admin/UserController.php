@@ -37,21 +37,26 @@ class UserController extends Controller
             $request->query('role'),
         ]);
 
-        return view('admin.users.create', $this->buildFormData(
+        $formData = $this->buildFormData(
             selectedRoles: $selectedRoles,
             selectedPermissions: $this->rolePermissionPresetService->permissionsForRoles($selectedRoles)
-        ));
+        );
+
+        return view('admin.users.create', compact('formData'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateUserPayload($request);
-        $selectedRoles = $this->rolePermissionPresetService->normalizeRoleNames($validated['roles'] ?? []);
-        $selectedPermissions = $this->resolveSubmittedPermissions($request, $selectedRoles);
+
+        // Auto-assign role from user_type
+        $userType = $validated['user_type'];
+        $selectedRoles = [$userType];
+        $selectedPermissions = $this->rolePermissionPresetService->permissionsForRoles($selectedRoles);
 
         $accountEmailSent = false;
 
-        $user = DB::transaction(function () use ($validated, $selectedRoles, $selectedPermissions, &$accountEmailSent) {
+        $user = DB::transaction(function () use ($validated, $selectedRoles, $selectedPermissions, &$accountEmailSent, $userType) {
             $user = User::create([
                 'name' => $this->resolveUserName($validated),
                 'email' => $validated['email'],
@@ -64,9 +69,6 @@ class UserController extends Controller
                 'domaine_id' => $validated['domaine_id'] ?? null,
             ]);
 
-            // jb -> Les roles servent ici de preset metier et de repere
-            // d'interface; les permissions finales du compte sont ensuite
-            // synchronisees exactement selon les cases gardees par l'admin.
             $this->rolePermissionPresetService->assignRolesAndPermissions($user, $selectedRoles, $selectedPermissions);
             $this->syncEtudiantProfile($user, $validated, $selectedRoles);
 
@@ -80,7 +82,7 @@ class UserController extends Controller
             Activity::create([
                 'user_id' => auth()->id(),
                 'action' => 'Creation utilisateur',
-                'description' => "Utilisateur {$user->email} cree avec les roles: " . implode(', ', $selectedRoles),
+                'description' => "Utilisateur {$user->email} cree ({$userType}): " . implode(', ', $selectedRoles),
             ]);
 
             return $user;
@@ -93,6 +95,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'password' => $validated['password'],
+                'type' => $userType,
                 'account_email_sent' => $accountEmailSent,
             ]);
     }
@@ -122,8 +125,12 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $validated = $this->validateUserPayload($request, $user);
-        $selectedRoles = $this->rolePermissionPresetService->normalizeRoleNames($validated['roles'] ?? []);
-        $selectedPermissions = $this->resolveSubmittedPermissions($request, $selectedRoles);
+
+        // Auto-assign from user_type if present (create mode), else keep existing
+        $selectedRoles = !empty($validated['user_type'])
+            ? [$validated['user_type']]
+            : $this->rolePermissionPresetService->normalizeRoleNames($validated['roles'] ?? []);
+        $selectedPermissions = $this->rolePermissionPresetService->permissionsForRoles($selectedRoles);
         $oldEmail = $user->email;
 
         $verificationEmailSent = false;
@@ -234,9 +241,11 @@ class UserController extends Controller
 
     protected function validateUserPayload(Request $request, ?User $user = null): array
     {
-        $isEtudiant = in_array('etudiant', $request->input('roles', []), true);
+        $selectedType = $request->input('user_type');
+        $isEtudiant = $selectedType === 'etudiant';
+        $isEmploye = $selectedType === 'employe';
 
-        return $request->validate([
+        $rules = [
             'name' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -250,6 +259,7 @@ class UserController extends Controller
                 'min:8',
                 'max:255',
             ],
+            'user_type' => ['required', 'string', Rule::in($this->rolePermissionPresetService->allowedRoleNames())],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['string', Rule::in($this->rolePermissionPresetService->allowedRoleNames())],
             'permissions' => ['nullable', 'array'],
@@ -261,8 +271,10 @@ class UserController extends Controller
             'etudiant_genre' => [$isEtudiant ? 'required' : 'nullable', 'string', 'max:50'],
             'etudiant_telephone' => ['nullable', 'string', 'max:20'],
             'etudiant_ecole' => ['nullable', 'string', 'max:255'],
-            'domaine_id' => ['nullable', 'exists:domaines,id'],
-        ]);
+            'domaine_id' => ['nullable', 'exists:domaines,id', $isEmploye ? 'required' : 'nullable'],
+        ];
+
+        return $request->validate($rules);
     }
 
     protected function resolveSubmittedPermissions(Request $request, array $selectedRoles): array
@@ -329,25 +341,26 @@ class UserController extends Controller
     }
 
     protected function buildFormData(?User $user = null, array $selectedRoles = [], array $selectedPermissions = []): array
-    {
-        $roles = $this->rolePermissionPresetService->orderedRoles();
-        $permissions = Permission::query()->orderBy('name')->get();
-        $permissionGroups = $permissions->groupBy(fn(Permission $permission) => explode('.', $permission->name)[0]);
-        $selectedRoles = old('roles', $selectedRoles);
-        $oldInput = session()->getOldInput();
+{
+    $roles = $this->rolePermissionPresetService->orderedRoles();
+    $permissions = Permission::query()->orderBy('name')->get();  // ← déjà là
+    $permissionGroups = $permissions->groupBy(fn(Permission $permission) => explode('.', $permission->name)[0]);
+    $selectedRoles = old('roles', $selectedRoles);
+    $oldInput = session()->getOldInput();
 
-        if (is_array($oldInput) && (array_key_exists('permissions', $oldInput) || array_key_exists('permissions_overridden', $oldInput))) {
-            $selectedPermissions = old('permissions', []);
-        }
-
-        return [
-            'user' => $user,
-            'roles' => $roles,
-            'permissionGroups' => $permissionGroups,
-            'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
-            'selectedRoles' => $selectedRoles,
-            'selectedPermissions' => $selectedPermissions,
-            'domaines' => Domaine::orderBy('nom')->get(),
-        ];
+    if (is_array($oldInput) && (array_key_exists('permissions', $oldInput) || array_key_exists('permissions_overridden', $oldInput))) {
+        $selectedPermissions = old('permissions', []);
     }
+
+    return [
+        'user' => $user,
+        'roles' => $roles,
+        'permissions' => $permissions,          // ✅ AJOUTER cette ligne
+        'permissionGroups' => $permissionGroups,
+        'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
+        'selectedRoles' => $selectedRoles,
+        'selectedPermissions' => $selectedPermissions,
+        'domaines' => Domaine::orderBy('nom')->get(),
+    ];
+}
 }

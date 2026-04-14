@@ -10,7 +10,7 @@ class RolePermissionPresetService
 {
     public function allowedRoleNames(): array
     {
-        return ['admin', 'superviseur', 'etudiant'];
+        return ['admin', 'superviseur', 'employe', 'etudiant'];
     }
 
     public function orderedRoles()
@@ -35,6 +35,15 @@ class RolePermissionPresetService
             // il precharge toutes les permissions, mais l'admin pourra
             // ensuite retirer celles qu'il ne veut pas garder sur un compte.
             'admin' => $allPermissions,
+            'employe' => [
+                'dashboard.view',
+                'presence.view',
+                'presence.checkin',
+                'presence.checkout',
+                'daily_reports.view',
+                'daily_reports.create',
+                'daily_reports.submit',
+            ],
             'superviseur' => [
                 'dashboard.view',
                 'etudiants.view',

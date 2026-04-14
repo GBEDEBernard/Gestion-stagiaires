@@ -12,9 +12,9 @@
             <p class="text-gray-500 dark:text-gray-400 ml-14">Formulaire unique pour creer un admin, un superviseur ou un etudiant.</p>
         </div>
 
-        @include('admin.users.partials.form', [
-            'formAction' => route('admin.users.store'),
-            'submitLabel' => "Creer l'utilisateur",
-        ])
+        @include('admin.users.partials.form', array_merge($formData, [
+        'formAction' => route('admin.users.store'),
+        'submitLabel' => 'Creer l\'utilisateur',
+        ]))
     </div>
 </x-app-layout>

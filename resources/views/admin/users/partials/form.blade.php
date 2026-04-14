@@ -127,58 +127,31 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Roles <span class="text-red-500">*</span></label>
-                <div class="flex flex-wrap gap-3">
+                <label for="user_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Type d'utilisateur <span class="text-red-500">*</span></label>
+                <select id="user_type" name="user_type" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white" required>
+                    <option value="">Choisir le type...</option>
                     @foreach($roles as $role)
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            name="roles[]"
-                            value="{{ $role->name }}"
-                            class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 rounded-lg"
-                            data-role-checkbox
-                            {{ in_array($role->name, $selectedRoleNames, true) ? 'checked' : '' }}>
-                        <span class="px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium text-sm">{{ $role->name }}</span>
-                    </label>
+                    <option value="{{ $role->name }}" {{ old('user_type', $selectedRoleNames[0] ?? '') == $role->name ? 'selected' : '' }}>
+                        {{ ucfirst(str_replace('_', ' ', $role->name)) }}
+                    </option>
                     @endforeach
-                </div>
-                @error('roles')
+                </select>
+                @error('user_type')
                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
-                @error('roles.*')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
+
+                {{-- Hidden inputs for auto-assignment --}}
+                <input type="hidden" name="roles[]" value="" id="hidden_role" data-role-input>
+                @foreach($roles as $role)
+                <input type="hidden" name="roles[]" value="{{ $role->name }}" class="hidden-role" style="display: none;" data-role="{{ $role->name }}">
+                @endforeach
             </div>
 
-            <div class="space-y-4">
-                @foreach($permissionGroups as $group => $groupPermissions)
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{{ str_replace('_', ' ', $group) }}</h3>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        @foreach($groupPermissions as $permission)
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="permissions[]"
-                                value="{{ $permission->name }}"
-                                class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                data-permission-checkbox
-                                {{ in_array($permission->name, $selectedPermissionNames, true) ? 'checked' : '' }}>
-                            <span class="px-2 py-1 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium" title="{{ $permission->name }}">
-                                {{ $permission->name }}
-                            </span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-                @endforeach
-                @error('permissions')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
-                @error('permissions.*')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
-            </div>
+            {{-- Permissions hidden & auto-assigned --}}
+            <input type="hidden" name="permissions_overridden" value="0">
+            @foreach($permissions as $permission)
+            <input type="hidden" name="permissions[]" value="{{ $permission->name }}" class="hidden-permission" style="display: none;" data-permission="{{ $permission->name }}">
+            @endforeach
         </section>
 
         <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6">
@@ -320,32 +293,33 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         }
 
         const roleMap = JSON.parse(form.dataset.rolePermissionMap || '{}');
-        const roleCheckboxes = Array.from(form.querySelectorAll('[data-role-checkbox]'));
-        const permissionCheckboxes = Array.from(form.querySelectorAll('[data-permission-checkbox]'));
+        const typeSelect = form.querySelector('#user_type');
+        const hiddenRoleInput = form.querySelector('#hidden_role');
+        const hiddenRoleInputs = form.querySelectorAll('.hidden-role');
+        const hiddenPermissionInputs = form.querySelectorAll('.hidden-permission');
         const etudiantFields = form.querySelector('[data-etudiant-fields]');
         const permissionsOverriddenInput = form.querySelector('[data-permissions-overridden]');
         const accountNameInput = form.querySelector('[data-account-name]');
         const etudiantNomInput = form.querySelector('[data-etudiant-nom]');
         const etudiantPrenomInput = form.querySelector('[data-etudiant-prenom]');
 
-        const selectedRoles = () => roleCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value);
+        const selectedRole = () => typeSelect ? [typeSelect.value] : [];
         const defaultPermissions = () => {
             const permissions = new Set();
-
-            selectedRoles().forEach((roleName) => {
+            const roles = selectedRole();
+            roles.forEach((roleName) => {
                 (roleMap[roleName] || []).forEach((permissionName) => permissions.add(permissionName));
             });
-
             return permissions;
         };
 
         const syncEtudiantVisibility = () => {
-            const hasEtudiantRole = selectedRoles().includes('etudiant');
+            const hasEtudiantRole = selectedRole().includes('etudiant');
             etudiantFields.classList.toggle('hidden', !hasEtudiantRole);
         };
 
         const syncNameFromEtudiant = () => {
-            if (!selectedRoles().includes('etudiant')) {
+            if (!selectedRole().includes('etudiant')) {
                 return;
             }
 
@@ -366,23 +340,24 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             });
         };
 
-        const applyRoleDefaults = () => {
+        const applyTypeDefaults = () => {
+            // Show selected role input
+            hiddenRoleInputs.forEach(input => input.style.display = 'none');
+            const selectedType = typeSelect.value;
+            const matchingRole = Array.from(hiddenRoleInputs).find(input => input.dataset.role === selectedType);
+            if (matchingRole) {
+                matchingRole.style.display = 'block';
+            }
+            hiddenRoleInput.value = selectedType || '';
+
+            // Auto-show all preset permissions (hidden)
             const defaults = defaultPermissions();
-
-            permissionCheckboxes.forEach((checkbox) => {
-                // jb -> Les cases touchees manuellement par l'admin restent
-                // prioritaires; seuls les presets non personnalises bougent
-                // encore quand les roles changent.
-                if (checkbox.dataset.manual === 'true') {
-                    return;
-                }
-
-                checkbox.checked = defaults.has(checkbox.value);
+            hiddenPermissionInputs.forEach(input => {
+                input.style.display = defaults.has(input.dataset.permission) ? 'block' : 'none';
             });
 
             syncEtudiantVisibility();
             syncNameFromEtudiant();
-            refreshManualFlags();
         };
 
         accountNameInput.addEventListener('input', () => {
@@ -395,11 +370,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             });
         });
 
-        roleCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', () => {
-                applyRoleDefaults();
-            });
-        });
+        typeSelect.addEventListener('change', applyTypeDefaults);
 
         permissionCheckboxes.forEach((checkbox) => {
             checkbox.addEventListener('change', () => {

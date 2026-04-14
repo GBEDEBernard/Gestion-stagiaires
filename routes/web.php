@@ -234,22 +234,10 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('/historique', [PresenceController::class, 'historique'])->name('presence.historique')->middleware('permission:presence.view');
         Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('presence.prepareCheckin')->middleware('permission:presence.checkin');
         Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
-        Route::get('/validate', [PresenceController::class, 'validate'])->name('presence.validate');
+        Route::get('/validate', [PresenceController::class, 'showValidation'])->name('presence.validate');
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
-    });
-
-    // ---------------- Presence Employés ----------------
-    Route::prefix('employee/presence')->group(function () {
-        Route::get('/pointage', [PresenceController::class, 'employeePointage'])->name('employee.presence.pointage')->middleware('permission:presence.view');
-        Route::get('/historique', [PresenceController::class, 'employeeHistorique'])->name('employee.presence.historique')->middleware('permission:presence.view');
-        Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('employee.presence.prepareCheckin')->middleware('permission:presence.checkin');
-        Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('employee.presence.prepareCheckout')->middleware('permission:presence.checkout');
-        Route::get('/validate', [PresenceController::class, 'validate'])->name('employee.presence.validate');
-        Route::post('/confirm', [PresenceController::class, 'confirm'])->name('employee.presence.confirm');
-        Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('employee.presence.checkin')->middleware('permission:presence.checkin');
-        Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('employee.presence.checkout')->middleware('permission:presence.checkout');
     });
 
     // ---------------- Rapports journaliers ----------------

@@ -277,7 +277,7 @@ class PresenceController extends Controller
     /**
      * Affiche la page de validation (récupère depuis session).
      */
-    public function validate(Request $request)
+    public function showValidation(Request $request)
     {
         $pending = session('pending_pointage');
         if (!$pending) {
@@ -368,9 +368,9 @@ class PresenceController extends Controller
             } else {
                 // Logique pour employé
                 if ($pending['type'] === 'check_in') {
-                    $event = $this->registerEmployeeCheckIn($user, $data);
+                    $event = $this->presenceService->registerEmployeeCheckIn($user, $data);
                 } else {
-                    $event = $this->registerEmployeeCheckOut($user, $data);
+                    $event = $this->presenceService->registerEmployeeCheckOut($user, $data);
                 }
             }
 
@@ -522,120 +522,5 @@ class PresenceController extends Controller
             ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
 
         return view('employee.presence.historique', compact('attendanceDays', 'period'));
-    }
-
-    /**
-     * Enregistre l'arrivée pour un employé.
-     */
-    private function registerEmployeeCheckIn(User $user, array $data): AttendanceEvent
-    {
-        return DB::transaction(function () use ($user, $data) {
-            // Créer ou récupérer le jour d'assiduité
-            $attendanceDay = AttendanceDay::firstOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'attendance_date' => today(),
-                ],
-                [
-                    'site_id' => null, // TODO: Lier à un site pour employés
-                    'first_check_in_at' => now(),
-                    'day_status' => 'present',
-                ]
-            );
-
-            // Créer l'événement
-            $event = AttendanceEvent::create([
-                'stage_id' => null,
-                'etudiant_id' => null,
-                'user_id' => $user->id,
-                'attendance_day_id' => $attendanceDay->id,
-                'event_type' => 'check_in',
-                'latitude' => $data['latitude'],
-                'longitude' => $data['longitude'],
-                'accuracy_meters' => $data['accuracy_meters'] ?? null,
-                'device_fingerprint' => $data['device_fingerprint'],
-                'device_uuid' => $data['device_uuid'] ?? null,
-                'device_label' => $data['device_label'] ?? null,
-                'platform' => $data['platform'] ?? null,
-                'browser' => $data['browser'] ?? null,
-                'app_version' => $data['app_version'] ?? null,
-                'status' => 'approved', // Pour l'instant, approuver automatiquement
-                'processed_at' => now(),
-            ]);
-
-            // Mettre à jour le jour d'assiduité
-            $attendanceDay->update([
-                'first_check_in_at' => $event->created_at,
-                'arrival_status' => 'on_time', // TODO: Calculer si en retard
-            ]);
-
-            return $event;
-        });
-    }
-
-    /**
-     * Enregistre le départ pour un employé.
-     */
-    private function registerEmployeeCheckOut(User $user, array $data): AttendanceEvent
-    {
-        return DB::transaction(function () use ($user, $data) {
-            // Récupérer le jour d'assiduité
-            $attendanceDay = AttendanceDay::where('user_id', $user->id)
-                ->whereDate('attendance_date', today())
-                ->first();
-
-            if (!$attendanceDay) {
-                throw new \Exception('Aucun check-in trouvé pour aujourd\'hui.');
-            }
-
-            // Créer l'événement
-            $event = AttendanceEvent::create([
-                'stage_id' => null,
-                'etudiant_id' => null,
-                'user_id' => $user->id,
-                'attendance_day_id' => $attendanceDay->id,
-                'event_type' => 'check_out',
-                'latitude' => $data['latitude'],
-                'longitude' => $data['longitude'],
-                'accuracy_meters' => $data['accuracy_meters'] ?? null,
-                'device_fingerprint' => $data['device_fingerprint'],
-                'device_uuid' => $data['device_uuid'] ?? null,
-                'device_label' => $data['device_label'] ?? null,
-                'platform' => $data['platform'] ?? null,
-                'browser' => $data['browser'] ?? null,
-                'app_version' => $data['app_version'] ?? null,
-                'status' => 'approved', // Pour l'instant, approuver automatiquement
-                'processed_at' => now(),
-            ]);
-
-            // Mettre à jour le jour d'assiduité
-            $attendanceDay->update([
-                'last_check_out_at' => $event->created_at,
-                'departure_status' => 'on_time', // TODO: Calculer si départ anticipé
-                'worked_minutes' => $attendanceDay->first_check_in_at
-                    ? $attendanceDay->first_check_in_at->diffInMinutes($event->created_at)
-                    : null,
-            ]);
-
-            return $event;
-        });
-    }
-
-    /**
-     * Calcule distance entre 2 points GPS (mètres).
-     */
-    private function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): int
-    {
-        $earthRadius = 6371000; // Rayon Terre en mètres
-
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lngDelta = deg2rad($lng2 - $lng1);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($lngDelta / 2) * sin($lngDelta / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return (int) round($earthRadius * $c);
     }
 }
