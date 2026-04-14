@@ -389,9 +389,7 @@ class PresenceController extends Controller
             return redirect()->route('presence.historique')
                 ->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('Pointage confirm failed', ['error' => $e->getMessage()]);
-            request()->session()->forget('pending_pointage');
-            return redirect()->route('presence.pointage')->with('error', 'Erreur lors de la confirmation.');
+            dd($e->getMessage());
         }
     }
 

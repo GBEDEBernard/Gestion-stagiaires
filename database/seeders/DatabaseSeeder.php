@@ -17,8 +17,10 @@ class DatabaseSeeder extends Seeder
             JoursSeeder::class,
             TypeStageSeeder::class,
             UserSeeder::class,
+            DomaineSiteSeeder::class,
+            EmployeSeeder::class,
             EtudiantsPresenceSeeder::class,
-            SiteGeofenceSeeder::class,  // ✅ Ajouter ici
+            SiteGeofenceSeeder::class,
 
         ]);
     }

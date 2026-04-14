@@ -46,28 +46,25 @@ class PresenceService
     protected function registerEmployeeEvent(User $user, array $payload, string $eventType): AttendanceEvent
     {
         return DB::transaction(function () use ($user, $payload, $eventType) {
+            if (!isset($payload['latitude'], $payload['longitude'])) {
+                throw ValidationException::withMessages([
+                    'presence' => 'Coordonnées GPS manquantes.'
+                ]);
+            }
+
             $domaine = $user->domaine;
             if (!$domaine) {
                 throw ValidationException::withMessages(['presence' => 'Aucun domaine assigné pour le pointage.']);
             }
 
             $device = $this->resolveTrustedDevice($user, $payload);
-            $site = $domaine->site ?? null;
-            $geofence = $site?->geofences()->where('is_active', true)->orderByDesc('is_primary')->first();
-            $distance = $geofence
-                ? $this->calculateDistanceMeters(
-                    (float) $payload['latitude'], 
-                    (float) $payload['longitude'], 
-                    (float) $geofence->center_latitude, 
-                    (float) $geofence->center_longitude
-                )
-                : null;
+            [$site, $geofence, $distance] = $this->resolveEmployeeSiteGeofence($domaine, $payload);
 
             $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance);
 
             $event = AttendanceEvent::create([
-                'stage_id' => 0,
-                'etudiant_id' => 0,
+                'stage_id' => null,
+                'etudiant_id' => null,
                 'site_id' => $site?->id,
                 'site_geofence_id' => $geofence?->id,
                 'user_id' => $user->id,
@@ -105,6 +102,42 @@ class PresenceService
 
             return $event;
         });
+    }
+
+    protected function resolveEmployeeSiteGeofence(Domaine $domaine, array $payload): array
+    {
+        $latitude = (float) $payload['latitude'];
+        $longitude = (float) $payload['longitude'];
+
+        $sites = $domaine->sites()->with(['geofences' => function ($query) {
+            $query->where('is_active', true);
+        }])->where('is_active', true)->get();
+
+        $best = null;
+        foreach ($sites as $site) {
+            foreach ($site->geofences as $geofence) {
+                $distance = $this->calculateDistanceMeters(
+                    $latitude,
+                    $longitude,
+                    (float) $geofence->center_latitude,
+                    (float) $geofence->center_longitude
+                );
+
+                if ($best === null || $distance < $best['distance']) {
+                    $best = [
+                        'site' => $site,
+                        'geofence' => $geofence,
+                        'distance' => $distance,
+                    ];
+                }
+            }
+        }
+
+        if (!$best) {
+            return [null, null, null];
+        }
+
+        return [$best['site'], $best['geofence'], $best['distance']];
     }
 
     protected function evaluateEmployeeEvent(User $user, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
@@ -574,4 +607,3 @@ class PresenceService
         ]));
     }
 }
-?> 

@@ -11,6 +11,7 @@ use App\Models\Etudiant;
 use App\Models\Attestation;
 use App\Models\AppNotification;
 use App\Models\AttendanceDay;
+use App\Models\AttendanceEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,38 @@ class DashboardController extends Controller
             return redirect()
                 ->route('student.stage')
                 ->with('info', "L'espace stagiaire remplace le dashboard global pour votre compte.");
+        }
+
+        if (Auth::user()?->hasRole('employe')) {
+            $user = Auth::user();
+            $today = Carbon::now()->startOfDay();
+            $weekStart = Carbon::now()->startOfWeek();
+            $weekEnd = Carbon::now()->endOfWeek();
+
+            $todayAttendance = AttendanceDay::where('user_id', $user->id)
+                ->whereDate('attendance_date', $today)
+                ->first();
+
+            $daysPresentThisWeek = AttendanceDay::where('user_id', $user->id)
+                ->whereBetween('attendance_date', [$weekStart, $weekEnd])
+                ->whereNotNull('first_check_in_at')
+                ->count();
+
+            $daysTrackedThisWeek = AttendanceDay::where('user_id', $user->id)
+                ->whereBetween('attendance_date', [$weekStart, $weekEnd])
+                ->count();
+
+            $attendanceEventsThisWeek = AttendanceEvent::where('user_id', $user->id)
+                ->whereBetween('occurred_at', [$weekStart, $weekEnd])
+                ->count();
+
+            return view('employe.dashboard', compact(
+                'user',
+                'todayAttendance',
+                'daysPresentThisWeek',
+                'daysTrackedThisWeek',
+                'attendanceEventsThisWeek'
+            ));
         }
 
         abort_unless(Auth::user()?->can('dashboard.view'), 403);
