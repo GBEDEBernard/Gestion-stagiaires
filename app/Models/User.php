@@ -125,6 +125,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(DailyReport::class, 'reviewed_by');
     }
 
+    /**
+     * Attendance days for employees (user_id).
+     */
+    public function attendanceDays()
+    {
+        return $this->hasMany(AttendanceDay::class);
+    }
+
+
+
     public function dailyReportReviews()
     {
         return $this->hasMany(DailyReportReview::class, 'reviewer_id');

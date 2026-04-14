@@ -1,14 +1,14 @@
 @php
-    $linkedEtudiant = $user?->etudiant;
-    $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
-    $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
-    $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
-    $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-    $etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
-    $etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
-    $accountNameValue = old('name', $user?->name);
-    $generatedEtudiantName = trim(($etudiantPrenomValue ?? '') . ' ' . ($etudiantNomValue ?? ''));
-    $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $generatedEtudiantName;
+$linkedEtudiant = $user?->etudiant;
+$selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
+$selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
+$shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+$rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+$etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
+$etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
+$accountNameValue = old('name', $user?->name);
+$generatedEtudiantName = trim(($etudiantPrenomValue ?? '') . ' ' . ($etudiantNomValue ?? ''));
+$isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $generatedEtudiantName;
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -20,7 +20,7 @@
         data-role-permission-map="{{ $rolePermissionMapJson }}">
         @csrf
         @isset($formMethod)
-            @method($formMethod)
+        @method($formMethod)
         @endisset
 
         <input type="hidden" name="permissions_overridden" value="{{ old('permissions_overridden', 0) }}" data-permissions-overridden>
@@ -32,20 +32,20 @@
         </div>
 
         @if($user)
-            <div class="grid gap-3 md:grid-cols-2">
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                    <p class="font-semibold text-gray-800 dark:text-gray-100">Verification email</p>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">
-                        {{ $user->hasVerifiedEmail() ? 'Email deja verifie.' : 'Email encore en attente de verification.' }}
-                    </p>
-                </div>
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                    <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">
-                        {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel deja defini.' }}
-                    </p>
-                </div>
+        <div class="grid gap-3 md:grid-cols-2">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                <p class="font-semibold text-gray-800 dark:text-gray-100">Verification email</p>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">
+                    {{ $user->hasVerifiedEmail() ? 'Email deja verifie.' : 'Email encore en attente de verification.' }}
+                </p>
             </div>
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">
+                    {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel deja defini.' }}
+                </p>
+            </div>
+        </div>
         @endif
 
         <section class="space-y-5">
@@ -68,7 +68,7 @@
                         data-manual="{{ $isAccountNameManual ? 'true' : 'false' }}">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pour un etudiant, ce champ est rempli automatiquement a partir du prenom et du nom.</p>
                     @error('name')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -84,7 +84,7 @@
                         placeholder="exemple@email.com">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cet email sera celui utilise par l'utilisateur pour se connecter.</p>
                     @error('email')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -103,7 +103,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Definis le mot de passe initial">
                     @error('password')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -130,53 +130,53 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Roles <span class="text-red-500">*</span></label>
                 <div class="flex flex-wrap gap-3">
                     @foreach($roles as $role)
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="roles[]"
-                                value="{{ $role->name }}"
-                                class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 rounded-lg"
-                                data-role-checkbox
-                                {{ in_array($role->name, $selectedRoleNames, true) ? 'checked' : '' }}>
-                            <span class="px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium text-sm">{{ $role->name }}</span>
-                        </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="roles[]"
+                            value="{{ $role->name }}"
+                            class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 rounded-lg"
+                            data-role-checkbox
+                            {{ in_array($role->name, $selectedRoleNames, true) ? 'checked' : '' }}>
+                        <span class="px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium text-sm">{{ $role->name }}</span>
+                    </label>
                     @endforeach
                 </div>
                 @error('roles')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
                 @error('roles.*')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
             </div>
 
             <div class="space-y-4">
                 @foreach($permissionGroups as $group => $groupPermissions)
-                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{{ str_replace('_', ' ', $group) }}</h3>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach($groupPermissions as $permission)
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="permissions[]"
-                                        value="{{ $permission->name }}"
-                                        class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                        data-permission-checkbox
-                                        {{ in_array($permission->name, $selectedPermissionNames, true) ? 'checked' : '' }}>
-                                    <span class="px-2 py-1 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium" title="{{ $permission->name }}">
-                                        {{ $permission->name }}
-                                    </span>
-                                </label>
-                            @endforeach
-                        </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{{ str_replace('_', ' ', $group) }}</h3>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        @foreach($groupPermissions as $permission)
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="permissions[]"
+                                value="{{ $permission->name }}"
+                                class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                data-permission-checkbox
+                                {{ in_array($permission->name, $selectedPermissionNames, true) ? 'checked' : '' }}>
+                            <span class="px-2 py-1 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium" title="{{ $permission->name }}">
+                                {{ $permission->name }}
+                            </span>
+                        </label>
+                        @endforeach
                     </div>
+                </div>
                 @endforeach
                 @error('permissions')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
                 @error('permissions.*')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
             </div>
         </section>
@@ -195,14 +195,14 @@
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
                     <option value="">Aucun domaine (Étudiant ou non assigné)</option>
                     @foreach($domaines ?? [] as $domaine)
-                        <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id) == $domaine->id ? 'selected' : '' }}>
-                            {{ $domaine->nom }}
-                        </option>
+                    <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id) == $domaine->id ? 'selected' : '' }}>
+                        {{ $domaine->nom }}
+                    </option>
                     @endforeach
                 </select>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
                 @error('domaine_id')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
             </div>
         </section>
@@ -227,7 +227,7 @@
                         placeholder="Ex: Dupont"
                         data-etudiant-nom>
                     @error('etudiant_nom')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -242,7 +242,7 @@
                         placeholder="Ex: Jean"
                         data-etudiant-prenom>
                     @error('etudiant_prenom')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -259,7 +259,7 @@
                         <option value="Feminin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Feminin' ? 'selected' : '' }}>Feminin</option>
                     </select>
                     @error('etudiant_genre')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -273,7 +273,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: +229 01 00 00 00 00">
                     @error('etudiant_telephone')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -287,7 +287,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: Universite d'Abomey-Calavi">
                     @error('etudiant_ecole')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>

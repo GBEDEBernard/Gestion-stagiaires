@@ -20,8 +20,7 @@ class UserController extends Controller
 {
     public function __construct(
         protected RolePermissionPresetService $rolePermissionPresetService
-    ) {
-    }
+    ) {}
 
     public function index()
     {
