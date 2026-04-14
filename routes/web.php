@@ -22,6 +22,7 @@ use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
+use App\Http\Controllers\DomaineController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +143,21 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
+    // ---------------- Domaines ----------------
+    Route::prefix('admin/domaines')->group(function () {
+        Route::get('/', [DomaineController::class, 'index'])->name('domaines.index')->middleware('permission:domaines.view');
+        Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
+        Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
+        Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
+        Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
+        Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
+    });
+
+    // ---------------- Employés par domaine ----------------
+    Route::prefix('admin/employes')->group(function () {
+        Route::get('domaine/{domaine}', [UserController::class, 'indexByDomaine'])->name('employes.by_domaine')->middleware('permission:users.view');
+    });
+
     // ---------------- Sites ----------------
     Route::prefix('admin/sites')->group(function () {
         Route::get('/', [SiteController::class, 'index'])->name('sites.index')->middleware('permission:sites.view');
@@ -221,6 +237,18 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
+    });
+
+    // ---------------- Presence Employés ----------------
+    Route::prefix('employee/presence')->group(function () {
+        Route::get('/pointage', [PresenceController::class, 'employeePointage'])->name('employee.presence.pointage')->middleware('permission:presence.view');
+        Route::get('/historique', [PresenceController::class, 'employeeHistorique'])->name('employee.presence.historique')->middleware('permission:presence.view');
+        Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('employee.presence.prepareCheckin')->middleware('permission:presence.checkin');
+        Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('employee.presence.prepareCheckout')->middleware('permission:presence.checkout');
+        Route::get('/validate', [PresenceController::class, 'validate'])->name('employee.presence.validate');
+        Route::post('/confirm', [PresenceController::class, 'confirm'])->name('employee.presence.confirm');
+        Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('employee.presence.checkin')->middleware('permission:presence.checkin');
+        Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('employee.presence.checkout')->middleware('permission:presence.checkout');
     });
 
     // ---------------- Rapports journaliers ----------------

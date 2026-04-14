@@ -68,6 +68,9 @@ class AdminPresenceService
         if (!empty($filters['etudiant_id'])) {
             $query->where('etudiant_id', $filters['etudiant_id']);
         }
+        if (!empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
         if (!empty($filters['site_id'])) {
             $query->where('site_id', $filters['site_id']);
         }

@@ -12,6 +12,7 @@ class AttendanceDay extends Model
     protected $fillable = [
         'stage_id',
         'etudiant_id',
+        'user_id',
         'site_id',
         'check_in_event_id',
         'check_out_event_id',
@@ -48,6 +49,11 @@ class AttendanceDay extends Model
     public function etudiant()
     {
         return $this->belongsTo(Etudiant::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function site()

@@ -33,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'bio',
         'avatar',
         'status',
+        'domaine_id',
     ];
 
     protected $hidden = [
@@ -97,6 +98,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function trustedDevices()
     {
         return $this->hasMany(TrustedDevice::class);
+    }
+
+    public function domaine()
+    {
+        return $this->belongsTo(Domaine::class);
     }
 
     public function attendanceEvents()

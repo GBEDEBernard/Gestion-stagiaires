@@ -37,10 +37,16 @@
                 @endif
 
                 {{-- Aucun stage --}}
-                @if(!$activeStage)
+                @if(!$activeStage && !isset($domaine))
                 <div class="text-center p-6 bg-yellow-50 border rounded-xl">
                     <h3 class="font-semibold text-lg">Aucun stage actif</h3>
                     <p class="text-sm text-gray-600 mt-2">Contacte l'administration.</p>
+                </div>
+                @elseif(isset($domaine))
+                {{-- Pointage employé --}}
+                <div class="text-center p-6 bg-blue-50 border rounded-xl">
+                    <h3 class="font-semibold text-lg">Pointage employé</h3>
+                    <p class="text-sm text-gray-600 mt-2">Domaine : {{ $domaine->nom }}</p>
                 </div>
                 @else
 

@@ -18,6 +18,7 @@ class Stage extends Model
         'site_id',
         'supervisor_id',
         'badge_id',
+        'domaine_id',
         'theme',
         'date_debut',
         'date_fin',
@@ -57,6 +58,11 @@ class Stage extends Model
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function domaine()
+    {
+        return $this->belongsTo(Domaine::class);
     }
 
     public function badge()

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\Etudiant;
 use App\Models\User;
+use App\Models\Domaine;
 use App\Notifications\AccountProvisionedNotification;
 use App\Services\RolePermissionPresetService;
 use Illuminate\Http\RedirectResponse;
@@ -61,6 +62,7 @@ class UserController extends Controller
                 'must_change_password' => true,
                 'temporary_password_created_at' => now(),
                 'password_changed_at' => null,
+                'domaine_id' => $validated['domaine_id'] ?? null,
             ]);
 
             // jb -> Les roles servent ici de preset metier et de repere
@@ -134,6 +136,7 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'status' => $validated['status'] ?? $user->status,
                 'email_verified_at' => $validated['email'] !== $oldEmail ? null : $user->email_verified_at,
+                'domaine_id' => $validated['domaine_id'] ?? null,
             ];
 
             if (!empty($validated['password'])) {
@@ -206,6 +209,16 @@ class UserController extends Controller
             ->with('success', 'Utilisateur supprime avec succes.');
     }
 
+    public function indexByDomaine(Domaine $domaine)
+    {
+        $users = User::where('domaine_id', $domaine->id)
+            ->with(['roles', 'permissions'])
+            ->latest()
+            ->paginate(10);
+
+        return view('admin.employes.by_domaine', compact('users', 'domaine'));
+    }
+
     public function createPermission(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -249,6 +262,7 @@ class UserController extends Controller
             'etudiant_genre' => [$isEtudiant ? 'required' : 'nullable', 'string', 'max:50'],
             'etudiant_telephone' => ['nullable', 'string', 'max:20'],
             'etudiant_ecole' => ['nullable', 'string', 'max:255'],
+            'domaine_id' => ['nullable', 'exists:domaines,id'],
         ]);
     }
 
@@ -334,6 +348,7 @@ class UserController extends Controller
             'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
             'selectedRoles' => $selectedRoles,
             'selectedPermissions' => $selectedPermissions,
+            'domaines' => Domaine::orderBy('nom')->get(),
         ];
     }
 }

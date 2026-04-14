@@ -287,6 +287,54 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         @endunlessrole
         @endcan
 
+        <!-- Employés avec Sous-menu -->
+        @canany(['domaines.view', 'users.view'])
+        <div class="mb-3" x-data="{ open: false }">
+            <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden"
+                :class="open ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
+                <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="flex items-center gap-3 relative z-10">
+                    <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm"
+                        :class="open ? 'bg-white/20' : 'bg-slate-700/50'">
+                        <svg class="w-5 h-5" :class="open ? 'text-white' : 'text-cyan-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <span>Employés</span>
+                </div>
+                <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
+                </svg>
+            </button>
+
+            <!-- Sous-menu Employés -->
+            <div x-show="open" x-collapse @click.outside="open = false"
+                class="mt-3 ml-4 space-y-2 overflow-hidden">
+                @can('domaines.view')
+                <a href="{{ route('domaines.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>Gérer Domaines</span>
+                </a>
+                @endcan
+                @foreach($domaines as $domaine)
+                <a href="{{ route('employes.by_domaine', $domaine) }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>{{ $domaine->nom }}</span>
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endcanany
+
         <!-- Badges -->
         @can('badges.view')
         @unlessrole('etudiant')

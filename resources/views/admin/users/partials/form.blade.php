@@ -181,6 +181,32 @@
             </div>
         </section>
 
+        <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Domaine de travail</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Assignez un domaine de travail pour les employés (non applicable aux étudiants).</p>
+            </div>
+
+            <div>
+                <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                <select
+                    name="domaine_id"
+                    id="domaine_id"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
+                    <option value="">Aucun domaine (Étudiant ou non assigné)</option>
+                    @foreach($domaines ?? [] as $domaine)
+                        <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id) == $domaine->id ? 'selected' : '' }}>
+                            {{ $domaine->nom }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
+                @error('domaine_id')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+        </section>
+
         <section
             class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $shouldShowEtudiantBlock ? '' : 'hidden' }}"
             data-etudiant-fields>
