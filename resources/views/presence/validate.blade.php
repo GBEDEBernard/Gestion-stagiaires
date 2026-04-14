@@ -35,9 +35,9 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
-                            Étudiant
+                            {{ isset($user_name) ? 'Employé' : 'Étudiant' }}
                         </h3>
-                        <p class="text-lg font-bold text-slate-900">{{ $etudiant_name }}</p>
+                        <p class="text-lg font-bold text-slate-900">{{ $user_name ?? $etudiant_name }}</p>
                     </div>
 
                     <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -45,10 +45,12 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-1-4-4 4h14l-4-4"></path>
                             </svg>
-                            Entreprise / Site
+                            {{ isset($user_name) ? 'Domaine / Site' : 'Entreprise / Site' }}
                         </h3>
                         <p class="text-lg font-bold text-slate-900">{{ $site_name }}</p>
-                        @if(isset($theme))
+                        @if(isset($domaine_name))
+                        <p class="text-sm text-slate-600 mt-1">{{ $domaine_name }}</p>
+                        @elseif(isset($theme))
                         <p class="text-sm text-slate-600 mt-1">{{ $theme }}</p>
                         @endif
                     </div>

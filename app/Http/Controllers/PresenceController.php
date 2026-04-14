@@ -58,7 +58,10 @@ class PresenceController extends Controller
             // Pour les employés, on peut créer un "stage virtuel" ou utiliser une logique différente
             // Pour l'instant, utilisons la même logique mais sans stage
             $activeStage = null; // Pas de stage pour les employés
-            $attendanceDay = null; // TODO: Implémenter pour employés
+            // Query today's attendance for employee
+            $attendanceDay = AttendanceDay::where('user_id', $user->id)
+                ->whereDate('attendance_date', today())
+                ->first();
 
             return view('presence.pointage', compact('activeStage', 'attendanceDay', 'domaine'));
         }
@@ -139,7 +142,7 @@ class PresenceController extends Controller
             $previewData = [
                 'user_name' => $user->name,
                 'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal', // TODO: Lier employés à des sites
+                'site_name' => 'Site principal',
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
@@ -147,9 +150,7 @@ class PresenceController extends Controller
                 'type' => 'arrivée',
             ];
 
-            // TODO: Calculer distance si geofence disponible pour employés
-
-            // Stocker données complètes pour confirmation
+            // No geofence for employee preview (calculated later in service)
             session(['pending_pointage' => [
                 'type' => 'check_in',
                 'user_id' => $user->id,
@@ -244,7 +245,7 @@ class PresenceController extends Controller
             $previewData = [
                 'user_name' => $user->name,
                 'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal', // TODO: Lier employés à des sites
+                'site_name' => 'Site principal',
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
@@ -252,9 +253,7 @@ class PresenceController extends Controller
                 'type' => 'départ',
             ];
 
-            // TODO: Calculer distance si geofence disponible pour employés
-
-            // Stocker données complètes pour confirmation
+            // No geofence for employee preview (calculated later in service)
             session(['pending_pointage' => [
                 'type' => 'check_out',
                 'user_id' => $user->id,
@@ -321,7 +320,7 @@ class PresenceController extends Controller
             $previewData = [
                 'user_name' => $user->name,
                 'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal', // TODO: Lier employés à des sites
+                'site_name' => 'Site principal',
                 'latitude' => $pending['latitude'],
                 'longitude' => $pending['longitude'],
                 'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
@@ -330,7 +329,7 @@ class PresenceController extends Controller
                 'form_data' => $pending,
             ];
 
-            // TODO: Calculer distance si geofence disponible pour employés
+            // No geofence preview for employees
         }
 
         return view('presence.validate', $previewData);
@@ -489,6 +488,25 @@ class PresenceController extends Controller
             ->first();
 
         return view('employee.presence.pointage', compact('attendanceDay', 'user'));
+    }
+
+    /**
+     * Calculate distance between two GPS coordinates (copied from PresenceService)
+     */
+    private function calculateDistance(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
+    {
+        $earthRadius = 6371000;
+
+        $latDelta = deg2rad($latTo - $latFrom);
+        $lngDelta = deg2rad($lngTo - $lngFrom);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2)
+            + cos(deg2rad($latFrom)) * cos(deg2rad($latTo))
+            * sin($lngDelta / 2) * sin($lngDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return (int) round($earthRadius * $c);
     }
 
     /**

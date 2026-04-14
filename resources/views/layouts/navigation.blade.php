@@ -133,7 +133,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         </div>
         @endrole
 
-        <!-- Menu Présences (Admin + Users)
+        <!--  Menu Présences (Admin + Users) -->
         @can('presence.view')
         <a href="{{ route('presence.pointage') }}"
             class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 group relative overflow-hidden border-l-4 border-emerald-500/30">
@@ -151,7 +151,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 {{ $anomaliesCount }}
             </span>
             @endif
-        </a> -->
+        </a>
 
         {{-- Suivi Pointages pour Admins --}}
         @if(auth()->user()->can('presence.view') && auth()->user()->hasRole('admin'))

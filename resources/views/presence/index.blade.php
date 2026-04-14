@@ -2,7 +2,7 @@
     <div class="max-w-3xl mx-auto px-4 py-8">
         @if ($errors->any())
         <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700">
-            <p class="font-medium">Le pointage n'a pas pu etre valide.</p>
+            Le pointage n'a pas pu être validé.
             <ul class="mt-2 space-y-1 text-sm">
                 @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -13,8 +13,8 @@
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-200">
-                <h1 class="text-2xl font-semibold text-slate-900">Pointage de presence</h1>
-                <p class="text-sm text-slate-500 mt-1">Pointage geolocalise, pense pour rester rapide et fiable.</p>
+                Pointage de présence
+                Pointage géolocalisé
             </div>
 
             <div class="p-6 space-y-6">

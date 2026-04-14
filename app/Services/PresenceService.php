@@ -52,16 +52,13 @@ class PresenceService
             }
 
             $device = $this->resolveTrustedDevice($user, $payload);
-            
-            // Try domaine-linked site for geofence (future: add site_id to Domaine)
-            $site = $domaine->site ?? null; // Assume optional relation
+            $site = $domaine->site ?? null;
             $geofence = $site?->geofences()->where('is_active', true)->orderByDesc('is_primary')->first();
-
             $distance = $geofence
                 ? $this->calculateDistanceMeters(
-                    (float) $payload['latitude'],
-                    (float) $payload['longitude'],
-                    (float) $geofence->center_latitude,
+                    (float) $payload['latitude'], 
+                    (float) $payload['longitude'], 
+                    (float) $geofence->center_latitude, 
                     (float) $geofence->center_longitude
                 )
                 : null;
@@ -69,8 +66,8 @@ class PresenceService
             $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance);
 
             $event = AttendanceEvent::create([
-                'stage_id' => null,
-                'etudiant_id' => null,
+                'stage_id' => 0,
+                'etudiant_id' => 0,
                 'site_id' => $site?->id,
                 'site_geofence_id' => $geofence?->id,
                 'user_id' => $user->id,
@@ -86,7 +83,7 @@ class PresenceService
                 'user_agent' => request()->userAgent(),
                 'device_fingerprint' => $device?->device_fingerprint ?? $this->fallbackFingerprint($payload),
                 'reason_code' => $decision['reason_code'],
-                'rejection_reason' => $decision['message'],
+                'rejection_reason' => $decision['status'] === 'rejected' ? $decision['message'] : null,
                 'meta' => [
                     'domaine_id' => $domaine->id,
                     'platform' => $payload['platform'] ?? null,
@@ -104,7 +101,6 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-
             $this->syncEmployeeAttendanceDay($user, $event);
 
             return $event;
@@ -349,80 +345,7 @@ class PresenceService
         ]);
     }
 
-    protected function evaluateEmployeeEvent(User $user, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
-    {
-        if (!$geofence) {
-            return [
-                'status' => 'flagged',
-                'reason_code' => 'missing_geofence',
-                'message' => 'Aucune zone de présence active n\'est configurée pour ce site.',
-                'anomaly' => 'missing_geofence',
-                'severity' => 'high',
-            ];
-        }
 
-        if (!empty($payload['accuracy_meters']) && $payload['accuracy_meters'] > $geofence->allowed_accuracy_meters) {
-            return [
-                'status' => 'rejected',
-                'reason_code' => 'gps_accuracy_low',
-                'message' => 'La précision GPS est insuffisante pour valider votre présence.',
-                'anomaly' => 'gps_accuracy_low',
-                'severity' => 'medium',
-            ];
-        }
-
-        if ($distance !== null && $distance > $geofence->radius_meters) {
-            return [
-                'status' => 'rejected',
-                'reason_code' => 'outside_geofence',
-                'message' => "Vous êtes hors de la zone autorisée pour ce domaine.",
-                'anomaly' => 'outside_geofence',
-                'severity' => 'high',
-            ];
-        }
-
-        $day = AttendanceDay::where('user_id', $user->id)
-            ->whereDate('attendance_date', today())
-            ->first();
-
-        if ($eventType === 'check_in' && $day?->first_check_in_at) {
-            return [
-                'status' => 'rejected',
-                'reason_code' => 'duplicate_checkin',
-                'message' => "L'arrivée a déjà été enregistrée aujourd'hui.",
-                'anomaly' => 'duplicate_checkin',
-                'severity' => 'medium',
-            ];
-        }
-
-        if ($eventType === 'check_out' && !$day?->first_check_in_at) {
-            return [
-                'status' => 'rejected',
-                'reason_code' => 'checkout_without_checkin',
-                'message' => "Impossible d'enregistrer le départ sans arrivée.",
-                'anomaly' => 'checkout_without_checkin',
-                'severity' => 'medium',
-            ];
-        }
-
-        if ($eventType === 'check_out' && $day?->last_check_out_at) {
-            return [
-                'status' => 'rejected',
-                'reason_code' => 'duplicate_checkout',
-                'message' => 'Le départ a déjà été enregistré aujourd\'hui.',
-                'anomaly' => 'duplicate_checkout',
-                'severity' => 'medium',
-            ];
-        }
-
-        return [
-            'status' => 'approved',
-            'reason_code' => 'ok',
-            'message' => $eventType === 'check_in'
-                ? "Présence d'arrivée enregistrée."
-                : 'Présence de départ enregistrée.',
-        ];
-    }
 
     protected function evaluateEvent(Stage $stage, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
     {
@@ -552,40 +475,7 @@ class PresenceService
         $day->save();
     }
 
-    protected function syncEmployeeAttendanceDay(User $user, AttendanceEvent $event): void
-    {
-        $day = AttendanceDay::firstOrNew([
-            'user_id' => $user->id,
-            'attendance_date' => today()->toDateString(),
-        ]);
 
-        $day->fill([
-            'site_id' => $event->site_id,
-            'domaine_id' => $user->domaine_id,
-        ]);
-
-        if ($event->event_type === 'check_in' && in_array($event->status, ['approved', 'flagged'])) {
-            $day->check_in_event_id = $event->id;
-            $day->first_check_in_at = $event->occurred_at;
-            // For employees, we don't have stage schedules, so no late computation
-            $day->late_minutes = 0;
-            $day->arrival_status = 'ontime';
-            $day->day_status = 'present';
-            $day->validation_status = 'auto_approved';
-        }
-
-        if ($event->event_type === 'check_out' && in_array($event->status, ['approved', 'flagged'])) {
-            $day->check_out_event_id = $event->id;
-            $day->last_check_out_at = $event->occurred_at;
-            $day->worked_minutes = $day->first_check_in_at
-                ? max(0, $day->first_check_in_at->diffInMinutes($event->occurred_at))
-                : 0;
-            // For employees, no early departure rules
-            $day->early_departure_minutes = 0;
-        }
-
-        $day->save();
-    }
 
     protected function recordAnomaly(AttendanceEvent $event, string $type, string $severity, array $payload = []): void
     {
@@ -684,25 +574,4 @@ class PresenceService
         ]));
     }
 }
-?> </xai:function_call >  
-
-Assistant:  Mard
-
-  <xai:function_call name="attempt_completion">
-<parameter name="result">Employee attendance system fully implemented "bien propre"!
-
-**Summary**:
-- ✅ **Models**: User relations (attendanceDays, attendanceEvents)
-- ✅ **Service**: PresenceService with registerEmployeeCheckIn/Out (geofence, anomalies, trusted devices, status computation matching students)
-- ✅ **Unified flow**: Same pointage/historique/validate for employees (domaine context)
-- ✅ **Syntax verified**: php -l OK, caches cleared
-- ✅ **Progress**: TODO_PRESENCE_EMPLOYEES.md all ✅
-
-**Test**:
-```bash
-php artisan serve
-# Login employee (domaine assigned)
-# /presence/pointage → GPS → confirm → /presence/historique (shows domaine, status colors)
-```
-
-Dashboard unified like students. Ready!
+?> 

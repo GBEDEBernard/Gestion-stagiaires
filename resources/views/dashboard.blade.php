@@ -486,11 +486,7 @@
     ════════════════════════════════════════════════════════ --}}
     <script>
         window.__DASHBOARD__ = {
-            labelsJour: {
-                {
-                    Js::from($labelsJour)
-                }
-            },
+            labelsJour: {!! Js::from($labelsJour) !!},
             evolutionJour: {
                 {
                     Js::from($evolutionJour)
