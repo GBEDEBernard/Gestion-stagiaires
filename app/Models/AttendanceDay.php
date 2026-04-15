@@ -9,6 +9,15 @@ class AttendanceDay extends Model
 {
     use HasFactory;
 
+    /**
+     * Defaults pour employés: pas de stage/etudiant nécessaire
+     * Garantit NULL sur firstOrNew(['user_id', 'attendance_date'])
+     */
+    protected $attributes = [
+        'etudiant_id' => null,
+        'stage_id' => null,
+    ];
+
     protected $fillable = [
         'stage_id',
         'etudiant_id',

@@ -9,11 +9,16 @@ class AttendanceAnomaly extends Model
 {
     use HasFactory;
 
+    /**
+     * Champs fillables pour création d'anomalies.
+     * Compatible stagiaires (stage_id/etudiant_id) et employés (user_id).
+     */
     protected $fillable = [
         'attendance_event_id',
         'attendance_day_id',
-        'stage_id',
-        'etudiant_id',
+        'stage_id',           // NULL pour employés
+        'etudiant_id',        // NULL pour employés
+        'user_id',            // Pour employés
         'reviewed_by',
         'anomaly_type',
         'severity',
@@ -50,6 +55,17 @@ class AttendanceAnomaly extends Model
         return $this->belongsTo(Etudiant::class);
     }
 
+    /**
+     * Relation avec l'utilisateur concerné (pour employés).
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relation avec le reviewer/admin qui traite l'anomalie.
+     */
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');

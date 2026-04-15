@@ -218,6 +218,10 @@ class PresenceService
             'attendance_date' => today()->toDateString(),
         ]);
 
+        // Safeguard explicite pour employés (même avec $attributes model)
+        $day->etudiant_id = null;
+        $day->stage_id = null;
+
         if ($event->event_type === 'check_in' && in_array($event->status, ['approved', 'flagged'])) {
             $day->check_in_event_id = $event->id;
             $day->first_check_in_at = $event->occurred_at;
@@ -365,6 +369,10 @@ class PresenceService
         return $device;
     }
 
+    /**
+     * Enregistre une anomalie si pointage depuis appareil secondaire.
+     * Compatible employés/stagiaires via recordAnomaly amélioré.
+     */
     protected function recordDeviceSwitchAnomalyIfNeeded(AttendanceEvent $event, ?TrustedDevice $device): void
     {
         if (!$device || !$device->wasRecentlyCreated || $device->is_primary) {
@@ -372,9 +380,11 @@ class PresenceService
         }
 
         $this->recordAnomaly($event, 'secondary_device_detected', 'low', [
-            'message' => 'Pointage effectué depuis un appareil secondaire.',
+            'message' => 'Pointage effectué depuis un appareil secondaire (non principal).',
             'trusted_device_id' => $device->id,
             'device_label' => $device->device_label,
+            'device_uuid' => $device->device_uuid,
+            'is_trusted' => $device->is_trusted,
         ]);
     }
 
@@ -510,17 +520,28 @@ class PresenceService
 
 
 
+    /**
+     * Enregistre une anomalie de présence de manière compatible avec les employés et stagiaires.
+     * Pour les employés: stage_id et etudiant_id = null, user_id renseigné.
+     * Pour les stagiaires: stage_id et etudiant_id renseignés.
+     */
     protected function recordAnomaly(AttendanceEvent $event, string $type, string $severity, array $payload = []): void
     {
         AttendanceAnomaly::create([
             'attendance_event_id' => $event->id,
-            'stage_id' => $event->stage_id,
-            'etudiant_id' => $event->etudiant_id,
+            'attendance_day_id' => $event->attendanceDay?->id ?? null,
+            'stage_id' => $event->stage_id ?? null,        // NULL pour employés
+            'etudiant_id' => $event->etudiant_id ?? null,  // NULL pour employés
+            'user_id' => $event->user_id,                  // TOUJOURS renseigné
             'anomaly_type' => $type,
             'severity' => $severity,
             'status' => 'open',
             'detected_at' => now(),
-            'payload' => $payload,
+            'payload' => array_merge($payload, [
+                'event_type' => $event->event_type,
+                'user_type' => $event->etudiant_id ? 'etudiant' : 'employe',
+                'status' => $event->status,
+            ]),
         ]);
     }
 
