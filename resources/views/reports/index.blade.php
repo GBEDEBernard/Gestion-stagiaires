@@ -44,17 +44,25 @@
         </div>
         @endif
 
-        @if (! $activeStage)
+        @if (! $activeStage && ! $isEmployee)
         <div class="rounded-2xl bg-amber-50 border border-amber-200 px-5 py-5 text-amber-800">
             Aucun stage actif n'est disponible aujourd'hui pour remplir un rapport.
         </div>
-        @else
+        @elseif ($activeStage || $isEmployee)
         <div class="grid gap-4 lg:grid-cols-3 mb-6">
+            @if ($activeStage)
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p class="text-sm text-slate-500">Stage actif</p>
                 <p class="mt-2 text-lg font-semibold text-slate-900">{{ $activeStage->theme ?: 'Stage sans theme' }}</p>
                 <p class="mt-1 text-sm text-slate-600">{{ $activeStage->site?->name ?: 'Site non defini' }}</p>
             </div>
+            @else
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm text-slate-500">Type</p>
+                <p class="mt-2 text-lg font-semibold text-slate-900">Employé</p>
+                <p class="mt-1 text-sm text-slate-600">Rapport pour l'entreprise</p>
+            </div>
+            @endif
 
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p class="text-sm text-slate-500">Presence du jour</p>
@@ -113,6 +121,7 @@
                 </div>
             </div>
 
+            @if ($activeStage)
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
                 <div class="flex flex-col gap-1">
                     <h2 class="text-lg font-semibold text-slate-900">Taches du stage</h2>
@@ -171,6 +180,7 @@
                 </div>
                 @endif
             </div>
+            @endif
 
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
                 <div class="flex flex-col gap-1">
@@ -184,7 +194,7 @@
                 <div class="space-y-4">
                     @for ($freeIndex = 0; $freeIndex < 3; $freeIndex++)
                         @php
-                        $itemIndex=$activeStage->tasks->count() + $freeIndex;
+                        $itemIndex = ($activeStage ? $activeStage->tasks->count() : 0) + $freeIndex;
                         $freeItem = $freeItems->get($freeIndex);
                         @endphp
                         <div class="rounded-2xl border border-dashed border-slate-300 p-5">

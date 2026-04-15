@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DailyReport\StoreDailyReportRequest;
 use App\Models\AttendanceDay;
+use App\Models\DailyReport;
 use App\Services\DailyReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -18,10 +19,11 @@ class DailyReportController extends Controller
     {
         $user = $request->user();
         $etudiant = $user->etudiant;
+        $isEmployee = $user->hasRole('employe');
 
-        // For employees, we might handle differently, but for now allow access
-        if (!$etudiant && !$user->hasRole('employe')) {
-            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        // Allow both students and employees to access reports
+        if (!$etudiant && !$isEmployee) {
+            abort_if(true, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
         }
 
         $period = $request->get('period', 'daily');
@@ -33,7 +35,7 @@ class DailyReportController extends Controller
                 $attendanceDay = AttendanceDay::where('stage_id', $activeStage->id)
                     ->whereDate('attendance_date', today())
                     ->first();
-            } elseif ($user->hasRole('employe')) {
+            } elseif ($isEmployee) {
                 $attendanceDay = AttendanceDay::where('user_id', $user->id)
                     ->whereDate('attendance_date', today())
                     ->first();
@@ -45,9 +47,14 @@ class DailyReportController extends Controller
                     ->with(['items.task', 'reviews'])
                     ->whereDate('report_date', today())
                     ->first();
+            } elseif ($isEmployee) {
+                $todayReport = DailyReport::where('user_id', $user->id)
+                    ->with(['items.task', 'reviews'])
+                    ->whereDate('report_date', today())
+                    ->first();
             }
 
-            $taskItems = $todayReport
+            $taskItems = $todayReport && $etudiant && $activeStage
                 ? $todayReport->items->whereNotNull('task_id')->keyBy('task_id')
                 : collect();
             $freeItems = $todayReport
@@ -60,7 +67,8 @@ class DailyReportController extends Controller
                 'todayReport',
                 'taskItems',
                 'freeItems',
-                'period'
+                'period',
+                'isEmployee'
             ));
         } else {
             // For weekly/monthly, show history of reports
@@ -78,12 +86,20 @@ class DailyReportController extends Controller
                     ->where('report_date', '<=', now())
                     ->orderBy('report_date', 'desc')
                     ->get();
+            } elseif ($isEmployee) {
+                $reports = DailyReport::where('user_id', $user->id)
+                    ->with(['items.task', 'reviews'])
+                    ->where('report_date', '>=', $dateFrom)
+                    ->where('report_date', '<=', now())
+                    ->orderBy('report_date', 'desc')
+                    ->get();
             }
 
             return view('reports.index', compact(
                 'activeStage',
                 'reports',
-                'period'
+                'period',
+                'isEmployee'
             ));
         }
     }

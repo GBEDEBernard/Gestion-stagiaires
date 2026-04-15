@@ -14,6 +14,7 @@ class DailyReport extends Model
     protected $fillable = [
         'stage_id',
         'etudiant_id',
+        'user_id',
         'attendance_day_id',
         'report_date',
         'title',
@@ -64,5 +65,10 @@ class DailyReport extends Model
     public function reviews()
     {
         return $this->hasMany(DailyReportReview::class)->latest('reviewed_at');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

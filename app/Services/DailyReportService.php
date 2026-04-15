@@ -38,6 +38,11 @@ class DailyReportService
     public function storeForToday(User $user, array $payload): DailyReport
     {
         return DB::transaction(function () use ($user, $payload) {
+            if ($user->hasRole('employe')) {
+                return $this->storeForEmployeeToday($user, $payload);
+            }
+
+            // Original student logic
             $etudiant = $this->resolveEtudiant($user);
             $stage = $this->resolveActiveStage($user, $etudiant);
             $attendanceDay = AttendanceDay::where('stage_id', $stage->id)
@@ -75,6 +80,68 @@ class DailyReportService
         });
     }
 
+    protected function storeForEmployeeToday(User $user, array $payload): DailyReport
+    {
+        $attendanceDay = AttendanceDay::where('user_id', $user->id)
+            ->whereDate('attendance_date', today())
+            ->first();
+
+        $report = DailyReport::withTrashed()->firstOrNew([
+            'user_id' => $user->id,
+            'report_date' => today()->toDateString(),
+        ]);
+
+        if ($report->trashed()) {
+            $report->restore();
+        }
+
+        $status = $payload['status_action'] === 'submit' ? 'submitted' : 'draft';
+
+        $report->fill([
+            'user_id' => $user->id,
+            'attendance_day_id' => $attendanceDay?->id,
+            'title' => sprintf('Rapport du %s', today()->format('d/m/Y')),
+            'summary' => trim($payload['summary']),
+            'blockers' => $this->nullableText($payload['blockers'] ?? null),
+            'next_steps' => $this->nullableText($payload['next_steps'] ?? null),
+            'hours_declared' => $payload['hours_declared'] ?? 0,
+            'completion_rate' => $payload['completion_rate'] ?? null,
+            'status' => $status,
+            'submitted_at' => $status === 'submitted' ? now() : null,
+        ]);
+        $report->save();
+
+        // For employees, only sync free-form items (no tasks)
+        $this->syncFreeReportItems($report, $user, $payload['items'] ?? []);
+
+        return $report->fresh(['items', 'attendanceDay']);
+    }
+
+    protected function syncFreeReportItems(DailyReport $report, User $user, array $items): void
+    {
+        $report->items()->delete();
+
+        foreach ($items as $index => $item) {
+            if (!$this->isMeaningfulItem($item)) {
+                continue;
+            }
+
+            $description = $this->nullableText(Arr::get($item, 'description'));
+            $outcome = $this->nullableText(Arr::get($item, 'outcome'));
+            $duration = (int) (Arr::get($item, 'duration_minutes') ?? 0);
+
+            $report->items()->create([
+                'task_id' => null,
+                'work_type' => 'free_entry',
+                'description' => $description ?: 'Activite du jour',
+                'outcome' => $outcome,
+                'duration_minutes' => $duration,
+                'progress_percent' => null,
+                'display_order' => $index + 1,
+            ]);
+        }
+    }
+
     protected function resolveEtudiant(User $user): Etudiant
     {
         if ($user->etudiant) {
@@ -99,7 +166,7 @@ class DailyReportService
         return $stage;
     }
 
-    protected function syncReportItems(DailyReport $report, Stage $stage, User $user, array $items): void
+    protected function syncReportItems(DailyReport $report, ?Stage $stage, User $user, array $items): void
     {
         $report->items()->delete();
 
@@ -108,7 +175,7 @@ class DailyReportService
                 continue;
             }
 
-            $task = $this->resolveTask($stage, Arr::get($item, 'task_id'));
+            $task = $stage ? $this->resolveTask($stage, Arr::get($item, 'task_id')) : null;
             $description = $this->nullableText(Arr::get($item, 'description'));
             $outcome = $this->nullableText(Arr::get($item, 'outcome'));
             $duration = (int) (Arr::get($item, 'duration_minutes') ?? 0);
@@ -130,9 +197,9 @@ class DailyReportService
         }
     }
 
-    protected function resolveTask(Stage $stage, mixed $taskId): ?Task
+    protected function resolveTask(?Stage $stage, mixed $taskId): ?Task
     {
-        if (!$taskId) {
+        if (!$taskId || !$stage) {
             return null;
         }
 
