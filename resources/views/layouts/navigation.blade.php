@@ -133,6 +133,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         </div>
         @endrole
 
+        @unless(auth()->user()->hasRole('etudiant'))
         <!--  Menu Présences (Admin + Users) -->
         @can('presence.view')
         <a href="{{ route('presence.pointage') }}"
@@ -185,6 +186,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
         </a>
         @endcan
+        @endunless
 
         <!-- Menu Stages avec Sous-menu (Admin only) -->
         @canany(['stages.view', 'type_stages.view', 'services.view', 'sites.view', 'tasks.view', 'signataires.view', 'jour_stage.view'])

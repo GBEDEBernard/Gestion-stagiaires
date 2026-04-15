@@ -19,23 +19,34 @@ class DailyReportController extends Controller
         $user = $request->user();
         $etudiant = $user->etudiant;
 
-        abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        // For employees, we might handle differently, but for now allow access
+        if (!$etudiant && !$user->hasRole('employe')) {
+            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        }
 
         $period = $request->get('period', 'daily');
-        $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
+        $activeStage = $etudiant ? $this->dailyReportService->resolveActiveStageForUser($user) : null;
 
         if ($period === 'daily') {
-            $attendanceDay = $activeStage
-                ? AttendanceDay::where('stage_id', $activeStage->id)
-                ->whereDate('attendance_date', today())
-                ->first()
-                : null;
-            $todayReport = $activeStage
-                ? $activeStage->dailyReports()
-                ->with(['items.task', 'reviews'])
-                ->whereDate('report_date', today())
-                ->first()
-                : null;
+            $attendanceDay = null;
+            if ($etudiant && $activeStage) {
+                $attendanceDay = AttendanceDay::where('stage_id', $activeStage->id)
+                    ->whereDate('attendance_date', today())
+                    ->first();
+            } elseif ($user->hasRole('employe')) {
+                $attendanceDay = AttendanceDay::where('user_id', $user->id)
+                    ->whereDate('attendance_date', today())
+                    ->first();
+            }
+
+            $todayReport = null;
+            if ($etudiant && $activeStage) {
+                $todayReport = $activeStage->dailyReports()
+                    ->with(['items.task', 'reviews'])
+                    ->whereDate('report_date', today())
+                    ->first();
+            }
+
             $taskItems = $todayReport
                 ? $todayReport->items->whereNotNull('task_id')->keyBy('task_id')
                 : collect();
@@ -59,16 +70,17 @@ class DailyReportController extends Controller
                 default => now()->startOfWeek()
             };
 
-            $reports = $activeStage
-                ? $activeStage->dailyReports()
-                ->with(['items.task', 'reviews'])
-                ->where('report_date', '>=', $dateFrom)
-                ->where('report_date', '<=', now())
-                ->orderBy('report_date', 'desc')
-                ->get()
-                : collect();
+            $reports = collect();
+            if ($etudiant && $activeStage) {
+                $reports = $activeStage->dailyReports()
+                    ->with(['items.task', 'reviews'])
+                    ->where('report_date', '>=', $dateFrom)
+                    ->where('report_date', '<=', now())
+                    ->orderBy('report_date', 'desc')
+                    ->get();
+            }
 
-            return view('reports.history', compact(
+            return view('reports.index', compact(
                 'activeStage',
                 'reports',
                 'period'
