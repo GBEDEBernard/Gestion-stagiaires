@@ -343,27 +343,27 @@ class UserController extends Controller
     }
 
     protected function buildFormData(?User $user = null, array $selectedRoles = [], array $selectedPermissions = [], ?int $selectedDomaineId = null): array
-{
-    $roles = $this->rolePermissionPresetService->orderedRoles();
-    $permissions = Permission::query()->orderBy('name')->get();
-    $permissionGroups = $permissions->groupBy(fn(Permission $permission) => explode('.', $permission->name)[0]);
-    $selectedRoles = old('roles', $selectedRoles);
-    $oldInput = session()->getOldInput();
+    {
+        $roles = $this->rolePermissionPresetService->orderedRoles();
+        $permissions = Permission::query()->orderBy('name')->get();
+        $permissionGroups = $permissions->groupBy(fn(Permission $permission) => explode('.', $permission->name)[0]);
+        $selectedRoles = old('roles', $selectedRoles);
+        $oldInput = session()->getOldInput();
 
-    if (is_array($oldInput) && (array_key_exists('permissions', $oldInput) || array_key_exists('permissions_overridden', $oldInput))) {
-        $selectedPermissions = old('permissions', []);
+        if (is_array($oldInput) && (array_key_exists('permissions', $oldInput) || array_key_exists('permissions_overridden', $oldInput))) {
+            $selectedPermissions = old('permissions', []);
+        }
+
+        return [
+            'user' => $user,
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'permissionGroups' => $permissionGroups,
+            'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
+            'selectedRoles' => $selectedRoles,
+            'selectedPermissions' => $selectedPermissions,
+            'domaines' => Domaine::orderBy('nom')->get(),
+            'selectedDomaineId' => $selectedDomaineId,
+        ];
     }
-
-    return [
-        'user' => $user,
-        'roles' => $roles,
-        'permissions' => $permissions,
-        'permissionGroups' => $permissionGroups,
-        'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
-        'selectedRoles' => $selectedRoles,
-        'selectedPermissions' => $selectedPermissions,
-        'domaines' => Domaine::orderBy('nom')->get(),
-        'selectedDomaineId' => $selectedDomaineId,
-    ];
-}
 }
