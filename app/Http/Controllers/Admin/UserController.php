@@ -36,10 +36,12 @@ class UserController extends Controller
         $selectedRoles = $this->rolePermissionPresetService->normalizeRoleNames([
             $request->query('role'),
         ]);
+        $selectedDomaineId = $request->query('domaine_id');
 
         $formData = $this->buildFormData(
             selectedRoles: $selectedRoles,
-            selectedPermissions: $this->rolePermissionPresetService->permissionsForRoles($selectedRoles)
+            selectedPermissions: $this->rolePermissionPresetService->permissionsForRoles($selectedRoles),
+            selectedDomaineId: $selectedDomaineId,
         );
 
         return view('admin.users.create', compact('formData'));
@@ -340,10 +342,10 @@ class UserController extends Controller
         $etudiant->save();
     }
 
-    protected function buildFormData(?User $user = null, array $selectedRoles = [], array $selectedPermissions = []): array
+    protected function buildFormData(?User $user = null, array $selectedRoles = [], array $selectedPermissions = [], ?int $selectedDomaineId = null): array
 {
     $roles = $this->rolePermissionPresetService->orderedRoles();
-    $permissions = Permission::query()->orderBy('name')->get();  // ← déjà là
+    $permissions = Permission::query()->orderBy('name')->get();
     $permissionGroups = $permissions->groupBy(fn(Permission $permission) => explode('.', $permission->name)[0]);
     $selectedRoles = old('roles', $selectedRoles);
     $oldInput = session()->getOldInput();
@@ -355,12 +357,13 @@ class UserController extends Controller
     return [
         'user' => $user,
         'roles' => $roles,
-        'permissions' => $permissions,          // ✅ AJOUTER cette ligne
+        'permissions' => $permissions,
         'permissionGroups' => $permissionGroups,
         'rolePermissionMap' => $this->rolePermissionPresetService->rolePermissionMap(),
         'selectedRoles' => $selectedRoles,
         'selectedPermissions' => $selectedPermissions,
         'domaines' => Domaine::orderBy('nom')->get(),
+        'selectedDomaineId' => $selectedDomaineId,
     ];
 }
 }

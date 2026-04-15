@@ -140,17 +140,14 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
 
-                {{-- Hidden inputs for auto-assignment --}}
+                {{-- Hidden input for selected role --}}
                 <input type="hidden" name="roles[]" value="" id="hidden_role" data-role-input>
-                @foreach($roles as $role)
-                <input type="hidden" name="roles[]" value="{{ $role->name }}" class="hidden-role" style="display: none;" data-role="{{ $role->name }}">
-                @endforeach
             </div>
 
             {{-- Permissions hidden & auto-assigned --}}
-            <input type="hidden" name="permissions_overridden" value="0">
+            <input type="hidden" name="permissions_overridden" value="0" data-permissions-overridden>
             @foreach($permissions as $permission)
-            <input type="hidden" name="permissions[]" value="{{ $permission->name }}" class="hidden-permission" style="display: none;" data-permission="{{ $permission->name }}">
+            <input type="hidden" name="permissions[]" value="{{ $permission->name }}" class="hidden-permission" data-permission="{{ $permission->name }}">
             @endforeach
         </section>
 
@@ -168,7 +165,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
                     <option value="">Aucun domaine (Étudiant ou non assigné)</option>
                     @foreach($domaines ?? [] as $domaine)
-                    <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id) == $domaine->id ? 'selected' : '' }}>
+                    <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id ?? $selectedDomaineId) == $domaine->id ? 'selected' : '' }}>
                         {{ $domaine->nom }}
                     </option>
                     @endforeach
@@ -295,8 +292,8 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         const roleMap = JSON.parse(form.dataset.rolePermissionMap || '{}');
         const typeSelect = form.querySelector('#user_type');
         const hiddenRoleInput = form.querySelector('#hidden_role');
-        const hiddenRoleInputs = form.querySelectorAll('.hidden-role');
         const hiddenPermissionInputs = form.querySelectorAll('.hidden-permission');
+        const permissionCheckboxes = Array.from(form.querySelectorAll('.permission-checkbox'));
         const etudiantFields = form.querySelector('[data-etudiant-fields]');
         const permissionsOverriddenInput = form.querySelector('[data-permissions-overridden]');
         const accountNameInput = form.querySelector('[data-account-name]');
@@ -341,19 +338,13 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         };
 
         const applyTypeDefaults = () => {
-            // Show selected role input
-            hiddenRoleInputs.forEach(input => input.style.display = 'none');
             const selectedType = typeSelect.value;
-            const matchingRole = Array.from(hiddenRoleInputs).find(input => input.dataset.role === selectedType);
-            if (matchingRole) {
-                matchingRole.style.display = 'block';
-            }
             hiddenRoleInput.value = selectedType || '';
 
-            // Auto-show all preset permissions (hidden)
+            // Auto-enable preset permissions (hidden)
             const defaults = defaultPermissions();
-            hiddenPermissionInputs.forEach(input => {
-                input.style.display = defaults.has(input.dataset.permission) ? 'block' : 'none';
+            hiddenPermissionInputs.forEach((input) => {
+                input.disabled = !defaults.has(input.dataset.permission);
             });
 
             syncEtudiantVisibility();
@@ -379,6 +370,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             });
         });
 
+        applyTypeDefaults();
         refreshManualFlags();
         syncEtudiantVisibility();
         syncNameFromEtudiant();
