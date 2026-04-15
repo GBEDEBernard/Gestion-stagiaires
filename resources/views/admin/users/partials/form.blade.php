@@ -3,6 +3,7 @@ $linkedEtudiant = $user?->etudiant;
 $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
 $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
 $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+$showDomaineSection = !in_array('etudiant', $selectedRoleNames, true);
 $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 $etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
 $etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
@@ -151,7 +152,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             @endforeach
         </section>
 
-        <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6">
+        <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $showDomaineSection ? '' : 'hidden' }}" data-domaine-section>
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Domaine de travail</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">Assignez un domaine de travail pour les employés (non applicable aux étudiants).</p>
@@ -292,6 +293,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         const roleMap = JSON.parse(form.dataset.rolePermissionMap || '{}');
         const typeSelect = form.querySelector('#user_type');
         const hiddenRoleInput = form.querySelector('#hidden_role');
+        const domaineSection = form.querySelector('[data-domaine-section]');
         const hiddenPermissionInputs = form.querySelectorAll('.hidden-permission');
         const permissionCheckboxes = Array.from(form.querySelectorAll('.permission-checkbox'));
         const etudiantFields = form.querySelector('[data-etudiant-fields]');
@@ -337,6 +339,11 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             });
         };
 
+        const syncDomaineVisibility = () => {
+            const isEtudiant = selectedRole().includes('etudiant');
+            domaineSection?.classList.toggle('hidden', isEtudiant);
+        };
+
         const applyTypeDefaults = () => {
             const selectedType = typeSelect.value;
             hiddenRoleInput.value = selectedType || '';
@@ -348,6 +355,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             });
 
             syncEtudiantVisibility();
+            syncDomaineVisibility();
             syncNameFromEtudiant();
         };
 
