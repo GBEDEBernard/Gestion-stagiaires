@@ -22,6 +22,7 @@ use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
+use App\Http\Controllers\AdminReportTrackingController;
 use App\Http\Controllers\DomaineController;
 
 /*
@@ -263,6 +264,10 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
     });
 
+    // ---------------- Suivi des Rapports Admin ----------------
+    Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
+        Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
+    });
 
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {

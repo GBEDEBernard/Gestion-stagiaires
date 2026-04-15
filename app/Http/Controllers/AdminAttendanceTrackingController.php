@@ -39,21 +39,30 @@ class AdminAttendanceTrackingController extends Controller
      */
     protected function getDailyData(Carbon $date): array
     {
-        $attendanceDays = AttendanceDay::whereDate('attendance_date', $date)
+        $studentDays = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereNotNull('etudiant_id')
             ->with(['etudiant.user', 'stage.site', 'anomalies'])
             ->orderBy('etudiant_id')
             ->get();
 
+        $employeeDays = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereNotNull('user_id')
+            ->whereNull('etudiant_id')
+            ->where('user_id', '!=', Auth::id())
+            ->with(['user', 'stage.site', 'anomalies'])
+            ->orderBy('user_id')
+            ->get();
+
         $summary = [
-            'total' => $attendanceDays->count(),
-            'present' => $attendanceDays->where('first_check_in_at', '!=', null)->count(),
-            'absent' => $attendanceDays->where('first_check_in_at', null)->count(),
-            'late' => $attendanceDays->where('arrival_status', 'late')->count(),
-            'warning' => $attendanceDays->where('arrival_status', 'warning')->count(),
+            'student_total' => $studentDays->count(),
+            'student_present' => $studentDays->where('first_check_in_at', '!=', null)->count(),
+            'employee_total' => $employeeDays->count(),
+            'employee_present' => $employeeDays->where('first_check_in_at', '!=', null)->count(),
         ];
 
         return [
-            'attendanceDays' => $attendanceDays,
+            'attendanceStudents' => $studentDays,
+            'attendanceEmployees' => $employeeDays,
             'summary' => $summary,
             'displayDate' => $date->format('d MMM Y'),
         ];
@@ -67,31 +76,50 @@ class AdminAttendanceTrackingController extends Controller
         $startOfWeek = $date->clone()->startOfWeek();
         $endOfWeek = $date->clone()->endOfWeek();
 
-        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+            ->whereNotNull('etudiant_id')
             ->with(['etudiant.user', 'stage.site', 'anomalies'])
             ->get()
-            ->groupBy(function ($day) {
-                return $day->etudiant_id;
-            });
+            ->groupBy('etudiant_id');
 
-        $weekSummary = [];
-        foreach ($attendanceDays as $etudiantId => $days) {
+        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+            ->whereNotNull('user_id')
+            ->whereNull('etudiant_id')
+            ->where('user_id', '!=', Auth::id())
+            ->with(['user', 'stage.site', 'anomalies'])
+            ->get()
+            ->groupBy('user_id');
+
+        $studentSummary = $this->groupWeeklySummary($studentDays, 'etudiant');
+        $employeeSummary = $this->groupWeeklySummary($employeeDays, 'user');
+
+        return [
+            'studentWeekData' => $studentSummary,
+            'employeeWeekData' => $employeeSummary,
+            'displayDate' => $startOfWeek->format('d MMM') . ' - ' . $endOfWeek->format('d MMM Y'),
+            'weekStart' => $startOfWeek,
+            'weekEnd' => $endOfWeek,
+        ];
+    }
+
+    protected function groupWeeklySummary($grouped, string $relationKey): array
+    {
+        $summary = [];
+
+        foreach ($grouped as $ownerId => $days) {
+            $owner = $days->first()->{$relationKey};
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
 
-            $weekSummary[$etudiantId] = [
+            $summary[$ownerId] = [
+                'owner' => $owner,
                 'present_days' => $presentDays,
                 'total_late_minutes' => $totalLateMinutes,
                 'days' => $days->sortBy('attendance_date'),
             ];
         }
 
-        return [
-            'weekData' => $weekSummary,
-            'displayDate' => $startOfWeek->format('d MMM') . ' - ' . $endOfWeek->format('d MMM Y'),
-            'weekStart' => $startOfWeek,
-            'weekEnd' => $endOfWeek,
-        ];
+        return $summary;
     }
 
     /**
@@ -102,33 +130,52 @@ class AdminAttendanceTrackingController extends Controller
         $startOfMonth = $date->clone()->startOfMonth();
         $endOfMonth = $date->clone()->endOfMonth();
 
-        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->whereNotNull('etudiant_id')
             ->with(['etudiant.user', 'stage.site'])
             ->get()
-            ->groupBy(function ($day) {
-                return $day->etudiant_id;
-            });
+            ->groupBy('etudiant_id');
 
-        $monthlySummary = [];
-        foreach ($attendanceDays as $etudiantId => $days) {
-            $totalLateMinutes = $days->sum('late_minutes');
-            $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
-            $totalWorkedMinutes = $days->sum('worked_minutes');
+        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->whereNotNull('user_id')
+            ->whereNull('etudiant_id')
+            ->where('user_id', '!=', Auth::id())
+            ->with(['user', 'stage.site'])
+            ->get()
+            ->groupBy('user_id');
 
-            $monthlySummary[$etudiantId] = [
-                'present_days' => $presentDays,
-                'total_late_minutes' => $totalLateMinutes,
-                'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
-                'etudiant' => $days->first()->etudiant,
-            ];
-        }
+        $studentSummary = $this->groupMonthlySummary($studentDays, 'etudiant');
+        $employeeSummary = $this->groupMonthlySummary($employeeDays, 'user');
 
         return [
-            'monthlySummary' => $monthlySummary,
+            'studentMonthlySummary' => $studentSummary,
+            'employeeMonthlySummary' => $employeeSummary,
             'displayDate' => $date->translatedFormat('F Y'),
             'monthStart' => $startOfMonth,
             'monthEnd' => $endOfMonth,
         ];
+    }
+
+    protected function groupMonthlySummary($grouped, string $relationKey): array
+    {
+        $summary = [];
+
+        foreach ($grouped as $ownerId => $days) {
+            $owner = $days->first()->{$relationKey};
+            $totalLateMinutes = $days->sum('late_minutes');
+            $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
+            $totalWorkedMinutes = $days->sum('worked_minutes');
+
+            $summary[$ownerId] = [
+                'owner' => $owner,
+                'present_days' => $presentDays,
+                'total_late_minutes' => $totalLateMinutes,
+                'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
+                'days' => $days->sortBy('attendance_date'),
+            ];
+        }
+
+        return $summary;
     }
 
     /**
@@ -139,35 +186,54 @@ class AdminAttendanceTrackingController extends Controller
         $startOfYear = $date->clone()->startOfYear();
         $endOfYear = $date->clone()->endOfYear();
 
-        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+            ->whereNotNull('etudiant_id')
             ->with(['etudiant.user', 'stage.site'])
             ->get()
-            ->groupBy(function ($day) {
-                return $day->etudiant_id;
-            });
+            ->groupBy('etudiant_id');
 
-        $yearlySummary = [];
-        foreach ($attendanceDays as $etudiantId => $days) {
+        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+            ->whereNotNull('user_id')
+            ->whereNull('etudiant_id')
+            ->where('user_id', '!=', Auth::id())
+            ->with(['user', 'stage.site'])
+            ->get()
+            ->groupBy('user_id');
+
+        $studentSummary = $this->groupYearlySummary($studentDays, 'etudiant');
+        $employeeSummary = $this->groupYearlySummary($employeeDays, 'user');
+
+        return [
+            'studentYearlySummary' => $studentSummary,
+            'employeeYearlySummary' => $employeeSummary,
+            'displayDate' => $date->year,
+            'yearStart' => $startOfYear,
+            'yearEnd' => $endOfYear,
+        ];
+    }
+
+    protected function groupYearlySummary($grouped, string $relationKey): array
+    {
+        $summary = [];
+
+        foreach ($grouped as $ownerId => $days) {
+            $owner = $days->first()->{$relationKey};
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
             $totalWorkedMinutes = $days->sum('worked_minutes');
             $anomalies = $days->sum(fn($d) => $d->anomalies->count());
 
-            $yearlySummary[$etudiantId] = [
+            $summary[$ownerId] = [
+                'owner' => $owner,
                 'present_days' => $presentDays,
                 'total_late_minutes' => $totalLateMinutes,
                 'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
                 'anomalies_count' => $anomalies,
-                'etudiant' => $days->first()->etudiant,
+                'days' => $days->sortBy('attendance_date'),
             ];
         }
 
-        return [
-            'yearlySummary' => $yearlySummary,
-            'displayDate' => $date->year,
-            'yearStart' => $startOfYear,
-            'yearEnd' => $endOfYear,
-        ];
+        return $summary;
     }
 
     /**
@@ -198,9 +264,17 @@ class AdminAttendanceTrackingController extends Controller
                 fputcsv($file, ['Nom', 'Jours présents', 'Retard total (min)', 'Heures travaillées']);
 
                 $data = $this->getMonthlyData($filterDate);
-                foreach ($data['monthlySummary'] as $summary) {
+                foreach ($data['studentMonthlySummary'] as $summary) {
                     fputcsv($file, [
-                        $summary['etudiant']->user->name ?? 'N/A',
+                        $summary['owner']->user->name ?? 'N/A',
+                        $summary['present_days'],
+                        $summary['total_late_minutes'],
+                        $summary['total_worked_hours'],
+                    ]);
+                }
+                foreach ($data['employeeMonthlySummary'] as $summary) {
+                    fputcsv($file, [
+                        $summary['owner']->name ?? 'N/A',
                         $summary['present_days'],
                         $summary['total_late_minutes'],
                         $summary['total_worked_hours'],

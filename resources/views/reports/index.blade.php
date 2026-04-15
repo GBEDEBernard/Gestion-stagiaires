@@ -194,7 +194,7 @@
                 <div class="space-y-4">
                     @for ($freeIndex = 0; $freeIndex < 3; $freeIndex++)
                         @php
-                        $itemIndex = ($activeStage ? $activeStage->tasks->count() : 0) + $freeIndex;
+                        $itemIndex=($activeStage ? $activeStage->tasks->count() : 0) + $freeIndex;
                         $freeItem = $freeItems->get($freeIndex);
                         @endphp
                         <div class="rounded-2xl border border-dashed border-slate-300 p-5">

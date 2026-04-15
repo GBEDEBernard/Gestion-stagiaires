@@ -272,8 +272,8 @@ class DailyReportService
     {
         $progressValues = collect($items)
             ->pluck('progress_percent')
-            ->filter(static fn ($value) => $value !== null && $value !== '')
-            ->map(static fn ($value) => (int) $value)
+            ->filter(static fn($value) => $value !== null && $value !== '')
+            ->map(static fn($value) => (int) $value)
             ->values();
 
         if ($progressValues->isEmpty()) {
