@@ -118,19 +118,19 @@
                                     $statusText = 'Absent';
 
                                     if ($hour !== null) {
-                                        if ($hour < 8 || ($hour == 7 && $minute <= 45)) {
-                                            $statusClass = 'bg-emerald-100 text-emerald-800';
-                                            $statusText = '👍 À l\'heure';
-                                        } elseif ($hour == 7 && $minute > 45 && $minute < 60) {
-                                            $statusClass = 'bg-amber-100 text-amber-800';
-                                            $statusText = '⚠️ Tard';
-                                        } else {
-                                            $statusClass = 'bg-red-100 text-red-800';
-                                            $statusText = '👎 Retard';
-                                        }
-                                    }
-                                    @endphp
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
+                                    if ($hour < 8 || ($hour==7 && $minute <=45)) {
+                                        $statusClass='bg-emerald-100 text-emerald-800' ;
+                                        $statusText='👍 À l\' heure';
+                                        } elseif ($hour==7 && $minute> 45 && $minute < 60) {
+                                            $statusClass='bg-amber-100 text-amber-800' ;
+                                            $statusText='⚠️ Tard' ;
+                                            } else {
+                                            $statusClass='bg-red-100 text-red-800' ;
+                                            $statusText='👎 Retard' ;
+                                            }
+                                            }
+                                            @endphp
+                                            <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-sm font-semibold">
                                     @if($day->late_minutes > 0)
@@ -199,19 +199,19 @@
                                     $statusText = 'Absent';
 
                                     if ($hour !== null) {
-                                        if ($hour < 8 || ($hour == 7 && $minute <= 45)) {
-                                            $statusClass = 'bg-emerald-100 text-emerald-800';
-                                            $statusText = '👍 À l\'heure';
-                                        } elseif ($hour == 7 && $minute > 45 && $minute < 60) {
-                                            $statusClass = 'bg-amber-100 text-amber-800';
-                                            $statusText = '⚠️ Tard';
-                                        } else {
-                                            $statusClass = 'bg-red-100 text-red-800';
-                                            $statusText = '👎 Retard';
-                                        }
-                                    }
-                                    @endphp
-                                    <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
+                                    if ($hour < 8 || ($hour==7 && $minute <=45)) {
+                                        $statusClass='bg-emerald-100 text-emerald-800' ;
+                                        $statusText='👍 À l\' heure';
+                                        } elseif ($hour==7 && $minute> 45 && $minute < 60) {
+                                            $statusClass='bg-amber-100 text-amber-800' ;
+                                            $statusText='⚠️ Tard' ;
+                                            } else {
+                                            $statusClass='bg-red-100 text-red-800' ;
+                                            $statusText='👎 Retard' ;
+                                            }
+                                            }
+                                            @endphp
+                                            <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
                                 </td>
                                 <td class="px-6 py-3 text-sm font-semibold">
                                     @if($day->late_minutes > 0)

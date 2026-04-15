@@ -37,8 +37,8 @@ class AdminReportTrackingController extends Controller
 
         $reports = $query->orderBy('report_date', 'desc')->get();
 
-        $studentReports = $reports->filter(fn ($report) => $report->etudiant_id !== null);
-        $employeeReports = $reports->filter(fn ($report) => $report->etudiant_id === null);
+        $studentReports = $reports->filter(fn($report) => $report->etudiant_id !== null);
+        $employeeReports = $reports->filter(fn($report) => $report->etudiant_id === null);
 
         $summary = [
             'total' => $reports->count(),
