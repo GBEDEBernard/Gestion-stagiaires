@@ -1,9 +1,9 @@
-<x-app-layout>
+<x-app-layout title="Rapports de travail">
     <div class="max-w-6xl mx-auto px-4 py-8">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-900">Rapport journalier</h1>
-                <p class="text-sm text-slate-500 mt-1">Un seul ecran pour declarer la journee, suivre les taches et garder une trace propre du stage.</p>
+                <h1 class="text-2xl font-semibold text-slate-900">Rapports de travail</h1>
+                <p class="text-sm text-slate-500 mt-1">Gérez vos rapports quotidiens, hebdomadaires et mensuels</p>
             </div>
 
             <a href="{{ route('presence.pointage') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
@@ -11,6 +11,22 @@
             </a>
         </div>
 
+        {{-- Period Tabs --}}
+        <div class="bg-white rounded-2xl border border-slate-200 p-1 shadow-sm mb-6">
+            <nav class="-mb-px flex space-x-8">
+                <a href="{{ route('reports.index', ['period' => 'daily']) }}" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period', 'daily') === 'daily' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                    📅 Quotidien
+                </a>
+                <a href="{{ route('reports.index', ['period' => 'weekly']) }}" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period', 'daily') === 'weekly' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                    📊 Hebdomadaire
+                </a>
+                <a href="{{ route('reports.index', ['period' => 'monthly']) }}" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period', 'daily') === 'monthly' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                    📈 Mensuel
+                </a>
+            </nav>
+        </div>
+
+        @if(request('period', 'daily') === 'daily')
         @if (session('success'))
         <div class="mb-6 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-700">
             {{ session('success') }}
@@ -210,6 +226,77 @@
                 </button>
             </div>
         </form>
+        @endif
+        @else
+        {{-- Weekly/Monthly Reports History --}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    Rapports {{ $period === 'weekly' ? 'hebdomadaires' : 'mensuels' }}
+                    <span class="px-2 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-full">
+                        {{ $reports->count() }} rapports
+                    </span>
+                </h3>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Résumé</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Heures</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Progression</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        @forelse($reports as $report)
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-slate-900">{{ $report->report_date->format('d M Y') }}</div>
+                                <div class="text-xs text-slate-500">{{ $report->report_date->translatedFormat('l') }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-700 max-w-xs truncate">
+                                {{ Str::limit($report->summary, 50) }}
+                            </td>
+                            <td class="px-6 py-4 text-sm font-semibold">
+                                {{ $report->hours_declared }}h
+                            </td>
+                            <td class="px-6 py-4 text-sm font-semibold">
+                                {{ $report->completion_rate }}%
+                            </td>
+                            <td class="px-6 py-4">
+                                @if($report->status === 'submitted')
+                                    <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                        Soumis
+                                    </span>
+                                @elseif($report->status === 'approved')
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                        Approuvé
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
+                                        {{ ucfirst($report->status) }}
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                <svg class="mx-auto h-16 w-16 mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <h3 class="text-lg font-semibold text-slate-900 mb-2">Aucun rapport trouvé</h3>
+                                <p class="text-slate-500">Vos rapports apparaîtront ici une fois soumis.</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
         @endif
     </div>
 </x-app-layout>

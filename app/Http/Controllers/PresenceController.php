@@ -435,7 +435,7 @@ class PresenceController extends Controller
             ];
 
             $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-                ->with(['stage.site', 'anomalies']);
+                ->with(['stage.site', 'anomalies', 'dailyReports']);
 
             $attendanceDays = $attendanceDaysQuery->get()
                 ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
@@ -461,7 +461,7 @@ class PresenceController extends Controller
             ];
 
             $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-                ->with(['anomalies']);
+                ->with(['anomalies', 'dailyReports']);
 
             $attendanceDays = $attendanceDaysQuery->get()
                 ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
