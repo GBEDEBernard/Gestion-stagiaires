@@ -135,7 +135,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
         @unless(auth()->user()->hasRole('etudiant'))
         <div class="mb-4 rounded-3xl border border-slate-700/40 bg-slate-950/10 p-4 shadow-xl shadow-slate-950/10">
-    
+
 
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
             <div class="space-y-3">

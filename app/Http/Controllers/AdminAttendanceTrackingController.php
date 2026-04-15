@@ -64,7 +64,7 @@ class AdminAttendanceTrackingController extends Controller
             'attendanceStudents' => $studentDays,
             'attendanceEmployees' => $employeeDays,
             'summary' => $summary,
-            'displayDate' => $date->format('d MMM Y'),
+            'displayDate' => $date->translatedFormat('d F Y'),
         ];
     }
 
@@ -96,7 +96,7 @@ class AdminAttendanceTrackingController extends Controller
         return [
             'studentWeekData' => $studentSummary,
             'employeeWeekData' => $employeeSummary,
-            'displayDate' => $startOfWeek->format('d MMM') . ' - ' . $endOfWeek->format('d MMM Y'),
+            'displayDate' => $startOfWeek->translatedFormat('d F') . ' - ' . $endOfWeek->translatedFormat('d F Y'),
             'weekStart' => $startOfWeek,
             'weekEnd' => $endOfWeek,
         ];
