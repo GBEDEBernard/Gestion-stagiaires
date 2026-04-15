@@ -4,6 +4,7 @@ $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
 $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
 $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
 $showDomaineSection = in_array('employe', $selectedRoleNames, true);
+$isCreate = !$user;
 $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 $etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
 $etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
@@ -146,7 +147,15 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             </div>
 
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargees automatiquement selon le role. Vous pouvez les ajuster librement pour chaque compte.</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargees automatiquement selon le role.
+                    @if($isCreate)
+                    Elles seront appliquees a la creation du compte et peuvent etre modifiees ensuite en edition de l'utilisateur ou du role.
+                    @else
+                    Vous pouvez les ajuster librement pour ce compte.
+                    @endif
+                </p>
+
+                @unless($isCreate)
                 <div class="grid gap-4 lg:grid-cols-2">
                     @foreach($permissionGroups as $group => $groupPermissions)
                     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
@@ -170,9 +179,8 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                 @error('permissions')
                 <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
                 @enderror
+                @endunless
             </div>
-
-            <input type="hidden" name="permissions_overridden" value="0" data-permissions-overridden>
         </section>
 
         <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $showDomaineSection ? '' : 'hidden' }}" data-domaine-section>
