@@ -500,6 +500,7 @@
             svcEnCours: {!! Js::from($servicesStats->pluck('enCours')->values()) !!},
             svcTermines: {!! Js::from($servicesStats->pluck('termines')->values()) !!},
             svcInscrits: {!! Js::from($servicesStats->pluck('inscrits')->values()) !!}
+    
         };
     </script>
 
