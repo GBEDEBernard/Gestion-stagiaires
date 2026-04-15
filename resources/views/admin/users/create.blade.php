@@ -1,23 +1,23 @@
 <x-app-layout>
     <div class="max-w-5xl mx-auto">
         @php
-            $selectedRoleName = $selectedRoles[0] ?? null;
-            if ($selectedRoleName === 'employe') {
-                $pageTitle = 'Nouvel Employé';
-                $pageDescription = 'Création rapide d’un employé du domaine TFG.';
-            } elseif ($selectedRoleName === 'etudiant') {
-                $pageTitle = 'Nouvel Étudiant';
-                $pageDescription = 'Formulaire simplifié pour ajouter un étudiant et créer sa fiche stagiaire.';
-            } elseif ($selectedRoleName === 'admin') {
-                $pageTitle = 'Nouvel Administrateur';
-                $pageDescription = 'Créer un administrateur avec toutes les permissions disponible.';
-            } elseif ($selectedRoleName === 'superviseur') {
-                $pageTitle = 'Nouveau Superviseur';
-                $pageDescription = 'Créer un superviseur avec les permissions appropriées.';
-            } else {
-                $pageTitle = 'Nouvel Utilisateur';
-                $pageDescription = 'Formulaire unique pour créer un admin, un superviseur ou un étudiant.';
-            }
+        $selectedRoleName = $selectedRoles[0] ?? null;
+        if ($selectedRoleName === 'employe') {
+        $pageTitle = 'Nouvel Employé';
+        $pageDescription = 'Création rapide d’un employé du domaine TFG.';
+        } elseif ($selectedRoleName === 'etudiant') {
+        $pageTitle = 'Nouvel Étudiant';
+        $pageDescription = 'Formulaire simplifié pour ajouter un étudiant et créer sa fiche stagiaire.';
+        } elseif ($selectedRoleName === 'admin') {
+        $pageTitle = 'Nouvel Administrateur';
+        $pageDescription = 'Créer un administrateur avec toutes les permissions disponible.';
+        } elseif ($selectedRoleName === 'superviseur') {
+        $pageTitle = 'Nouveau Superviseur';
+        $pageDescription = 'Créer un superviseur avec les permissions appropriées.';
+        } else {
+        $pageTitle = 'Nouvel Utilisateur';
+        $pageDescription = 'Formulaire unique pour créer un admin, un superviseur ou un étudiant.';
+        }
         @endphp
         <div class="mb-8">
             <div class="flex items-center gap-4 mb-2">
