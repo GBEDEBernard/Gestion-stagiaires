@@ -487,71 +487,19 @@
     <script>
         window.__DASHBOARD__ = {
             labelsJour: {!! Js::from($labelsJour) !!},
-            evolutionJour: {
-                {
-                    Js::from($evolutionJour)
-                }
-            },
-            labelsSemaine: {
-                {
-                    Js::from($labelsSemaine)
-                }
-            },
-            evolutionSemaine: {
-                {
-                    Js::from($evolutionSemaine)
-                }
-            },
-            labelsMois: {
-                {
-                    Js::from($labelsMois)
-                }
-            },
-            evolutionMois: {
-                {
-                    Js::from($evolutionMois)
-                }
-            },
-            typesLabels: {
-                {
-                    Js::from($typesLabels)
-                }
-            },
-            typesData: {
-                {
-                    Js::from($typesData)
-                }
-            },
-            stagesMoisLabels: {
-                {
-                    Js::from($labelsMoisAnnee)
-                }
-            },
-            stagesMoisData: {
-                {
-                    Js::from($stagesParMois)
-                }
-            },
-            svcLabels: {
-                {
-                    Js::from($servicesStats - > pluck('service') - > values())
-                }
-            },
-            svcEnCours: {
-                {
-                    Js::from($servicesStats - > pluck('enCours') - > values())
-                }
-            },
-            svcTermines: {
-                {
-                    Js::from($servicesStats - > pluck('termines') - > values())
-                }
-            },
-            svcInscrits: {
-                {
-                    Js::from($servicesStats - > pluck('inscrits') - > values())
-                }
-            }
+            evolutionJour: {!! Js::from($evolutionJour) !!},
+            labelsSemaine: {!! Js::from($labelsSemaine) !!},
+            evolutionSemaine: {!! Js::from($evolutionSemaine) !!},
+            labelsMois: {!! Js::from($labelsMois) !!},
+            evolutionMois: {!! Js::from($evolutionMois) !!},
+            typesLabels: {!! Js::from($typesLabels) !!},
+            typesData: {!! Js::from($typesData) !!},
+            stagesMoisLabels: {!! Js::from($labelsMoisAnnee) !!},
+            stagesMoisData: {!! Js::from($stagesParMois) !!},
+            svcLabels: {!! Js::from($servicesStats->pluck('service')->values()) !!},
+            svcEnCours: {!! Js::from($servicesStats->pluck('enCours')->values()) !!},
+            svcTermines: {!! Js::from($servicesStats->pluck('termines')->values()) !!},
+            svcInscrits: {!! Js::from($servicesStats->pluck('inscrits')->values()) !!}
         };
     </script>
 
