@@ -12,8 +12,7 @@ class DailyReportController extends Controller
 {
     public function __construct(
         protected DailyReportService $dailyReportService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -28,14 +27,14 @@ class DailyReportController extends Controller
         if ($period === 'daily') {
             $attendanceDay = $activeStage
                 ? AttendanceDay::where('stage_id', $activeStage->id)
-                    ->whereDate('attendance_date', today())
-                    ->first()
+                ->whereDate('attendance_date', today())
+                ->first()
                 : null;
             $todayReport = $activeStage
                 ? $activeStage->dailyReports()
-                    ->with(['items.task', 'reviews'])
-                    ->whereDate('report_date', today())
-                    ->first()
+                ->with(['items.task', 'reviews'])
+                ->whereDate('report_date', today())
+                ->first()
                 : null;
             $taskItems = $todayReport
                 ? $todayReport->items->whereNotNull('task_id')->keyBy('task_id')
@@ -62,11 +61,11 @@ class DailyReportController extends Controller
 
             $reports = $activeStage
                 ? $activeStage->dailyReports()
-                    ->with(['items.task', 'reviews'])
-                    ->where('report_date', '>=', $dateFrom)
-                    ->where('report_date', '<=', now())
-                    ->orderBy('report_date', 'desc')
-                    ->get()
+                ->with(['items.task', 'reviews'])
+                ->where('report_date', '>=', $dateFrom)
+                ->where('report_date', '<=', now())
+                ->orderBy('report_date', 'desc')
+                ->get()
                 : collect();
 
             return view('reports.history', compact(

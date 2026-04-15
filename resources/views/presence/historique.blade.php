@@ -168,27 +168,27 @@
                                 $report = $day->dailyReports->first();
                                 @endphp
                                 @if($report)
-                                    @if($report->status === 'submitted')
-                                        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
-                                            Soumis
-                                        </span>
-                                    @elseif($report->status === 'draft')
-                                        <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
-                                            Brouillon
-                                        </span>
-                                    @elseif($report->status === 'approved')
-                                        <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                                            Approuvé
-                                        </span>
-                                    @else
-                                        <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
-                                            {{ ucfirst($report->status) }}
-                                        </span>
-                                    @endif
+                                @if($report->status === 'submitted')
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                    Soumis
+                                </span>
+                                @elseif($report->status === 'draft')
+                                <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
+                                    Brouillon
+                                </span>
+                                @elseif($report->status === 'approved')
+                                <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                    Approuvé
+                                </span>
                                 @else
-                                    <span class="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
-                                        Aucun
-                                    </span>
+                                <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
+                                    {{ ucfirst($report->status) }}
+                                </span>
+                                @endif
+                                @else
+                                <span class="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
+                                    Aucun
+                                </span>
                                 @endif
                             </td>
                         </tr>

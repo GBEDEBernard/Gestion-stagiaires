@@ -268,17 +268,17 @@
                             </td>
                             <td class="px-6 py-4">
                                 @if($report->status === 'submitted')
-                                    <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
-                                        Soumis
-                                    </span>
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                    Soumis
+                                </span>
                                 @elseif($report->status === 'approved')
-                                    <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                                        Approuvé
-                                    </span>
+                                <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                    Approuvé
+                                </span>
                                 @else
-                                    <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
-                                        {{ ucfirst($report->status) }}
-                                    </span>
+                                <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
+                                    {{ ucfirst($report->status) }}
+                                </span>
                                 @endif
                             </td>
                         </tr>
