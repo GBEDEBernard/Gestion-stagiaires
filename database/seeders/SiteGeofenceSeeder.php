@@ -24,25 +24,36 @@ class SiteGeofenceSeeder extends Seeder
         SiteGeofence::where('site_id', $tfgSite->id)->delete();
 
         // ─────────────────────────────────────────────────────────────────────
-        // Geofence principal TFG SARL
-        //
-        // POURQUOI 100m / 50m ?
-        //   - GPS en intérieur (bureau, bâtiment béton) : précision typique 20–80m
-        //   - GPS en extérieur proche bâtiment           : précision typique 5–20m
-        //   - Un rayon de 5m est uniquement viable en plein air avec signal fort
-        //   - 100m couvre le bâtiment + parking sans autoriser le quartier entier
-        //   - allowed_accuracy_meters = tolérance sur l'imprécision du capteur GPS
+        // ─────────────────────────────────────────────────────────────────────
+        // TFG CENTRE - Position EXACTE demandée (rayon STRICT 25m)
+        // Coordonnées: 6.408685590450129, 2.3305279419712015
+        // Rayon: 25m (20-30m milieu), Accuracy tolérance: 30m GPS mobile réaliste
         // ─────────────────────────────────────────────────────────────────────
         SiteGeofence::create([
             'site_id'                => $tfgSite->id,
-            'name'                   => 'TFG SARL - Zone Principale',
-            'center_latitude'        => 6.424759441415669,
-            'center_longitude'       => 2.317200378309422,
-            'radius_meters'          => 100,  // ✅ était 5m → trop strict pour GPS mobile en bureau
-            'allowed_accuracy_meters'=> 50,   // ✅ était 10m → GPS intérieur = 20-80m typique
+            'name'                   => 'TFG Centre - Zone Principale (25m)',
+            'center_latitude'        => 6.408685590450129,
+            'center_longitude'       => 2.3305279419712015,
+            'radius_meters'          => 25,
+            'allowed_accuracy_meters' => 30,
             'is_primary'             => true,
             'is_active'              => true,
-            'notes'                  => 'Zone pointage principale TFG SARL. 100m rayon + 50m tolérance précision GPS (bureau intérieur).',
+            'notes'                  => 'TFG Centre exact. Rayon 25m strict. Tolérance GPS 30m. Employés/étudiants OK.',
+        ]);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // TFG SARL Ancienne zone (backup 100m)
+        // ─────────────────────────────────────────────────────────────────────
+        SiteGeofence::create([
+            'site_id'                => $tfgSite->id,
+            'name'                   => 'TFG SARL - Zone Backup (100m)',
+            'center_latitude'        => 6.424759441415669,
+            'center_longitude'       => 2.317200378309422,
+            'radius_meters'          => 100,
+            'allowed_accuracy_meters' => 50,
+            'is_primary'             => false,
+            'is_active'              => true,
+            'notes'                  => 'Ancienne zone TFG (backup signal faible).',
         ]);
 
         // Geofence secondaire étendu (pour cas très dégradé / signal faible)
@@ -52,7 +63,7 @@ class SiteGeofenceSeeder extends Seeder
             'center_latitude'        => 6.424759441415669,
             'center_longitude'       => 2.317200378309422,
             'radius_meters'          => 200,
-            'allowed_accuracy_meters'=> 80,
+            'allowed_accuracy_meters' => 80,
             'is_primary'             => false,
             'is_active'              => true,
             'notes'                  => 'Zone secondaire pour GPS très imprécis (sous-sol, salle sans fenêtre).',
