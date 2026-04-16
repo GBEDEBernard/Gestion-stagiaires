@@ -31,48 +31,100 @@
             </nav>
         </div>
 
-        {{-- Stats Cards --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-xl bg-emerald-100">
-                        <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">Jours pointés</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceDays->flatten()->count() }}</p>
-                    </div>
-                </div>
+        {{-- Stats Cards améliorées --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <x-stats-card title="Jours Pointés" value="{{ $attendanceDays->count() }}" icon="calendar-days" color="slate">
+                <x-slot:subtitle>{{ $userStats['present_days'] ?? $attendanceDays->whereNotNull('first_check_in_at')->count() }} présents</x-slot:subtitle>
+            </x-stats-card>
+
+            <x-stats-card title="Taux Présence" value="{{ round(($userStats['present_days'] ?? $attendanceDays->whereNotNull('first_check_in_at')->count()) / max(1, $attendanceDays->count()) * 100, 1) }}%" icon="check-circle" color="emerald">
+                <x-slot:subtitle>+{{ $userStats['late_days'] ?? $attendanceDays->where('arrival_status', 'late')->count() }} retards</x-slot:subtitle>
+            </x-stats-card>
+
+            <x-stats-card title="Heures Totales" value="{{ round($attendanceDays->sum('worked_minutes') / 60, 1) }}h" icon="briefcase" color="blue">
+                <x-slot:subtitle>{{ round($attendanceDays->avg('worked_minutes') / 60, 1) }}h/jour moyenne</x-slot:subtitle>
+            </x-stats-card>
+
+            <x-stats-card title="Retards Cumulés" value="{{ $attendanceDays->sum('late_minutes') }}min" icon="clock" color="amber">
+                <x-slot:subtitle>{{ $attendanceDays->where('late_minutes', '>', 0)->count() }} jours retard</x-slot:subtitle>
+            </x-stats-card>
+        </div>
+
+        {{-- Graph Dynamique --}}
+        {{-- Graphs avec données userStats --}}
+        @if(isset($userStats) && isset($userStats['chart_data']))
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    📈 Évolution Présence
+                </h3>
+                <canvas id="personalPresenceChart" height="300"></canvas>
             </div>
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-xl bg-blue-100">
-                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">Taux présence</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ number_format(($attendanceDays->flatten()->where('day_status', '!=', 'late')->count() / max(1, $attendanceDays->flatten()->count())) * 100, 0) }}%</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-xl bg-amber-100">
-                        <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 001-1v-3a1 1 0 00-1-1H9z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-slate-600">Retards</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceDays->flatten()->where('late_minutes', '>', 0)->sum('late_minutes') }} min</p>
-                    </div>
-                </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    ⚠️ Retards Journaliers ({{ $userStats['total_late_minutes'] }}min)
+                </h3>
+                <canvas id="personalLateChart" height="300"></canvas>
             </div>
         </div>
+        @endif
+
+        @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(isset($userStats) && isset($userStats['chart_data']))
+            // Chart Présence (basé sur worked_hours comme proxy présence)
+            const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
+            if (presenceCtx) {
+                new Chart(presenceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: @json($userStats['chart_data']['labels']),
+                        datasets: [{
+                            label: 'Heures travaillées',
+                            data: @json($userStats['chart_data']['worked_hours']),
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            }
+
+            // Chart Retards
+            const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
+            if (lateCtx) {
+                new Chart(lateCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @json($userStats['chart_data']['labels']),
+                        datasets: [{
+                            label: 'Minutes de retard',
+                            data: @json($userStats['chart_data']['late_minutes']),
+                            backgroundColor: 'rgb(251, 191, 36)',
+                            borderColor: 'rgb(251, 146, 60)',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { position: 'top' } }
+                    }
+                });
+            }
+            @endif
+        });
+        </script>
+        @endpush>
 
         {{-- Main Table --}}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

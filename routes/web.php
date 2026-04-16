@@ -251,6 +251,8 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::prefix('admin/presence')->middleware('permission:presence.admin.view')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
+        Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
+        Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
         Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
             ->name('admin.presence.anomalies.resolve')

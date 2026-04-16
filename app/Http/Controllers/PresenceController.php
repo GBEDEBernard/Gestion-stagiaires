@@ -416,58 +416,30 @@ class PresenceController extends Controller
     {
         $user = $request->user();
         $etudiant = $user->etudiant;
+        $period = $request->get('period', 'month');
 
-        if ($etudiant) {
-            // Logique pour stagiaire
-            $period = $request->get('period', 'week');
+        // Stats détaillées via service
+        $userStats = $this->adminPresenceService->getUserDetailedStats($user->id, $period);
 
-            $dateFrom = match ($period) {
-                'week' => now()->subWeek()->startOfWeek(),
-                'month' => now()->subMonth()->startOfMonth(),
-                'year' => now()->subYear()->startOfYear(),
-                default => now()->subWeek()
-            };
+        $dateFrom = match ($period) {
+            'week' => now()->subWeek()->startOfWeek(),
+            'month' => now()->subMonth()->startOfMonth(),
+            'year' => now()->subYear()->startOfYear(),
+            default => now()->subWeek()
+        };
 
-            $filters = [
-                'date_from' => $dateFrom->format('Y-m-d'),
-                'date_to' => now()->format('Y-m-d'),
-                'etudiant_id' => $etudiant->id,
-            ];
+        $filters = [
+            'date_from' => $dateFrom->format('Y-m-d'),
+            'date_to' => now()->format('Y-m-d'),
+            $etudiant ? 'etudiant_id' : 'user_id' => $etudiant ? $etudiant->id : $user->id,
+        ];
 
-            $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-                ->with(['stage.site', 'anomalies', 'dailyReports']);
+        $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
+            ->with(['stage.site', 'anomalies', 'dailyReports']);
 
-            $attendanceDays = $attendanceDaysQuery->get()
-                ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
+        $attendanceDays = $attendanceDaysQuery->get();
 
-            return view('presence.historique', compact('attendanceDays', 'period'));
-        } else {
-            // Logique pour employé
-            abort_if(!$user->domaine, 403, "Votre compte n'est pas encore rattaché à un domaine.");
-
-            $period = $request->get('period', 'week');
-
-            $dateFrom = match ($period) {
-                'week' => now()->subWeek()->startOfWeek(),
-                'month' => now()->subMonth()->startOfMonth(),
-                'year' => now()->subYear()->startOfYear(),
-                default => now()->subWeek()
-            };
-
-            $filters = [
-                'date_from' => $dateFrom->format('Y-m-d'),
-                'date_to' => now()->format('Y-m-d'),
-                'user_id' => $user->id,
-            ];
-
-            $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-                ->with(['anomalies', 'dailyReports']);
-
-            $attendanceDays = $attendanceDaysQuery->get()
-                ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
-
-            return view('presence.historique', compact('attendanceDays', 'period'));
-        }
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
     }
 
     /**
