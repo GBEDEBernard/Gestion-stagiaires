@@ -1,9 +1,13 @@
-# Sidebar Navigation Polish - Pro Style ✅
+# TODO - Correction Validation Mot de Passe Optionnel
 
-- [✅] Step 1: Create TODO.md with steps
-- [✅] Step 2: Edit navigation.blade.php - Unified slate-700/30 borders, pro Suivi (emerald gradients, icons, "Pro" badge, smooth anims, spacing)
-- [ ] Step 3: Test: Run `php artisan serve` & check sidebar
-- [ ] Step 4: Dashboard cards harmony if needed
-- [✅] Step 5: Sidebar complete
+## Étapes complétées :
 
-Next: Test & demo.
+- [x] Analyse des fichiers (formulaire et contrôleur)
+- [x] Plan de correction établi et confirmé
+
+## Étapes à compléter :
+
+- [ ] Éditer app/Http/Controllers/Admin/UserController.php (règles de validation conditionnelles)
+- [ ] Tester la soumission sans mot de passe
+- [ ] Nettoyer cache routes/composer
+- [ ] Vérification finale

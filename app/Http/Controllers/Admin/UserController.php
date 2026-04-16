@@ -257,10 +257,11 @@ class UserController extends Controller
             ],
             'password' => [
                 $user ? 'nullable' : 'required',
-                'confirmed',
                 'min:8',
                 'max:255',
+                Rule::when($request->filled('password'), 'confirmed'),
             ],
+            'password_confirmation' => 'nullable',
             'user_type' => ['required', 'string', Rule::in($this->rolePermissionPresetService->allowedRoleNames())],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['string', Rule::in($this->rolePermissionPresetService->allowedRoleNames())],
