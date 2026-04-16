@@ -2,43 +2,31 @@
 $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
 @endphp
 
-<nav x-data="{ sidebarOpen: false }" 
-    class="fixed inset-y-0 left-0 z-40 w-72 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-800/95
-     transform transition-all duration-300 ease-out lg:translate-x-0 shadow-2xl flex flex-col
-     :class='sidebarOpen ? \"translate-x-0\" : \"-translate-x-full lg:translate-x-0\"'">
+<div x-data="{ sidebarOpen: false }">
 
-    <!-- Mobile Open Button (Menu) -->
-    <button @click="sidebarOpen = !sidebarOpen"
-        class="lg:hidden fixed top-4 left-4 z-[60] p-3 rounded-2xl 
-        bg-gradient-to-br from-slate-800/95 to-slate-900/90 backdrop-blur-2xl text-white 
-        shadow-2xl border border-slate-700/50 ring-1 ring-white/20 
-        hover:bg-emerald-600/20 hover:shadow-emerald-500/25 hover:scale-105 
-        active:scale-95 transition-all duration-300 font-semibold text-sm tracking-wide"
-        aria-label="Ouvrir le menu de navigation">
-        <div class="flex items-center gap-1.5">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span class="hidden xs:inline">Menu</span>
-        </div>
-    </button>
+    <!-- BOUTON MENU -->
+   <button 
+    x-show="!sidebarOpen"
+    @click="sidebarOpen = true"
+    class="lg:hidden fixed top-4 left-4 z-[60] p-3 bg-slate-900 text-white rounded-xl"
+    x-transition>
+    ☰
+</button>
 
-    <!-- Mobile Close Button (Retour) - Inside nav -->
-    <button @click="sidebarOpen = false"
-        class="lg:hidden absolute top-6 right-6 z-[55] flex items-center gap-2 px-4 py-2.5
-        bg-gradient-to-r from-slate-800/95 via-slate-700/90 to-slate-900/95 backdrop-blur-2xl text-white 
-        shadow-2xl border border-slate-600/50 ring-1 ring-white/30 rounded-2xl font-semibold text-sm
-        hover:from-emerald-600/90 hover:to-emerald-700/90 hover:shadow-emerald-500/40 hover:shadow-xl
-        hover:scale-105 hover:border-emerald-400/60 active:scale-95 transition-all duration-300"
-        x-show="sidebarOpen"
-        aria-label="Fermer le menu de navigation et retourner au tableau de bord">
-        <svg class="w-4.5 h-4.5 -ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span class="tracking-wide">Retour</span>
-    </button>
+  <nav 
+        class="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900
+        transform transition duration-300"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
-    <!-- Logo et Titre -->
+        <!-- Bouton fermer -->
+<button 
+    x-show="sidebarOpen"
+    @click="sidebarOpen = false"
+    class="lg:hidden absolute top-4 right-4 z-[60] p-2 text-white bg-red-500 rounded-full"
+    x-transition>
+    ✕
+</button>
+  <!-- Logo et Titre -->
     <div class="flex-shrink-0">
         <div class="flex items-center gap-3 px-6 py-6 bg-gradient-to-b from-slate-900/95 to-slate-950/70 backdrop-blur-md shadow-2xl">
             <a href="{{ $homeRoute }}" class="flex items-center gap-3 group">
@@ -556,17 +544,15 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         </div>
     </div>
 </nav>
+ <!-- 🔥 OVERLAY ICI EXACTEMENT -->
+    <div x-show="sidebarOpen"
+        @click="sidebarOpen = false"
+        class="lg:hidden fixed inset-0 bg-black/60 z-30"
+        x-transition>
+    </div>
 
-<!-- Mobile Overlay -->
-<div x-show="sidebarOpen" @click="sidebarOpen = false"
-    class="lg:hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[30] transition-all duration-300"
-    x-transition:enter="transition ease-out duration-300"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-200"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0">
 </div>
+
 
 <style>
     .custom-scrollbar::-webkit-scrollbar {
