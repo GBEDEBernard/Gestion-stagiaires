@@ -91,16 +91,25 @@
 
                 {{-- Actions --}}
                 <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200">
-                    <form method="POST" action="{{ route('presence.confirm') }}" class="flex-1">
+                    <form id="pointageForm" method="POST" action="{{ route('presence.confirm') }}" class="flex-1">
                         @csrf
                         @foreach($form_data ?? [] as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endforeach
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Valider le pointage
+                        <button type="submit" id="submitBtn"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 focus:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 group relative overflow-hidden">
+                            <span class="flex items-center gap-3">
+                                <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Valider le pointage
+                            </span>
+                            <div id="spinner" class="absolute inset-0 flex items-center justify-center opacity-0 invisible transition-all duration-300">
+                                <svg class="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
                         </button>
                     </form>
 
@@ -109,11 +118,50 @@
                     </a>
                 </div>
 
+                {{-- Optimistic preview --}}
+                <div id="optimisticPreview" class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl opacity-0 scale-95 transition-all duration-300 hidden">
+                    <div class="flex items-center gap-3 text-emerald-800">
+                        <div class="w-10 h-10 bg-emerald-500 text-white rounded-2xl flex items-center justify-center animate-bounce">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">✅ Pointage en cours de validation...</h3>
+                            <p class="text-sm">Vous serez redirigé vers l'historique dans quelques instants !</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="text-xs text-slate-500 text-center">
                     Après validation, vous serez redirigé vers l'historique de vos présences.
                 </div>
 
             </div>
+            {{-- JS pour loading + optimistic --}}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const form = document.getElementById('pointageForm');
+                    const submitBtn = document.getElementById('submitBtn');
+                    const spinner = document.getElementById('spinner');
+                    const textSpan = submitBtn.querySelector('span');
+                    const optimisticPreview = document.getElementById('optimisticPreview');
+
+                    form.addEventListener('submit', function(e) {
+                        // Disable button + show spinner
+                        submitBtn.disabled = true;
+                        textSpan.style.opacity = '0';
+                        spinner.classList.remove('opacity-0', 'invisible');
+
+                        // Show optimistic preview after short delay
+                        setTimeout(() => {
+                            optimisticPreview.classList.remove('opacity-0', 'scale-95', 'hidden');
+                            optimisticPreview.classList.add('opacity-100', 'scale-100');
+                        }, 300);
+                    });
+                });
+            </script>
         </div>
+    </div>
     </div>
 </x-app-layout>

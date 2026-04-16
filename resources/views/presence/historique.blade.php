@@ -1,14 +1,40 @@
 <x-app-layout title="Historique de présence">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {{-- 🎉 SUCCESS BANNER ANIMÉ --}}
+        @if (session('success'))
+        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)"
+            x-show="show" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform -translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
+            class="group bg-gradient-to-r from-emerald-500 to-green-600 text-white p-6 rounded-3xl shadow-2xl border-4 border-white/20 backdrop-blur-sm animate-pulse mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-bounce">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black drop-shadow-lg animate-pulse">{{ session('success') }}</h2>
+                        <p class="text-sm opacity-90 font-medium">Redirection vers votre historique ✨</p>
+                    </div>
+                </div>
+                <button @click="show = false" class="p-2 -m-2 rounded-2xl hover:bg-white/20 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        @endif
+
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">
-                    Historique de présence{{ isset($user) && $user->id !== auth()->id() ? ' - ' . $user->name : '' }}
-                </h1>
-                <p class="mt-2 text-xl text-slate-600">
-                    {{ isset($user) && $user->id !== auth()->id() ? 'Pointages de ' . $user->name : 'Tous tes pointages' }} par période
-                </p>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight animate-fade-in">
+                    <p class="mt-2 text-xl text-slate-600">
+                        {{ isset($user) && $user->id !== auth()->id() ? 'Pointages de ' . $user->name : 'Tous tes pointages' }} par période
+                    </p>
             </div>
             <div class="flex gap-3">
                 <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all">
@@ -75,74 +101,158 @@
         @endif
 
         @push('scripts')
+        {{-- Tailwind Animate pour les animations --}}
+        <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                @if(isset($userStats) && isset($userStats['chart_data']))
-                // Chart Présence (basé sur worked_hours comme proxy présence)
-                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
-                if (presenceCtx) {
-                    new Chart(presenceCtx, {
-                        type: 'line',
-                        data: {
-                            labels: @json($userStats['chart_data']['labels']),
-                            datasets: [{
-                                label: 'Heures travaillées',
-                                data: @json($userStats['chart_data']['worked_hours']),
-                                borderColor: 'rgb(59, 130, 246)',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'top'
-                                }
-                            }
-                        }
-                    });
-                }
 
-                // Chart Retards
-                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
-                if (lateCtx) {
-                    new Chart(lateCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: @json($userStats['chart_data']['labels']),
-                            datasets: [{
-                                label: 'Minutes de retard',
-                                data: @json($userStats['chart_data']['late_minutes']),
-                                backgroundColor: 'rgb(251, 191, 36)',
-                                borderColor: 'rgb(251, 146, 60)',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'top'
-                                }
-                            }
-                        }
-                    });
+        <script>
+            // Keyframes CSS pour animations custom
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
-                @endif
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
+                .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+                
+                @media (prefers-reduced-motion: reduce) {
+                    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Confetti si success après charts
+            @if(session('success'))
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    // Simple confetti canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;z-index:9999;width:100vw;height:100vh';
+                    document.body.appendChild(canvas);
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
+                    const confetti = [];
+                    for (let i = 0; i < 100; i++) {
+                        confetti.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height - canvas.height,
+                            r: Math.random() * 4 + 1,
+                            d: Math.random() * 200 + 200,
+                            color: ['#10B981', '#059669', '#047857'][Math.floor(Math.random() * 3)],
+                            tilt: Math.random() * 10,
+                            tiltAngle: 0
+                        });
+                    }
+
+                    let animationId;
+
+                    function draw() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        confetti.forEach((c, i) => {
+                            c.tiltAngle += 0.1;
+                            c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+                            c.tilt = Math.sin(c.tiltAngle - i / 3) * 15;
+
+                            ctx.save();
+                            ctx.translate(c.x, c.y);
+                            ctx.fillStyle = c.color;
+                            ctx.beginPath();
+                            ctx.lineTo(c.tilt + c.r * 3, 0);
+                            ctx.lineTo(c.tilt, c.r * 3);
+                            ctx.lineTo(c.tilt + c.r * 3, c.r * 6);
+                            ctx.lineTo(c.tilt, c.r * 9);
+                            ctx.lineTo(c.tilt + c.r * 3, c.r * 12);
+                            ctx.lineTo(c.tilt, c.r * 15);
+                            ctx.lineTo(c.tilt + c.r * 3, c.r * 18);
+                            ctx.fill();
+                            ctx.restore();
+
+                            if (c.y > canvas.height) confetti.splice(i, 1);
+                        });
+                        if (confetti.length) animationId = requestAnimationFrame(draw);
+                        else document.body.removeChild(canvas);
+                    }
+                    draw();
+                }, 500);
             });
+            @endif
+
+            document.addEventListener('DOMContentLoaded', function() {
+                        <
+                        script >
+                            document.addEventListener('DOMContentLoaded', function() {
+                                @if(isset($userStats) && isset($userStats['chart_data']))
+                                // Chart Présence (basé sur worked_hours comme proxy présence)
+                                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
+                                if (presenceCtx) {
+                                    new Chart(presenceCtx, {
+                                        type: 'line',
+                                        data: {
+                                            labels: @json($userStats['chart_data']['labels']),
+                                            datasets: [{
+                                                label: 'Heures travaillées',
+                                                data: @json($userStats['chart_data']['worked_hours']),
+                                                borderColor: 'rgb(59, 130, 246)',
+                                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                tension: 0.4,
+                                                fill: true
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true
+                                                }
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top'
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+
+                                // Chart Retards
+                                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
+                                if (lateCtx) {
+                                    new Chart(lateCtx, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: @json($userStats['chart_data']['labels']),
+                                            datasets: [{
+                                                label: 'Minutes de retard',
+                                                data: @json($userStats['chart_data']['late_minutes']),
+                                                backgroundColor: 'rgb(251, 191, 36)',
+                                                borderColor: 'rgb(251, 146, 60)',
+                                                borderRadius: 4
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            scales: {
+                                                y: {
+                                                    beginAtZero: true
+                                                }
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top'
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                                @endif
+                            });
         </script>
         @endpush>
 
@@ -170,8 +280,11 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
-                        @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $day)
-                        <tr class="hover:bg-slate-50 group transition-colors {{ $day->attendance_date->isToday() ? 'bg-emerald-50 border-l-4 border-emerald-400' : '' }}">
+                        @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $index => $day)
+                        <tr class="hover:bg-slate-50 group transition-all duration-300 animate-fade-in-up 
+                                   {{ $index % 2 === 0 ? 'delay-100' : 'delay-200' }}
+                                   {{ $day->attendance_date->isToday() ? 'bg-emerald-50 border-l-4 border-emerald-400 ring-2 ring-emerald-200/50' : '' }}"
+                            style="animation-fill-mode: both;">
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-slate-900">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
                                 <div class="text-xs text-slate-500 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
