@@ -228,8 +228,9 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         </div>
         @endunless
 
+        <!-- Menu Stages - ADMIN SEULEMENT -->
+        @role('admin')
         <!-- Menu Stages avec Sous-menu (Admin only) -->
-        @unlessrole('employe')
         @canany(['stages.view', 'type_stages.view', 'services.view', 'sites.view', 'tasks.view', 'signataires.view', 'jour_stage.view'])
         <div class="mb-3" x-data="{ open: false }">
             <button @click="open = !open"
@@ -322,7 +323,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
         </div>
         @endcanany
-        @endunlessrole
+        @endrole
 
         <!-- Étudiants -->
         @can('etudiants.view')
