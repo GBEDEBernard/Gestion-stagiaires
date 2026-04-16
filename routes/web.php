@@ -264,6 +264,7 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
         Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
+        Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
     });
 
     // ---------------- Suivi des Rapports Admin ----------------

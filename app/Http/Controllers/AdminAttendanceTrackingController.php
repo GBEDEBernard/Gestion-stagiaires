@@ -287,4 +287,40 @@ class AdminAttendanceTrackingController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Historique des présences pour un utilisateur spécifique (admin).
+     */
+    public function userHistorique(Request $request, User $user)
+    {
+        $period = $request->get('period', 'month');
+
+        // Déterminer si c'est un étudiant ou un employé
+        $etudiant = $user->etudiant;
+        $ownerType = $etudiant ? 'etudiant' : 'user';
+        $ownerId = $etudiant ? $etudiant->id : $user->id;
+
+        // Stats détaillées via service (utiliser AdminPresenceService si disponible)
+        $userStats = app(\App\Services\AdminPresenceService::class)->getUserDetailedStats($user->id, $period);
+
+        $dateFrom = match ($period) {
+            'week' => now()->subWeek()->startOfWeek(),
+            'month' => now()->subMonth()->startOfMonth(),
+            'year' => now()->subYear()->startOfYear(),
+            default => now()->subWeek()
+        };
+
+        $filters = [
+            'date_from' => $dateFrom->format('Y-m-d'),
+            'date_to' => now()->format('Y-m-d'),
+            $etudiant ? 'etudiant_id' : 'user_id' => $ownerId,
+        ];
+
+        $attendanceDaysQuery = app(\App\Services\AdminPresenceService::class)->listAttendanceDays($filters, 100)
+            ->with(['stage.site', 'anomalies', 'dailyReports']);
+
+        $attendanceDays = $attendanceDaysQuery->get();
+
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user'));
+    }
 }

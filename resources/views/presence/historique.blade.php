@@ -3,8 +3,12 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Historique de présence</h1>
-                <p class="mt-2 text-xl text-slate-600">Tous tes pointages par période</p>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">
+                    Historique de présence{{ isset($user) && $user->id !== auth()->id() ? ' - ' . $user->name : '' }}
+                </h1>
+                <p class="mt-2 text-xl text-slate-600">
+                    {{ isset($user) && $user->id !== auth()->id() ? 'Pointages de ' . $user->name : 'Tous tes pointages' }} par période
+                </p>
             </div>
             <div class="flex gap-3">
                 <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all">
