@@ -15,14 +15,14 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
   <nav 
         class="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900
-        transform transition duration-300"
+        transform transition duration-300 flex flex-col"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
         <!-- Bouton fermer -->
 <button 
     x-show="sidebarOpen"
     @click="sidebarOpen = false"
-    class="lg:hidden absolute top-4 right-4 z-[60] p-2 text-white bg-red-500 rounded-full"
+    class="lg:hidden absolute top-8 right-2 z-[60] p-1 text-white bg-blue-700 rounded-full"
     x-transition>
     ✕
 </button>
