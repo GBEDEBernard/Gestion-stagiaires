@@ -66,32 +66,15 @@
             }
         }
 
-        /* Transition du contenu principal avec push mobile */
+        /* Transition du contenu principal */
         .main-content {
-            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            @apply relative;
+            transition: margin-left 0.3s ease;
         }
 
-        /* Desktop : sidebar fixe */
         @media (min-width: 1024px) {
             .main-content {
-                margin-left: 18rem;
-                /* w-72 */
-            }
-        }
-
-        /* Mobile/Tablet : push content fluide */
-        @media (max-width: 1023px) {
-            .main-content.sidebar-open {
-                margin-left: 18rem;
-                transform: translateX(18rem);
-            }
-        }
-
-        /* Tablet optimisé */
-        @media (min-width: 768px) and (max-width: 1023px) {
-            .main-content.sidebar-open {
-                overflow: hidden;
+                margin-left: 16rem;
+                /* w-64 */
             }
         }
 
@@ -128,14 +111,19 @@
         @include('layouts.navigation')
 
         <!-- Header Propre -->
-        <header class="sticky top-0 z-30 main-content bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 ml-12 md:ml-0 -mr-2 md:mr-0">
+        <header class="sticky top-0 z-30 main-content bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
 
                     <!-- Titre de la page / Breadcrumb -->
                     <div class="flex items-center gap-4">
-                        {{-- Bouton hamburger supprimé : présent dans navigation.blade.php --}}
-
+                        <!-- Bouton Menu Mobile -->
+                        <button @click="$dispatch('toggle-sidebar')"
+                            class="lg:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
 
                         <!-- Titre dynamique -->
                         <div>
@@ -282,28 +270,7 @@
         </header>
 
         <!-- Contenu Principal -->
-        <main class="main-content flex-1 px-4 sm:px-6 lg:px-8 py-6"
-            x-data="{ sidebarOpen: false }"
-            x-init=" 
-                $watch('sidebarOpen', value => {
-                    if (window.innerWidth < 1024) {
-                        document.documentElement.classList.toggle('sidebar-open', value);
-                        document.body.classList.toggle('overflow-hidden', value);
-                    }
-                });
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && sidebarOpen) sidebarOpen = false;
-                });
-            "
-            x-on:resize.window.debounce.250ms=" 
-                if (window.innerWidth >= 1024) {
-                    sidebarOpen = false;
-                    document.documentElement.classList.remove('sidebar-open');
-                    document.body.classList.remove('overflow-hidden');
-                }
-            "
-            aria-label="Contenu principal">
-
+        <main class="main-content flex-1 px-4 sm:px-6 lg:px-8 py-6">
             <div class="max-w-7xl mx-auto">
                 {{ $slot }}
             </div>

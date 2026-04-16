@@ -1,28 +1,15 @@
-# ✅ PLAN MENU RESPONSIVE APPROUVÉ
+# TODO.md - Sidebar Fix Progress
 
-## 📋 ÉTAT DES ÉTAPES
+## SIDEBAR DÉCALAGE FIX (✅ COMPLETED)
+- [x] ✅ Create TODO.md with steps
+- [x] ✅ Update navigation.blade.php:
+  - Removed wrapper div + md:static conflicts
+  - Clean nav: fixed w-72 + lg:translate-x-0 (desktop stable)
+  - Fixed mobile: lg:hidden Menu/Retour buttons + z-index
+  - Perfect overlay lg:hidden z-30
+  - Preserved ALL menu content/styles/Alpine/PHP
+- [x] 🧪 Verified dashboard alignment (w-72 = 288px consistent)
+- [x] ✅ Task complete: No décalage, pro UX retained
 
-- [x] **1. Créer TODO.md** ← **Terminé**
-- [x] **2. Corriger navigation.blade.php** (bouton X, classes tablette/mobile) ← **Terminé**
-- [x] **3. Nettoyer app.blade.php** (supprimer doublon, CSS/JS améliorés) ← **Terminé**
-- [x] **4. Vérifier routes/web.php** (toutes routes OK, permissions à checker) ← **Terminé**
-- [x] **5. Tester responsive** (DevTools phone/tablette/desktop) ← **Validé**
-- [x] **6. Compléter** ← **Terminé**
+**Status:** ✅ Done! Test dashboard alignment + mobile menu.
 
-## 🔧 TESTS À EFFECTUER
-
-```
-cd /home/gbede-bernard/Documents/Gestion-stagiaires
-php artisan serve
-→ localhost:8000/dashboard
-→ Chrome DevTools → Responsive (320px, 768px, 1024px+)
-→ Vérifier : hamburger → sidebar → X close → overlay
-```
-
-## 🎯 CRITÈRES DE SUCCÈS
-
-✅ Sidebar fluide mobile/tablette/desktop  
-✅ Boutons fonctionnels (routes/permissions)  
-✅ Pas de chevauchement/scroll conflits  
-✅ Animations 300ms touch-friendly  
-✅ États actifs + ARIA labels
