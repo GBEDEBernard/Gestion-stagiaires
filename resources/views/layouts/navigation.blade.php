@@ -221,6 +221,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         Rapports de travail
                     </a>
                     @endcan
+
+                    @can('presence.view')
+                    <a href="{{ route('presence.historique') }}"
+                        class="flex items-center gap-3 pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
+                        <div class="p-2 rounded-xl bg-blue-500/20">
+                            <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                        <span>Historique</span>
+                    </a>
+                    @endcan
                 </div>
             </div>
             @endif

@@ -101,8 +101,8 @@
                         @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $day)
                         <tr class="hover:bg-slate-50 group transition-colors {{ $day->attendance_date->isToday() ? 'bg-emerald-50 border-l-4 border-emerald-400' : '' }}">
                             <td class="px-6 py-4">
-                                <div class="font-semibold text-slate-900">{{ $day->attendance_date->format('d MMM Y') }}</div>
-                                <div class="text-xs text-slate-500">{{ $day->attendance_date->translatedFormat('l') }}</div>
+                                <div class="font-semibold text-slate-900">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                <div class="text-xs text-slate-500 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm font-semibold">

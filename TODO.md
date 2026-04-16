@@ -1,39 +1,28 @@
-# TODO: Fix Employee Attendance Anomaly stage_id NULL Error - ✅ TERMINÉ
+# TODO pour Sidebar Historique et Dates Français
 
-## ✅ Complété
+## Plan approuvé - Progression
 
-- [x] 1. Créer TODO.md pour tracking
-- [x] 2. Corriger PresenceService.php: recordAnomaly() compatible employés (stage_id/etudiant_id nullables)
-- [x] 3. Mettre à jour AttendanceAnomaly model: Ajout user_id fillable + relation user()
-- [x] 4. Tests code employee pointage (checkin/checkout anomalie)
-- [x] 5. Créer migration DB: stage_id/etudiant_id nullable + user_id dans attendance_anomalies
-- [x] 6. Exécuter migration `php artisan migrate`
-- [x] 7. Tests finaux OK
+### ✅ Étape 1: Créer ce TODO.md
 
-## Changements apportés:
+- [x] Fichier créé avec étapes
 
-**Code corrigé**:
-- `PresenceService::recordAnomaly()`: `stage_id ?? null`, `etudiant_id ?? null`, ajout `user_id`
-- Commentaires français propres
-- `recordDeviceSwitchAnomalyIfNeeded()` amélioré
+### ⏳ Étape 2: Modifier navigation.blade.php
 
-**Model amélioré**:
-- `AttendanceAnomaly`: `user_id` fillable, relation `user()`
+- Ajouter onglet Historique dans section "Suivi" pour employés (comme etudiant style)
 
-**DB corrigée**:
-- Migration `2026_04_14_183005_...`: `stage_id`, `etudiant_id` nullable + `user_id` colonne/index
+### ⏳ Étape 3: Corriger dates en français
 
-**Résultat**: 
-✅ Erreur SQL \"stage_id ne peut pas être nulle\" résolue pour employés
-✅ Pointage employés/stagiaires unifié et robuste
-✅ Anomalies traçables via user_id pour employés
+- `resources/views/presence/historique.blade.php`: Fix `format('d MMM Y')` → French
+- `resources/views/components/presence-history-table.blade.php`: Fix dates
 
-## Prochaines étapes suggérées:
-```
-# Tester pointage employé
-php artisan serve
-# Accéder app → login employé → pointage arrivée/départ
-# Vérifier DB: anomalies avec stage_id=NULL, user_id=OK
-```
+### ⏳ Étape 4: Vérifier et tester
 
-**Tâche terminée avec succès !** 🎉
+- Routes: `php artisan route:list | grep historique`
+- Views: presence.historique pour employee/etudiant
+- Dates: "16 avril 2026" + "jeudi"
+
+### ⏳ Étape 5: Completion
+
+- attempt_completion
+
+_Maj à chaque étape terminée._
