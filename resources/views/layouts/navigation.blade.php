@@ -285,28 +285,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         @endcanany
         @endrole
 
-        <!-- Étudiants -->
-        @can('etudiants.view')
-        @unlessrole('etudiant')
-        <a href="{{ route('etudiants.index') }}"
-            class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
-            <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="flex items-center gap-3 relative z-10">
-                <div class="p-2 rounded-xl bg-emerald-500/20">
-                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292 4 4 0 010-5.292zM15 12H9m4.354-11.646l2.121 2.121a4 4 0 01-5.656 5.656l-2.121-2.121a4 4 0 015.656-5.656z" />
-                    </svg>
-                </div>
-                <span>Étudiants</span>
-            </div>
-            @if($etudiantsCount > 0)
-            <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">
-                {{ $etudiantsCount }}
-            </span>
-            @endif
-        </a>
-        @endunlessrole
-        @endcan
+       
 
         <!-- Employés avec Sous-menu -->
         @canany(['domaines.view', 'users.view'])
@@ -355,7 +334,28 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
         </div>
         @endcanany
-
+ <!-- Étudiants -->
+        @can('etudiants.view')
+        @unlessrole('etudiant')
+        <a href="{{ route('etudiants.index') }}"
+            class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
+            <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="p-2 rounded-xl bg-emerald-500/20">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292 4 4 0 010-5.292zM15 12H9m4.354-11.646l2.121 2.121a4 4 0 01-5.656 5.656l-2.121-2.121a4 4 0 015.656-5.656z" />
+                    </svg>
+                </div>
+                <span>Étudiants</span>
+            </div>
+            @if($etudiantsCount > 0)
+            <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">
+                {{ $etudiantsCount }}
+            </span>
+            @endif
+        </a>
+        @endunlessrole
+        @endcan
         <!-- Badges -->
         @can('badges.view')
         @unlessrole('etudiant')
