@@ -11,16 +11,16 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
     <!-- Logo et Titre -->
     <div class="flex-shrink-0">
-        <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50 bg-slate-900/30">
+        <div class="flex items-center gap-3 px-6 py-6 bg-gradient-to-b from-slate-900/95 to-slate-950/70 backdrop-blur-md shadow-2xl">
             <a href="{{ $homeRoute }}" class="flex items-center gap-3 group">
                 <div class="relative">
                     <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
-                        class="w-12 h-12 rounded-2xl shadow-lg ring-2 ring-blue-500/30 group-hover:ring-blue-500/80 group-hover:scale-110 transition-all duration-300">
-                    <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        class="w-12 h-12 rounded-3xl shadow-2xl ring-2 ring-emerald-400/60 group-hover:ring-emerald-300/90 group-hover:scale-110 transition-all duration-400">
+                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full animate-ping shadow-lg"></div>
                 </div>
                 <div class="flex flex-col">
-                    <h1 class="text-lg font-bold text-white tracking-wide">Gestion</h1>
-                    <p class="text-xs text-slate-400 font-medium">Stagiaires TFG</p>
+                    <h1 class="text-xl font-black text-white tracking-tight bg-gradient-to-r from-white to-slate-100 bg-clip-text">Gestion Pro</h1>
+                    <p class="text-sm text-emerald-300 font-bold tracking-wide">Administrative TFG</p>
                 </div>
             </a>
         </div>
@@ -32,7 +32,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
         @role('etudiant')
 
-        <div class="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 shadow-lg shadow-cyan-950/20">
+        <div class="rounded-3xl bg-gradient-to-br from-cyan-500/10 to-cyan-900/20 p-3 shadow-2xl shadow-cyan-950/30 backdrop-blur-sm">
             <div class="px-3 py-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Espace stagiaire</p>
                 <p class="mt-1 text-sm text-slate-300">Les 3 acces utiles pour suivre ton stage sans detour.</p>
@@ -73,99 +73,109 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         @endrole
 
         @unless(auth()->user()->hasRole('etudiant'))
-        <div class="mb-4 rounded-3xl border border-slate-700/40 bg-slate-950/10 p-4 shadow-xl shadow-slate-950/10">
-
+        <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
 
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
-            <div class="space-y-3">
+            <div class="space-y-1.5">
                 @can('presence.admin.view')
                 <a href="{{ route('admin.presence.index') }}"
-                    class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
+                    class="flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 hover:text-emerald-100 hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 bg-slate-800/30">
                     <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-xl bg-emerald-500/20">
+                        <div class="p-2 rounded-xl bg-emerald-500/30 ring-1 ring-emerald-500/40">
                             <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span>Pointage Présence</span>
+                        <span>Pointage Admin</span>
                     </div>
                     @if(($anomaliesCount ?? 0) > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-rose-500 text-white rounded-full shadow-lg animate-pulse">{{ $anomaliesCount }}</span>
+                    <span class="px-2.5 py-1 text-xs font-bold bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-full shadow-lg animate-pulse ring-1 ring-rose-400/50">{{ $anomaliesCount }}</span>
                     @endif
                 </a>
                 @endcan
 
-                @if(auth()->user()->can('presence.view') || auth()->user()->can('daily_reports.view'))
-                <div x-data="{ open: false }" class="space-y-2">
+                <div x-data="{ open: false }" class="space-y-1">
                     <button @click="open = !open" type="button"
-                        class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-300 border border-slate-800 bg-slate-950/80">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-xl bg-slate-700/20">
-                                <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="group w-full flex items-center justify-between px-5 py-4 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 bg-slate-800/40 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 -skew-x-12"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-400/30 to-blue-400/30 ring-1 ring-emerald-500/50">
+                                <svg class="w-5 h-5 text-emerald-500 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
                                 </svg>
                             </div>
-                            <span>Suivi</span>
+                            <span class="text-white text-xl font-bold">Suivi</span>
+                            <span class="px-3 py-1 text-white text-xs bg-emerald-500/30 text-emerald-200 font-bold rounded-full ring-1 ring-emerald-800/50">Pro</span>
                         </div>
-                        <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-4 h-4 text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-5 h-5 text-emerald-300 transform transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="open" x-cloak class="space-y-2">
+                    <div x-show="open" x-cloak="open" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 space-y-1.5 pl-3 border-l-2 border-emerald-500/30 bg-slate-900/50 rounded-2xl p-3">
                         @can('presence.view')
                         <a href="{{ route('attendance.tracking.index') }}"
-                            class="block pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
-                            Suivi Pointages
+                            class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-blue-500/50">
+                            📊 Suivi Pointages
                         </a>
                         @endcan
 
                         @can('daily_reports.view')
                         <a href="{{ route('admin.reports.index') }}"
-                            class="block pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
-                            Suivi Rapports
+                            class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-500/50">
+                            📈 Suivi Rapports
                         </a>
                         @endcan
                     </div>
                 </div>
-                @endif
             </div>
             @else
-            @if(auth()->user()->can('presence.view') || auth()->user()->can('daily_reports.view'))
-            <div x-data="{ open: false }" class="space-y-2">
+            <div x-data="{ open: false }" class="space-y-1">
                 <button @click="open = !open" type="button"
-                    class="w-full flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all duration-300 group relative overflow-hidden border border-slate-800 bg-slate-950/80">
-                    <div class="flex items-center gap-3 relative z-10">
-                        <div class="p-2 rounded-xl bg-slate-700/20">
-                            <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="group w-full flex items-center justify-between px-5 py-4 mb-3 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 border border-slate-700/30 bg-slate-800/40 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 -skew-x-12"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-400/30 to-blue-400/30 ring-1 ring-emerald-500/50">
+                            <svg class="w-5 h-5 text-emerald-300 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
                             </svg>
                         </div>
                         <span>Suivi</span>
+                        <span class="px-3 py-1 text-xs bg-emerald-500/30 text-emerald-200 font-bold rounded-full ring-1 ring-emerald-400/50">Pro</span>
                     </div>
-                    <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-4 h-4 text-slate-300 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-5 h-5 text-emerald-300 transform transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div x-show="open" x-cloak class="space-y-2">
+                <div x-show="open" x-cloak="open" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 space-y-1.5 pl-3 border-l-2 border-emerald-500/30 bg-slate-900/50 rounded-2xl p-3">
                     @can('presence.view')
                     <a href="{{ route('presence.pointage') }}"
-                        class="block pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-emerald-500/30">
+                        <div class="p-2 rounded-xl bg-emerald-500/30 ring-1 ring-emerald-500/40">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m-6 0h2m-2 0v2" />
+                            </svg>
+                        </div>
                         Pointage Présence
                     </a>
                     @endcan
 
                     @can('daily_reports.view')
                     <a href="{{ route('reports.index') }}"
-                        class="block pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-amber-500/30">
+                        <div class="p-2 rounded-xl bg-amber-500/30 ring-1 ring-amber-500/40">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
                         Rapports de travail
                     </a>
                     @endcan
 
                     @can('presence.view')
                     <a href="{{ route('presence.historique') }}"
-                        class="flex items-center gap-3 pl-12 pr-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 transition-all duration-300 border border-slate-800 bg-slate-950/80">
-                        <div class="p-2 rounded-xl bg-blue-500/20">
-                            <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-blue-500/30">
+                        <div class="p-2 rounded-xl bg-blue-500/30 ring-1 ring-blue-500/40">
+                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                         </div>
@@ -174,7 +184,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     @endcan
                 </div>
             </div>
-            @endif
             @endif
         </div>
         @endunless
@@ -480,7 +489,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     </div>
 
     <!-- Profil Utilisateur en bas du Sidebar -->
-    <div class="flex-shrink-0 p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm" x-data="{ userMenuOpen: false }">
+    <div class="flex-shrink-0 p-5 bg-gradient-to-t from-slate-900/90 to-transparent backdrop-blur-xl" x-data="{ userMenuOpen: false }">
         <button @click="userMenuOpen = !userMenuOpen"
             class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 group">
             @if(Auth::user()->avatar)
