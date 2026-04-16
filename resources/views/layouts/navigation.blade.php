@@ -1,14 +1,17 @@
 @php
 $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
 @endphp
+<div x-data="{ sidebarOpen: false }" class="relative">
 
-<nav x-data="{ 
-    sidebarOpen: false, 
-    stagesOpen: false,
-    mobileMenuOpen: false 
-}"
-    class="fixed inset-y-0 left-0 z-40 w-72 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl flex flex-col">
+<nav
+        class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] 
+        bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-800/95
+        transform transition-all duration-300 ease-out
+        md:translate-x-0 md:static md:inset-0
+        flex flex-col shadow-2xl"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
 
+        
     <!-- Logo et Titre -->
     <div class="flex-shrink-0">
         <div class="flex items-center gap-3 px-6 py-6 bg-gradient-to-b from-slate-900/95 to-slate-950/70 backdrop-blur-md shadow-2xl">
@@ -40,7 +43,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
             <div class="mt-2 space-y-2">
                 <a href="{{ route('presence.pointage') }}"
-                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10 {{ request()->routeIs('presence.pointage') ? 'bg-emerald-500/30 ring-2 ring-emerald-400/50 !text-emerald-100 scale-105' : '' }}" aria-current="page">
                     <div class="p-2 rounded-xl bg-emerald-500/20">
                         <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -285,7 +288,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         @endcanany
         @endrole
 
-       
+
 
         <!-- Employés avec Sous-menu -->
         @canany(['domaines.view', 'users.view'])
@@ -334,7 +337,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
         </div>
         @endcanany
- <!-- Étudiants -->
+        <!-- Étudiants -->
         @can('etudiants.view')
         @unlessrole('etudiant')
         <a href="{{ route('etudiants.index') }}"
@@ -533,23 +536,37 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     </div>
 </nav>
 
-<!-- Bouton Mobile pour ouvrir sidebar -->
+<!-- Bouton Mobile Hamburger (responsive phone/tablet) -->
 <button @click="sidebarOpen = !sidebarOpen"
-    class="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-slate-800/90 backdrop-blur-sm text-white shadow-xl hover:bg-slate-700 transition-all duration-300 hover:scale-105">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    class="sm:hidden fixed top-4 left-4 z-[60] p-3 rounded-2xl bg-gradient-to-br from-slate-800/95 to-slate-900/90 backdrop-blur-2xl text-white shadow-2xl hover:shadow-emerald-500/25 hover:bg-emerald-600/20 active:scale-95 transition-all duration-300 hover:scale-105 border border-slate-700/50 ring-1 ring-white/20" aria-label="Ouvrir menu" aria-expanded="false" x-ref="hamburger">
+    <!-- Icône adaptative : hamburger → close -->
+    <svg x-show="!sidebarOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+    <svg x-show="sidebarOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+</button>
+
+<!-- BOUTON CLOSE (X) DANS LA SIDEBAR - Mobile uniquement -->
+<button @click="sidebarOpen = false"
+    class="sm:hidden absolute top-6 right-6 z-[55] p-2.5 rounded-2xl bg-slate-800/95 backdrop-blur-2xl text-white shadow-2xl hover:bg-rose-500/90 hover:shadow-rose-500/25 hover:scale-110 active:scale-95 transition-all duration-300 ring-1 ring-white/20"
+    x-show="sidebarOpen" aria-label="Fermer menu">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
     </svg>
 </button>
 
 <!-- Overlay pour mobile -->
 <div x-show="sidebarOpen" @click="sidebarOpen = false"
-    class="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-all duration-300"
-    x-transition:enter="transition ease-out duration-200"
+    class="md:hidden fixed inset-0 bg-black/70 backdrop-blur-md z-[40] transition-all duration-300"
+    x-transition:enter="transition ease-out duration-300"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0">
+    x-transition:leave-end="opacity-0"
+    role="button" tabindex="0" aria-label="Fermer en cliquant dehors">
 </div>
 
 <style>

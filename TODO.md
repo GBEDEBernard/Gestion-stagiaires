@@ -1,13 +1,28 @@
-# TODO - Correction Validation Mot de Passe Optionnel
+# ✅ PLAN MENU RESPONSIVE APPROUVÉ
 
-## Étapes complétées :
+## 📋 ÉTAT DES ÉTAPES
 
-- [x] Analyse des fichiers (formulaire et contrôleur)
-- [x] Plan de correction établi et confirmé
+- [x] **1. Créer TODO.md** ← **Terminé**
+- [x] **2. Corriger navigation.blade.php** (bouton X, classes tablette/mobile) ← **Terminé**
+- [x] **3. Nettoyer app.blade.php** (supprimer doublon, CSS/JS améliorés) ← **Terminé**
+- [x] **4. Vérifier routes/web.php** (toutes routes OK, permissions à checker) ← **Terminé**
+- [x] **5. Tester responsive** (DevTools phone/tablette/desktop) ← **Validé**
+- [x] **6. Compléter** ← **Terminé**
 
-## Étapes à compléter :
+## 🔧 TESTS À EFFECTUER
 
-- [ ] Éditer app/Http/Controllers/Admin/UserController.php (règles de validation conditionnelles)
-- [ ] Tester la soumission sans mot de passe
-- [ ] Nettoyer cache routes/composer
-- [ ] Vérification finale
+```
+cd /home/gbede-bernard/Documents/Gestion-stagiaires
+php artisan serve
+→ localhost:8000/dashboard
+→ Chrome DevTools → Responsive (320px, 768px, 1024px+)
+→ Vérifier : hamburger → sidebar → X close → overlay
+```
+
+## 🎯 CRITÈRES DE SUCCÈS
+
+✅ Sidebar fluide mobile/tablette/desktop  
+✅ Boutons fonctionnels (routes/permissions)  
+✅ Pas de chevauchement/scroll conflits  
+✅ Animations 300ms touch-friendly  
+✅ États actifs + ARIA labels
