@@ -1,12 +1,12 @@
 <x-app-layout title="Historique de présence">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 dark:bg-gray-900/50 min-h-screen pb-24">
         {{-- 🎉 SUCCESS BANNER ANIMÉ --}}
         @if (session('success'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)"
             x-show="show" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 transform -translate-y-4 scale-95"
             x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
-            class="group bg-gradient-to-r from-emerald-500 to-green-600 text-white p-6 rounded-3xl shadow-2xl border-4 border-white/20 backdrop-blur-sm animate-pulse mb-8">
+            class="group bg-gradient-to-r from-emerald-500 to-green-600 text-white p-6 rounded-3xl shadow-2xl border-4 border-white/20 backdrop-blur-sm animate-pulse mb-8 dark:border-white/30">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center animate-bounce">
@@ -31,13 +31,14 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 tracking-tight animate-fade-in">
-                    <p class="mt-2 text-xl text-slate-600">
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-gray-100 tracking-tight animate-fade-in">
+                    <p class="mt-2 text-xl text-slate-600 dark:text-indigo-300 animate-fade-in delay-200">
                         {{ isset($user) && $user->id !== auth()->id() ? 'Pointages de ' . $user->name : 'Tous tes pointages' }} par période
                     </p>
+                </h1>
             </div>
             <div class="flex gap-3">
-                <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all">
+                <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-xl font-medium shadow-sm transition-all">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z">
                     </svg>
@@ -47,21 +48,21 @@
         </div>
 
         {{-- Period Tabs --}}
-        <div class="bg-white rounded-2xl border border-slate-200 p-1 shadow-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-1 shadow-sm">
             <nav class="-mb-px flex space-x-8">
-                <a href="?period=week" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'week' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                <a href="?period=week" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'week' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200' }} text-sm transition-colors">
                     {{ request('period') === 'week' ? '📅 Semaine' : 'Semaine' }}
                 </a>
-                <a href="?period=month" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'month' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                <a href="?period=month" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'month' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200' }} text-sm transition-colors">
                     {{ request('period') === 'month' ? '📊 Mois' : 'Mois' }}
                 </a>
-                <a href="?period=year" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'year' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
+                <a href="?period=year" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'year' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200' }} text-sm transition-colors">
                     {{ request('period') === 'year' ? '📈 Année' : 'Année' }}
                 </a>
             </nav>
         </div>
 
-        {{-- Stats Cards améliorées --}}
+        {{-- Stats Cards --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <x-stats-card title="Jours Pointés" value="{{ $attendanceDays->count() }}" icon="calendar-days" color="slate">
                 <x-slot:subtitle>{{ $userStats['present_days'] ?? $attendanceDays->whereNotNull('first_check_in_at')->count() }} présents</x-slot:subtitle>
@@ -80,19 +81,18 @@
             </x-stats-card>
         </div>
 
-        {{-- Graph Dynamique --}}
-        {{-- Graphs avec données userStats --}}
+        {{-- Graphs --}}
         @if(isset($userStats) && isset($userStats['chart_data']))
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-8">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                     📈 Évolution Présence
                 </h3>
                 <canvas id="personalPresenceChart" height="300"></canvas>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-8">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                     ⚠️ Retards Journaliers ({{ $userStats['total_late_minutes'] }}min)
                 </h3>
                 <canvas id="personalLateChart" height="300"></canvas>
@@ -100,210 +100,54 @@
         </div>
         @endif
 
-        @push('scripts')
-        {{-- Tailwind Animate pour les animations --}}
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-        <script>
-            // Keyframes CSS pour animations custom
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fade-in-up {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
-                .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
-                
-                @media (prefers-reduced-motion: reduce) {
-                    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
-                }
-            `;
-            document.head.appendChild(style);
-
-            // Confetti si success après charts
-            @if(session('success'))
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(() => {
-                    // Simple confetti canvas
-                    const canvas = document.createElement('canvas');
-                    canvas.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;z-index:9999;width:100vw;height:100vh';
-                    document.body.appendChild(canvas);
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-
-                    const confetti = [];
-                    for (let i = 0; i < 100; i++) {
-                        confetti.push({
-                            x: Math.random() * canvas.width,
-                            y: Math.random() * canvas.height - canvas.height,
-                            r: Math.random() * 4 + 1,
-                            d: Math.random() * 200 + 200,
-                            color: ['#10B981', '#059669', '#047857'][Math.floor(Math.random() * 3)],
-                            tilt: Math.random() * 10,
-                            tiltAngle: 0
-                        });
-                    }
-
-                    let animationId;
-
-                    function draw() {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        confetti.forEach((c, i) => {
-                            c.tiltAngle += 0.1;
-                            c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
-                            c.tilt = Math.sin(c.tiltAngle - i / 3) * 15;
-
-                            ctx.save();
-                            ctx.translate(c.x, c.y);
-                            ctx.fillStyle = c.color;
-                            ctx.beginPath();
-                            ctx.lineTo(c.tilt + c.r * 3, 0);
-                            ctx.lineTo(c.tilt, c.r * 3);
-                            ctx.lineTo(c.tilt + c.r * 3, c.r * 6);
-                            ctx.lineTo(c.tilt, c.r * 9);
-                            ctx.lineTo(c.tilt + c.r * 3, c.r * 12);
-                            ctx.lineTo(c.tilt, c.r * 15);
-                            ctx.lineTo(c.tilt + c.r * 3, c.r * 18);
-                            ctx.fill();
-                            ctx.restore();
-
-                            if (c.y > canvas.height) confetti.splice(i, 1);
-                        });
-                        if (confetti.length) animationId = requestAnimationFrame(draw);
-                        else document.body.removeChild(canvas);
-                    }
-                    draw();
-                }, 500);
-            });
-            @endif
-
-            document.addEventListener('DOMContentLoaded', function() {
-                        <
-                        script >
-                            document.addEventListener('DOMContentLoaded', function() {
-                                @if(isset($userStats) && isset($userStats['chart_data']))
-                                // Chart Présence (basé sur worked_hours comme proxy présence)
-                                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
-                                if (presenceCtx) {
-                                    new Chart(presenceCtx, {
-                                        type: 'line',
-                                        data: {
-                                            labels: @json($userStats['chart_data']['labels']),
-                                            datasets: [{
-                                                label: 'Heures travaillées',
-                                                data: @json($userStats['chart_data']['worked_hours']),
-                                                borderColor: 'rgb(59, 130, 246)',
-                                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                                tension: 0.4,
-                                                fill: true
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            scales: {
-                                                y: {
-                                                    beginAtZero: true
-                                                }
-                                            },
-                                            plugins: {
-                                                legend: {
-                                                    position: 'top'
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
-
-                                // Chart Retards
-                                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
-                                if (lateCtx) {
-                                    new Chart(lateCtx, {
-                                        type: 'bar',
-                                        data: {
-                                            labels: @json($userStats['chart_data']['labels']),
-                                            datasets: [{
-                                                label: 'Minutes de retard',
-                                                data: @json($userStats['chart_data']['late_minutes']),
-                                                backgroundColor: 'rgb(251, 191, 36)',
-                                                borderColor: 'rgb(251, 146, 60)',
-                                                borderRadius: 4
-                                            }]
-                                        },
-                                        options: {
-                                            responsive: true,
-                                            scales: {
-                                                y: {
-                                                    beginAtZero: true
-                                                }
-                                            },
-                                            plugins: {
-                                                legend: {
-                                                    position: 'top'
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
-                                @endif
-                            });
-        </script>
-        @endpush>
-
         {{-- Main Table --}}
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/50">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 flex items-center gap-2">
                     Pointages récents
-                    <span class="px-2 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-full">
+                    <span class="px-2 py-1 bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200 text-xs font-semibold rounded-full">
                         {{ $attendanceDays->flatten()->count() }} jours
                     </span>
                 </h3>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700">
                     <thead>
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Heure d'arrivée</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Heure de départ</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Position</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Statut</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">Rapport</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Heure d'arrivée</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Heure de départ</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Position</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Statut</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Rapport</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200">
+                    <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $index => $day)
-                        <tr class="hover:bg-slate-50 group transition-all duration-300 animate-fade-in-up 
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800 group transition-all duration-300 animate-fade-in-up 
                                    {{ $index % 2 === 0 ? 'delay-100' : 'delay-200' }}
-                                   {{ $day->attendance_date->isToday() ? 'bg-emerald-50 border-l-4 border-emerald-400 ring-2 ring-emerald-200/50' : '' }}"
+                                   {{ $day->attendance_date->isToday() ? 'bg-emerald-50 dark:bg-emerald-950/50 border-l-4 border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-200/50 dark:ring-emerald-900/50' : '' }}"
                             style="animation-fill-mode: both;">
                             <td class="px-6 py-4">
-                                <div class="font-semibold text-slate-900">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
-                                <div class="text-xs text-slate-500 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
+                                <div class="font-semibold text-slate-900 dark:text-gray-100">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                <div class="text-xs text-slate-500 dark:text-gray-400 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm font-semibold">
+                                <div class="text-sm font-semibold text-slate-900 dark:text-gray-100">
                                     {{ $day->first_check_in_at?->format('H:i') ?? '—' }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm font-semibold">
+                            <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-gray-100">
                                 {{ $day->last_check_out_at?->format('H:i') ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-slate-700">
+                            <td class="px-6 py-4 text-sm text-slate-700 dark:text-gray-300">
                                 @if($day->stage && $day->stage->site)
-                                <span class="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 text-sm font-semibold rounded-full">
                                     TFG SARL (TECHNOLOGY FOREVER GROUP)
                                 </span>
                                 @else
-                                <span class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-full">
                                     À distance
                                 </span>
                                 @endif
@@ -334,7 +178,7 @@
                                             }
                                             @endphp
                                             @if($status !=='inconnu' )
-                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg">
+                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg dark:from-{{ $color }}-500 dark:to-{{ $color }}-600">
                                             @if($icon === 'thumbs-up')
                                             👍
                                             @elseif($icon === 'thumbs-down')
@@ -343,7 +187,7 @@
                                             {{ $status }}
                                             </span>
                                             @else
-                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 text-slate-800">
+                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200">
                                                 Inconnu
                                             </span>
                                             @endif
@@ -354,24 +198,24 @@
                                 @endphp
                                 @if($report)
                                 @if($report->status === 'submitted')
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold rounded-full">
                                     Soumis
                                 </span>
                                 @elseif($report->status === 'draft')
-                                <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 text-xs font-semibold rounded-full">
                                     Brouillon
                                 </span>
                                 @elseif($report->status === 'approved')
-                                <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
                                     Approuvé
                                 </span>
                                 @else
-                                <span class="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-slate-100 dark:bg-gray-800 text-slate-800 dark:text-gray-200 text-xs font-semibold rounded-full">
                                     {{ ucfirst($report->status) }}
                                 </span>
                                 @endif
                                 @else
-                                <span class="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
+                                <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">
                                     Aucun
                                 </span>
                                 @endif
@@ -379,14 +223,14 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                                <svg class="mx-auto h-16 w-16 mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-gray-400">
+                                <svg class="mx-auto h-16 w-16 mb-4 text-slate-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                <h3 class="text-lg font-semibold text-slate-900 mb-2">Aucun pointage trouvé</h3>
-                                <p class="text-slate-500">Tes premiers pointages apparaîtront ici.</p>
+                                <h3 class="text-lg font-semibold text-slate-900 dark:text-gray-100 mb-2">Aucun pointage trouvé</h3>
+                                <p class="text-slate-500 dark:text-gray-400">Tes premiers pointages apparaîtront ici.</p>
                                 <div class="mt-6">
-                                    <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg transition-all">
+                                    <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white font-semibold shadow-lg transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
@@ -400,5 +244,62 @@
                 </table>
             </div>
         </div>
-    </div>
+
+        @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                @if(isset($userStats) && isset($userStats['chart_data']))
+                // Chart Présence
+                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
+                if (presenceCtx) {
+                    new Chart(presenceCtx, {
+                        type: 'line',
+                        data: {
+                            labels: @json($userStats['chart_data']['labels']),
+                            datasets: [{
+                                label: 'Heures travaillées',
+                                data: @json($userStats['chart_data']['worked_hours']),
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+
+                // Chart Retards
+                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
+                if (lateCtx) {
+                    new Chart(lateCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @json($userStats['chart_data']['labels']),
+                            datasets: [{
+                                label: 'Minutes de retard',
+                                data: @json($userStats['chart_data']['late_minutes']),
+                                backgroundColor: 'rgb(251, 191, 36)',
+                                borderColor: 'rgb(251, 146, 60)',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+                @endif
+            });
+        </script>
+        @endpush
 </x-app-layout>
