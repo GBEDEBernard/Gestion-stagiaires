@@ -77,56 +77,72 @@
         @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            @if(isset($userStats) && isset($userStats['chart_data']))
-            // Chart Présence (basé sur worked_hours comme proxy présence)
-            const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
-            if (presenceCtx) {
-                new Chart(presenceCtx, {
-                    type: 'line',
-                    data: {
-                        labels: @json($userStats['chart_data']['labels']),
-                        datasets: [{
-                            label: 'Heures travaillées',
-                            data: @json($userStats['chart_data']['worked_hours']),
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: { y: { beginAtZero: true } },
-                        plugins: { legend: { position: 'top' } }
-                    }
-                });
-            }
+            document.addEventListener('DOMContentLoaded', function() {
+                @if(isset($userStats) && isset($userStats['chart_data']))
+                // Chart Présence (basé sur worked_hours comme proxy présence)
+                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
+                if (presenceCtx) {
+                    new Chart(presenceCtx, {
+                        type: 'line',
+                        data: {
+                            labels: @json($userStats['chart_data']['labels']),
+                            datasets: [{
+                                label: 'Heures travaillées',
+                                data: @json($userStats['chart_data']['worked_hours']),
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            }
+                        }
+                    });
+                }
 
-            // Chart Retards
-            const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
-            if (lateCtx) {
-                new Chart(lateCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: @json($userStats['chart_data']['labels']),
-                        datasets: [{
-                            label: 'Minutes de retard',
-                            data: @json($userStats['chart_data']['late_minutes']),
-                            backgroundColor: 'rgb(251, 191, 36)',
-                            borderColor: 'rgb(251, 146, 60)',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: { y: { beginAtZero: true } },
-                        plugins: { legend: { position: 'top' } }
-                    }
-                });
-            }
-            @endif
-        });
+                // Chart Retards
+                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
+                if (lateCtx) {
+                    new Chart(lateCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: @json($userStats['chart_data']['labels']),
+                            datasets: [{
+                                label: 'Minutes de retard',
+                                data: @json($userStats['chart_data']['late_minutes']),
+                                backgroundColor: 'rgb(251, 191, 36)',
+                                borderColor: 'rgb(251, 146, 60)',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            }
+                        }
+                    });
+                }
+                @endif
+            });
         </script>
         @endpush>
 

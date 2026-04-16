@@ -141,8 +141,8 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $day->etudiant->user) }}" 
-                                       class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                    <a href="{{ route('attendance.tracking.user.historique', $day->etudiant->user) }}"
+                                        class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                         👁️ Voir
                                     </a>
                                 </td>
@@ -229,8 +229,8 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $day->user) }}" 
-                                       class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                    <a href="{{ route('attendance.tracking.user.historique', $day->user) }}"
+                                        class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                         👁️ Voir
                                     </a>
                                 </td>
@@ -271,8 +271,8 @@
                                 <td class="px-6 py-3 text-sm"><span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/5 jours</span></td>
                                 <td class="px-6 py-3 text-sm font-semibold">{{ $data['total_late_minutes'] > 0 ? $data['total_late_minutes'] . ' min' : '0 min' }}</td>
                                 <td class="px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $data['owner']->user) }}" 
-                                       class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                    <a href="{{ route('attendance.tracking.user.historique', $data['owner']->user) }}"
+                                        class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                         👁️ Voir
                                     </a>
                                 </td>
@@ -308,8 +308,8 @@
                                 <td class="px-6 py-3 text-sm"><span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/5 jours</span></td>
                                 <td class="px-6 py-3 text-sm font-semibold">{{ $data['total_late_minutes'] > 0 ? $data['total_late_minutes'] . ' min' : '0 min' }}</td>
                                 <td class="px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $data['owner']) }}" 
-                                       class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                    <a href="{{ route('attendance.tracking.user.historique', $data['owner']) }}"
+                                        class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                         👁️ Voir
                                     </a>
                                 </td>
