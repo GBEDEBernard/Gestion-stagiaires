@@ -3,7 +3,7 @@
     {{-- ════════════════════════════════════════════════════════
          BANNER
     ════════════════════════════════════════════════════════ --}}
-    <div class="relative ml-4 overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 rounded-2xl mb-8">
+    <div class="relative ml-4 overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 rounded-2xl mt-8">
         <div class="absolute inset-0 bg-white/5"></div>
         <div class="relative px-8 py-0">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

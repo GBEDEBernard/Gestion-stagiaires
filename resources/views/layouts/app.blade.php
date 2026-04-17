@@ -220,35 +220,27 @@
 
                             <!-- Notifications -->
                             <div class="relative" x-data="{
-            notifyOpen: false, 
-            notificationCount: {{ $notificationCount ?? 0 }}, 
-            lastCount: {{ $notificationCount ?? 0 }},
-            polling: null, 
-            init() {
-                // Génération notifications au chargement
-                app(NotificationService).generateNotifications();
-                
-                this.polling = setInterval(async () => {
-                    try {
-                        const res = await fetch('/notifications/unread-json');
-                        const data = await res.json();
-                        if (data.count > this.notificationCount) {
-                            // Nouvelle notification ! 🎉
-                            this.lastCount = this.notificationCount;
-                            this.notificationCount = data.count;
-                            // Toast subtil
-                            this.$nextTick(() => {
-                                const badge = this.$el.querySelector('[x-text]');
-                                if (badge) badge.classList.add('animate-bounce');
-                                setTimeout(() => badge?.classList.remove('animate-bounce'), 1000);
-                            });
-                        } else {
-                            this.notificationCount = data.count;
-                        }
-                    } catch(e) {}
-                }, {{ $notificationCount > 0 ? '5000' : '15000' }}); // Plus fréquent si notifs existantes
-            }
-        }">
+                                notifyOpen: false, 
+                                notificationCount: {{ $notificationCount ?? 0 }}, 
+                                lastCount: {{ $notificationCount ?? 0 }},
+                                polling: null, 
+                                init() {
+                                    app(NotificationService).generateNotifications();
+                                    
+                                    this.polling = setInterval(async () => {
+                                        try {
+                                            const res = await fetch('/notifications/unread-json');
+                                            const data = await res.json();
+                                            if (data.count > this.notificationCount) {
+                                                this.lastCount = this.notificationCount;
+                                                this.notificationCount = data.count;
+                                            } else {
+                                                this.notificationCount = data.count;
+                                            }
+                                        } catch(e) {}
+                                    }, {{ $notificationCount > 0 ? '5000' : '15000' }});
+                                }
+                            }">
 
                                 <button @click="notifyOpen = !notifyOpen"
                                     class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition relative group"
@@ -262,9 +254,10 @@
                                             dark:ring-gray-900/80 dark:shadow-2xl"
                                             :class="notificationCount > lastCount ? 'animate-bounce-subtle bg-red-600 shadow-red-500/50' : ''"
                                             x-text="notificationCount > 9 ? '9+' : notificationCount"></span>
-
                                     </template>
                                 </button>
+
+                                <!-- Dropdown amélioré -->
                                 <div x-show="notifyOpen"
                                     @click.away="notifyOpen = false"
                                     x-transition:enter="transition ease-out duration-200"
@@ -273,9 +266,9 @@
                                     x-transition:leave="transition ease-in duration-150"
                                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                                     x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                                    class="animate-slide-down"
+                                    class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden z-[60]"
+                                    style="min-width: 320px;">
 
-                                    class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
                                     <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center">
                                         <h3 class="text-sm font-semibold text-gray-800 dark:text-white">Notifications</h3>
                                         @if($notificationCount > 0)
@@ -285,7 +278,8 @@
                                         </form>
                                         @endif
                                     </div>
-                                    <div class="max-h-80 overflow-y-auto">
+
+                                    <div class="max-h-80 overflow-y-auto custom-scrollbar">
                                         @forelse($menuNotifications ?? [] as $notification)
                                         <a href="{{ route('notifications.index') }}"
                                             class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
@@ -306,14 +300,21 @@
                                             </div>
                                         </a>
                                         @empty
-                                        <div class="px-4 py-8 text-center">
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">Aucune notification</p>
+                                        <div class="px-4 py-12 text-center">
+                                            <div class="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                                </svg>
+                                            </div>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">Aucune notification</p>
+                                            <p class="text-xs text-gray-400">Vous êtes à jour !</p>
                                         </div>
                                         @endforelse
                                     </div>
+
                                     @if($notificationCount > 0)
-                                    <div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                        <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                                        <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
                                             Voir toutes les notifications →
                                         </a>
                                     </div>
