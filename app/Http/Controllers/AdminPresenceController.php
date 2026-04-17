@@ -166,8 +166,7 @@ class AdminPresenceController extends Controller
         $recentAnomalies = \App\Models\AttendanceAnomaly::where('status', 'open')
             ->where('detected_at', '>=', now()->subDays(7))
             ->count();
-        $avgAccuracy = \App\Models\AttendanceEvent::whereNotNull('gps_accuracy')
-            ->avg('gps_accuracy') ?? 0;
+        $avgAccuracy = 0; // gps_accuracy column missing - disabled
 
         // Users pour filtre
         $users = \App\Models\User::select('id', 'name')
@@ -177,7 +176,7 @@ class AdminPresenceController extends Controller
             ->get();
 
         // Events récents
-        $query = \App\Models\AttendanceEvent::with(['user', 'attendanceDay.stage.site', 'anomalies'])
+        $query = \App\Models\AttendanceEvent::with(['user', 'checkInDay.stage.site', 'checkOutDay.stage.site', 'anomalies'])
             ->orderByDesc('occurred_at');
 
         if ($date) {
@@ -201,14 +200,13 @@ class AdminPresenceController extends Controller
             'userId'
         ));
     }
-
     /**
      * Export pointages CSV
      */
     public function exportPointages(Request $request)
     {
         $date = $request->get('date', today()->format('Y-m-d'));
-        $query = \App\Models\AttendanceEvent::with(['user', 'attendanceDay.stage.site'])
+        $query = \App\Models\AttendanceEvent::with(['user', 'checkInDay.stage.site', 'checkOutDay.stage.site'])
             ->whereDate('occurred_at', $date);
 
         $events = $query->get();
