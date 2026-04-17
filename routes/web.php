@@ -248,7 +248,7 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     });
 
     // ---------------- Supervision Présence Admin ----------------
-    Route::prefix('admin/presence')->middleware('permission:presence.admin.view')->group(function () {
+    Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
@@ -256,7 +256,7 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
         Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
             ->name('admin.presence.anomalies.resolve')
-            ->middleware('permission:presence.admin.anomalies.review');
+            ->middleware('can:reviewAdminAnomalies');
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
 

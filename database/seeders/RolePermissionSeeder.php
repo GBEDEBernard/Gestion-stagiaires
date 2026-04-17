@@ -35,6 +35,8 @@ class RolePermissionSeeder extends Seeder
             'tasks',
             'attendance_anomalies',
             'presence_stats',
+            // ✅ FIX 403 : Permissions Admin explicites pour anomalies
+            'presence.admin',
         ];
 
         $actions = [
@@ -105,9 +107,12 @@ class RolePermissionSeeder extends Seeder
         // dans l'ecran utilisateur unifie. Les permissions effectives
         // sont portees directement par chaque compte pour que l'admin
         // puisse vraiment en retirer ou en ajouter librement.
-        $adminRole->syncPermissions([]);
-        $supervisorRole->syncPermissions([]);
-        $etudiantRole->syncPermissions([]);
+        // ✅ FIX 403 : Donner TOUTES les permissions au role admin directement
+        $presetService = app(RolePermissionPresetService::class);
+        $adminRole->givePermissionTo($presetService->permissionsForRoles(['admin']));
+        $supervisorRole->syncPermissions($presetService->permissionsForRoles(['superviseur']));
+        $employeRole->syncPermissions($presetService->permissionsForRoles(['employe']));
+        $etudiantRole->syncPermissions($presetService->permissionsForRoles(['etudiant']));
 
         $user = User::find(1);
         if ($user) {
