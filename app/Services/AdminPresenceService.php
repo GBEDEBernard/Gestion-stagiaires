@@ -179,67 +179,58 @@ class AdminPresenceService
 {
     $query = AttendanceDay::query();
 
-    // 🔥 Filtre période
+    // Filtre période
     switch ($period) {
         case 'today':
             $query->whereDate('attendance_date', today());
             break;
-
         case 'week':
             $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
             break;
-
         case 'month':
             $query->whereMonth('attendance_date', now()->month)
                   ->whereYear('attendance_date', now()->year);
             break;
-
         case 'year':
             $query->whereYear('attendance_date', now()->year);
             break;
     }
 
-    // 🔥 DATA PAR JOUR (IMPORTANT POUR LE CHART)
     $dailyStats = $query
         ->selectRaw('
             DATE(attendance_date) as date,
             COUNT(*) as total_days,
             SUM(CASE WHEN first_check_in_at IS NOT NULL THEN 1 ELSE 0 END) as present,
             SUM(late_minutes) as late_minutes,
-            SUM(worked_minutes) as worked_minutes,
-            SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as late_days
+            SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as late_days,
+            SUM(worked_minutes) as worked_minutes
         ')
         ->groupBy('date')
         ->orderBy('date')
         ->get();
 
-    // 🔥 GLOBAL
     $totalDays = $dailyStats->sum('total_days');
     $presentDays = $dailyStats->sum('present');
     $totalLateMinutes = $dailyStats->sum('late_minutes');
     $totalWorkedMinutes = $dailyStats->sum('worked_minutes');
     $totalLateDays = $dailyStats->sum('late_days');
 
-    $tauxPresence = $totalDays > 0
-        ? round(($presentDays / $totalDays) * 100, 1)
-        : 0;
-
-    // 🔥 FORMAT CHART
-    $chartData = [
-        'labels' => $dailyStats->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m')),
-        'present' => $dailyStats->pluck('present'),
-        'late_minutes' => $dailyStats->pluck('late_minutes'),
-    ];
+    $tauxPresence = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
 
     return [
-        'taux_presence' => $tauxPresence,
-        'present_days' => $presentDays,
-        'total_days' => $totalDays,
-        'total_late_minutes' => $totalLateMinutes,
-        'total_late_days' => $totalLateDays,
-        'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
-        'total_anomalies' => AttendanceAnomaly::where('status', 'open')->count(),
-        'chart_data' => $chartData,
+        'taux_presence'       => $tauxPresence,
+        'present_days'        => $presentDays,
+        'total_days'          => $totalDays,
+        'total_late_minutes'  => $totalLateMinutes,
+        'total_late_days'     => $totalLateDays,
+        'total_worked_hours'  => round($totalWorkedMinutes / 60, 1),
+        'total_anomalies'     => AttendanceAnomaly::where('status', 'open')->count(),
+        'chart_data' => [
+            'labels'       => $dailyStats->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d/m')),
+            'present'      => $dailyStats->pluck('present'),
+            'late_minutes' => $dailyStats->pluck('late_minutes'),
+            'late_days'    => $dailyStats->pluck('late_days'),   // ← important
+        ],
     ];
 }
     /**

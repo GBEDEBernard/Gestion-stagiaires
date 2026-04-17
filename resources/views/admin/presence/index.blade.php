@@ -865,22 +865,22 @@
                 </div>
             </div>
 
-           <div class="mt-6">
+  <div class="mt-6">
     <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
 
     <div class="pres-card">
-        <div class="pres-chart-wrap" style="height:260px;">
+        <div class="pres-chart-wrap" style="height:280px;">
             <canvas id="chartGlobal"></canvas>
         </div>
     </div>
 </div>
-          <!-- vue d'ensemble -->
-         <div class="pres-card mt-6">
-            <div class="pres-section-title" style="margin-bottom:1rem;">Vue d'Ensemble Quotidienne</div>
-            <div style="position:relative;height:260px;">
-                <canvas id="chartOverview"></canvas>
-            </div>
-        </div>
+
+<div class="pres-card mt-6">
+    <div class="pres-section-title">Vue d'Ensemble Quotidienne</div>
+    <div style="position:relative;height:280px;">
+        <canvas id="chartOverview"></canvas>
+    </div>
+</div>
                 {{-- Groups --}}
                 <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
 
@@ -1058,26 +1058,45 @@
         </div>{{-- /pres-page --}}
     </div>{{-- /pres-wrap --}}
 
-   @push('scripts')
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
     Chart.defaults.font.family = "'DM Sans', sans-serif";
-    Chart.defaults.color = '#6b7280';
+    Chart.defaults.color = '#9ca3af';
 
-    const labels = @json($globalStats['chart_data']['labels'] ?? []);
-    const present = @json($globalStats['chart_data']['present'] ?? []);
-    const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
+    // 🔥 DATA SAFE (ultra important)
+    const labels = @json(($globalStats['chart_data']['labels'] ?? collect())->values());
+    const present = @json(($globalStats['chart_data']['present'] ?? collect())->values());
+    const lateMinutes = @json(($globalStats['chart_data']['late_minutes'] ?? collect())->values());
+    const lateDays = @json(($globalStats['chart_data']['late_days'] ?? collect())->values());
 
-    // ⚠️ simulation logique propre (à améliorer backend plus tard)
-    const onTime = present.map((v, i) => v - (lateMinutes[i] > 0 ? 1 : 0));
+    // 🔥 calcul réel cohérent
+    const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-    /* ─────────── GRAPHE PRINCIPAL ─────────── */
+    /* =========================================================
+       🎨 GRADIENTS (EFFET PREMIUM)
+    ========================================================= */
+    const createGradient = (ctx, color) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        return gradient;
+    };
+
+    /* =========================================================
+       📈 GRAPHE PRINCIPAL (COURBES PRO)
+    ========================================================= */
     const ctxG = document.getElementById('chartGlobal');
 
-    if (ctxG) {
+    if (ctxG && labels.length > 0) {
+
+        const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
+        const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
+        const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
+
         new Chart(ctxG, {
             type: 'line',
             data: {
@@ -1087,58 +1106,97 @@ document.addEventListener('DOMContentLoaded', () => {
                         label: 'Présence',
                         data: present,
                         borderColor: '#10b981',
-                        backgroundColor: 'rgba(16,185,129,0.15)',
+                        backgroundColor: gradientGreen,
                         fill: true,
-                        tension: 0.4
+                        tension: 0.45,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     },
                     {
                         label: "À l'heure",
                         data: onTime,
                         borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59,130,246,0.15)',
+                        backgroundColor: gradientBlue,
                         fill: true,
-                        tension: 0.4
+                        tension: 0.45,
+                        borderWidth: 2,
+                        pointRadius: 4
                     },
                     {
-                        label: 'Retards',
+                        label: 'Retards (min)',
                         data: lateMinutes,
                         borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245,158,11,0.15)',
+                        backgroundColor: gradientOrange,
                         fill: true,
-                        tension: 0.4
+                        tension: 0.45,
+                        borderWidth: 2,
+                        yAxisID: 'y1',
+                        pointRadius: 4
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart'
+                },
+
                 interaction: {
                     mode: 'index',
                     intersect: false
                 },
+
                 plugins: {
                     legend: {
-                        display: true,
-                        position: 'top'
+                        labels: {
+                            color: '#e5e7eb',
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#111827',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        titleColor: '#fff',
+                        bodyColor: '#d1d5db'
                     }
                 },
+
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        }
                     },
                     y: {
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        beginAtZero: true
+                        beginAtZero: true,
+                        position: 'left',
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        }
                     }
                 }
             }
         });
     }
 
-    /* ─────────── VUE D’ENSEMBLE ─────────── */
+    /* =========================================================
+       📊 BAR CHART (clean)
+    ========================================================= */
     const ctxOv = document.getElementById('chartOverview');
 
-    if (ctxOv) {
+    if (ctxOv && labels.length > 0) {
         new Chart(ctxOv, {
             type: 'bar',
             data: {
@@ -1147,29 +1205,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         label: 'Présents',
                         data: present,
-                        backgroundColor: 'rgba(16,185,129,0.7)',
+                        backgroundColor: '#10b981'
                     },
                     {
                         label: "À l'heure",
                         data: onTime,
-                        backgroundColor: 'rgba(59,130,246,0.7)',
+                        backgroundColor: '#3b82f6'
                     },
                     {
                         label: 'Retards (min)',
                         data: lateMinutes,
-                        backgroundColor: 'rgba(245,158,11,0.7)',
+                        backgroundColor: '#f59e0b'
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' }
+
+                animation: {
+                    duration: 1000
                 },
+
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e5e7eb'
+                        }
+                    }
+                },
+
                 scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true }
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
         });
@@ -1178,5 +1250,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endpush
-
 </x-app-layout>
