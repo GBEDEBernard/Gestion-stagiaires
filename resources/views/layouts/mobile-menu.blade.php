@@ -5,7 +5,7 @@
     @toggle-menu.window="mobileMenuOpen = !mobileMenuOpen"
     @close-menu.window="mobileMenuOpen = false"
     x-init="$watch('mobileMenuOpen', val => document.body.style.overflow = val ? 'hidden' : '')">
-
+    
     <div x-show="mobileMenuOpen"
         x-cloak
         x-transition:enter="transition ease-out duration-300"
@@ -15,20 +15,14 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         @keydown.escape.window="mobileMenuOpen = false"
-        class="fixed inset-0 z-50 lg:hidden">
-
+        class="fixed inset-0 z-[9999] lg:hidden">
         <!-- Overlay cliquable -->
         <div @click="mobileMenuOpen = false"
             class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
         <!-- Panel glissant -->
-        <div class="relative w-full h-full bg-white dark:bg-gray-900 flex flex-col max-w-md mx-auto shadow-2xl"
-            x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="translate-x-full"
-            x-transition:enter-end="translate-x-0"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="translate-x-0"
-            x-transition:leave-end="translate-x-full">
+      <div class="relative w-full h-full bg-white dark:bg-gray-900 flex flex-col shadow-2xl
+            lg:max-w-md lg:ml-auto">
 
             <!-- HEADER -->
             <div class="p-5 bg-gradient-to-r from-blue-500 to-purple-600 text-white flex-shrink-0">
