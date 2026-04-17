@@ -26,7 +26,7 @@ class NotificationComposer
 
         $view->with([
             'notificationCount' => $count,
-            'notifications' => $recent,
+            'menuNotifications' => $recent,
         ]);
     }
 }

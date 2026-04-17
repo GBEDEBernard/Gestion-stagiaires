@@ -5,7 +5,7 @@
     ════════════════════════════════════════════════════════ --}}
     <div class="relative ml-4 overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 rounded-2xl mb-8">
         <div class="absolute inset-0 bg-white/5"></div>
-        <div class="relative px-8 py-10">
+        <div class="relative px-8 py-0">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div>
                     <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2">Notifications</h1>
@@ -17,7 +17,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
-                        <span class="font-medium">{{ $unreadCount }} non lu(s)</span>
+                        <span class="font-medium">{{ $unreadCount ?? $notificationCount ?? 0 }} non lu(s)</span>
                     </div>
                 </div>
             </div>
@@ -30,11 +30,11 @@
         </div>
     </div>
 
-    <div class="space-y-6 ml-4">
+    <div class="space-y-6 ml-4 mr-4">
         {{-- Actions --}}
         <div class="flex items-center justify-between">
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                {{ $notifications->total() }} notification(s) au total
+                {{ $notifications->count() }} notification(s) au total
             </div>
             @if($unreadCount > 0)
             <form action="{{ route('notifications.markAllRead') }}" method="POST">
@@ -100,7 +100,7 @@
         </div>
 
         {{-- Pagination --}}
-        @if($notifications->hasPages())
+        @if($notifications instanceof \Illuminate\Pagination\LengthAwarePaginator)
         <div class="px-6 py-4">
             {{ $notifications->links() }}
         </div>
@@ -108,3 +108,4 @@
     </div>
 
 </x-app-layout>
+</xai:function_call<xai:function_call name="edit_file">

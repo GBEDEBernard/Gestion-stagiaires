@@ -1,15 +1,16 @@
-# TODO.md - Sidebar Fix Progress
+# TODO: Correction Erreur Pagination Notifications
 
-## SIDEBAR DÉCALAGE FIX (✅ COMPLETED)
-- [x] ✅ Create TODO.md with steps
-- [x] ✅ Update navigation.blade.php:
-  - Removed wrapper div + md:static conflicts
-  - Clean nav: fixed w-72 + lg:translate-x-0 (desktop stable)
-  - Fixed mobile: lg:hidden Menu/Retour buttons + z-index
-  - Perfect overlay lg:hidden z-30
-  - Preserved ALL menu content/styles/Alpine/PHP
-- [x] 🧪 Verified dashboard alignment (w-72 = 288px consistent)
-- [x] ✅ Task complete: No décalage, pro UX retained
+**Statut: En cours** | **Plan approuvé par utilisateur**
 
-**Status:** ✅ Done! Test dashboard alignment + mobile menu.
+## Étapes (5/5 restantes):
 
+- [x]   1. Modifier `app/Http/ViewComposers/NotificationComposer.php` (renommer `$notifications` → `$menuNotifications`)\n- [x] 2. Modifier `resources/views/notifications/index.blade.php` (gérer pagination conditionnelle)
+- [x]   3. Vérifier + corriger `app/Providers/AppServiceProvider.php` et layouts (ViewComposer `*` confirmé)
+- [x]   4. Nettoyer caches ✅ (`php artisan view:clear && php artisan view:cache && php artisan route:clear && php artisan config:clear`)
+- [x]   5. **TÂCHE TERMINÉE** ✅\n\nRoutes vérifiées: `notifications.index` OK\nCaches nettoyés\nFichiers corrigés\n\n**Testez:** `php artisan serve` puis visitez `http://127.0.0.1:8000/notifications`
+
+**Notes:**
+
+- Garder `$notificationCount` pour menu/bandeau
+- Contrôleur déjà correct (paginate(15))
+- Tout en français

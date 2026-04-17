@@ -83,65 +83,64 @@
             }
         }
 
-  #loader-overlay.active {
-    opacity: 1;
-    pointer-events: all;
-    }
+        #loader-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
 
-    .dark #loader-overlay {
-    background: rgba(0, 0, 0, 0.5);
-    }
+        .dark #loader-overlay {
+            background: rgba(0, 0, 0, 0.5);
+        }
 
-    .spinner {
-    border: 6px solid #f3f3f3;
-    border-top: 6px solid #3b82f6;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-    }
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3b82f6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
 
-    @keyframes spin {
-    0% {
-    transform: rotate(0deg)
-    }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg)
+            }
 
-    100% {
-    transform: rotate(360deg)
-    }
-    }
+            100% {
+                transform: rotate(360deg)
+            }
+        }
 
-    .main-content {
-    transition: margin-left 0.3s ease;
-    }
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
 
-    @media (min-width: 1024px) {
-    .main-content {
-    margin-left: 16rem;
-    }
-    }
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 16rem;
+            }
+        }
 
-    .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
 
-    .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-    }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.3);
-    border-radius: 3px;
-    }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 3px;
+        }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.5);
-    }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
 
-    [x-cloak] {
-    display: none !important;
-    }
-  
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -287,7 +286,7 @@
                                         @endif
                                     </div>
                                     <div class="max-h-80 overflow-y-auto">
-                                        @forelse($notifications as $notification)
+                                        @forelse($menuNotifications ?? [] as $notification)
                                         <a href="{{ route('notifications.index') }}"
                                             class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
                                             <div class="flex items-start gap-3">
