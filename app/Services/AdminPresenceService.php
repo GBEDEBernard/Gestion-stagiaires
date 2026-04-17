@@ -175,96 +175,73 @@ class AdminPresenceService
     /**
      * Stats globales selon la période.
      */
-    public function getGlobalStats(string $period = 'today')
-    {
-        $query = AttendanceDay::query()
-            ->with('user') // si besoin pour d'autres stats
-            ->selectRaw('
-            COUNT(*) as total_days,
-            SUM(CASE WHEN first_check_in_at IS NOT NULL THEN 1 ELSE 0 END) as present_days,
-            SUM(late_minutes) as total_late_minutes,
-            SUM(worked_minutes) as total_worked_minutes,
-            SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as total_late_days,
-            attendance_date
-        ');
+   public function getGlobalStats(string $period = 'today')
+{
+    $query = AttendanceDay::query();
 
-        $groupByColumn = 'attendance_date';
-        $dateFormat = 'Y-m-d';
+    // 🔥 Filtre période
+    switch ($period) {
+        case 'today':
+            $query->whereDate('attendance_date', today());
+            break;
 
-        switch ($period) {
-            case 'today':
-                $query->whereDate('attendance_date', today());
-                break;
+        case 'week':
+            $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
+            break;
 
-            case 'week':
-                $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
-                $groupByColumn = 'attendance_date'; // ou DAYNAME si tu veux par jour de la semaine
-                break;
+        case 'month':
+            $query->whereMonth('attendance_date', now()->month)
+                  ->whereYear('attendance_date', now()->year);
+            break;
 
-            case 'month':
-                $query->whereYear('attendance_date', now()->year)
-                    ->whereMonth('attendance_date', now()->month);
-                break;
-
-            case 'year':
-                $query->whereYear('attendance_date', now()->year);
-                $groupByColumn = 'MONTH(attendance_date)'; // ou juste l'année
-                $dateFormat = 'Y-m';
-                break;
-
-            default:
-                $query->whereDate('attendance_date', today());
-        }
-
-        $dailyStats = $query->groupBy(DB::raw('DATE(attendance_date)'))
-            ->get([
-                DB::raw('DATE(attendance_date) as date'),
-                DB::raw('COUNT(*) as total_days'),
-                DB::raw('SUM(CASE WHEN first_check_in_at IS NOT NULL THEN 1 ELSE 0 END) as present_days'),
-                DB::raw('SUM(late_minutes) as total_late_minutes'),
-                DB::raw('SUM(worked_minutes) as total_worked_minutes'),
-                DB::raw('SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as total_late_days')
-            ])
-            ->map(function ($day) {
-                return [
-                    'date'              => $day->date,
-                    'total_days'        => (int) $day->total_days,
-                    'present'           => (int) $day->present_days,
-                    'total_late_minutes' => (int) $day->total_late_minutes,
-                    'total_worked_minutes' => (int) $day->total_worked_minutes,
-                    'total_late_days'   => (int) $day->total_late_days,
-                ];
-            });
-
-        // Calcul des stats globales
-        $totalDays = $dailyStats->sum('total_days');
-        $presentDays = $dailyStats->sum('present');
-        $totalLateMinutes = $dailyStats->sum('total_late_minutes');
-        $totalWorkedMinutes = $dailyStats->sum('total_worked_minutes');
-        $totalLateDays = $dailyStats->sum('total_late_days');
-
-        $tauxPresence = $totalDays > 0
-            ? round(($presentDays / $totalDays) * 100, 1)
-            : 0;
-
-        // Préparation des données pour le graphique
-        $chartData = [
-            'labels'  => $dailyStats->pluck('date')->toArray(),
-            'present' => $dailyStats->pluck('present')->toArray(),
-            'late'    => $dailyStats->pluck('total_late_days')->toArray(), // ou late_minutes si tu préfères
-        ];
-
-        return [
-            'taux_presence'       => $tauxPresence,
-            'present_days'        => $presentDays,
-            'total_days'          => $totalDays,
-            'total_late_minutes'  => $totalLateMinutes,
-            'total_late_days'     => $totalLateDays,
-            'total_worked_hours'  => round($totalWorkedMinutes / 60, 1),
-            'total_anomalies'     => AttendanceAnomaly::where('status', 'open')->count(), // ou selon ta logique
-            'chart_data'          => $chartData,
-        ];
+        case 'year':
+            $query->whereYear('attendance_date', now()->year);
+            break;
     }
+
+    // 🔥 DATA PAR JOUR (IMPORTANT POUR LE CHART)
+    $dailyStats = $query
+        ->selectRaw('
+            DATE(attendance_date) as date,
+            COUNT(*) as total_days,
+            SUM(CASE WHEN first_check_in_at IS NOT NULL THEN 1 ELSE 0 END) as present,
+            SUM(late_minutes) as late_minutes,
+            SUM(worked_minutes) as worked_minutes,
+            SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as late_days
+        ')
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+    // 🔥 GLOBAL
+    $totalDays = $dailyStats->sum('total_days');
+    $presentDays = $dailyStats->sum('present');
+    $totalLateMinutes = $dailyStats->sum('late_minutes');
+    $totalWorkedMinutes = $dailyStats->sum('worked_minutes');
+    $totalLateDays = $dailyStats->sum('late_days');
+
+    $tauxPresence = $totalDays > 0
+        ? round(($presentDays / $totalDays) * 100, 1)
+        : 0;
+
+    // 🔥 FORMAT CHART
+    $chartData = [
+        'labels' => $dailyStats->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m')),
+        'present' => $dailyStats->pluck('present'),
+        'late_minutes' => $dailyStats->pluck('late_minutes'),
+    ];
+
+    return [
+        'taux_presence' => $tauxPresence,
+        'present_days' => $presentDays,
+        'total_days' => $totalDays,
+        'total_late_minutes' => $totalLateMinutes,
+        'total_late_days' => $totalLateDays,
+        'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
+        'total_anomalies' => AttendanceAnomaly::where('status', 'open')->count(),
+        'chart_data' => $chartData,
+    ];
+}
     /**
      * Stats par groupe (étudiants vs employés).
      */

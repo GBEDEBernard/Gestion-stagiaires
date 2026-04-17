@@ -1,31 +1,10 @@
-# TODO Progress Tracker
+# TODO List - Gestion Stagiaires
 
-## Task: Clean Presence/Anomalies tabs in admin sidebar with nice Suivi
+## ✅ Complété
 
-✅ **1. Plan approved by user** - Add "Présence" dropdown with Anomalies link + badge, enhance "Suivi Pro"
+✅ **ERREUR GROUP BY MYSQL CORRIGÉE** - AdminPresenceService.php (ligne ~183)
+*Supprimé `attendance_date` du selectRaw() pour conformité strict mode*
 
-# TODO Progress Tracker - ✅ TASK COMPLETE
+## En cours
 
-**Task accomplished:**
-
-- ✅ Added clean "Présence" dropdown in admin sidebar (after Pointage Admin)
-    - 🚨 Direct "Tableau Anomalies" link with badge (`route('admin.presence.anomalies')`)
-    - 📊 "Suivi Pointages" link (`admin.presence.pointage-suivi`)
-- ✅ Enhanced professional styling (amber gradients, icons, hovers, badges)
-- ✅ View cache cleared (`php artisan view:clear`)
-- ✅ Sidebar now displays presence tabs + anomalies table cleanly in admin navigation
-- ✅ Responsive, matches existing design (Tailwind/Alpine)
-
-**Updated admin sidebar structure:**
-
-```
-Pointage Admin [anomalies badge]
-📋 Présence (new dropdown)
-├─ 🚨 Tableau Anomalies [badge]
-└─ 📊 Suivi Pointages
-📈 Suivi Pro
-```
-
-Run `php artisan serve` → login as admin to see the new clean presence/anomalies sidebar with professional suivi tracking.
-
-**Status:** Complete
+_(liste des tâches ouvertes)_
