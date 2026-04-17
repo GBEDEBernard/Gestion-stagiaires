@@ -195,6 +195,85 @@
             @endforeach
         </div>
 
+        {{-- ── SUIVI DES POINTAGES (Admins uniquement) ──────────── --}}
+        @can('presence.view')
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Suivi des Pointages
+                </h3>
+                <a href="{{ route('attendance.tracking.index') }}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-sm transition-all">
+                    Voir le détail
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-900/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-emerald-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h-2m-2-2H8m6 0h2m2-2h2m-2 2v2m0 2v2m0 2h-4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase">Aujourd'hui</p>
+                            <p class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{{ $todayAttendance }}</p>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">pointages</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-blue-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">Présents</p>
+                            <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ $todayPresent }}</p>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">aujourd'hui</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-900/30 rounded-xl p-4 border border-amber-200 dark:border-amber-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-amber-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase">En retard</p>
+                            <p class="text-2xl font-bold text-amber-900 dark:text-amber-100">{{ $todayLate }}</p>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">aujourd'hui</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/20 dark:to-rose-900/30 rounded-xl p-4 border border-rose-200 dark:border-rose-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-rose-600 text-white rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-rose-700 dark:text-rose-300 uppercase">Retard cumulé</p>
+                            <p class="text-2xl font-bold text-rose-900 dark:text-rose-100">{{ $weekLateMinutes }}</p>
+                            <p class="text-xs text-rose-600 dark:text-rose-400 mt-1">min cette semaine</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+
         {{-- ── CHART 1 : Évolution inscriptions + Types ──────────── --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -407,198 +486,166 @@
     ════════════════════════════════════════════════════════ --}}
     <script>
         window.__DASHBOARD__ = {
-            labelsJour:      {{ Js::from($labelsJour) }},
-            evolutionJour:   {{ Js::from($evolutionJour) }},
-            labelsSemaine:   {{ Js::from($labelsSemaine) }},
-            evolutionSemaine:{{ Js::from($evolutionSemaine) }},
-            labelsMois:      {{ Js::from($labelsMois) }},
-            evolutionMois:   {{ Js::from($evolutionMois) }},
-            typesLabels:     {{ Js::from($typesLabels) }},
-            typesData:       {{ Js::from($typesData) }},
-            stagesMoisLabels:{{ Js::from($labelsMoisAnnee) }},
-            stagesMoisData:  {{ Js::from($stagesParMois) }},
-            svcLabels:       {{ Js::from($servicesStats->pluck('service')->values()) }},
-            svcEnCours:      {{ Js::from($servicesStats->pluck('enCours')->values()) }},
-            svcTermines:     {{ Js::from($servicesStats->pluck('termines')->values()) }},
-            svcInscrits:     {{ Js::from($servicesStats->pluck('inscrits')->values()) }}
+
+            labelsJour: {!! Js::from($labelsJour) !!},
+            evolutionJour: {!! Js::from($evolutionJour) !!},
+            labelsSemaine: {!! Js::from($labelsSemaine) !!},
+            evolutionSemaine: {!! Js::from($evolutionSemaine) !!},
+            labelsMois: {!! Js::from($labelsMois) !!},
+            evolutionMois: {!! Js::from($evolutionMois) !!},
+            typesLabels: {!! Js::from($typesLabels) !!},
+            typesData: {!! Js::from($typesData) !!},
+            stagesMoisLabels: {!! Js::from($labelsMoisAnnee) !!},
+            stagesMoisData: {!! Js::from($stagesParMois) !!},
+            svcLabels: {!! Js::from($servicesStats->pluck('service')->values()) !!},
+            svcEnCours: {!! Js::from($servicesStats->pluck('enCours')->values()) !!},
+            svcTermines: {!! Js::from($servicesStats->pluck('termines')->values()) !!},
+            svcInscrits: {!! Js::from($servicesStats->pluck('inscrits')->values()) !!}
+    
         };
     </script>
 
-    @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
+  @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-            Chart.defaults.font.family = "'Figtree', sans-serif";
-            var isDark   = document.documentElement.classList.contains('dark');
-            var TXT      = isDark ? '#e5e7eb' : '#374151';
-            var GRID     = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
-            var BORDER_BG = isDark ? '#1f2937' : '#ffffff';
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-            var D            = window.__DASHBOARD__;
-            var LABELS_JOUR  = D.labelsJour;
-            var DATA_JOUR    = D.evolutionJour;
-            var LABELS_SEM   = D.labelsSemaine;
-            var DATA_SEM     = D.evolutionSemaine;
-            var LABELS_MOIS  = D.labelsMois;
-            var DATA_MOIS    = D.evolutionMois;
-            var TYPES_LABELS = D.typesLabels;
-            var TYPES_DATA   = D.typesData;
-            var SM_LABELS    = D.stagesMoisLabels;
-            var SM_DATA      = D.stagesMoisData;
-            var SVC_LABELS   = D.svcLabels;
-            var SVC_ENCOURS  = D.svcEnCours;
-            var SVC_TERMINES = D.svcTermines;
-            var SVC_INSCRITS = D.svcInscrits;
+    const D = window.__DASHBOARD__ || {};
 
-            function xyScales() {
-                return {
-                    x: { ticks: { color: TXT, maxRotation: 45 }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { color: TXT, precision: 0 }, grid: { color: GRID } }
-                };
+    const safe = (arr, fallback = []) => Array.isArray(arr) && arr.length ? arr : fallback;
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const TXT = isDark ? '#e5e7eb' : '#374151';
+    const GRID = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const BORDER_BG = isDark ? '#1f2937' : '#ffffff';
+
+    Chart.defaults.font.family = "'Figtree', sans-serif";
+
+    function xyScales() {
+        return {
+            x: { ticks: { color: TXT }, grid: { display: false }},
+            y: { beginAtZero: true, ticks: { color: TXT }, grid: { color: GRID }}
+        };
+    }
+
+    function tip() {
+        return {
+            backgroundColor: 'rgba(15,23,42,.9)',
+            titleColor: '#fff',
+            bodyColor: '#ddd',
+            padding: 10,
+            cornerRadius: 6
+        };
+    }
+
+    /* ===================== 1. INSCRIPTIONS ===================== */
+    let inscChart;
+
+    function buildInscriptions(labels, data) {
+        const canvas = document.getElementById('chart-inscriptions');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+
+        if (inscChart) inscChart.destroy();
+
+        inscChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: safe(labels, ['Aucune donnée']),
+                datasets: [{
+                    label: 'Inscriptions',
+                    data: safe(data, [0]),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: tip() },
+                scales: xyScales()
             }
+        });
+    }
 
-            function tip() {
-                return {
-                    backgroundColor: 'rgba(15,23,42,.88)',
-                    titleColor: '#f8fafc',
-                    bodyColor: '#cbd5e1',
-                    padding: 12,
-                    cornerRadius: 8
-                };
-            }
+    window.switchPeriod = function(period) {
+        const map = {
+            jour: [D.labelsJour, D.evolutionJour],
+            semaine: [D.labelsSemaine, D.evolutionSemaine],
+            mois: [D.labelsMois, D.evolutionMois],
+        };
 
-            /* ── 1. ÉVOLUTION DES INSCRIPTIONS ── */
-            var inscChart = null;
+        document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+            btn.classList.remove('bg-blue-500','text-white');
+        });
 
-            function buildInscriptions(labels, data) {
-                var ctx = document.getElementById('chart-inscriptions');
-                if (!ctx) return;
-                if (inscChart) { inscChart.destroy(); inscChart = null; }
-                inscChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Inscriptions',
-                            data: data,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59,130,246,0.10)',
-                            borderWidth: 3,
-                            tension: 0.45,
-                            fill: true,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#3b82f6',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            pointHoverRadius: 7
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: tip() },
-                        scales: xyScales()
-                    }
-                });
-            }
+        document.getElementById('btn-'+period)?.classList.add('bg-blue-500','text-white');
 
-            window.switchPeriod = function (period) {
-                ['jour','semaine','mois'].forEach(function (p) {
-                    var btn = document.getElementById('btn-' + p);
-                    if (!btn) return;
-                    btn.className = p === period
-                        ? 'px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-500 text-white transition-all'
-                        : 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all';
-                });
-                if (period === 'jour')    buildInscriptions(LABELS_JOUR, DATA_JOUR);
-                if (period === 'semaine') buildInscriptions(LABELS_SEM,  DATA_SEM);
-                if (period === 'mois')    buildInscriptions(LABELS_MOIS, DATA_MOIS);
-            };
+        buildInscriptions(...map[period]);
+    };
 
-            buildInscriptions(LABELS_JOUR, DATA_JOUR);
+    buildInscriptions(D.labelsJour, D.evolutionJour);
 
-            /* ── 2. PAR TYPE — Doughnut ── */
-            (function () {
-                var ctx = document.getElementById('chart-types');
-                if (!ctx) return;
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: TYPES_LABELS.length ? TYPES_LABELS : ['Aucun type'],
-                        datasets: [{
-                            data: TYPES_DATA.length ? TYPES_DATA : [1],
-                            backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'],
-                            borderColor: BORDER_BG,
-                            borderWidth: 3,
-                            hoverOffset: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '62%',
-                        plugins: {
-                            legend: { position: 'bottom', labels: { color: TXT, padding: 14, usePointStyle: true, font: { size: 11 } } },
-                            tooltip: tip()
-                        }
-                    }
-                });
-            }());
+    /* ===================== 2. TYPES ===================== */
+    new Chart(document.getElementById('chart-types')?.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: safe(D.typesLabels, ['Vide']),
+            datasets: [{
+                data: safe(D.typesData, [1]),
+                backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: TXT }}, tooltip: tip() }
+        }
+    });
 
-            /* ── 3. STAGES 12 MOIS — Barres ── */
-            (function () {
-                var ctx = document.getElementById('chart-stages-mois');
-                if (!ctx) return;
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: SM_LABELS,
-                        datasets: [{
-                            label: 'Stages créés',
-                            data: SM_DATA,
-                            backgroundColor: 'rgba(139,92,246,0.75)',
-                            borderRadius: 6,
-                            borderSkipped: false
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: tip() },
-                        scales: xyScales()
-                    }
-                });
-            }());
+    /* ===================== 3. STAGES / MOIS ===================== */
+    new Chart(document.getElementById('chart-stages-mois')?.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: safe(D.stagesMoisLabels, []),
+            datasets: [{
+                label: 'Stages',
+                data: safe(D.stagesMoisData, [0]),
+                backgroundColor: '#8b5cf6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tip() },
+            scales: xyScales()
+        }
+    });
 
-            /* ── 4. RÉPARTITION PAR SERVICE — Barres groupées ── */
-            (function () {
-                var ctx = document.getElementById('chart-services');
-                if (!ctx) return;
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: SVC_LABELS.length ? SVC_LABELS : ['Aucun service'],
-                        datasets: [
-                            { label: 'En cours',  data: SVC_ENCOURS.length  ? SVC_ENCOURS  : [0], backgroundColor: '#22c55e', borderRadius: 4, borderSkipped: false },
-                            { label: 'Terminés',  data: SVC_TERMINES.length ? SVC_TERMINES : [0], backgroundColor: '#a855f7', borderRadius: 4, borderSkipped: false },
-                            { label: 'À venir',   data: SVC_INSCRITS.length ? SVC_INSCRITS : [0], backgroundColor: '#f97316', borderRadius: 4, borderSkipped: false }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom', labels: { color: TXT, usePointStyle: true, padding: 15, font: { size: 11 } } },
-                            tooltip: tip()
-                        },
-                        scales: xyScales()
-                    }
-                });
-            }());
+    /* ===================== 4. SERVICES ===================== */
+    new Chart(document.getElementById('chart-services')?.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: safe(D.svcLabels, ['Vide']),
+            datasets: [
+                { label: 'En cours', data: safe(D.svcEnCours,[0]), backgroundColor:'#22c55e' },
+                { label: 'Terminés', data: safe(D.svcTermines,[0]), backgroundColor:'#a855f7' },
+                { label: 'À venir', data: safe(D.svcInscrits,[0]), backgroundColor:'#f97316' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position:'bottom', labels:{color:TXT}}, tooltip: tip() },
+            scales: xyScales()
+        }
+    });
 
-        }); /* end DOMContentLoaded */
-    </script>
-    @endpush
-
+});
+</script>
+@endpush
 </x-app-layout>

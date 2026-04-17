@@ -20,6 +20,10 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AdminPresenceController;
+use App\Http\Controllers\AdminAttendanceTrackingController;
+use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\DomaineController;
 
 /*
 |--------------------------------------------------------------------------
@@ -140,6 +144,22 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
+    // ---------------- Domaines ----------------
+    Route::prefix('admin/domaines')->group(function () {
+        Route::get('/', [DomaineController::class, 'index'])->name('domaines.index')->middleware('permission:domaines.view');
+        Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
+        Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
+        Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
+        Route::get('{domaine}', [DomaineController::class, 'show'])->name('domaines.show')->middleware('permission:domaines.view');
+        Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
+        Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
+    });
+
+    // ---------------- Employés par domaine ----------------
+    Route::prefix('admin/employes')->group(function () {
+        Route::get('domaine/{domaine}', [UserController::class, 'indexByDomaine'])->name('employes.by_domaine')->middleware('permission:users.view');
+    });
+
     // ---------------- Sites ----------------
     Route::prefix('admin/sites')->group(function () {
         Route::get('/', [SiteController::class, 'index'])->name('sites.index')->middleware('permission:sites.view');
@@ -203,9 +223,21 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::get('/mon-stage', [StudentStageController::class, 'show'])
         ->name('student.stage');
 
+    // ---------------- Dashboard Superviseur ----------------
+    Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\SuperviseurDashboardController::class, 'index'])
+            ->name('superviseur.dashboard');
+    });
+
     // ---------------- Presence ----------------
     Route::prefix('presence')->group(function () {
-        Route::get('/', [PresenceController::class, 'index'])->name('presence.index')->middleware('permission:presence.view');
+        Route::get('/pointage', [PresenceController::class, 'pointage'])->name('presence.pointage')->middleware('permission:presence.view');
+        Route::get('/historique', [PresenceController::class, 'historique'])->name('presence.historique')->middleware('permission:presence.view');
+        Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('presence.prepareCheckin')->middleware('permission:presence.checkin');
+        Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
+        Route::get('/validate', [PresenceController::class, 'showValidation'])->name('presence.validate');
+        Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
+        Route::post('/confirm-ajax', [PresenceController::class, 'confirmAjax'])->name('presence.confirm.ajax'); // ← Nouvelle route AJAX
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });
@@ -214,6 +246,31 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     Route::prefix('reports')->group(function () {
         Route::get('/', [DailyReportController::class, 'index'])->name('reports.index')->middleware('permission:daily_reports.view');
         Route::post('/', [DailyReportController::class, 'store'])->name('reports.store')->middleware('permission:daily_reports.create');
+    });
+
+    // ---------------- Supervision Présence Admin ----------------
+    Route::prefix('admin/presence')->middleware('permission:presence.admin.view')->group(function () {
+        Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
+        Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
+        Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
+        Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');
+        Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
+        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
+            ->name('admin.presence.anomalies.resolve')
+            ->middleware('permission:presence.admin.anomalies.review');
+        Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
+    });
+
+    // ---------------- Suivi des Pointages Admin ----------------
+    Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
+        Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
+        Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
+        Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
+    });
+
+    // ---------------- Suivi des Rapports Admin ----------------
+    Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
+        Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
     });
 
     // ---------------- Notifications ----------------

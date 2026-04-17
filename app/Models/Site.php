@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Domaine;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -49,5 +50,10 @@ class Site extends Model
     public function attendanceDays()
     {
         return $this->hasMany(AttendanceDay::class);
+    }
+
+    public function domaines()
+    {
+        return $this->belongsToMany(Domaine::class, 'domaine_site');
     }
 }

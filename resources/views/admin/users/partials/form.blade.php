@@ -1,14 +1,16 @@
 @php
-    $linkedEtudiant = $user?->etudiant;
-    $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
-    $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
-    $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
-    $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-    $etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
-    $etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
-    $accountNameValue = old('name', $user?->name);
-    $generatedEtudiantName = trim(($etudiantPrenomValue ?? '') . ' ' . ($etudiantNomValue ?? ''));
-    $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $generatedEtudiantName;
+$linkedEtudiant = $user?->etudiant;
+$selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
+$selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
+$shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+$showDomaineSection = in_array('employe', $selectedRoleNames, true);
+$isCreate = !$user;
+$rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+$etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
+$etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
+$accountNameValue = old('name', $user?->name);
+$generatedEtudiantName = trim(($etudiantPrenomValue ?? '') . ' ' . ($etudiantNomValue ?? ''));
+$isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $generatedEtudiantName;
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -20,7 +22,7 @@
         data-role-permission-map="{{ $rolePermissionMapJson }}">
         @csrf
         @isset($formMethod)
-            @method($formMethod)
+        @method($formMethod)
         @endisset
 
         <input type="hidden" name="permissions_overridden" value="{{ old('permissions_overridden', 0) }}" data-permissions-overridden>
@@ -32,20 +34,20 @@
         </div>
 
         @if($user)
-            <div class="grid gap-3 md:grid-cols-2">
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                    <p class="font-semibold text-gray-800 dark:text-gray-100">Verification email</p>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">
-                        {{ $user->hasVerifiedEmail() ? 'Email deja verifie.' : 'Email encore en attente de verification.' }}
-                    </p>
-                </div>
-                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                    <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
-                    <p class="mt-1 text-gray-600 dark:text-gray-400">
-                        {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel deja defini.' }}
-                    </p>
-                </div>
+        <div class="grid gap-3 md:grid-cols-2">
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                <p class="font-semibold text-gray-800 dark:text-gray-100">Verification email</p>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">
+                    {{ $user->hasVerifiedEmail() ? 'Email deja verifie.' : 'Email encore en attente de verification.' }}
+                </p>
             </div>
+            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">
+                    {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel deja defini.' }}
+                </p>
+            </div>
+        </div>
         @endif
 
         <section class="space-y-5">
@@ -68,7 +70,7 @@
                         data-manual="{{ $isAccountNameManual ? 'true' : 'false' }}">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pour un etudiant, ce champ est rempli automatiquement a partir du prenom et du nom.</p>
                     @error('name')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -84,7 +86,7 @@
                         placeholder="exemple@email.com">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cet email sera celui utilise par l'utilisateur pour se connecter.</p>
                     @error('email')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -103,7 +105,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Definis le mot de passe initial">
                     @error('password')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -127,56 +129,82 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Roles <span class="text-red-500">*</span></label>
-                <div class="flex flex-wrap gap-3">
+                <label for="user_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Type d'utilisateur <span class="text-red-500">*</span></label>
+                <select id="user_type" name="user_type" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white" required>
+                    <option value="">Choisir le type...</option>
                     @foreach($roles as $role)
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="roles[]"
-                                value="{{ $role->name }}"
-                                class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 rounded-lg"
-                                data-role-checkbox
-                                {{ in_array($role->name, $selectedRoleNames, true) ? 'checked' : '' }}>
-                            <span class="px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium text-sm">{{ $role->name }}</span>
-                        </label>
+                    <option value="{{ $role->name }}" {{ old('user_type', $selectedRoleNames[0] ?? '') == $role->name ? 'selected' : '' }}>
+                        {{ ucfirst(str_replace('_', ' ', $role->name)) }}
+                    </option>
                     @endforeach
-                </div>
-                @error('roles')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                </select>
+                @error('user_type')
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
-                @error('roles.*')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
+
+                {{-- Hidden input for selected role --}}
+                <input type="hidden" name="roles[]" value="" id="hidden_role" data-role-input>
             </div>
 
-            <div class="space-y-4">
-                @foreach($permissionGroups as $group => $groupPermissions)
-                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{{ str_replace('_', ' ', $group) }}</h3>
-                        <div class="mt-3 flex flex-wrap gap-2">
+            <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargees automatiquement selon le role.
+                    @if($isCreate)
+                    Elles seront appliquees a la creation du compte et peuvent etre modifiees ensuite en edition de l'utilisateur ou du role.
+                    @else
+                    Vous pouvez les ajuster librement pour ce compte.
+                    @endif
+                </p>
+
+                @unless($isCreate)
+                <div class="grid gap-4 lg:grid-cols-2">
+                    @foreach($permissionGroups as $group => $groupPermissions)
+                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{{ ucfirst($group) }}</p>
+                        <div class="space-y-2">
                             @foreach($groupPermissions as $permission)
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="permissions[]"
-                                        value="{{ $permission->name }}"
-                                        class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                        data-permission-checkbox
-                                        {{ in_array($permission->name, $selectedPermissionNames, true) ? 'checked' : '' }}>
-                                    <span class="px-2 py-1 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium" title="{{ $permission->name }}">
-                                        {{ $permission->name }}
-                                    </span>
-                                </label>
+                            <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                                <input
+                                    type="checkbox"
+                                    name="permissions[]"
+                                    value="{{ $permission->name }}"
+                                    class="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-emerald-500 permission-checkbox"
+                                    {{ in_array($permission->name, $selectedPermissionNames) ? 'checked' : '' }}>
+                                <span class="leading-tight">{{ $permission->name }}</span>
+                            </label>
                             @endforeach
                         </div>
                     </div>
-                @endforeach
+                    @endforeach
+                </div>
                 @error('permissions')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
                 @enderror
-                @error('permissions.*')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                @endunless
+            </div>
+        </section>
+
+        <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $showDomaineSection ? '' : 'hidden' }}" data-domaine-section>
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Domaine de travail</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Assignez un domaine de travail pour les employés (non applicable aux étudiants).</p>
+            </div>
+
+            <div>
+                <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                <select
+                    name="domaine_id"
+                    id="domaine_id"
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
+                    <option value="">Aucun domaine (Étudiant ou non assigné)</option>
+                    @foreach($domaines ?? [] as $domaine)
+                    <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id ?? $selectedDomaineId) == $domaine->id ? 'selected' : '' }}>
+                        {{ $domaine->nom }}
+                    </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
+                @error('domaine_id')
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
             </div>
         </section>
@@ -201,7 +229,7 @@
                         placeholder="Ex: Dupont"
                         data-etudiant-nom>
                     @error('etudiant_nom')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -216,7 +244,7 @@
                         placeholder="Ex: Jean"
                         data-etudiant-prenom>
                     @error('etudiant_prenom')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -233,7 +261,7 @@
                         <option value="Feminin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Feminin' ? 'selected' : '' }}>Feminin</option>
                     </select>
                     @error('etudiant_genre')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -247,7 +275,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: +229 01 00 00 00 00">
                     @error('etudiant_telephone')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -261,7 +289,7 @@
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: Universite d'Abomey-Calavi">
                     @error('etudiant_ecole')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -294,32 +322,33 @@
         }
 
         const roleMap = JSON.parse(form.dataset.rolePermissionMap || '{}');
-        const roleCheckboxes = Array.from(form.querySelectorAll('[data-role-checkbox]'));
-        const permissionCheckboxes = Array.from(form.querySelectorAll('[data-permission-checkbox]'));
+        const typeSelect = form.querySelector('#user_type');
+        const hiddenRoleInput = form.querySelector('#hidden_role');
+        const domaineSection = form.querySelector('[data-domaine-section]');
+        const permissionCheckboxes = Array.from(form.querySelectorAll('.permission-checkbox'));
         const etudiantFields = form.querySelector('[data-etudiant-fields]');
         const permissionsOverriddenInput = form.querySelector('[data-permissions-overridden]');
         const accountNameInput = form.querySelector('[data-account-name]');
         const etudiantNomInput = form.querySelector('[data-etudiant-nom]');
         const etudiantPrenomInput = form.querySelector('[data-etudiant-prenom]');
 
-        const selectedRoles = () => roleCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value);
+        const selectedRole = () => typeSelect ? [typeSelect.value] : [];
         const defaultPermissions = () => {
             const permissions = new Set();
-
-            selectedRoles().forEach((roleName) => {
+            const roles = selectedRole();
+            roles.forEach((roleName) => {
                 (roleMap[roleName] || []).forEach((permissionName) => permissions.add(permissionName));
             });
-
             return permissions;
         };
 
         const syncEtudiantVisibility = () => {
-            const hasEtudiantRole = selectedRoles().includes('etudiant');
+            const hasEtudiantRole = selectedRole().includes('etudiant');
             etudiantFields.classList.toggle('hidden', !hasEtudiantRole);
         };
 
         const syncNameFromEtudiant = () => {
-            if (!selectedRoles().includes('etudiant')) {
+            if (!selectedRole().includes('etudiant')) {
                 return;
             }
 
@@ -340,23 +369,25 @@
             });
         };
 
-        const applyRoleDefaults = () => {
+        const syncDomaineVisibility = () => {
+            const isEmploye = selectedRole().includes('employe');
+            domaineSection?.classList.toggle('hidden', !isEmploye);
+        };
+
+        const applyTypeDefaults = () => {
+            const selectedType = typeSelect.value;
+            hiddenRoleInput.value = selectedType || '';
+
             const defaults = defaultPermissions();
-
-            permissionCheckboxes.forEach((checkbox) => {
-                // jb -> Les cases touchees manuellement par l'admin restent
-                // prioritaires; seuls les presets non personnalises bougent
-                // encore quand les roles changent.
-                if (checkbox.dataset.manual === 'true') {
-                    return;
-                }
-
-                checkbox.checked = defaults.has(checkbox.value);
-            });
+            if (permissionsOverriddenInput.value !== '1') {
+                permissionCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = defaults.has(checkbox.value);
+                });
+            }
 
             syncEtudiantVisibility();
+            syncDomaineVisibility();
             syncNameFromEtudiant();
-            refreshManualFlags();
         };
 
         accountNameInput.addEventListener('input', () => {
@@ -369,10 +400,9 @@
             });
         });
 
-        roleCheckboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', () => {
-                applyRoleDefaults();
-            });
+        typeSelect.addEventListener('change', () => {
+            permissionsOverriddenInput.value = '0';
+            applyTypeDefaults();
         });
 
         permissionCheckboxes.forEach((checkbox) => {
@@ -382,8 +412,10 @@
             });
         });
 
+        applyTypeDefaults();
         refreshManualFlags();
         syncEtudiantVisibility();
+        syncDomaineVisibility();
         syncNameFromEtudiant();
     });
 </script>

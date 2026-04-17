@@ -10,6 +10,8 @@ use App\Models\Activity;
 use App\Models\Etudiant;
 use App\Models\Attestation;
 use App\Models\AppNotification;
+use App\Models\AttendanceDay;
+use App\Models\AttendanceEvent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +27,38 @@ class DashboardController extends Controller
             return redirect()
                 ->route('student.stage')
                 ->with('info', "L'espace stagiaire remplace le dashboard global pour votre compte.");
+        }
+
+        if (Auth::user()?->hasRole('employe')) {
+            $user = Auth::user();
+            $today = Carbon::now()->startOfDay();
+            $weekStart = Carbon::now()->startOfWeek();
+            $weekEnd = Carbon::now()->endOfWeek();
+
+            $todayAttendance = AttendanceDay::where('user_id', $user->id)
+                ->whereDate('attendance_date', $today)
+                ->first();
+
+            $daysPresentThisWeek = AttendanceDay::where('user_id', $user->id)
+                ->whereBetween('attendance_date', [$weekStart, $weekEnd])
+                ->whereNotNull('first_check_in_at')
+                ->count();
+
+            $daysTrackedThisWeek = AttendanceDay::where('user_id', $user->id)
+                ->whereBetween('attendance_date', [$weekStart, $weekEnd])
+                ->count();
+
+            $attendanceEventsThisWeek = AttendanceEvent::where('user_id', $user->id)
+                ->whereBetween('occurred_at', [$weekStart, $weekEnd])
+                ->count();
+
+            return view('employe.dashboard', compact(
+                'user',
+                'todayAttendance',
+                'daysPresentThisWeek',
+                'daysTrackedThisWeek',
+                'attendanceEventsThisWeek'
+            ));
         }
 
         abort_unless(Auth::user()?->can('dashboard.view'), 403);
@@ -239,6 +273,24 @@ class DashboardController extends Controller
         $totalTrash = $stagesTrash->count() + $etudiantsTrash->count() +
             $badgesTrash->count() + $servicesTrash->count();
 
+        // ==================== SUIVI DES POINTAGES ====================
+        $todayAttendance = AttendanceDay::whereDate('attendance_date', $today)
+            ->with(['etudiant.user', 'stage.site'])
+            ->count();
+
+        $todayPresent = AttendanceDay::whereDate('attendance_date', $today)
+            ->whereNotNull('first_check_in_at')
+            ->count();
+
+        $todayLate = AttendanceDay::whereDate('attendance_date', $today)
+            ->where('arrival_status', 'late')
+            ->count();
+
+        $weekStart = now()->startOfWeek();
+        $weekEnd = now()->endOfWeek();
+        $weekLateMinutes = AttendanceDay::whereBetween('attendance_date', [$weekStart, $weekEnd])
+            ->sum('late_minutes');
+
         // ==================== Retour à la Vue ====================
         return view('dashboard', compact(
             // Notifications
@@ -296,7 +348,13 @@ class DashboardController extends Controller
             'etudiantsTrash',
             'badgesTrash',
             'servicesTrash',
-            'totalTrash'
+            'totalTrash',
+
+            // Suivi pointages
+            'todayAttendance',
+            'todayPresent',
+            'todayLate',
+            'weekLateMinutes'
         ));
     }
 }

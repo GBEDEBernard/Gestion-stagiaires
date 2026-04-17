@@ -33,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'bio',
         'avatar',
         'status',
+        'domaine_id',
     ];
 
     protected $hidden = [
@@ -63,7 +64,11 @@ class User extends Authenticatable implements MustVerifyEmail
         // jb -> Cette methode centralise la destination post-authentification
         // selon le role principal pour eviter les redirections dupliquees
         // dans plusieurs controlleurs.
-        return $this->hasRole('etudiant') ? 'student.stage' : 'dashboard';
+        // Étudiants et superviseurs atterrissent directement sur la page de pointage.
+        if ($this->hasRole('etudiant') || $this->hasRole('superviseur')) {
+            return 'presence.pointage';
+        }
+        return 'dashboard';
     }
 
     public function sendPasswordResetNotification($token)
@@ -93,6 +98,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TrustedDevice::class);
     }
 
+    public function domaine()
+    {
+        return $this->belongsTo(Domaine::class);
+    }
+
     public function attendanceEvents()
     {
         return $this->hasMany(AttendanceEvent::class);
@@ -111,6 +121,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reviewedDailyReports()
     {
         return $this->hasMany(DailyReport::class, 'reviewed_by');
+    }
+
+    /**
+     * Attendance days for employees (user_id).
+     */
+    public function attendanceDays()
+    {
+        return $this->hasMany(AttendanceDay::class);
     }
 
     public function dailyReportReviews()

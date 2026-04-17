@@ -21,6 +21,7 @@ class RolePermissionSeeder extends Seeder
             'type_stages',
             'badges',
             'services',
+            'domaines',
             'signataires',
             'users',
             'roles',
@@ -96,6 +97,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $employeRole = Role::firstOrCreate(['name' => 'employe']);
         $supervisorRole = Role::firstOrCreate(['name' => 'superviseur']);
         $etudiantRole = Role::firstOrCreate(['name' => 'etudiant']);
 

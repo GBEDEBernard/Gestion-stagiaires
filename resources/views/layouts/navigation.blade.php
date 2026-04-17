@@ -1,26 +1,43 @@
 @php
-    $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
+$homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route('dashboard');
 @endphp
 
-<nav x-data="{ 
-    sidebarOpen: false, 
-    stagesOpen: false,
-    mobileMenuOpen: false 
-}"
-    class="fixed inset-y-0 left-0 z-40 w-72 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-2xl flex flex-col">
+<div x-data="{ sidebarOpen: false }">
 
-    <!-- Logo et Titre -->
+    <!-- BOUTON MENU -->
+   <button 
+    x-show="!sidebarOpen"
+    @click="sidebarOpen = true"
+    class="lg:hidden fixed top-4 left-4 z-[60] p-3 bg-slate-900 text-white rounded-xl"
+    x-transition>
+    ☰
+</button>
+
+  <nav 
+        class="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900
+        transform transition duration-300 flex flex-col"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+
+        <!-- Bouton fermer -->
+<button 
+    x-show="sidebarOpen"
+    @click="sidebarOpen = false"
+    class="lg:hidden absolute top-8 right-2 z-[60] p-1 text-white bg-blue-700 rounded-full"
+    x-transition>
+    ✕
+</button>
+  <!-- Logo et Titre -->
     <div class="flex-shrink-0">
-        <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-700/50 bg-slate-900/30">
+        <div class="flex items-center gap-3 px-6 py-6 bg-gradient-to-b from-slate-900/95 to-slate-950/70 backdrop-blur-md shadow-2xl">
             <a href="{{ $homeRoute }}" class="flex items-center gap-3 group">
                 <div class="relative">
                     <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
-                        class="w-12 h-12 rounded-2xl shadow-lg ring-2 ring-blue-500/30 group-hover:ring-blue-500/80 group-hover:scale-110 transition-all duration-300">
-                    <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        class="w-12 h-12 rounded-3xl shadow-2xl ring-2 ring-emerald-400/60 group-hover:ring-emerald-300/90 group-hover:scale-110 transition-all duration-400">
+                    <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full animate-ping shadow-lg"></div>
                 </div>
                 <div class="flex flex-col">
-                    <h1 class="text-lg font-bold text-white tracking-wide">Gestion</h1>
-                    <p class="text-xs text-slate-400 font-medium">Stagiaires TFG</p>
+                    <h1 class="text-xl font-black text-white tracking-tight bg-gradient-to-r from-white to-slate-100 bg-clip-text">Gestion Pro</h1>
+                    <p class="text-sm text-emerald-300 font-bold tracking-wide">Administrative TFG</p>
                 </div>
             </a>
         </div>
@@ -28,34 +45,33 @@
 
     <!-- Navigation Principale - Zone scrollable -->
     <div class="flex-1 overflow-y-auto custom-scrollbar px-3 py-4">
-        <!-- Contenu du menu ici... (inchangé) -->
-
         @role('etudiant')
-        <div class="mb-4 rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 shadow-lg shadow-cyan-950/20">
+
+        <div class="rounded-3xl bg-gradient-to-br from-cyan-500/10 to-cyan-900/20 p-3 shadow-2xl shadow-cyan-950/30 backdrop-blur-sm">
             <div class="px-3 py-2">
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">Espace stagiaire</p>
                 <p class="mt-1 text-sm text-slate-300">Les 3 acces utiles pour suivre ton stage sans detour.</p>
             </div>
 
             <div class="mt-2 space-y-2">
-                <a href="{{ route('student.stage') }}"
-                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
-                    <div class="p-2 rounded-xl bg-cyan-500/20">
-                        <svg class="w-5 h-5 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7l9-4 9 4-9 4-9-4zm0 10l9 4 9-4M3 12l9 4 9-4" />
-                        </svg>
-                    </div>
-                    <span>Mon stage</span>
-                </a>
-
-                <a href="{{ route('presence.index') }}"
-                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                <a href="{{ route('presence.pointage') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10 {{ request()->routeIs('presence.pointage') ? 'bg-emerald-500/30 ring-2 ring-emerald-400/50 !text-emerald-100 scale-105' : '' }}" aria-current="page">
                     <div class="p-2 rounded-xl bg-emerald-500/20">
                         <svg class="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <span>Presence</span>
+                    <span>Pointage</span>
+                </a>
+
+                <a href="{{ route('presence.historique') }}"
+                    class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10">
+                    <div class="p-2 rounded-xl bg-blue-500/20">
+                        <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <span>Historique</span>
                 </a>
 
                 <a href="{{ route('reports.index') }}"
@@ -71,7 +87,124 @@
         </div>
         @endrole
 
-        <!-- Menu Stages avec Sous-menu (Admin only) -->
+        @unless(auth()->user()->hasRole('etudiant'))
+        <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
+
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
+            <div class="space-y-1.5">
+                @can('presence.admin.view')
+                <a href="{{ route('admin.presence.index') }}"
+                    class="flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 hover:text-emerald-100 hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 bg-slate-800/30">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-xl bg-emerald-500/30 ring-1 ring-emerald-500/40">
+                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <span>Pointage Admin</span>
+                    </div>
+                    @if(($anomaliesCount ?? 0) > 0)
+                    <span class="px-2.5 py-1 text-xs font-bold bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-full shadow-lg animate-pulse ring-1 ring-rose-400/50">{{ $anomaliesCount }}</span>
+                    @endif
+                </a>
+                @endcan
+
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open" type="button"
+                        class="group w-full flex items-center justify-between px-5 py-4 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 bg-slate-800/40 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 -skew-x-12"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-400/30 to-blue-400/30 ring-1 ring-emerald-500/50">
+                                <svg class="w-5 h-5 text-emerald-500 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
+                                </svg>
+                            </div>
+                            <span class="text-white text-xl font-bold">Suivi</span>
+                            <span class="px-3 py-1 text-xs bg-emerald-500/30 text-gray-200 font-bold rounded-full ring-1 ring-emerald-800/50">Pro</span>
+                        </div>
+                        <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-5 h-5 text-emerald-300 transform transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-cloak="open" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 space-y-1.5 pl-3 border-l-2 border-emerald-500/30 bg-slate-900/50 rounded-2xl p-3">
+                        @can('presence.view')
+                        <a href="{{ route('attendance.tracking.index') }}"
+                            class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-blue-500/50">
+                            📊 Suivi Pointages
+                        </a>
+                        @endcan
+
+                        @can('daily_reports.view')
+                        <a href="{{ route('admin.reports.index') }}"
+                            class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-500/50">
+                            📈 Suivi Rapports
+                        </a>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+            @else
+            <div x-data="{ open: false }" class="space-y-1">
+                <button @click="open = !open" type="button"
+                    class="group w-full flex items-center justify-between px-5 py-4 mb-3 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 border border-slate-700/30 bg-slate-800/40 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 -skew-x-12"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="p-2.5 rounded-xl bg-gradient-to-br from-emerald-400/30 to-blue-400/30 ring-1 ring-emerald-500/50">
+                            <svg class="w-5 h-5 text-emerald-300 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
+                            </svg>
+                        </div>
+                        <span>Suivi</span>
+                        <span class="px-3 py-1 text-xs bg-emerald-500/30 text-emerald-200 font-bold rounded-full ring-1 ring-emerald-400/50">Pro</span>
+                    </div>
+                    <svg x-bind:class="open ? 'rotate-180' : 'rotate-0'" class="w-5 h-5 text-emerald-300 transform transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="open" x-cloak="open" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 space-y-1.5 pl-3 border-l-2 border-emerald-500/30 bg-slate-900/50 rounded-2xl p-3">
+                    @can('presence.view')
+                    <a href="{{ route('presence.pointage') }}"
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-emerald-500/30">
+                        <div class="p-2 rounded-xl bg-emerald-500/30 ring-1 ring-emerald-500/40">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m-6 0h2m-2 0v2" />
+                            </svg>
+                        </div>
+                        Pointage Présence
+                    </a>
+                    @endcan
+
+                    @can('daily_reports.view')
+                    <a href="{{ route('reports.index') }}"
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-amber-600/20 hover:text-amber-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-amber-500/30">
+                        <div class="p-2 rounded-xl bg-amber-500/30 ring-1 ring-amber-500/40">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        Rapports de travail
+                    </a>
+                    @endcan
+
+                    @can('presence.view')
+                    <a href="{{ route('presence.historique') }}"
+                        class="flex items-center gap-3 pl-3 pr-4 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 hover:translate-x-1 transition-all duration-300 border border-slate-700/20 bg-slate-800/20 shadow-sm hover:shadow-blue-500/30">
+                        <div class="p-2 rounded-xl bg-blue-500/30 ring-1 ring-blue-500/40">
+                            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                        <span>Historique</span>
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            @endif
+        </div>
+        @endunless
+
+        <!-- Menu Stages - ADMIN SEULEMENT -->
+        @role('admin')
         @canany(['stages.view', 'type_stages.view', 'services.view', 'sites.view', 'tasks.view', 'signataires.view', 'jour_stage.view'])
         <div class="mb-3" x-data="{ open: false }">
             <button @click="open = !open"
@@ -130,27 +263,7 @@
                     <span>Services</span>
                 </a>
                 @endcan
-                @can('sites.view')
-                <a href="{{ route('sites.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Sites</span>
-                </a>
-                @endcan
-                @can('tasks.view')
-                <a href="{{ route('tasks.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
-                    </svg>
-                    <span>Taches</span>
-                </a>
-                @endcan
+
                 @can('signataires.view')
                 <a href="{{ route('signataires.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
@@ -184,7 +297,55 @@
             </div>
         </div>
         @endcanany
+        @endrole
 
+        <!-- Employés avec Sous-menu -->
+        @canany(['domaines.view', 'users.view'])
+        <div class="mb-3" x-data="{ open: false }">
+            <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden"
+                :class="open ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
+                <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="flex items-center gap-3 relative z-10">
+                    <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm"
+                        :class="open ? 'bg-white/20' : 'bg-slate-700/50'">
+                        <svg class="w-5 h-5" :class="open ? 'text-white' : 'text-cyan-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <span>Employés</span>
+                </div>
+                <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
+                </svg>
+            </button>
+
+            <!-- Sous-menu Employés -->
+            <div x-show="open" x-collapse @click.outside="open = false"
+                class="mt-3 ml-4 space-y-2 overflow-hidden">
+                @can('domaines.view')
+                <a href="{{ route('domaines.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>Gérer Domaines</span>
+                </a>
+                @endcan
+                @foreach($domaines as $domaine)
+                <a href="{{ route('employes.by_domaine', $domaine) }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>{{ $domaine->nom }}</span>
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endcanany
         <!-- Étudiants -->
         @can('etudiants.view')
         @unlessrole('etudiant')
@@ -207,7 +368,6 @@
         </a>
         @endunlessrole
         @endcan
-
         <!-- Badges -->
         @can('badges.view')
         @unlessrole('etudiant')
@@ -251,7 +411,7 @@
             </span>
             @endif
         </a>
-        @endcan
+        @endrole
 
         <!-- Rôles (Admin only) -->
         @role('admin')
@@ -272,7 +432,7 @@
             </span>
             @endif
         </a>
-        @endcan
+        @endrole
 
         <!-- Corbeille Globale (Admin only) -->
         @can('corbeille.view')
@@ -294,7 +454,27 @@
             @endif
         </a>
         @endcan
-
+        @can('sites.view')
+        <a href="{{ route('sites.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+            <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+            <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Sites</span>
+        </a>
+        @endcan
+        @can('tasks.view')
+        <a href="{{ route('tasks.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
+            <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
+            </svg>
+            <span>Taches</span>
+        </a>
+        @endcan
         <!-- Divider -->
         @can('dashboard.view')
         @unlessrole('etudiant')
@@ -321,7 +501,7 @@
     </div>
 
     <!-- Profil Utilisateur en bas du Sidebar -->
-    <div class="flex-shrink-0 p-4 border-t border-slate-700/50 bg-slate-900/50 backdrop-blur-sm" x-data="{ userMenuOpen: false }">
+    <div class="flex-shrink-0 p-5 bg-gradient-to-t from-slate-900/90 to-transparent backdrop-blur-xl" x-data="{ userMenuOpen: false }">
         <button @click="userMenuOpen = !userMenuOpen"
             class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 group">
             @if(Auth::user()->avatar)
@@ -364,25 +544,15 @@
         </div>
     </div>
 </nav>
+ <!-- 🔥 OVERLAY ICI EXACTEMENT -->
+    <div x-show="sidebarOpen"
+        @click="sidebarOpen = false"
+        class="lg:hidden fixed inset-0 bg-black/60 z-30"
+        x-transition>
+    </div>
 
-<!-- Bouton Mobile pour ouvrir sidebar -->
-<button @click="sidebarOpen = !sidebarOpen"
-    class="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-slate-800/90 backdrop-blur-sm text-white shadow-xl hover:bg-slate-700 transition-all duration-300 hover:scale-105">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-</button>
-
-<!-- Overlay pour mobile -->
-<div x-show="sidebarOpen" @click="sidebarOpen = false"
-    class="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-all duration-300"
-    x-transition:enter="transition ease-out duration-200"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0">
 </div>
+
 
 <style>
     .custom-scrollbar::-webkit-scrollbar {
@@ -402,3 +572,4 @@
         background: rgba(148, 163, 184, 0.5);
     }
 </style>
+
