@@ -44,8 +44,8 @@ class AppServiceProvider extends ServiceProvider
         // Enregistrer le ViewComposer pour la navigation
         View::composer('layouts.navigation', NavigationComposer::class);
 
-        // Enregistrer le ViewComposer pour les notifications (pour toutes les vues)
-        View::composer('layouts.app', NotificationComposer::class);
+        // Enregistrer le ViewComposer pour les notifications (TOUTES LES VUES ✨)
+        View::composer('*', NotificationComposer::class);
 
         // Route Model Binding personnalisé pour le décryptage
         // Ce binding s'exécute automatiquement quand une route contient {stage}, {etudiant}, etc.

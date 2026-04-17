@@ -15,19 +15,18 @@ class NotificationComposer
         $this->notificationService = $notificationService;
     }
 
-    /**
-     * Composer les données de notification pour toutes les vues
-     */
     public function compose(View $view)
     {
-        // Générer les notifications automatiquement
-        $this->notificationService->generateNotifications();
+        if (!Auth::check()) {
+            return;
+        }
 
-        // Récupérer les notifications non lues
-        $notifications = $this->notificationService->getUnreadNotifications();
-        $notificationCount = $this->notificationService->getUnreadCount();
+        $count = $this->notificationService->getUnreadCount();
+        $recent = $this->notificationService->getUnreadNotifications()->take(5);
 
-        $view->with('notifications', $notifications);
-        $view->with('notificationCount', $notificationCount);
+        $view->with([
+            'notificationCount' => $count,
+            'notifications' => $recent,
+        ]);
     }
 }

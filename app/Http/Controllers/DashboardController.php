@@ -65,14 +65,12 @@ class DashboardController extends Controller
 
         $today = Carbon::now()->startOfDay();
 
-        // ==================== Notifications ====================
-        $notifications = AppNotification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->take(2)
-            ->get();
-        $notificationCount = AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
-            ->count();
+        // ==================== Notifications (via Service + ViewComposer universel) ====================
+        $notificationService = app(\App\Services\NotificationService::class);
+        $notificationService->generateNotifications(); // Génère si nécessaire
+
+        $notifications = $notificationService->getUnreadNotifications();
+        $notificationCount = $notificationService->getUnreadCount();
 
         // ==================== KPIs Principaux ====================
         $totalStages = Stage::count();

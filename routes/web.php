@@ -277,5 +277,36 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+
+        // 🔥 API JSON pour menu mobile dynamique
+        Route::get('/unread-json', function () {
+            $service = app(\App\Services\NotificationService::class);
+            return response()->json([
+                'count' => $service->getUnreadCount(),
+                'notifications' => $service->getUnreadNotifications()->take(5)->map(function ($notif) {
+                    return [
+                        'id' => $notif->id,
+                        'title' => $notif->title,
+                        'message' => $notif->message,
+                        'color' => $notif->color ?? 'blue',
+                        'created_at' => $notif->created_at->diffForHumans(),
+                        'read_at' => $notif->read_at ? true : false,
+                        'url' => $notif->url
+                    ];
+                })
+            ]);
+        })->name('notifications.unread.json');
+
+        Route::post('/mark-read/{id}', function ($id) {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAsRead($id);
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-read.api');
+
+        Route::post('/mark-all-read-api', function () {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAllAsRead();
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-all.api');
     });
 });

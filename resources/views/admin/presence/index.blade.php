@@ -64,7 +64,7 @@
             <x-stats-card
                 title="Anomalies Ouvertes"
                 value="{{ $globalStats['total_anomalies'] ?? 0 }}"
-                change="‑{{ AttendanceAnomaly::where('status', 'resolved')->whereDate('resolved_at', today())->count() }}"
+                change="‑{{ \App\Models\AttendanceAnomaly::where('status', 'resolved')->whereDate('reviewed_at', today())->count() }}"
                 icon="exclamation-triangle"
                 color="rose">
                 <x-slot:subtitle>À reviewer</x-slot:subtitle>

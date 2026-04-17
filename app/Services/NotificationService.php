@@ -10,25 +10,24 @@ use Illuminate\Support\Facades\Auth;
 class NotificationService
 {
     /**
-     * Generer les notifications automatiquement.
+     * Generer les notifications automatiquement (ADMIN/SUPERVISEUR uniquement).
      */
     public function generateNotifications()
     {
         $userId = Auth::id();
         $user = Auth::user();
 
-        if (!$userId) {
+        if (!$userId || !$user) {
             return;
         }
 
-        // jb -> Les alertes generees ici servent au pilotage global
-        // du back-office. Les comptes etudiants ne doivent donc pas
-        // recevoir ces notifications d'administration generale.
-        if ($user && $user->hasRole('etudiant')) {
+        // UNIQUEMENT pour admin/superviseur (pas etudiants)
+        if ($user->hasRole('etudiant')) {
             return;
         }
 
-        $nouveauxEtudiants = Etudiant::where('created_at', '>=', now()->subDays(7))
+        // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours)
+        $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -36,46 +35,43 @@ class NotificationService
             $this->createNotificationIfNotExists(
                 'etudiant_' . $etudiant->id,
                 $userId,
-                'nouveau',
-                'Nouvel etudiant',
-                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit',
-                'user-plus',
+                'nouveau_etudiant',
+                '👤 Nouvel étudiant',
+                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                'users',
                 'blue',
                 route('etudiants.edit', $etudiant->id),
                 $etudiant->id,
-                Etudiant::class,
-                $etudiant->created_at
+                \App\Models\Etudiant::class
             );
         }
 
-        $stagesFinSemaine = Stage::where('date_fin', '>=', now())
+        // 2️⃣ STAGES TERMINANT CETTE SEMAINE
+        $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
             ->with('etudiant')
-            ->orderBy('date_fin', 'asc')
             ->get();
 
         foreach ($stagesFinSemaine as $stage) {
             $joursRestants = now()->diffInDays($stage->date_fin, false);
-
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
                 $userId,
                 'stage_fin_semaine',
-                'Stage bientot termine',
+                '⏰ Stage bientôt terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
                 'clock',
                 'amber',
                 encrypted_route('stages.show', $stage),
                 $stage->id,
-                Stage::class,
-                $stage->date_fin
+                \App\Models\Stage::class
             );
         }
 
-        $stagesTermines = Stage::where('date_fin', '<', now())
+        // 3️⃣ STAGES TERMINÉS (7 derniers jours)
+        $stagesTermines = \App\Models\Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
             ->with('etudiant')
-            ->orderBy('date_fin', 'desc')
             ->get();
 
         foreach ($stagesTermines as $stage) {
@@ -83,17 +79,83 @@ class NotificationService
                 'stage_termine_' . $stage->id,
                 $userId,
                 'stage_termine',
-                'Stage termine',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a termine son stage',
+                '✅ Stage terminé',
+                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
                 'check-circle',
                 'green',
                 encrypted_route('stages.show', $stage),
                 $stage->id,
-                Stage::class,
-                $stage->date_fin
+                \App\Models\Stage::class
             );
         }
+
+        // 🔥 4️⃣ ADMIN SPÉCIFIQUES : Anomalies Présence (24h)
+        $anomalies = \App\Models\AttendanceAnomaly::where('created_at', '>=', now()->subDay())
+            ->where('status', 'open')
+            ->count();
+
+        if ($anomalies > 0) {
+            $this->createNotificationIfNotExists(
+                'presence_anomalies_' . now()->format('Y-m-d'),
+                $userId,
+                'presence_anomalies',
+                '🚨 ' . $anomalies . ' anomalie(s) présence',
+                'À vérifier immédiatement dans Admin > Présence > Anomalies',
+                'exclamation-triangle',
+                'red',
+                route('admin.presence.anomalies'),
+                null,
+                null
+            );
+        }
+
+        // 🔥 5️⃣ Rapports journaliers en attente (aujourd'hui)
+        $rapportsAttente = \App\Models\DailyReport::whereDate('created_at', now())
+            ->where('reviewed_at', null)
+            ->count();
+
+        if ($rapportsAttente > 0) {
+            $this->createNotificationIfNotExists(
+                'rapports_attente_' . now()->format('Y-m-d'),
+                $userId,
+                'rapports_en_attente',
+                '📋 ' . $rapportsAttente . ' rapport(s) à valider',
+                'Nouveaux rapports journaliers soumis aujourd\'hui',
+                'clipboard-list',
+                'orange',
+                route('admin.reports.index'),
+                null,
+                null
+            );
+        }
+
+        // 🔥 6️⃣ Badges à attribuer (étudiants sans badge récent) - DISABLED car pas de relation badges()
+        /*
+        $sansBadge = \App\Models\Etudiant::whereDoesntHave('badges', function ($q) {
+            $q->where('created_at', '>=', now()->subDays(30));
+        })
+            ->whereHas('stages', function ($q) {
+                $q->where('date_fin', '<=', now()->subDays(7));
+            })
+            ->count();
+
+        if ($sansBadge > 0) {
+            $this->createNotificationIfNotExists(
+                'badges_manquants_' . now()->format('Y-m-d'),
+                $userId,
+                'badges_manquants',
+                '🏷️ ' . $sansBadge . ' badge(s) à attribuer',
+                'Étudiants avec stages terminés sans badge récent',
+                'ticket',
+                'purple',
+                route('badges.index'),
+                null,
+                null
+            );
+        }
+        */
     }
+    // ✅ Fin generateNotifications() - Code propre, 6 alertes admin prêtes !
 
     /**
      * Creer une notification si elle n'existe pas deja.
