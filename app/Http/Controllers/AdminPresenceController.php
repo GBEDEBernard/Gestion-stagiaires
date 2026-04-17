@@ -135,20 +135,102 @@ class AdminPresenceController extends Controller
     /**
      * Liste anomalies.
      */
-   /**
- * Liste anomalies.
- */
-public function anomalies(Request $request)
-{
-    $anomalies = $this->presenceService->getOpenAnomalies(100);
+    /**
+     * Liste anomalies.
+     */
+    public function anomalies(Request $request)
+    {
+        $anomalies = $this->presenceService->getOpenAnomalies(100);
 
-    if ($request->wantsJson()) {
-        return response()->json($anomalies);
+        if ($request->wantsJson()) {
+            return response()->json($anomalies);
+        }
+
+        // ✅ Correction : utiliser Blade au lieu d'Inertia
+        return view('admin.presence.anomalies', compact('anomalies'));
     }
 
-    // ✅ Correction : utiliser Blade au lieu d'Inertia
-    return view('admin.presence.anomalies', compact('anomalies'));
-}
+    /**
+     * ✅ Suivi Pointage - Admin
+     */
+    public function pointageSuivi(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $userId = $request->get('user_id');
+
+        // Stats rapides
+        $today = today();
+        $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
+        $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
+        $checkoutsToday = \App\Models\AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
+        $recentAnomalies = \App\Models\AttendanceAnomaly::where('status', 'open')
+            ->where('detected_at', '>=', now()->subDays(7))
+            ->count();
+        $avgAccuracy = \App\Models\AttendanceEvent::whereNotNull('gps_accuracy')
+            ->avg('gps_accuracy') ?? 0;
+
+        // Users pour filtre
+        $users = \App\Models\User::select('id', 'name')
+            ->whereHas('attendanceEvents')
+            ->orderBy('name')
+            ->limit(50)
+            ->get();
+
+        // Events récents
+        $query = \App\Models\AttendanceEvent::with(['user', 'attendanceDay.stage.site', 'anomalies'])
+            ->orderByDesc('occurred_at');
+
+        if ($date) {
+            $query->whereDate('occurred_at', $date);
+        }
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $events = $query->paginate(50);
+
+        return view('admin.presence.pointage-suivi', compact(
+            'events',
+            'todayCount',
+            'checkinsToday',
+            'checkoutsToday',
+            'recentAnomalies',
+            'avgAccuracy',
+            'users',
+            'date',
+            'userId'
+        ));
+    }
+
+    /**
+     * Export pointages CSV
+     */
+    public function exportPointages(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $query = \App\Models\AttendanceEvent::with(['user', 'attendanceDay.stage.site'])
+            ->whereDate('occurred_at', $date);
+
+        $events = $query->get();
+
+        $csv = $events->map(function ($event) {
+            return [
+                $event->occurred_at->format('d/m/Y H:i'),
+                $event->user?->name ?? 'N/A',
+                $event->event_type === 'check_in' ? 'Entrée' : 'Sortie',
+                $event->attendanceDay?->stage?->site?->nom ?? 'Hors site',
+                $event->gps_accuracy ?? 'N/A',
+                $event->status,
+            ];
+        });
+
+        return response()->streamDownload(function () use ($csv) {
+            echo "Date Heure,Utilisateur,Type,Site,Précision,Statut\n";
+            foreach ($csv as $row) {
+                echo implode(';', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $row)) . "\n";
+            }
+        }, 'pointages-' . $date . '.csv');
+    }
     /**
      * Résoudre anomalie.
      */

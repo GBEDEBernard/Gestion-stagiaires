@@ -261,44 +261,49 @@ class AdminPresenceService
     /**
      * Stats par groupe (étudiants vs employés).
      */
-    public function getStatsByGroup(string $group = 'all', string $period = 'today'): array
-    {
-        $etudiantsQuery = AttendanceDay::whereNotNull('etudiant_id');
-        $employesQuery = AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id');
+    /**
+ * Stats par groupe (étudiants vs employés).
+ */
+public function getStatsByGroup(string $group = 'all', string $period = 'today'): array
+{
+    $etudiantsQuery = AttendanceDay::whereNotNull('etudiant_id');
+    $employesQuery  = AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id');
 
-        if ($period !== 'today') {
-            // Apply period filter similar to getGlobalStats
-            $start = match ($period) {
-                'week' => now()->startOfWeek(),
-                'month' => now()->startOfMonth(),
-                'year' => now()->startOfYear(),
-                default => today()
-            };
-            $end = match ($period) {
-                'week' => now()->endOfWeek(),
-                'month' => now()->endOfMonth(),
-                'year' => now()->endOfYear(),
-                default => today()
-            };
-            [$etudiantsQuery, $employesQuery] = [$etudiantsQuery, $employesQuery]
-                ->each(fn($q) => $q->whereBetween('attendance_date', [$start, $end]));
-        }
+    // Appliquer le filtre de période
+    if ($period !== 'today') {
+        $start = match ($period) {
+            'week'  => now()->startOfWeek(),
+            'month' => now()->startOfMonth(),
+            'year'  => now()->startOfYear(),
+            default => today()
+        };
 
-        return [
-            'etudiants' => [
-                'count' => $etudiantsQuery->count(),
-                'present' => $etudiantsQuery->whereNotNull('first_check_in_at')->count(),
-                'late' => $etudiantsQuery->where('arrival_status', 'late')->count(),
-                'avg_worked_hours' => round($etudiantsQuery->avg('worked_minutes') / 60, 1),
-            ],
-            'employes' => [
-                'count' => $employesQuery->count(),
-                'present' => $employesQuery->whereNotNull('first_check_in_at')->count(),
-                'late' => $employesQuery->where('arrival_status', 'late')->count(),
-                'avg_worked_hours' => round($employesQuery->avg('worked_minutes') / 60, 1),
-            ],
-        ];
+        $end = match ($period) {
+            'week'  => now()->endOfWeek(),
+            'month' => now()->endOfMonth(),
+            'year'  => now()->endOfYear(),
+            default => today()
+        };
+
+        $etudiantsQuery->whereBetween('attendance_date', [$start, $end]);
+        $employesQuery->whereBetween('attendance_date', [$start, $end]);
     }
+
+    return [
+        'etudiants' => [
+            'count'            => $etudiantsQuery->count(),
+            'present'          => $etudiantsQuery->whereNotNull('first_check_in_at')->count(),
+            'late'             => $etudiantsQuery->where('arrival_status', 'late')->count(),
+            'avg_worked_hours' => round(($etudiantsQuery->avg('worked_minutes') ?? 0) / 60, 1),
+        ],
+        'employes' => [
+            'count'            => $employesQuery->count(),
+            'present'          => $employesQuery->whereNotNull('first_check_in_at')->count(),
+            'late'             => $employesQuery->where('arrival_status', 'late')->count(),
+            'avg_worked_hours' => round(($employesQuery->avg('worked_minutes') ?? 0) / 60, 1),
+        ],
+    ];
+}
 
     /**
      * Stats détaillées utilisateur (pour vue admin individuelle).

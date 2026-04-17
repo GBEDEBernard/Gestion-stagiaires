@@ -1,16 +1,31 @@
-# TODO: Correction Erreur Pagination Notifications
+# TODO Progress Tracker
 
-**Statut: En cours** | **Plan approuvé par utilisateur**
+## Task: Clean Presence/Anomalies tabs in admin sidebar with nice Suivi
 
-## Étapes (5/5 restantes):
+✅ **1. Plan approved by user** - Add "Présence" dropdown with Anomalies link + badge, enhance "Suivi Pro"
 
-- [x]   1. Modifier `app/Http/ViewComposers/NotificationComposer.php` (renommer `$notifications` → `$menuNotifications`)\n- [x] 2. Modifier `resources/views/notifications/index.blade.php` (gérer pagination conditionnelle)
-- [x]   3. Vérifier + corriger `app/Providers/AppServiceProvider.php` et layouts (ViewComposer `*` confirmé)
-- [x]   4. Nettoyer caches ✅ (`php artisan view:clear && php artisan view:cache && php artisan route:clear && php artisan config:clear`)
-- [x]   5. **TÂCHE TERMINÉE** ✅\n\nRoutes vérifiées: `notifications.index` OK\nCaches nettoyés\nFichiers corrigés\n\n**Testez:** `php artisan serve` puis visitez `http://127.0.0.1:8000/notifications`
+# TODO Progress Tracker - ✅ TASK COMPLETE
 
-**Notes:**
+**Task accomplished:**
 
-- Garder `$notificationCount` pour menu/bandeau
-- Contrôleur déjà correct (paginate(15))
-- Tout en français
+- ✅ Added clean "Présence" dropdown in admin sidebar (after Pointage Admin)
+    - 🚨 Direct "Tableau Anomalies" link with badge (`route('admin.presence.anomalies')`)
+    - 📊 "Suivi Pointages" link (`admin.presence.pointage-suivi`)
+- ✅ Enhanced professional styling (amber gradients, icons, hovers, badges)
+- ✅ View cache cleared (`php artisan view:clear`)
+- ✅ Sidebar now displays presence tabs + anomalies table cleanly in admin navigation
+- ✅ Responsive, matches existing design (Tailwind/Alpine)
+
+**Updated admin sidebar structure:**
+
+```
+Pointage Admin [anomalies badge]
+📋 Présence (new dropdown)
+├─ 🚨 Tableau Anomalies [badge]
+└─ 📊 Suivi Pointages
+📈 Suivi Pro
+```
+
+Run `php artisan serve` → login as admin to see the new clean presence/anomalies sidebar with professional suivi tracking.
+
+**Status:** Complete
