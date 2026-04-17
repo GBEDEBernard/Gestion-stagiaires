@@ -9,8 +9,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\AdminPresenceService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
+
 use Carbon\Carbon;
 
 class AdminPresenceController extends Controller
@@ -136,19 +135,20 @@ class AdminPresenceController extends Controller
     /**
      * Liste anomalies.
      */
-    public function anomalies(Request $request)
-    {
-        $anomalies = $this->presenceService->getOpenAnomalies(100);
+   /**
+ * Liste anomalies.
+ */
+public function anomalies(Request $request)
+{
+    $anomalies = $this->presenceService->getOpenAnomalies(100);
 
-        if ($request->wantsJson()) {
-            return response()->json($anomalies);
-        }
-
-        return Inertia::render('Admin/Presence/Anomalies', [
-            'anomalies' => $anomalies,
-        ]);
+    if ($request->wantsJson()) {
+        return response()->json($anomalies);
     }
 
+    // ✅ Correction : utiliser Blade au lieu d'Inertia
+    return view('admin.presence.anomalies', compact('anomalies'));
+}
     /**
      * Résoudre anomalie.
      */
