@@ -11,7 +11,10 @@ class TaskController extends Controller
 {
     public function index()
     {
-        $tasks = Task::with(['stage.etudiant', 'assignedBy'])->latest()->paginate(10);
+        $tasks = Task::with(['stage.etudiant', 'assignedBy'])
+            ->visibleTo(auth()->user())
+            ->latest()
+            ->paginate(10);
 
         return view('admin.tasks.index', compact('tasks'));
     }

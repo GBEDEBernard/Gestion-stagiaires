@@ -246,10 +246,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Rapports journaliers ----------------
     Route::prefix('reports')->group(function () {
-        Route::get('/', [DailyReportController::class, 'index'])->name('reports.index')->middleware('permission:daily_reports.view');
-        Route::post('/', [DailyReportController::class, 'store'])->name('reports.store')->middleware('permission:daily_reports.create');
-    });
 
+        // accès lecture
+        Route::get('/', [DailyReportController::class, 'index'])
+            ->name('reports.index');
+
+        // création (étudiant ou employé autorisé via logique controller)
+        Route::post('/', [DailyReportController::class, 'store'])
+            ->name('reports.store');
+    });
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');

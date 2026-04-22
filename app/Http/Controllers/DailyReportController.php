@@ -7,7 +7,6 @@ use App\Models\AttendanceDay;
 use App\Models\DailyReport;
 use App\Services\DailyReportService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class DailyReportController extends Controller
 {
@@ -15,109 +14,97 @@ class DailyReportController extends Controller
         protected DailyReportService $dailyReportService
     ) {}
 
+    /**
+     * 📊 AFFICHAGE (daily / history)
+     */
     public function index(Request $request)
     {
         $user = $request->user();
+        $period = $request->get('period', 'daily');
+
         $etudiant = $user->etudiant;
         $isEmployee = $user->hasRole('employe');
 
-        // Allow both students and employees to access reports
-        if (!$etudiant && !$isEmployee) {
-            abort_if(true, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        if (!$etudiant && !$isEmployee && !$user->hasRole('admin')) {
+            abort(403);
         }
 
-        $period = $request->get('period', 'daily');
-        $activeStage = $etudiant ? $this->dailyReportService->resolveActiveStageForUser($user) : null;
+        $activeStage = $etudiant
+            ? $this->dailyReportService->resolveActiveStageForUser($user)
+            : null;
 
+        $query = DailyReport::query()->visibleTo($user)
+            ->with(['items', 'reviews'])
+            ->orderByDesc('report_date');
+
+        /* ======================
+       DAILY
+    ====================== */
         if ($period === 'daily') {
-            $attendanceDay = null;
-            if ($etudiant && $activeStage) {
-                $attendanceDay = AttendanceDay::where('stage_id', $activeStage->id)
-                    ->whereDate('attendance_date', today())
-                    ->first();
-            } elseif ($isEmployee) {
-                $attendanceDay = AttendanceDay::where('user_id', $user->id)
-                    ->whereDate('attendance_date', today())
-                    ->first();
-            }
 
-            $todayReport = null;
-            if ($etudiant && $activeStage) {
-                $todayReport = $activeStage->dailyReports()
-                    ->with(['items.task', 'reviews'])
-                    ->whereDate('report_date', today())
-                    ->first();
-            } elseif ($isEmployee) {
-                $todayReport = DailyReport::where('user_id', $user->id)
-                    ->with(['items.task', 'reviews'])
-                    ->whereDate('report_date', today())
-                    ->first();
-            }
+            $todayReport = (clone $query)
+                ->whereDate('report_date', today())
+                ->first();
 
-            $taskItems = $todayReport && $etudiant && $activeStage
-                ? $todayReport->items->whereNotNull('task_id')->keyBy('task_id')
-                : collect();
-            $freeItems = $todayReport
-                ? $todayReport->items->whereNull('task_id')->values()
-                : collect();
+            $reports = (clone $query)->limit(10)->get();
 
             return view('reports.index', compact(
-                'activeStage',
-                'attendanceDay',
                 'todayReport',
-                'taskItems',
-                'freeItems',
-                'period',
-                'isEmployee'
-            ));
-        } else {
-            // For weekly/monthly, show history of reports
-            $dateFrom = match ($period) {
-                'weekly' => now()->startOfWeek(),
-                'monthly' => now()->startOfMonth(),
-                default => now()->startOfWeek()
-            };
-
-            $reports = collect();
-            if ($etudiant && $activeStage) {
-                $reports = $activeStage->dailyReports()
-                    ->with(['items.task', 'reviews'])
-                    ->where('report_date', '>=', $dateFrom)
-                    ->where('report_date', '<=', now())
-                    ->orderBy('report_date', 'desc')
-                    ->get();
-            } elseif ($isEmployee) {
-                $reports = DailyReport::where('user_id', $user->id)
-                    ->with(['items.task', 'reviews'])
-                    ->where('report_date', '>=', $dateFrom)
-                    ->where('report_date', '<=', now())
-                    ->orderBy('report_date', 'desc')
-                    ->get();
-            }
-
-            return view('reports.index', compact(
-                'activeStage',
                 'reports',
                 'period',
+                'activeStage',
                 'isEmployee'
             ));
         }
+
+        /* ======================
+       WEEKLY / MONTHLY
+    ====================== */
+
+        $dateFrom = match ($period) {
+            'weekly' => now()->startOfWeek(),
+            'monthly' => now()->startOfMonth(),
+            default => now()->startOfWeek()
+        };
+
+        $reports = $query
+            ->whereBetween('report_date', [$dateFrom, now()])
+            ->get();
+
+        return view('reports.index', compact(
+            'reports',
+            'period',
+            'activeStage',
+            'isEmployee'
+        ));
     }
 
     public function store(StoreDailyReportRequest $request)
     {
-        try {
-            $report = $this->dailyReportService->storeForToday($request->user(), $request->validated());
-        } catch (ValidationException $exception) {
-            throw $exception;
+        $this->dailyReportService
+            ->storeForToday($request->user(), $request->validated());
+
+        return back()->with('success', 'Rapport enregistré.');
+    }
+
+    public function update(Request $request, DailyReport $report)
+    {
+        $user = $request->user();
+
+        if (
+            $report->user_id !== $user->id &&
+            $report->etudiant_id !== optional($user->etudiant)->id
+        ) {
+            abort(403);
         }
 
-        $message = $report->status === 'submitted'
-            ? 'Rapport du jour soumis avec succes.'
-            : 'Brouillon du rapport du jour enregistre.';
+        $report->update($request->validate([
+            'summary' => 'required|string',
+            'blockers' => 'nullable|string',
+            'next_steps' => 'nullable|string',
+            'hours_declared' => 'nullable|numeric|min:0|max:24',
+        ]));
 
-        return redirect()
-            ->route('reports.index')
-            ->with('success', $message);
+        return back()->with('success', 'Rapport mis à jour.');
     }
 }
