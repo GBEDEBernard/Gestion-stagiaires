@@ -64,11 +64,17 @@ class User extends Authenticatable implements MustVerifyEmail
         // jb -> Cette methode centralise la destination post-authentification
         // selon le role principal pour eviter les redirections dupliquees
         // dans plusieurs controlleurs.
+<<<<<<< HEAD
+        // Étudiants et superviseurs atterrissent directement sur la page de pointage.
+        if ($this->hasRole('etudiant') || $this->hasRole('superviseur')) {
+            return 'presence.pointage';
+=======
         if ($this->hasRole('etudiant')) {
             return 'student.stage';
         }
         if ($this->hasRole('superviseur')) {
             return 'superviseur.dashboard';
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         }
         return 'dashboard';
     }
@@ -133,8 +139,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(AttendanceDay::class);
     }
 
+<<<<<<< HEAD
+=======
 
 
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
     public function dailyReportReviews()
     {
         return $this->hasMany(DailyReportReview::class, 'reviewer_id');
