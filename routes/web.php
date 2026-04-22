@@ -237,7 +237,10 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
         Route::get('/validate', [PresenceController::class, 'showValidation'])->name('presence.validate');
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
+<<<<<<< HEAD
         Route::post('/confirm-ajax', [PresenceController::class, 'confirmAjax'])->name('presence.confirm.ajax'); // ← Nouvelle route AJAX
+=======
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });
@@ -249,15 +252,27 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     });
 
     // ---------------- Supervision Présence Admin ----------------
+<<<<<<< HEAD
     Route::prefix('admin/presence')->middleware('permission:presence.admin.view')->group(function () {
+=======
+    Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
         Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
+<<<<<<< HEAD
         Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
             ->name('admin.presence.anomalies.resolve')
             ->middleware('permission:presence.admin.anomalies.review');
+=======
+        Route::get('/pointage-suivi', [AdminPresenceController::class, 'pointageSuivi'])->name('admin.presence.pointage-suivi');
+        Route::get('/export-pointages', [AdminPresenceController::class, 'exportPointages'])->name('admin.presence.export-pointages');
+        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
+            ->name('admin.presence.anomalies.resolve')
+            ->middleware('can:reviewAdminAnomalies');
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
 
@@ -278,5 +293,36 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+
+        // 🔥 API JSON pour menu mobile dynamique
+        Route::get('/unread-json', function () {
+            $service = app(\App\Services\NotificationService::class);
+            return response()->json([
+                'count' => $service->getUnreadCount(),
+                'notifications' => $service->getUnreadNotifications()->take(5)->map(function ($notif) {
+                    return [
+                        'id' => $notif->id,
+                        'title' => $notif->title,
+                        'message' => $notif->message,
+                        'color' => $notif->color ?? 'blue',
+                        'created_at' => $notif->created_at->diffForHumans(),
+                        'read_at' => $notif->read_at ? true : false,
+                        'url' => $notif->url
+                    ];
+                })
+            ]);
+        })->name('notifications.unread.json');
+
+        Route::post('/mark-read/{id}', function ($id) {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAsRead($id);
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-read.api');
+
+        Route::post('/mark-all-read-api', function () {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAllAsRead();
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-all.api');
     });
 });

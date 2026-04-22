@@ -9,7 +9,11 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\AdminPresenceService;
 use Illuminate\Http\Request;
+<<<<<<< HEAD
 use Inertia\Inertia;
+=======
+
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
 use Carbon\Carbon;
 
 class AdminPresenceController extends Controller
@@ -135,6 +139,12 @@ class AdminPresenceController extends Controller
     /**
      * Liste anomalies.
      */
+<<<<<<< HEAD
+=======
+    /**
+     * Liste anomalies.
+     */
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
     public function anomalies(Request $request)
     {
         $anomalies = $this->presenceService->getOpenAnomalies(100);
@@ -143,12 +153,99 @@ class AdminPresenceController extends Controller
             return response()->json($anomalies);
         }
 
+<<<<<<< HEAD
         return Inertia::render('Admin/Presence/Anomalies', [
             'anomalies' => $anomalies,
         ]);
     }
 
     /**
+=======
+        // ✅ Correction : utiliser Blade au lieu d'Inertia
+        return view('admin.presence.anomalies', compact('anomalies'));
+    }
+
+    /**
+     * ✅ Suivi Pointage - Admin
+     */
+    public function pointageSuivi(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $userId = $request->get('user_id');
+
+        // Stats rapides
+        $today = today();
+        $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
+        $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
+        $checkoutsToday = \App\Models\AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
+        $recentAnomalies = \App\Models\AttendanceAnomaly::where('status', 'open')
+            ->where('detected_at', '>=', now()->subDays(7))
+            ->count();
+        $avgAccuracy = 0; // gps_accuracy column missing - disabled
+
+        // Users pour filtre
+        $users = \App\Models\User::select('id', 'name')
+            ->whereHas('attendanceEvents')
+            ->orderBy('name')
+            ->limit(50)
+            ->get();
+
+        // Events récents
+        $query = \App\Models\AttendanceEvent::with(['user', 'checkInDay.stage.site', 'checkOutDay.stage.site', 'anomalies'])
+            ->orderByDesc('occurred_at');
+
+        if ($date) {
+            $query->whereDate('occurred_at', $date);
+        }
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $events = $query->paginate(50);
+
+        return view('admin.presence.pointage-suivi', compact(
+            'events',
+            'todayCount',
+            'checkinsToday',
+            'checkoutsToday',
+            'recentAnomalies',
+            'avgAccuracy',
+            'users',
+            'date',
+            'userId'
+        ));
+    }
+    /**
+     * Export pointages CSV
+     */
+    public function exportPointages(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $query = \App\Models\AttendanceEvent::with(['user', 'checkInDay.stage.site', 'checkOutDay.stage.site'])
+            ->whereDate('occurred_at', $date);
+
+        $events = $query->get();
+
+        $csv = $events->map(function ($event) {
+            return [
+                $event->occurred_at->format('d/m/Y H:i'),
+                $event->user?->name ?? 'N/A',
+                $event->event_type === 'check_in' ? 'Entrée' : 'Sortie',
+                $event->attendanceDay?->stage?->site?->nom ?? 'Hors site',
+                $event->gps_accuracy ?? 'N/A',
+                $event->status,
+            ];
+        });
+
+        return response()->streamDownload(function () use ($csv) {
+            echo "Date Heure,Utilisateur,Type,Site,Précision,Statut\n";
+            foreach ($csv as $row) {
+                echo implode(';', array_map(fn($v) => '"' . str_replace('"', '""', $v) . '"', $row)) . "\n";
+            }
+        }, 'pointages-' . $date . '.csv');
+    }
+    /**
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
      * Résoudre anomalie.
      */
     public function resolveAnomaly(ResolveAnomalyRequest $request, int $anomalyId)

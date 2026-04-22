@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <x-pointage-layout>
     <div class="min-h-screen bg-white dark:bg-[#101829] text-slate-900 transition-colors duration-300">
         {{-- Header --}}
@@ -55,6 +56,10 @@
         </header>
 
         <main class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+=======
+<x-app-layout>
+<main class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             <div class="text-center mb-10">
                 <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
                     Bonjour, <span class="text-[#4154f1]">{{ explode(' ', Auth::user()->name)[0] }}</span>
@@ -148,6 +153,7 @@
                 </div>
                 @endif
         </main>
+<<<<<<< HEAD
     </div>
     @push('scripts')
     <script>
@@ -165,13 +171,38 @@
             };
 
             const generateFingerprint = (uuid) => {
+=======
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // ─── Utilitaires device ──────────────────────────────────────────
+            function getOrCreateDeviceUuid() {
+                const key = 'jb_presence_device_uuid';
+                let uuid = localStorage.getItem(key);
+                if (!uuid) {
+                    uuid = (crypto.randomUUID) ?
+                        crypto.randomUUID() :
+                        `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    localStorage.setItem(key, uuid);
+                }
+                return uuid;
+            }
+
+            function generateFingerprint(deviceUuid) {
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 const raw = [
                     navigator.userAgent,
                     navigator.platform || '',
                     screen.width,
                     screen.height,
                     Intl.DateTimeFormat().resolvedOptions().timeZone,
+<<<<<<< HEAD
                     uuid
+=======
+                    deviceUuid,
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 ].join('|');
                 let hash = 0;
                 for (let i = 0; i < raw.length; i++) {
@@ -179,23 +210,41 @@
                     hash |= 0;
                 }
                 return `jb-${Math.abs(hash)}`;
+<<<<<<< HEAD
             };
 
             const detectBrowser = () => {
+=======
+            }
+
+            function detectBrowser() {
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 const ua = navigator.userAgent;
                 if (ua.includes('Edg/')) return 'Edge';
                 if (ua.includes('Chrome/')) return 'Chrome';
                 if (ua.includes('Firefox/')) return 'Firefox';
                 if (ua.includes('Safari/')) return 'Safari';
                 return 'Unknown';
+<<<<<<< HEAD
             };
 
             const deviceUuid = getDeviceUuid();
+=======
+            }
+
+            // ─── Init ────────────────────────────────────────────────────────
+            const forms = document.querySelectorAll('.presence-form');
+            const status = document.getElementById('presence-status');
+
+            // Pré-calcul des valeurs device (une seule fois)
+            const deviceUuid = getOrCreateDeviceUuid();
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             const fingerprint = generateFingerprint(deviceUuid);
             const browserName = detectBrowser();
             const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
             const deviceLabel = `${browserName} / ${platformName}`;
 
+<<<<<<< HEAD
             const forms = document.querySelectorAll('.presence-form');
             const statusDiv = document.getElementById('presence-status');
             const statusSpan = statusDiv?.querySelector('span');
@@ -203,10 +252,31 @@
             if (!navigator.geolocation) {
                 statusSpan.textContent = 'GPS non supporté';
                 statusDiv.className = 'mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-center text-sm font-medium text-red-700 dark:text-red-400 flex items-center justify-center gap-2';
+=======
+            // ─── Vérification SweetAlert (rejet serveur) ────────────────────
+            @if(session('rejection_reason'))
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: '🚫 Pointage refusé',
+                    html: "{{ addslashes(session('rejection_reason')) }}<br><small>Déplacez-vous vers le site et réessayez.</small>",
+                    confirmButtonText: 'OK, nouveau pointage',
+                    confirmButtonColor: '#10b981',
+                    allowOutsideClick: true,
+                });
+            }
+            @endif
+
+            // ─── GPS non disponible ──────────────────────────────────────────
+            if (!navigator.geolocation) {
+                status.textContent = '❌ GPS non supporté sur ce navigateur.';
+                status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 forms.forEach(f => f.querySelector('.presence-submit').disabled = true);
                 return;
             }
 
+<<<<<<< HEAD
             forms.forEach(form => {
                 const btn = form.querySelector('.presence-submit');
                 if (!btn || btn.disabled) return;
@@ -224,12 +294,34 @@
                             form.querySelector('[name="latitude"]').value = pos.coords.latitude;
                             form.querySelector('[name="longitude"]').value = pos.coords.longitude;
                             form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy);
+=======
+            // ─── Bind click sur chaque formulaire ───────────────────────────
+            forms.forEach(form => {
+                const btn = form.querySelector('.presence-submit');
+                const actionName = form.dataset.action || 'présence';
+
+                btn.addEventListener('click', () => {
+                    btn.disabled = true;
+                    btn.textContent = '📡 Recherche GPS...';
+                    status.textContent = '📡 Localisation en cours...';
+                    status.className = 'p-4 bg-blue-50 text-blue-700 rounded-xl text-center text-sm';
+
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            // ── Coordonnées GPS ──────────────────────────────
+                            form.querySelector('[name="latitude"]').value = pos.coords.latitude;
+                            form.querySelector('[name="longitude"]').value = pos.coords.longitude;
+                            form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy || 0);
+
+                            // ── Informations device (CORRECTION PRINCIPALE) ──
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                             form.querySelector('[name="device_fingerprint"]').value = fingerprint;
                             form.querySelector('[name="device_uuid"]').value = deviceUuid;
                             form.querySelector('[name="device_label"]').value = deviceLabel;
                             form.querySelector('[name="platform"]').value = platformName;
                             form.querySelector('[name="browser"]').value = browserName;
 
+<<<<<<< HEAD
                             statusSpan.textContent = `Position capturée (${Math.round(pos.coords.accuracy)}m)`;
                             statusDiv.className = 'mb-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl text-center text-sm font-medium text-green-700 dark:text-green-400 flex items-center justify-center gap-2';
 
@@ -356,6 +448,27 @@
                             enableHighAccuracy: true,
                             timeout: 10000,
                             maximumAge: 0
+=======
+                            status.textContent = `✅ Position capturée (précision: ${Math.round(pos.coords.accuracy)}m) — envoi en cours...`;
+                            status.className = 'p-4 bg-green-50 text-green-700 rounded-xl text-center text-sm';
+
+                            form.submit();
+                        },
+                        (err) => {
+                            let msg = 'Impossible de récupérer votre position.';
+                            if (err.code === err.PERMISSION_DENIED) msg = '🔒 Autorise la localisation dans ton navigateur.';
+                            if (err.code === err.TIMEOUT) msg = '⏱️ GPS trop lent. Essaie en plein air ou près d\'une fenêtre.';
+                            if (err.code === err.POSITION_UNAVAILABLE) msg = '📡 Position indisponible pour le moment.';
+
+                            status.textContent = msg;
+                            status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
+                            btn.disabled = false;
+                            btn.textContent = actionName === 'arrivée' ? 'Pointer arrivée' : 'Pointer départ';
+                        }, {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0,
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                         }
                     );
                 });
@@ -363,4 +476,9 @@
         });
     </script>
     @endpush
+<<<<<<< HEAD
 </x-pointage-layout>
+=======
+
+</x-app-layout>
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a

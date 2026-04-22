@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TODO.md - Sidebar Fix Progress
 
 ## SIDEBAR DÉCALAGE FIX (✅ COMPLETED)
@@ -13,3 +14,15 @@
 
 **Status:** ✅ Done! Test dashboard alignment + mobile menu.
 
+=======
+# TODO List - Gestion Stagiaires
+
+## ✅ Complété
+
+✅ **ERREUR GROUP BY MYSQL CORRIGÉE** - AdminPresenceService.php (ligne ~183)
+*Supprimé `attendance_date` du selectRaw() pour conformité strict mode*
+
+## En cours
+
+_(liste des tâches ouvertes)_
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
