@@ -61,15 +61,21 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function homeRouteName(): string
     {
-        // jb -> Cette methode centralise la destination post-authentification
-        // selon le role principal pour eviter les redirections dupliquees
-        // dans plusieurs controlleurs.
-        if ($this->hasRole('etudiant')) {
-            return 'student.stage';
+        // 👑 Admin
+        if ($this->hasRole('admin')) {
+            return 'dashboard';
         }
-        if ($this->hasRole('superviseur')) {
-            return 'superviseur.dashboard';
+
+        // 👨‍🎓 Étudiants + fonctionnaires + superviseurs → pointage
+        if (
+            $this->hasRole('etudiant') ||
+            $this->hasRole('fonctionnaire') ||
+            $this->hasRole('superviseur')
+        ) {
+            return 'presence.pointage';
         }
+
+        // fallback sécurisé
         return 'dashboard';
     }
 
