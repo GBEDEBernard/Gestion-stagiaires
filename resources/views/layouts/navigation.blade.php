@@ -608,47 +608,58 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcan
             </div>
 
-            <!-- Profil Utilisateur en bas du Sidebar -->
-            <div class="flex-shrink-0 p-5 bg-gradient-to-t from-slate-900/90 to-transparent backdrop-blur-xl" x-data="{ userMenuOpen: false }">
+            <!-- Profil Utilisateur -->
+            <div class="p-4 border-t border-slate-800/40" x-data="{ userMenuOpen: false }">
+
+                <!-- Bouton profil -->
                 <button @click="userMenuOpen = !userMenuOpen"
-                    class="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-slate-800/60 transition-all duration-300 group">
+                    class="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-slate-800/30 transition">
+
                     @if(Auth::user()->avatar)
-                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar"
-                        class="w-10 h-10 rounded-2xl object-cover shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                        class="w-9 h-9 rounded-full object-cover">
                     @else
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white text-sm font-medium">
                         {{ substr(Auth::user()->name, 0, 1) }}
                     </div>
                     @endif
-                    <div class="flex-1 text-left">
-                        <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ Auth::user()->email }}</p>
+
+                    <div class="flex-1 text-left min-w-0">
+                        <p class="text-sm text-white truncate">
+                            {{ Auth::user()->name }}
+                        </p>
+
                     </div>
-                    <svg class="w-4 h-4 text-slate-400 transform transition-transform duration-300" :class="userMenuOpen ? 'rotate-180' : ''" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
+
+                    <svg class="w-4 h-4 text-slate-500 transition-transform duration-200"
+                        :class="userMenuOpen ? 'rotate-180' : ''"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
 
-                <!-- Menu Utilisateur -->
-                <div x-show="userMenuOpen" x-collapse @click.outside="userMenuOpen = false"
-                    class="mt-3 py-2 bg-slate-800/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl">
+                <!-- Menu -->
+                <div x-show="userMenuOpen"
+                    x-transition
+                    @click.outside="userMenuOpen = false"
+                    class="mt-2 rounded-xl bg-slate-900/60 border border-slate-800/40 overflow-hidden">
+
+                    <!-- Profil -->
                     <a href="{{ route('profile.edit') }}"
-                        class="flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-200 group">
-                        <svg class="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        </svg>
-                        <span>Paramètres</span>
+                        class="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/40 transition">
+                        Paramètres
                     </a>
+
+                    <!-- Déconnexion -->
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group">
-                            <svg class="w-4 h-4 text-red-500 group-hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            <span>Déconnexion</span>
+                            class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition">
+                            Déconnexion
                         </button>
                     </form>
+
                 </div>
             </div>
     </nav>
