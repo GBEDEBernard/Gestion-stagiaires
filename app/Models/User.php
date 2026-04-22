@@ -52,12 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function requiresPasswordChange(): bool
-    {
-        // jb -> Point d'entree unique pour savoir si le compte est encore
-        // dans son etat provisoire apres creation admin.
-        return (bool) $this->must_change_password;
-    }
+
 
     public function homeRouteName(): string
     {

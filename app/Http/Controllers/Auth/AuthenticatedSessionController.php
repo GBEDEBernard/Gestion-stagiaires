@@ -31,9 +31,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('verification.notice');
         }
 
-        if ($user->requiresPasswordChange()) {
-            return redirect()->route('password.first.edit');
-        }
+
 
         return redirect()->route($user->homeRouteName());
     }

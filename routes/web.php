@@ -36,9 +36,8 @@ Route::get('/', fn() => redirect()->route('login'));
 require __DIR__ . '/auth.php';
 
 // Routes protégées
-// jb -> Toute la partie metier du projet reste derriere 3 verrous:
-// connexion, email verifie et mot de passe temporaire remplace.
-Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
+// Routes protégées (mdp change non requis)
+Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])

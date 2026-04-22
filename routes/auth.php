@@ -4,7 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\FirstPasswordController;
+
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -66,13 +66,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    // jb -> Ecran intermediaire obligatoire pour sortir un compte
-    // de son mot de passe temporaire apres verification email.
-    Route::get('first-password', [FirstPasswordController::class, 'edit'])
-        ->name('password.first.edit');
 
-    Route::put('first-password', [FirstPasswordController::class, 'update'])
-        ->name('password.first.update');
 
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');

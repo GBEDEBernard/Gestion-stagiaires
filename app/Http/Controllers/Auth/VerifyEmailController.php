@@ -15,9 +15,7 @@ class VerifyEmailController extends Controller
             event(new Verified($request->user()));
         }
 
-        if ($request->user()->requiresPasswordChange()) {
-            return redirect()->route('password.first.edit')->with('success', 'Email verifie avec succes.');
-        }
+
 
         return redirect()->route($request->user()->homeRouteName())->with('success', 'Email verifie avec succes.');
     }
