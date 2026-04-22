@@ -93,6 +93,25 @@
                 </div>
                 @endif
         </main>
+<<<<<<< HEAD
+    </div>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            const getDeviceUuid = () => {
+                const key = 'jb_presence_device_uuid';
+                let uuid = localStorage.getItem(key);
+                if (!uuid) {
+                    uuid = crypto.randomUUID ? crypto.randomUUID() : `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    localStorage.setItem(key, uuid);
+                }
+                return uuid;
+            };
+
+            const generateFingerprint = (uuid) => {
+=======
 
     @push('scripts')
     <script>
@@ -112,13 +131,18 @@
             }
 
             function generateFingerprint(deviceUuid) {
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 const raw = [
                     navigator.userAgent,
                     navigator.platform || '',
                     screen.width,
                     screen.height,
                     Intl.DateTimeFormat().resolvedOptions().timeZone,
+<<<<<<< HEAD
+                    uuid
+=======
                     deviceUuid,
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 ].join('|');
                 let hash = 0;
                 for (let i = 0; i < raw.length; i++) {
@@ -126,15 +150,26 @@
                     hash |= 0;
                 }
                 return `jb-${Math.abs(hash)}`;
+<<<<<<< HEAD
+            };
+
+            const detectBrowser = () => {
+=======
             }
 
             function detectBrowser() {
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 const ua = navigator.userAgent;
                 if (ua.includes('Edg/')) return 'Edge';
                 if (ua.includes('Chrome/')) return 'Chrome';
                 if (ua.includes('Firefox/')) return 'Firefox';
                 if (ua.includes('Safari/')) return 'Safari';
                 return 'Unknown';
+<<<<<<< HEAD
+            };
+
+            const deviceUuid = getDeviceUuid();
+=======
             }
 
             // ─── Init ────────────────────────────────────────────────────────
@@ -143,11 +178,21 @@
 
             // Pré-calcul des valeurs device (une seule fois)
             const deviceUuid = getOrCreateDeviceUuid();
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             const fingerprint = generateFingerprint(deviceUuid);
             const browserName = detectBrowser();
             const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
             const deviceLabel = `${browserName} / ${platformName}`;
 
+<<<<<<< HEAD
+            const forms = document.querySelectorAll('.presence-form');
+            const statusDiv = document.getElementById('presence-status');
+            const statusSpan = statusDiv?.querySelector('span');
+
+            if (!navigator.geolocation) {
+                statusSpan.textContent = 'GPS non supporté';
+                statusDiv.className = 'mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-center text-sm font-medium text-red-700 dark:text-red-400 flex items-center justify-center gap-2';
+=======
             // ─── Vérification SweetAlert (rejet serveur) ────────────────────
             @if(session('rejection_reason'))
             if (typeof Swal !== 'undefined') {
@@ -166,10 +211,30 @@
             if (!navigator.geolocation) {
                 status.textContent = '❌ GPS non supporté sur ce navigateur.';
                 status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 forms.forEach(f => f.querySelector('.presence-submit').disabled = true);
                 return;
             }
 
+<<<<<<< HEAD
+            forms.forEach(form => {
+                const btn = form.querySelector('.presence-submit');
+                if (!btn || btn.disabled) return;
+
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    btn.disabled = true;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Localisation...`;
+                    statusSpan.textContent = 'Localisation en cours...';
+                    statusDiv.className = 'mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl text-center text-sm font-medium text-blue-700 dark:text-blue-400 flex items-center justify-center gap-2';
+
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            form.querySelector('[name="latitude"]').value = pos.coords.latitude;
+                            form.querySelector('[name="longitude"]').value = pos.coords.longitude;
+                            form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy);
+=======
             // ─── Bind click sur chaque formulaire ───────────────────────────
             forms.forEach(form => {
                 const btn = form.querySelector('.presence-submit');
@@ -189,12 +254,141 @@
                             form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy || 0);
 
                             // ── Informations device (CORRECTION PRINCIPALE) ──
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                             form.querySelector('[name="device_fingerprint"]').value = fingerprint;
                             form.querySelector('[name="device_uuid"]').value = deviceUuid;
                             form.querySelector('[name="device_label"]').value = deviceLabel;
                             form.querySelector('[name="platform"]').value = platformName;
                             form.querySelector('[name="browser"]').value = browserName;
 
+<<<<<<< HEAD
+                            statusSpan.textContent = `Position capturée (${Math.round(pos.coords.accuracy)}m)`;
+                            statusDiv.className = 'mb-6 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl text-center text-sm font-medium text-green-700 dark:text-green-400 flex items-center justify-center gap-2';
+
+                            fetch(form.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                        'Accept': 'application/json',
+                                    },
+                                    body: JSON.stringify(Object.fromEntries(new FormData(form)))
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        const preview = data.preview;
+                                        let html = `
+                                    <div style="text-align: left; font-size: 0.9rem;">
+                                        <p><strong>${preview.etudiant_name ?? preview.user_name}</strong></p>
+                                        <p>Site : ${preview.site_name}</p>
+                                        <p>Heure : ${preview.pointage_time}</p>
+                                        <p>Type : ${preview.type}</p>
+                                `;
+                                        if (preview.distance) {
+                                            html += `<p>Distance : ${preview.distance} m</p>`;
+                                        }
+                                        if (preview.accuracy) {
+                                            html += `<p>Précision GPS : ${preview.accuracy} m</p>`;
+                                        }
+                                        html += `</div>`;
+
+                                        Swal.fire({
+                                            title: 'Confirmer le pointage',
+                                            html: html,
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Valider',
+                                            cancelButtonText: 'Annuler',
+                                            confirmButtonColor: '#4154f1',
+                                            cancelButtonColor: '#eb0000',
+                                            width: '400px',
+                                            padding: '1.5rem',
+                                            customClass: {
+                                                popup: 'rounded-2xl',
+                                                title: 'text-lg font-bold',
+                                                confirmButton: 'px-4 py-2 text-sm rounded-xl',
+                                                cancelButton: 'px-4 py-2 text-sm rounded-xl'
+                                            }
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                fetch('{{ route("presence.confirm.ajax") }}', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                                            'Accept': 'application/json',
+                                                        }
+                                                    })
+                                                    .then(response => response.json())
+                                                    .then(confirmData => {
+                                                        if (confirmData.success) {
+                                                            Swal.fire({
+                                                                title: 'Validé !',
+                                                                text: confirmData.message,
+                                                                icon: 'success',
+                                                                confirmButtonColor: '#4154f1',
+                                                                width: '360px',
+                                                                padding: '1.5rem'
+                                                            }).then(() => window.location.href = confirmData.redirect);
+                                                        } else if (confirmData.rejected) {
+                                                            Swal.fire({
+                                                                title: 'Pointage refusé',
+                                                                text: confirmData.reason,
+                                                                icon: 'error',
+                                                                confirmButtonColor: '#4154f1',
+                                                                width: '400px',
+                                                                padding: '1.5rem'
+                                                            }).then(() => window.location.reload());
+                                                        } else {
+                                                            Swal.fire({
+                                                                title: 'Erreur',
+                                                                text: confirmData.message,
+                                                                icon: 'error',
+                                                                confirmButtonColor: '#4154f1'
+                                                            });
+                                                            btn.disabled = false;
+                                                            btn.innerHTML = originalHTML;
+                                                            statusSpan.textContent = 'Prêt pour la localisation';
+                                                            statusDiv.className = 'mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700';
+                                                        }
+                                                    });
+                                            } else {
+                                                btn.disabled = false;
+                                                btn.innerHTML = originalHTML;
+                                                statusSpan.textContent = 'Prêt pour la localisation';
+                                                statusDiv.className = 'mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700';
+                                            }
+                                        });
+                                    } else {
+                                        throw new Error('Erreur serveur');
+                                    }
+                                })
+                                .catch(err => {
+                                    Swal.fire({
+                                        title: 'Erreur',
+                                        text: 'Impossible de préparer le pointage.',
+                                        icon: 'error',
+                                        confirmButtonColor: '#4154f1',
+                                        width: '400px'
+                                    });
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHTML;
+                                    statusSpan.textContent = 'Prêt pour la localisation';
+                                    statusDiv.className = 'mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700';
+                                });
+                        },
+                        (err) => {
+                            let msg = 'Position indisponible';
+                            if (err.code === 1) msg = 'Accès à la localisation refusé';
+                            statusSpan.textContent = msg;
+                            statusDiv.className = 'mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-center text-sm font-medium text-red-700 dark:text-red-400 flex items-center justify-center gap-2';
+                            btn.disabled = false;
+                            btn.innerHTML = originalHTML;
+                        }, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+=======
                             status.textContent = `✅ Position capturée (précision: ${Math.round(pos.coords.accuracy)}m) — envoi en cours...`;
                             status.className = 'p-4 bg-green-50 text-green-700 rounded-xl text-center text-sm';
 
@@ -214,6 +408,7 @@
                             enableHighAccuracy: true,
                             timeout: 15000,
                             maximumAge: 0,
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                         }
                     );
                 });
@@ -221,5 +416,9 @@
         });
     </script>
     @endpush
+<<<<<<< HEAD
+</x-pointage-layout>
+=======
 
 </x-app-layout>
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a

@@ -172,6 +172,74 @@ class AdminPresenceService
      * Stats globales par période (admin dashboard).
      * Retourne datasets Chart.js-ready.
      */
+<<<<<<< HEAD
+    public function getGlobalStats(string $period = 'today'): array
+    {
+        $query = AttendanceDay::query();
+
+        switch ($period) {
+            case 'week':
+                $start = now()->startOfWeek();
+                $end = now()->endOfWeek();
+                $query->whereBetween('attendance_date', [$start, $end]);
+                $groupBy = 'attendance_date';
+                break;
+            case 'month':
+                $start = now()->startOfMonth();
+                $end = now()->endOfMonth();
+                $query->whereBetween('attendance_date', [$start, $end]);
+                $groupBy = fn($date) => $date->format('Y-m-d');
+                break;
+            case 'year':
+                $start = now()->startOfYear();
+                $end = now()->endOfYear();
+                $query->whereBetween('attendance_date', [$start, $end]);
+                $groupBy = fn($date) => $date->format('Y-m');
+                break;
+            default: // today
+                $query->whereDate('attendance_date', today());
+                $groupBy = 'attendance_date';
+        }
+
+        $dailyStats = $query->get()
+            ->groupBy(fn($day) => $groupBy($day->attendance_date))
+            ->map(function ($days) {
+                $totalDays = $days->count();
+                $presentDays = $days->whereNotNull('first_check_in_at')->count();
+                $lateDays = $days->where('arrival_status', 'late')->count();
+                $totalLateMinutes = $days->sum('late_minutes');
+                $totalWorkedMinutes = $days->sum('worked_minutes');
+
+                return [
+                    'date' => $days->first()->attendance_date->format('Y-m-d'),
+                    'total_days' => $totalDays,
+                    'present' => $presentDays,
+                    'late' => $lateDays,
+                    'late_minutes' => $totalLateMinutes,
+                    'worked_minutes' => $totalWorkedMinutes,
+                    'taux_presence' => $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0,
+                ];
+            });
+
+        $totals = [
+            'total_days' => $dailyStats->sum('total_days'),
+            'present_days' => $dailyStats->sum('present'),
+            'taux_presence' => $dailyStats->avg('taux_presence'),
+            'total_late_days' => $dailyStats->sum('late'),
+            'total_late_minutes' => $dailyStats->sum('late_minutes'),
+            'total_worked_hours' => round($dailyStats->sum('worked_minutes') / 60, 1),
+            'total_anomalies' => AttendanceAnomaly::whereBetween('detected_at', [$start ?? today(), $end ?? today()])->count(),
+            'chart_data' => [
+                'labels' => $dailyStats->pluck('date')->map(fn($d) => Carbon::parse($d)->isoFormat('D MMM')),
+                'present' => $dailyStats->pluck('present')->values(),
+                'late' => $dailyStats->pluck('late')->values(),
+            ],
+        ];
+
+        return $totals;
+    }
+
+=======
     /**
      * Stats globales selon la période.
      */
@@ -236,12 +304,33 @@ class AdminPresenceService
     /**
      * Stats par groupe (étudiants vs employés).
      */
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
     /**
      * Stats par groupe (étudiants vs employés).
      */
     public function getStatsByGroup(string $group = 'all', string $period = 'today'): array
     {
         $etudiantsQuery = AttendanceDay::whereNotNull('etudiant_id');
+<<<<<<< HEAD
+        $employesQuery = AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id');
+
+        if ($period !== 'today') {
+            // Apply period filter similar to getGlobalStats
+            $start = match ($period) {
+                'week' => now()->startOfWeek(),
+                'month' => now()->startOfMonth(),
+                'year' => now()->startOfYear(),
+                default => today()
+            };
+            $end = match ($period) {
+                'week' => now()->endOfWeek(),
+                'month' => now()->endOfMonth(),
+                'year' => now()->endOfYear(),
+                default => today()
+            };
+            [$etudiantsQuery, $employesQuery] = [$etudiantsQuery, $employesQuery]
+                ->each(fn($q) => $q->whereBetween('attendance_date', [$start, $end]));
+=======
         $employesQuery  = AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id');
 
         // Appliquer le filtre de période
@@ -262,10 +351,23 @@ class AdminPresenceService
 
             $etudiantsQuery->whereBetween('attendance_date', [$start, $end]);
             $employesQuery->whereBetween('attendance_date', [$start, $end]);
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         }
 
         return [
             'etudiants' => [
+<<<<<<< HEAD
+                'count' => $etudiantsQuery->count(),
+                'present' => $etudiantsQuery->whereNotNull('first_check_in_at')->count(),
+                'late' => $etudiantsQuery->where('arrival_status', 'late')->count(),
+                'avg_worked_hours' => round($etudiantsQuery->avg('worked_minutes') / 60, 1),
+            ],
+            'employes' => [
+                'count' => $employesQuery->count(),
+                'present' => $employesQuery->whereNotNull('first_check_in_at')->count(),
+                'late' => $employesQuery->where('arrival_status', 'late')->count(),
+                'avg_worked_hours' => round($employesQuery->avg('worked_minutes') / 60, 1),
+=======
                 'count'            => $etudiantsQuery->count(),
                 'present'          => $etudiantsQuery->whereNotNull('first_check_in_at')->count(),
                 'late'             => $etudiantsQuery->where('arrival_status', 'late')->count(),
@@ -276,6 +378,7 @@ class AdminPresenceService
                 'present'          => $employesQuery->whereNotNull('first_check_in_at')->count(),
                 'late'             => $employesQuery->where('arrival_status', 'late')->count(),
                 'avg_worked_hours' => round(($employesQuery->avg('worked_minutes') ?? 0) / 60, 1),
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             ],
         ];
     }
@@ -331,7 +434,25 @@ class AdminPresenceService
      */
     public function getTopLateUsers(int $limit = 10, string $period = 'month'): array
     {
+<<<<<<< HEAD
+        return AttendanceDay::selectRaw('
+                COALESCE(etudiants.user_id, attendance_days.user_id) as user_id,
+                users.name,
+                SUM(late_minutes) as total_late,
+                COUNT(*) as days_count,
+                AVG(late_minutes) as avg_late
+            ')
+            ->leftJoin('stages', 'attendance_days.stage_id', 'stages.id')
+            ->leftJoin('etudiants', 'stages.etudiant_id', 'etudiants.id')
+            ->leftJoin('users', 'COALESCE(etudiants.user_id, attendance_days.user_id)', '=', 'users.id')
+            ->groupBy('user_id', 'users.name')
+            ->orderByDesc('total_late')
+            ->limit($limit)
+            ->get()
+            ->toArray();
+=======
         return AttendanceDay::topLate($limit, $period)->get()->toArray();
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
     }
 
     /**

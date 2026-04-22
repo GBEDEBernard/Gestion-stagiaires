@@ -109,7 +109,11 @@ class AttendanceDay extends Model
                 return $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
             case 'month':
                 return $query->whereMonth('attendance_date', now()->month)
+<<<<<<< HEAD
+                             ->whereYear('attendance_date', now()->year);
+=======
                     ->whereYear('attendance_date', now()->year);
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             case 'year':
                 return $query->whereYear('attendance_date', now()->year);
             default:
@@ -135,15 +139,28 @@ class AttendanceDay extends Model
      */
     public function scopeForUser($query, $userId)
     {
+<<<<<<< HEAD
+        return $query->where(function($q) use ($userId) {
+            $q->where('etudiant_id', $userId)
+              ->orWhere('user_id', $userId);
+=======
         return $query->where(function ($q) use ($userId) {
             $q->where('etudiant_id', $userId)
                 ->orWhere('user_id', $userId);
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         });
     }
 
     /**
      * Scope top retards.
      */
+<<<<<<< HEAD
+    public function scopeTopLate($query, $limit = 10)
+    {
+        return $query->selectRaw('
+                COALESCE(etudiants.user_id, attendance_days.user_id) as user_id,
+                users.name,
+=======
     public function scopeTopLate($query, $limit = 10, $period = null)
     {
         if ($period && $period !== 'today') {
@@ -153,15 +170,21 @@ class AttendanceDay extends Model
         return $query->selectRaw('
                 COALESCE(etudiant_users.id, direct_users.id) as user_id,
                 COALESCE(etudiant_users.name, direct_users.name) as user_name,
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
                 SUM(late_minutes) as total_late,
                 COUNT(*) as days_count,
                 AVG(late_minutes) as avg_late
             ')
             ->leftJoin('stages', 'attendance_days.stage_id', 'stages.id')
             ->leftJoin('etudiants', 'stages.etudiant_id', 'etudiants.id')
+<<<<<<< HEAD
+            ->leftJoin('users', 'COALESCE(etudiants.user_id, attendance_days.user_id)', '=', 'users.id')
+            ->groupBy('user_id', 'users.name')
+=======
             ->leftJoin('users as etudiant_users', 'etudiants.user_id', 'etudiant_users.id')
             ->leftJoin('users as direct_users', 'attendance_days.user_id', 'direct_users.id')
             ->groupBy('user_id', 'user_name')
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
             ->orderByDesc('total_late')
             ->limit($limit);
     }
@@ -173,6 +196,8 @@ class AttendanceDay extends Model
     {
         return $query->whereNull('first_check_in_at');
     }
+<<<<<<< HEAD
+=======
 
     /**
      * Vérifie si l'arrivée est en retard.
@@ -181,4 +206,5 @@ class AttendanceDay extends Model
     {
         return $this->late_minutes > 0;
     }
+>>>>>>> 7f86b0b18054b451357562162fff94988eac643a
 }
