@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
@@ -23,7 +24,10 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\SuperviseurDashboardController;
 use App\Http\Controllers\DomaineController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -208,12 +212,12 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
 
     // ---------------- Roles ----------------
     Route::prefix('admin/roles')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
-        Route::get('create', [\App\Http\Controllers\Admin\RoleController::class, 'create'])->name('admin.roles.create')->middleware('permission:roles.create');
-        Route::post('/', [\App\Http\Controllers\Admin\RoleController::class, 'store'])->name('admin.roles.store')->middleware('permission:roles.create');
-        Route::get('{role}/edit', [\App\Http\Controllers\Admin\RoleController::class, 'edit'])->name('admin.roles.edit')->middleware('permission:roles.edit');
-        Route::put('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'update'])->name('admin.roles.update')->middleware('permission:roles.edit');
-        Route::delete('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('admin.roles.destroy')->middleware('permission:roles.delete');
+        Route::get('/', [RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
+        Route::get('create', [RoleController::class, 'create'])->name('admin.roles.create')->middleware('permission:roles.create');
+        Route::post('/', [RoleController::class, 'store'])->name('admin.roles.store')->middleware('permission:roles.create');
+        Route::get('{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit')->middleware('permission:roles.edit');
+        Route::put('{role}', [RoleController::class, 'update'])->name('admin.roles.update')->middleware('permission:roles.edit');
+        Route::delete('{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy')->middleware('permission:roles.delete');
     });
 
     // ---------------- Corbeille Globale ----------------
@@ -225,7 +229,7 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\SuperviseurDashboardController::class, 'index'])
+        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])
             ->name('superviseur.dashboard');
     });
 
@@ -237,10 +241,6 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
         Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
         Route::get('/validate', [PresenceController::class, 'showValidation'])->name('presence.validate');
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
-<<<<<<< HEAD
-        Route::post('/confirm-ajax', [PresenceController::class, 'confirmAjax'])->name('presence.confirm.ajax'); // ← Nouvelle route AJAX
-=======
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });
@@ -252,27 +252,17 @@ Route::middleware(['auth', 'verified', 'password.changed', \App\Http\Middleware\
     });
 
     // ---------------- Supervision Présence Admin ----------------
-<<<<<<< HEAD
-    Route::prefix('admin/presence')->middleware('permission:presence.admin.view')->group(function () {
-=======
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
         Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
-<<<<<<< HEAD
-        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
-            ->name('admin.presence.anomalies.resolve')
-            ->middleware('permission:presence.admin.anomalies.review');
-=======
         Route::get('/pointage-suivi', [AdminPresenceController::class, 'pointageSuivi'])->name('admin.presence.pointage-suivi');
         Route::get('/export-pointages', [AdminPresenceController::class, 'exportPointages'])->name('admin.presence.export-pointages');
         Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
             ->name('admin.presence.anomalies.resolve')
             ->middleware('can:reviewAdminAnomalies');
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
 
