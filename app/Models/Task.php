@@ -55,4 +55,27 @@ class Task extends Model
     {
         return $this->hasMany(DailyReportItem::class);
     }
+
+    public function scopeVisibleTo($query, $user)
+    {
+        // 👑 ADMIN : voit tout
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        // 👨‍🏫 SUPERVISEUR : voit les tâches de ses étudiants
+        if ($user->hasRole('superviseur')) {
+            return $query->whereHas('stage', function ($q) use ($user) {
+                $q->where('supervisor_id', $user->id);
+            });
+        }
+
+        // 👨‍🎓 ÉTUDIANT : voit uniquement ses tâches
+        if ($user->hasRole('etudiant')) {
+            return $query->where('etudiant_id', optional($user->etudiant)->id);
+        }
+
+        // 👨‍🔧 EMPLOYÉ : ses propres tâches assignées
+        return $query->where('assigned_by', $user->id);
+    }
 }

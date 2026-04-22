@@ -27,20 +27,31 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             ✕
         </button>
         <!-- Logo et Titre -->
-        <div class="flex-shrink-0">
-            <div class="flex items-center gap-3 px-6 py-6 bg-gradient-to-b from-slate-900/95 to-slate-950/70 backdrop-blur-md shadow-2xl">
-                <a href="{{ $homeRoute }}" class="flex items-center gap-3 group">
-                    <div class="relative">
-                        <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
-                            class="w-12 h-12 rounded-3xl shadow-2xl ring-2 ring-emerald-400/60 group-hover:ring-emerald-300/90 group-hover:scale-110 transition-all duration-400">
-                        <div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full animate-ping shadow-lg"></div>
-                    </div>
-                    <div class="flex flex-col">
-                        <h1 class="text-xl font-black text-white tracking-tight bg-gradient-to-r from-white to-slate-100 bg-clip-text">Gestion Pro</h1>
-                        <p class="text-sm text-emerald-300 font-bold tracking-wide">Administrative TFG</p>
-                    </div>
-                </a>
-            </div>
+        <div class="flex-shrink-0 border-b border-slate-800/40">
+
+            <a href="{{ $homeRoute }}"
+                class="flex items-center gap-3 px-5 py-5 group hover:bg-slate-800/20 transition">
+
+                <!-- Logo -->
+                <div class="relative">
+                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG"
+                        class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
+
+                    <!-- petit statut discret -->
+                    <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                </div>
+
+                <!-- Texte -->
+                <div class="flex flex-col leading-tight">
+                    <h1 class="text-base font-semibold text-white tracking-tight">
+                        Gestion Pro
+                    </h1>
+                    <p class="text-xs text-slate-400">
+                        Administrative TFG
+                    </p>
+                </div>
+
+            </a>
         </div>
 
         <!-- Navigation Principale - Zone scrollable -->
@@ -573,16 +584,21 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <span>Sites</span>
                 </a>
                 @endcan
-                @can('tasks.view')
+                @role('admin')
                 <a href="{{ route('tasks.index') }}"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+
                     <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
+
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
                     </svg>
-                    <span>Taches</span>
+
+                    <span>Tâches</span>
                 </a>
-                @endcan
+                @endrole
                 <!-- Divider -->
                 @can('dashboard.view')
                 @unlessrole('etudiant')

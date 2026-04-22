@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DailyReport extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'stage_id',
@@ -34,8 +33,13 @@ class DailyReport extends Model
         'report_date' => 'date',
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
-        'hours_declared' => 'decimal:2',
+        'hours_declared' => 'float',
+        'completion_rate' => 'integer',
     ];
+
+    /* =======================
+       RELATIONS
+    ======================= */
 
     public function stage()
     {
@@ -47,14 +51,14 @@ class DailyReport extends Model
         return $this->belongsTo(Etudiant::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function attendanceDay()
     {
         return $this->belongsTo(AttendanceDay::class);
-    }
-
-    public function reviewer()
-    {
-        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function items()
@@ -62,13 +66,47 @@ class DailyReport extends Model
         return $this->hasMany(DailyReportItem::class)->orderBy('display_order');
     }
 
+    // 🔥 FIX IMPORTANT (ton erreur)
     public function reviews()
     {
-        return $this->hasMany(DailyReportReview::class)->latest('reviewed_at');
+        return $this->hasMany(DailyReportReview::class, 'daily_report_id')
+            ->latest('reviewed_at');
     }
 
-    public function user()
+    /* =======================
+       HELPERS
+    ======================= */
+
+    public function isEmployeeReport(): bool
     {
-        return $this->belongsTo(User::class);
+        return !is_null($this->user_id);
+    }
+
+    public function isStudentReport(): bool
+    {
+        return !is_null($this->etudiant_id);
+    }
+
+    /* =======================
+       SCOPES
+    ======================= */
+
+    public function scopeVisibleTo($query, $user)
+    {
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
+        if ($user->hasRole('superviseur')) {
+            return $query->whereHas('stage', fn($q) =>
+                $q->where('supervisor_id', $user->id)
+            );
+        }
+
+        if ($user->hasRole('etudiant')) {
+            return $query->where('etudiant_id', optional($user->etudiant)->id);
+        }
+
+        return $query->where('user_id', $user->id);
     }
 }
