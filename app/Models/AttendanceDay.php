@@ -173,4 +173,12 @@ class AttendanceDay extends Model
     {
         return $query->whereNull('first_check_in_at');
     }
+
+    /**
+     * Vérifie si l'arrivée est en retard.
+     */
+    public function isLate()
+    {
+        return $this->late_minutes > 0;
+    }
 }

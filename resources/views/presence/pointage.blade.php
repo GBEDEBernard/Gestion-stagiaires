@@ -1,187 +1,98 @@
 <x-app-layout>
-    <div class="max-w-4xl mx-auto px-4 py-6">
-
-        {{-- Errors --}}
-        @if ($errors->any())
-        <div class="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
-            <strong>Erreur :</strong>
-            <ul class="mt-2 space-y-1">
-                @foreach ($errors->all() as $error)
-                <li>• {{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
-        <div class="bg-white rounded-2xl shadow border overflow-hidden">
-
-            {{-- Header --}}
-            <div class="p-5 border-b bg-gray-50">
-                <h1 class="text-xl md:text-2xl font-bold">Pointage de présence</h1>
-                <p class="text-sm text-gray-500">Rapide • sécurisé • géolocalisé</p>
+<main class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                    Bonjour, <span class="text-[#4154f1]">{{ explode(' ', Auth::user()->name)[0] }}</span>
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">
+                    {{ now()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}
+                </p>
             </div>
 
-            <div class="p-5 space-y-6">
+            @if(session('success'))
+            <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-100 rounded-xl text-green-700 dark:text-green-400 flex items-center gap-3">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> {{ session('success') }}
+            </div>
+            @endif
 
-                {{-- Messages --}}
-                @if(session('success'))
-                <div class="p-3 bg-green-50 text-green-700 rounded-lg text-sm">
-                    {{ session('success') }}
-                </div>
-                @endif
+            @php
+            $user = Auth::user();
+            $activeStage = $user->etudiant?->stages()
+            ->where('date_debut', '<=', now())
+                ->where('date_fin', '>=', now())
+                ->first();
+                $attendanceDay = $activeStage ? \App\Models\AttendanceDay::where('stage_id', $activeStage->id)->whereDate('attendance_date', today())->first() : null;
+                @endphp
 
-                @if(session('error'))
-                <div class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                    {{ session('error') }}
-                </div>
-                @endif
-
-                {{-- Aucun stage --}}
-                @if(!$activeStage && !isset($domaine))
-                <div class="text-center p-6 bg-yellow-50 border rounded-xl">
-                    <h3 class="font-semibold text-lg">Aucun stage actif</h3>
-                    <p class="text-sm text-gray-600 mt-2">Contacte l'administration.</p>
-                </div>
-                @elseif(isset($domaine))
-                {{-- Pointage employé --}}
-                <div class="text-center p-6 bg-blue-50 border rounded-xl">
-                    <h3 class="font-semibold text-lg">Pointage employé</h3>
-                    <p class="text-sm text-gray-600 mt-2">Domaine : {{ $domaine->nom }}</p>
-                </div>
-
-                {{-- Status du jour --}}
-                <div class="p-4 bg-black text-white rounded-xl text-center">
-                    <p class="text-sm opacity-70">Aujourd'hui</p>
-                    <div class="flex justify-center gap-6 mt-3 text-lg font-bold flex-wrap">
-                        <span>Arrivée: --</span>
-                        <span>Départ: --</span>
-                    </div>
-                </div>
-
-                {{-- GPS STATUS --}}
-                <div id="presence-status" class="p-4 bg-gray-100 rounded-xl text-center text-sm">
-                    📍 En attente de localisation...
-                </div>
-
-                {{-- BUTTONS --}}
-                <div class="space-y-4">
-
-                    {{-- CHECKIN --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="presence-form" data-action="arrivée" novalidate>
-                        @csrf
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version" value="presence-web-v1">
-
-                        <button type="button" class="presence-btn w-full bg-black text-white py-4 rounded-xl text-lg font-bold presence-submit">
-                            Pointer arrivée
-                        </button>
-                    </form>
-
-                    {{-- CHECKOUT --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="presence-form" data-action="départ" novalidate>
-                        @csrf
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version" value="presence-web-v1">
-
-                        <button type="button" class="presence-btn w-full bg-green-600 text-white py-4 rounded-xl text-lg font-bold presence-submit">
-                            Pointer départ
-                        </button>
-                    </form>
-
+                @if(!$activeStage)
+                <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-10 text-center">
+                    <i data-lucide="calendar-off" class="w-10 h-10 text-slate-400 mx-auto mb-4"></i>
+                    <h2 class="text-xl font-semibold">Aucun stage actif</h2>
+                    <p class="text-slate-500">Contactez l'administration.</p>
                 </div>
                 @else
-
-                {{-- Cards --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-green-50 rounded-xl border">
-                        <p class="text-sm text-green-700 font-semibold">Stage</p>
-                        <h2 class="font-bold text-lg">
-                            {{ $activeStage->theme ?? 'Sans thème' }}
-                        </h2>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-xl border">
-                        <p class="text-sm text-gray-600">Site</p>
-                        <h2 class="font-semibold">
-                            {{ $activeStage->site?->name ?? 'Site principal' }}
-                        </h2>
-                    </div>
-                </div>
-
-                {{-- Status du jour --}}
-                <div class="p-4 bg-black text-white rounded-xl text-center">
-                    <p class="text-sm opacity-70">Aujourd'hui</p>
-                    <div class="flex justify-center gap-6 mt-3 text-lg font-bold flex-wrap">
-                        <span>Arrivée: {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--' }}</span>
-                        <span>Départ: {{ $attendanceDay?->last_check_out_at?->format('H:i') ?? '--' }}</span>
+                <div class="bg-white dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm mb-8">
+                    <h3 class="text-xs font-semibold text-[#4154f1] uppercase tracking-wider mb-6 text-center md:text-left">Statut de présence</h3>
+                    <div class="flex flex-row items-center justify-around md:justify-start md:gap-12">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Arrivée</p>
+                            <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->first_check_in_at ? ($attendanceDay->isLate() ? 'text-[#eb0000]' : 'text-emerald-600') : 'text-slate-400' }}">
+                                {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--:--' }}
+                            </p>
+                        </div>
+                        <div class="w-px h-10 bg-slate-200"></div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Départ</p>
+                            <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->last_check_out_at ? 'text-slate-900 dark:text-white' : 'text-slate-400' }}">
+                                {{ $attendanceDay?->last_check_out_at?->format('H:i') ?? '--:--' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                {{-- GPS STATUS --}}
-                <div id="presence-status" class="p-4 bg-gray-100 rounded-xl text-center text-sm">
-                    📍 En attente de localisation...
+                <div id="presence-status" class="mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-[#4154f1]"></i>
+                    <span>Prêt pour la localisation</span>
                 </div>
 
-                {{-- BUTTONS --}}
-                <div class="space-y-4">
-
-                    {{-- CHECKIN --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="presence-form" data-action="arrivée" novalidate>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    @php $hasCheckIn = $attendanceDay && $attendanceDay->first_check_in_at; $hasCheckOut = $attendanceDay && $attendanceDay->last_check_out_at; @endphp
+                    @if(!$hasCheckOut)
+                    {{-- Arrivée --}}
+                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="flex-1 presence-form">
                         @csrf
                         <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
+                        <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
+                        <input type="hidden" name="platform"><input type="hidden" name="browser">
                         <input type="hidden" name="app_version" value="presence-web-v1">
-
-                        <button type="button" class="presence-btn w-full bg-black text-white py-4 rounded-xl text-lg font-bold presence-submit">
-                            Pointer arrivée
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ $hasCheckIn ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-[#4154f1] text-white' }}" {{ $hasCheckIn ? 'disabled' : '' }}>
+                            <i data-lucide="check" class="w-5 h-5"></i> Pointer l'arrivée
                         </button>
                     </form>
-
-                    {{-- CHECKOUT --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="presence-form" data-action="départ" novalidate>
+                    {{-- Départ --}}
+                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="flex-1 presence-form">
                         @csrf
                         <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
+                        <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
+                        <input type="hidden" name="platform"><input type="hidden" name="browser">
                         <input type="hidden" name="app_version" value="presence-web-v1">
-
-                        <button type="button" class="presence-btn w-full bg-green-600 text-white py-4 rounded-xl text-lg font-bold presence-submit">
-                            Pointer départ
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ !$hasCheckIn ? 'bg-red-50 border border-[#eb0000] text-[#eb0000] cursor-not-allowed' : 'bg-white border-2 border-[#eb0000] text-[#eb0000] hover:bg-[#eb0000] hover:text-white' }}" {{ !$hasCheckIn ? 'disabled' : '' }}>
+                            <i data-lucide="log-out" class="w-5 h-5"></i> Pointer le départ
                         </button>
                     </form>
-
+                    @else
+                    <div class="w-full p-8 bg-blue-50/50 border border-blue-100 rounded-2xl flex flex-col items-center gap-3">
+                        <i data-lucide="check-circle-2" class="w-8 h-8 text-[#4154f1]"></i>
+                        <p class="text-lg font-semibold text-[#4154f1]">Journée terminée</p>
+                    </div>
+                    @endif
                 </div>
-
                 @endif
-            </div>
-        </div>
-    </div>
+        </main>
 
     @push('scripts')
     <script>
