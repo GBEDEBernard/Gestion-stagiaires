@@ -9,11 +9,6 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\AdminPresenceService;
 use Illuminate\Http\Request;
-<<<<<<< HEAD
-use Inertia\Inertia;
-=======
-
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
 use Carbon\Carbon;
 
 class AdminPresenceController extends Controller
@@ -139,12 +134,9 @@ class AdminPresenceController extends Controller
     /**
      * Liste anomalies.
      */
-<<<<<<< HEAD
-=======
     /**
      * Liste anomalies.
      */
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
     public function anomalies(Request $request)
     {
         $anomalies = $this->presenceService->getOpenAnomalies(100);
@@ -153,14 +145,6 @@ class AdminPresenceController extends Controller
             return response()->json($anomalies);
         }
 
-<<<<<<< HEAD
-        return Inertia::render('Admin/Presence/Anomalies', [
-            'anomalies' => $anomalies,
-        ]);
-    }
-
-    /**
-=======
         // ✅ Correction : utiliser Blade au lieu d'Inertia
         return view('admin.presence.anomalies', compact('anomalies'));
     }
@@ -245,7 +229,6 @@ class AdminPresenceController extends Controller
         }, 'pointages-' . $date . '.csv');
     }
     /**
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
      * Résoudre anomalie.
      */
     public function resolveAnomaly(ResolveAnomalyRequest $request, int $anomalyId)
