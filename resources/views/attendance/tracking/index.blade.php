@@ -520,8 +520,7 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
+                    datasets: [{
                             label: 'Heures travaillées',
                             data: workedHours,
                             borderColor: 'rgb(16, 185, 129)',
