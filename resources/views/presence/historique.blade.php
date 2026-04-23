@@ -1,6 +1,7 @@
 <x-app-layout title="Historique de présence">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 dark:bg-gray-900/50 min-h-screen pb-24">
-        {{-- 🎉 SUCCESS BANNER ANIMÉ --}}
+
+        {{-- SUCCESS BANNER --}}
         @if (session('success'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)"
             x-show="show" x-transition:enter="transition ease-out duration-300"
@@ -31,8 +32,8 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-slate-900 dark:text-gray-100 tracking-tight animate-fade-in">
-                    <p class="mt-2 text-xl text-slate-600 dark:text-indigo-300 animate-fade-in delay-200">
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-gray-100 tracking-tight">
+                    <p class="mt-2 text-xl text-slate-600 dark:text-indigo-300">
                         {{ isset($user) && $user->id !== auth()->id() ? 'Pointages de ' . $user->name : 'Tous tes pointages' }} par période
                     </p>
                 </h1>
@@ -40,7 +41,7 @@
             <div class="flex gap-3">
                 <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-xl font-medium shadow-sm transition-all">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     Nouveau pointage
                 </a>
@@ -81,26 +82,37 @@
             </x-stats-card>
         </div>
 
-        {{-- Graphs --}}
-        @if(isset($userStats) && isset($userStats['chart_data']))
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-8">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-                    📈 Évolution Présence
-                </h3>
-                <canvas id="personalPresenceChart" height="300"></canvas>
+        {{-- Graphiques --}}
+        @if(isset($userStats))
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                📊 Évolution · Présence & Retards
+            </h3>
+
+            {{-- Légende manuelle --}}
+            <div class="flex flex-wrap gap-4 mb-4">
+                <span class="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-300">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#3b82f6;"></span>
+                    Heures travaillées
+                </span>
+                <span class="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-300">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#f97316;"></span>
+                    Minutes de retard
+                </span>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-8">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-                    ⚠️ Retards Journaliers ({{ $userStats['total_late_minutes'] }}min)
-                </h3>
-                <canvas id="personalLateChart" height="300"></canvas>
+            {{-- Wrapper avec hauteur fixe — NE PAS mettre height sur le canvas --}}
+            <div style="position: relative; width: 100%; height: 300px;">
+                <canvas id="presenceChart"
+                    role="img"
+                    aria-label="Graphique d'évolution des heures travaillées et des minutes de retard">
+                    Aucune donnée à afficher.
+                </canvas>
             </div>
         </div>
         @endif
 
-        {{-- Main Table --}}
+        {{-- Tableau principal --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/50">
                 <h3 class="text-lg font-bold text-slate-900 dark:text-gray-100 flex items-center gap-2">
@@ -119,16 +131,15 @@
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Heure d'arrivée</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Heure de départ</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Position</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Minutes avant 8h</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Statut</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider">Rapport</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         @forelse($attendanceDays->flatten()->sortByDesc('attendance_date') as $index => $day)
-                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800 group transition-all duration-300 animate-fade-in-up 
-                                   {{ $index % 2 === 0 ? 'delay-100' : 'delay-200' }}
-                                   {{ $day->attendance_date->isToday() ? 'bg-emerald-50 dark:bg-emerald-950/50 border-l-4 border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-200/50 dark:ring-emerald-900/50' : '' }}"
-                            style="animation-fill-mode: both;">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800 group transition-all duration-300
+                                   {{ $day->attendance_date->isToday() ? 'bg-emerald-50 dark:bg-emerald-950/50 border-l-4 border-emerald-400 dark:border-emerald-500' : '' }}">
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-slate-900 dark:text-gray-100">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
                                 <div class="text-xs text-slate-500 dark:text-gray-400 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
@@ -144,7 +155,7 @@
                             <td class="px-6 py-4 text-sm text-slate-700 dark:text-gray-300">
                                 @if($day->stage && $day->stage->site)
                                 <span class="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 text-sm font-semibold rounded-full">
-                                    TFG SARL (TECHNOLOGY FOREVER GROUP)
+                                    TFG SARL
                                 </span>
                                 @else
                                 <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-semibold rounded-full">
@@ -152,78 +163,70 @@
                                 </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-sm text-slate-700 dark:text-gray-300">
                                 @php
-                                $arrivalTime = $day->first_check_in_at;
-                                $status = 'inconnu';
-                                $color = 'gray';
-                                $icon = 'question';
-                                if ($arrivalTime) {
-                                $hour = $arrivalTime->hour;
-                                $minute = $arrivalTime->minute;
-                                $timeInMinutes = $hour * 60 + $minute;
-                                if ($timeInMinutes >= 7*60 && $timeInMinutes <= 7*60 + 45) {
-                                    $status='À l\' heure';
-                                    $color='emerald' ;
-                                    $icon='thumbs-up' ;
-                                    } elseif ($timeInMinutes>= 7*60 + 46 && $timeInMinutes <= 7*60 + 59) {
-                                        $status='Tard vers retard' ;
-                                        $color='amber' ;
-                                        $icon='thumbs-up' ;
-                                        } elseif ($timeInMinutes>= 8*60 && $timeInMinutes <= 13*60) {
-                                            $status='En retard' ;
-                                            $color='rose' ;
-                                            $icon='thumbs-down' ;
-                                            }
-                                            }
-                                            @endphp
-                                            @if($status !=='inconnu' )
-                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg dark:from-{{ $color }}-500 dark:to-{{ $color }}-600">
-                                            @if($icon === 'thumbs-up')
-                                            👍
-                                            @elseif($icon === 'thumbs-down')
-                                            👎
-                                            @endif
-                                            {{ $status }}
-                                            </span>
-                                            @else
-                                            <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200">
-                                                Inconnu
-                                            </span>
-                                            @endif
+                                    $arrivalTime = $day->first_check_in_at;
+                                    $minutesBefore = 0;
+                                    if ($arrivalTime) {
+                                        $arrivalMinutes = $arrivalTime->hour * 60 + $arrivalTime->minute;
+                                        $eightAM = 8 * 60;
+                                        if ($arrivalMinutes < $eightAM) {
+                                            $minutesBefore = $eightAM - $arrivalMinutes;
+                                        }
+                                    }
+                                @endphp
+                                {{ $minutesBefore > 0 ? $minutesBefore . ' min' : '—' }}
                             </td>
                             <td class="px-6 py-4">
                                 @php
-                                $report = $day->dailyReports->first();
+                                    $arrivalTime = $day->first_check_in_at;
+                                    $status = 'inconnu';
+                                    $color = 'gray';
+                                    $icon = 'question';
+                                    if ($arrivalTime) {
+                                        $timeInMinutes = $arrivalTime->hour * 60 + $arrivalTime->minute;
+                                        if ($timeInMinutes < 8 * 60) {
+                                            $status = 'À l\'heure';
+                                            $color = 'emerald';
+                                            $icon = 'thumbs-up';
+                                        } else {
+                                            $status = 'En retard';
+                                            $color = 'rose';
+                                            $icon = 'thumbs-down';
+                                        }
+                                    }
                                 @endphp
-                                @if($report)
-                                @if($report->status === 'submitted')
-                                <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold rounded-full">
-                                    Soumis
-                                </span>
-                                @elseif($report->status === 'draft')
-                                <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 text-xs font-semibold rounded-full">
-                                    Brouillon
-                                </span>
-                                @elseif($report->status === 'approved')
-                                <span class="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
-                                    Approuvé
+                                @if($status !== 'inconnu')
+                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-gradient-to-r from-{{ $color }}-400 to-{{ $color }}-500 text-white shadow-lg dark:from-{{ $color }}-500 dark:to-{{ $color }}-600">
+                                    @if($icon === 'thumbs-up') 👍 @elseif($icon === 'thumbs-down') 👎 @endif
+                                    {{ $status }}
                                 </span>
                                 @else
-                                <span class="px-3 py-1 bg-slate-100 dark:bg-gray-800 text-slate-800 dark:text-gray-200 text-xs font-semibold rounded-full">
-                                    {{ ucfirst($report->status) }}
+                                <span class="px-4 py-2 inline-flex text-xs font-bold rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200">
+                                    Inconnu
                                 </span>
                                 @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                @php $report = $day->dailyReports->first(); @endphp
+                                @if($report)
+                                    @if($report->status === 'submitted')
+                                    <span class="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold rounded-full">Soumis</span>
+                                    @elseif($report->status === 'draft')
+                                    <span class="px-3 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 text-xs font-semibold rounded-full">Brouillon</span>
+                                    @elseif($report->status === 'approved')
+                                    <span class="px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">Approuvé</span>
+                                    @else
+                                    <span class="px-3 py-1 bg-slate-100 dark:bg-gray-800 text-slate-800 dark:text-gray-200 text-xs font-semibold rounded-full">{{ ucfirst($report->status) }}</span>
+                                    @endif
                                 @else
-                                <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">
-                                    Aucun
-                                </span>
+                                <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-full">Aucun</span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-slate-500 dark:text-gray-400">
+                            <td colspan="7" class="px-6 py-12 text-center text-slate-500 dark:text-gray-400">
                                 <svg class="mx-auto h-16 w-16 mb-4 text-slate-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -245,61 +248,125 @@
             </div>
         </div>
 
-        @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                @if(isset($userStats) && isset($userStats['chart_data']))
-                // Chart Présence
-                const presenceCtx = document.getElementById('personalPresenceChart')?.getContext('2d');
-                if (presenceCtx) {
-                    new Chart(presenceCtx, {
-                        type: 'line',
-                        data: {
-                            labels: @json($userStats['chart_data']['labels']),
-                            datasets: [{
-                                label: 'Heures travaillées',
-                                data: @json($userStats['chart_data']['worked_hours']),
-                                borderColor: 'rgb(59, 130, 246)',
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                tension: 0.4,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: { beginAtZero: true }
-                            }
-                        }
-                    });
-                }
+    </div>
 
-                // Chart Retards
-                const lateCtx = document.getElementById('personalLateChart')?.getContext('2d');
-                if (lateCtx) {
-                    new Chart(lateCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: @json($userStats['chart_data']['labels']),
-                            datasets: [{
-                                label: 'Minutes de retard',
-                                data: @json($userStats['chart_data']['late_minutes']),
-                                backgroundColor: 'rgb(251, 191, 36)',
-                                borderColor: 'rgb(251, 146, 60)',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: { beginAtZero: true }
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        @if(isset($userStats))
+
+        {{-- Récupération des données depuis PHP --}}
+        var chartData     = @json($userStats['chart_data'] ?? []);
+        var labels        = Array.isArray(chartData.labels)       ? chartData.labels       : [];
+        var workedHours   = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+        var lateMinutes   = Array.isArray(chartData.late_minutes) ? chartData.late_minutes : [];
+
+        {{-- Conversion explicite en nombres pour éviter que JSON renvoie des strings --}}
+        workedHours = workedHours.map(function(v) { return parseFloat(v) || 0; });
+        lateMinutes = lateMinutes.map(function(v) { return parseInt(v)   || 0; });
+
+        var canvas = document.getElementById('presenceChart');
+        if (!canvas) return;
+
+        {{-- Si aucune donnée, afficher un message dans le canvas --}}
+        if (labels.length === 0) {
+            var ctx2d = canvas.getContext('2d');
+            ctx2d.font = '14px sans-serif';
+            ctx2d.fillStyle = '#94a3b8';
+            ctx2d.textAlign = 'center';
+            ctx2d.fillText('Aucune donnée disponible pour cette période.', canvas.offsetWidth / 2, 140);
+            return;
+        }
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Heures travaillées',
+                        data: workedHours,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        yAxisID: 'yHeures'
+                    },
+                    {
+                        label: 'Minutes de retard',
+                        data: lateMinutes,
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.08)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#f97316',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        yAxisID: 'yMinutes'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,   {{-- OBLIGATOIRE pour que le wrapper contrôle la hauteur --}}
+                animation: { duration: 600 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return ' ' + context.parsed.y.toFixed(1) + 'h travaillées';
+                                }
+                                return ' ' + context.parsed.y + ' min de retard';
                             }
                         }
-                    });
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 12,
+                            color: '#64748b'
+                        },
+                        grid: { color: 'rgba(148, 163, 184, 0.15)' }
+                    },
+                    yHeures: {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Heures', color: '#3b82f6' },
+                        ticks: { color: '#3b82f6' },
+                        grid: { color: 'rgba(148, 163, 184, 0.15)' }
+                    },
+                    yMinutes: {
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Minutes', color: '#f97316' },
+                        ticks: { color: '#f97316' },
+                        grid: { drawOnChartArea: false }
+                    }
                 }
-                @endif
-            });
-        </script>
-        @endpush
+            }
+        });
+
+        @endif
+    });
+    </script>
+    @endpush
 </x-app-layout>

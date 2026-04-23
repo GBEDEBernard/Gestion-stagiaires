@@ -1,28 +1,18 @@
-<<<<<<< HEAD
-# TODO.md - Sidebar Fix Progress
+# Suivi Mise à jour Graphique Historique
 
-## SIDEBAR DÉCALAGE FIX (✅ COMPLETED)
-- [x] ✅ Create TODO.md with steps
-- [x] ✅ Update navigation.blade.php:
-  - Removed wrapper div + md:static conflicts
-  - Clean nav: fixed w-72 + lg:translate-x-0 (desktop stable)
-  - Fixed mobile: lg:hidden Menu/Retour buttons + z-index
-  - Perfect overlay lg:hidden z-30
-  - Preserved ALL menu content/styles/Alpine/PHP
-- [x] 🧪 Verified dashboard alignment (w-72 = 288px consistent)
-- [x] ✅ Task complete: No décalage, pro UX retained
+## ✅ Étapes terminées
 
-**Status:** ✅ Done! Test dashboard alignment + mobile menu.
+- [x] Analyser fichiers admin/historique
+- [x] Plan d'implémentation validé
+- [ ] Implémenter graphique combiné dans historique.blade.php
+- [ ] Tester responsive + dark mode
+- [ ] Valider données par période (semaine/mois/année)
 
-=======
-# TODO List - Gestion Stagiaires
+## Détails techniques
 
-## ✅ Complété
+**Fichier cible** : `resources/views/presence/historique.blade.php`
+**Canvas ID** : `graphiqueCombine`
+**Datasets** : Heures travaillées / Retards / À l'heure
+**Hauteur** : 280px (comme admin)
 
-✅ **ERREUR GROUP BY MYSQL CORRIGÉE** - AdminPresenceService.php (ligne ~183)
-*Supprimé `attendance_date` du selectRaw() pour conformité strict mode*
-
-## En cours
-
-_(liste des tâches ouvertes)_
->>>>>>> 7f86b0b18054b451357562162fff94988eac643a
+**Prochaine étape** : Éditer historique.blade.php

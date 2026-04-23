@@ -314,11 +314,17 @@ class AdminPresenceService
      */
     public function getUserDetailedStats(int $userId, string $period = 'month'): array
     {
-        $user = User::findOrFail($userId);
-        $isEtudiant = $user->etudiant_id !== null;
+        $user = User::with('etudiant')->findOrFail($userId);
 
-        $query = AttendanceDay::where($isEtudiant ? 'etudiant_id' : 'user_id', $userId);
+        $isEtudiant = $user->etudiant !== null;
 
+        $query = AttendanceDay::query();
+
+        if ($isEtudiant) {
+            $query->where('etudiant_id', $user->etudiant->id);
+        } else {
+            $query->where('user_id', $user->id);
+        }
         // Period filter
         switch ($period) {
             case 'week':
