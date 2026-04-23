@@ -20,6 +20,7 @@ class AdminAttendanceTrackingController extends Controller
         $period = $request->get('period', 'day');
         $dateFilter = $request->get('date', now()->format('Y-m-d'));
         $filterDate = Carbon::createFromFormat('Y-m-d', $dateFilter);
+        $selectedUserId = $request->get('user_id');
 
         $data = match ($period) {
             'week' => $this->getWeeklyData($filterDate),
@@ -28,9 +29,42 @@ class AdminAttendanceTrackingController extends Controller
             default => $this->getDailyData($filterDate),
         };
 
+        // Get all users for dropdown
+        $students = Etudiant::with('user')->get()->map(function ($etudiant) {
+            return [
+                'id' => $etudiant->user->id,
+                'name' => $etudiant->user->name . ' (Étudiant)',
+                'type' => 'student'
+            ];
+        });
+
+        $employees = User::where('id', '!=', Auth::id())
+            ->whereDoesntHave('etudiant')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name . ' (Employé)',
+                    'type' => 'employee'
+                ];
+            });
+
+        $allUsers = $students->concat($employees)->sortBy('name')->values();
+
+        $userStats = null;
+        if ($selectedUserId) {
+            $selectedUser = User::find($selectedUserId);
+            if ($selectedUser) {
+                $userStats = app(\App\Services\AdminPresenceService::class)->getUserDetailedStats($selectedUser->id, $period);
+            }
+        }
+
         return view('attendance.tracking.index', array_merge($data, [
             'period' => $period,
-            'filterDate' => $filterDate
+            'filterDate' => $filterDate,
+            'allUsers' => $allUsers,
+            'selectedUserId' => $selectedUserId,
+            'userStats' => $userStats
         ]));
     }
 

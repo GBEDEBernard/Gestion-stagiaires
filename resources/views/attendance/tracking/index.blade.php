@@ -12,23 +12,31 @@
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
             <div class="flex flex-col gap-4">
                 <div class="flex flex-wrap gap-2">
-                    <a href="?period=day" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=day{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📅 Jour
                     </a>
-                    <a href="?period=week" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=week{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📊 Semaine
                     </a>
-                    <a href="?period=month" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=month{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📈 Mois
                     </a>
-                    <a href="?period=year" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=year{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" class="px-4 py-2 rounded-xl {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📊 Année
                     </a>
                 </div>
 
                 <div class="flex flex-wrap gap-3 items-center">
-                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" class="px-4 py-2  dark:bg-slate-800 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                    <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all">
+                    <select id="userFilter" name="user_id" class="px-4 py-2 dark:bg-slate-800 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        <option value="">Tous les utilisateurs</option>
+                        @foreach($allUsers as $user)
+                        <option value="{{ $user['id'] }}" {{ request('user_id') == $user['id'] ? 'selected' : '' }}>
+                            {{ $user['name'] }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" class="px-4 py-2 dark:bg-slate-800 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all">
                         📥 Exporter CSV
                     </a>
                 </div>
@@ -467,12 +475,125 @@
             </div>
         </div>
         @endif
+
+        {{-- Graphiques --}}
+        @if($userStats && $userStats['chart_data'])
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                <h3 class="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    📊 Évolution des statistiques — {{ $allUsers->where('id', $selectedUserId)->first()['name'] ?? 'Utilisateur' }}
+                </h3>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Période: {{ ucfirst($period) }}</p>
+            </div>
+            <div class="p-6">
+                <canvas id="presenceChart" width="400" height="200"
+                    aria-label="Graphique d'évolution des heures travaillées et des minutes de retard">
+                </canvas>
+            </div>
+        </div>
+        @endif
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         document.getElementById('dateFilter').addEventListener('change', function() {
             const period = new URLSearchParams(window.location.search).get('period') || 'day';
-            window.location.href = `?period=${period}&date=${this.value}`;
+            const userId = new URLSearchParams(window.location.search).get('user_id') || '';
+            window.location.href = `?period=${period}&date=${this.value}${userId ? '&user_id=' + userId : ''}`;
         });
+
+        document.getElementById('userFilter').addEventListener('change', function() {
+            const period = new URLSearchParams(window.location.search).get('period') || 'day';
+            const date = document.getElementById('dateFilter').value;
+            window.location.href = `?period=${period}&date=${date}&user_id=${this.value}`;
+        });
+
+        @if($userStats && $userStats['chart_data'])
+        var chartData = @json($userStats['chart_data'] ?? []);
+        var labels = Array.isArray(chartData.labels) ? chartData.labels : [];
+        var workedHours = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+        var lateMinutes = Array.isArray(chartData.late_minutes) ? chartData.late_minutes : [];
+
+        var canvas = document.getElementById('presenceChart');
+        if (canvas) {
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Heures travaillées',
+                            data: workedHours,
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Minutes de retard',
+                            data: lateMinutes,
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Évolution des présences et retards'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Heures travaillées'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Minutes de retard'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        @endif
     </script>
 </x-app-layout>
