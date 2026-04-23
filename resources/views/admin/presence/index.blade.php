@@ -400,6 +400,115 @@
             border-color: var(--border-hi);
         }
 
+        .pres-filter-panel {
+            margin-top: 1rem;
+            padding: 1rem 1rem 0;
+            background: rgba(255, 255, 255, .92);
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: 1rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: end;
+            color: #111;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+        }
+
+        .pres-filter-field {
+            display: grid;
+            gap: .5rem;
+            font-size: .85rem;
+            color: #374151;
+        }
+
+        .pres-filter-input {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, .35);
+            border-radius: .75rem;
+            background: #ffffff;
+            color: #111;
+            padding: .85rem 1rem;
+        }
+
+        .pres-filter-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .pres-filter-actions {
+            display: flex;
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+
+        .pres-btn-secondary {
+            background: #f8fafc;
+            border-color: rgba(148, 163, 184, .35);
+            color: #111;
+        }
+
+        .pres-btn-secondary:hover {
+            background: #eef2ff;
+        }
+
+        .dark .pres-filter-panel {
+            background: rgba(255, 255, 255, .06);
+            border-color: rgba(255, 255, 255, .12);
+            color: var(--muted);
+            box-shadow: none;
+        }
+
+        .dark .pres-filter-field {
+            color: var(--muted);
+        }
+
+        .dark .pres-filter-input {
+            background: rgba(255, 255, 255, .08);
+            border-color: rgba(255, 255, 255, .14);
+            color: #fff;
+        }
+
+        .dark .pres-filter-input::placeholder {
+            color: rgba(229, 231, 235, .8);
+        }
+
+        .dark .pres-btn-secondary {
+            background: transparent;
+            border-color: rgba(255, 255, 255, .12);
+            color: #e5e7eb;
+        }
+
+        .dark .pres-btn-secondary:hover {
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .pres-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            padding: .85rem 1.1rem;
+            border-radius: .85rem;
+            border: 1px solid transparent;
+            font-weight: 600;
+            font-size: .85rem;
+            text-decoration: none;
+        }
+
+        .pres-btn-primary {
+            background: var(--emerald);
+            color: #fff;
+        }
+
+        .pres-btn-secondary {
+            background: transparent;
+            border-color: rgba(255, 255, 255, .12);
+            color: #e5e7eb;
+        }
+
+        .pres-btn-secondary:hover {
+            background: rgba(255, 255, 255, .06);
+        }
+
         .pres-chart-wrap {
             position: relative;
             height: 220px;
@@ -768,6 +877,28 @@
                 @endforeach
             </div>
 
+            <div class="pres-filter-panel text-gray-600">
+                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form flex items-end gap-4 w-full">
+                    <input type="hidden" name="period" value="custom" />
+                    <input type="hidden" name="group" value="{{ $group }}" />
+
+                    <label class="pres-filter-field" text-gray-600>
+                        <span>Du</span>
+                        <input type="date" name="date_from" value="{{ request('date_from', today()->format('Y-m-d')) }}" class="pres-filter-input" />
+                    </label>
+
+                    <label class="pres-filter-field">
+                        <span>Au</span>
+                        <input type="date" name="date_to" value="{{ request('date_to', today()->format('Y-m-d')) }}" class="pres-filter-input" />
+                    </label>
+
+                    <div class=" flex  bg-slate-900">
+                        <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
+                        <a href="{{ route('admin.presence.index') }}" class="pres-btn pres-btn-secondary">Réinitialiser</a>
+                    </div>
+                </form>
+            </div>
+
             {{-- ── KPI CARDS ────────────────────────────────────── --}}
             <div class="pres-kpis mt-6">
 
@@ -865,389 +996,389 @@
                 </div>
             </div>
 
-  <div class="mt-6">
-    <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
-
-    <div class="pres-card">
-        <div class="pres-chart-wrap" style="height:280px;">
-            <canvas id="chartGlobal"></canvas>
-        </div>
-    </div>
-</div>
-
-<div class="pres-card mt-6">
-    <div class="pres-section-title">Vue d'Ensemble Quotidienne</div>
-    <div style="position:relative;height:280px;">
-        <canvas id="chartOverview"></canvas>
-    </div>
-</div>
-                {{-- Groups --}}
-                <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
-
-                    <div class="pres-group-card">
-                        <div class="pres-group-head">
-                            <div>
-                                <div class="pres-group-label">👥 Étudiants</div>
-                                <div class="pres-group-role">Stagiaires actifs</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <span class="pres-group-count">{{ $groupStats['etudiants']['present'] ?? 0 }}</span>
-                                <span class="pres-group-denom">/{{ $groupStats['etudiants']['count'] ?? 0 }}</span>
-                            </div>
-                        </div>
-                        <div class="pres-group-avg">Moy. {{ $groupStats['etudiants']['avg_worked_hours'] ?? 0 }}h/jour</div>
-                        <div class="pres-progress-bg">
-                            <div class="pres-progress-fill" style="width:{{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%;background:var(--emerald);"></div>
-                        </div>
-                        <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
-                            {{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%
-                        </div>
-                    </div>
-
-                    <div class="pres-group-card">
-                        <div class="pres-group-head">
-                            <div>
-                                <div class="pres-group-label">👔 Employés</div>
-                                <div class="pres-group-role">Personnel actif</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <span class="pres-group-count">{{ $groupStats['employes']['present'] ?? 0 }}</span>
-                                <span class="pres-group-denom">/{{ $groupStats['employes']['count'] ?? 0 }}</span>
-                            </div>
-                        </div>
-                        <div class="pres-group-avg">Moy. {{ $groupStats['employes']['avg_worked_hours'] ?? 0 }}h/jour</div>
-                        <div class="pres-progress-bg">
-                            <div class="pres-progress-fill" style="width:{{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%;background:var(--blue);"></div>
-                        </div>
-                        <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
-                            {{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            {{-- ── REPORTS SECTION ───────────────────────────────── --}}
             <div class="mt-6">
-                <div class="pres-section-title">Suivi des Rapports Journaliers</div>
-                <div class="pres-reports-kpis">
-                    <div class="pres-kpi" style="background:var(--bg2);border-color:var(--border);">
-                        <div class="pres-kpi-accent" style="background:var(--muted);"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
-                        <div class="pres-kpi-label">Brouillons</div>
-                        <div class="pres-kpi-sub">À compléter aujourd'hui</div>
-                    </div>
-                    <div class="pres-kpi kpi-amber">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">⏳</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
-                        <div class="pres-kpi-label">En Attente</div>
-                        <div class="pres-kpi-sub">À reviewer par sup.</div>
-                    </div>
-                    <div class="pres-kpi kpi-emerald">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">✅</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
-                        <div class="pres-kpi-label">Approuvés</div>
-                        <div class="pres-kpi-sub">Cette semaine</div>
-                    </div>
-                    <div class="pres-kpi kpi-blue">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">🏆</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
-                        <div class="pres-kpi-label">Taux Validation</div>
-                        <div class="pres-kpi-sub">Objectif › 90%</div>
-                    </div>
-                </div>
-                <div class="pres-reports-bottom">
-                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
-                        <span class="pres-action-icon">📊</span>
-                        <span style="font-size:1rem;">Tous les Rapports</span>
-                    </a>
-                    <div class="pres-tips">
-                        <div class="pres-tips-title">💡 Astuces Suivi</div>
-                        <ul>
-                            <li>Vérifiez la géolocalisation avant validation</li>
-                            <li>Signalez toute anomalie de +15 min de retard</li>
-                            <li>Validez avant 18h pour les stats du jour</li>
-                        </ul>
+                <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
+
+                <div class="pres-card">
+                    <div class="pres-chart-wrap" style="height:280px;">
+                        <canvas id="chartGlobal"></canvas>
                     </div>
                 </div>
             </div>
 
-            {{-- ── TOP RETARDS & ABSENCES ────────────────────────── --}}
-            <div class="pres-charts-grid mt-6">
+            <div class="pres-card mt-6">
+                <div class="pres-section-title">Vue d'Ensemble Quotidienne</div>
+                <div style="position:relative;height:280px;">
+                    <canvas id="chartOverview"></canvas>
+                </div>
+            </div>
+            {{-- Groups --}}
+            <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
 
-                {{-- Top 10 Retards --}}
-                <div class="pres-table-card">
-                    <div class="pres-table-head">
-                        <span class="pres-table-head-title">🚨 Top 10 Retards</span>
-                        <span class="pres-table-head-meta">Période : {{ $period ?? 'mois' }}</span>
+                <div class="pres-group-card">
+                    <div class="pres-group-head">
+                        <div>
+                            <div class="pres-group-label">👥 Étudiants</div>
+                            <div class="pres-group-role">Stagiaires actifs</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="pres-group-count">{{ $groupStats['etudiants']['present'] ?? 0 }}</span>
+                            <span class="pres-group-denom">/{{ $groupStats['etudiants']['count'] ?? 0 }}</span>
+                        </div>
                     </div>
-                    <table class="pres-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Utilisateur</th>
-                                <th>Total</th>
-                                <th>Jours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($topLate ?? [] as $i => $user)
-                            <tr>
-                                <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
-                                <td style="font-weight:500;">{{ $user->name }}</td>
-                                <td><span class="pres-tag tag-amber">{{ $user->total_late }} min</span></td>
-                                <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4">
-                                    <div class="pres-empty">
-                                        <div class="pres-empty-icon">✅</div>Aucun retard détecté
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    <div class="pres-group-avg">Moy. {{ $groupStats['etudiants']['avg_worked_hours'] ?? 0 }}h/jour</div>
+                    <div class="pres-progress-bg">
+                        <div class="pres-progress-fill" style="width:{{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%;background:var(--emerald);"></div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
+                        {{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%
+                    </div>
                 </div>
 
-                {{-- Absences --}}
-                <div class="pres-table-card">
-                    <div class="pres-table-head">
-                        <span class="pres-table-head-title">⭕ Absences</span>
-                        <span class="pres-table-head-meta">Période : {{ $period ?? 'mois' }}</span>
+                <div class="pres-group-card">
+                    <div class="pres-group-head">
+                        <div>
+                            <div class="pres-group-label">👔 Employés</div>
+                            <div class="pres-group-role">Personnel actif</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="pres-group-count">{{ $groupStats['employes']['present'] ?? 0 }}</span>
+                            <span class="pres-group-denom">/{{ $groupStats['employes']['count'] ?? 0 }}</span>
+                        </div>
                     </div>
-                    @if(empty($absences))
-                    <div class="pres-empty">
-                        <div class="pres-empty-icon">🎉</div>Aucune absence détectée
+                    <div class="pres-group-avg">Moy. {{ $groupStats['employes']['avg_worked_hours'] ?? 0 }}h/jour</div>
+                    <div class="pres-progress-bg">
+                        <div class="pres-progress-fill" style="width:{{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%;background:var(--blue);"></div>
                     </div>
-                    @else
-                    <table class="pres-table">
-                        <thead>
-                            <tr>
-                                <th>Utilisateur</th>
-                                <th>Jours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($absences as $userName => $count)
-                            <tr>
-                                <td style="font-weight:500;">{{ $userName }}</td>
-                                <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @endif
+                    <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
+                        {{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%
+                    </div>
                 </div>
 
             </div>
+        </div>
 
-        </div>{{-- /pres-page --}}
+        {{-- ── REPORTS SECTION ───────────────────────────────── --}}
+        <div class="mt-6">
+            <div class="pres-section-title">Suivi des Rapports Journaliers</div>
+            <div class="pres-reports-kpis">
+                <div class="pres-kpi" style="background:var(--bg2);border-color:var(--border);">
+                    <div class="pres-kpi-accent" style="background:var(--muted);"></div>
+                    <div class="pres-kpi-top">
+                        <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
+                    </div>
+                    <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
+                    <div class="pres-kpi-label">Brouillons</div>
+                    <div class="pres-kpi-sub">À compléter aujourd'hui</div>
+                </div>
+                <div class="pres-kpi kpi-amber">
+                    <div class="pres-kpi-accent"></div>
+                    <div class="pres-kpi-top">
+                        <div class="pres-kpi-icon">⏳</div>
+                    </div>
+                    <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
+                    <div class="pres-kpi-label">En Attente</div>
+                    <div class="pres-kpi-sub">À reviewer par sup.</div>
+                </div>
+                <div class="pres-kpi kpi-emerald">
+                    <div class="pres-kpi-accent"></div>
+                    <div class="pres-kpi-top">
+                        <div class="pres-kpi-icon">✅</div>
+                    </div>
+                    <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
+                    <div class="pres-kpi-label">Approuvés</div>
+                    <div class="pres-kpi-sub">Cette semaine</div>
+                </div>
+                <div class="pres-kpi kpi-blue">
+                    <div class="pres-kpi-accent"></div>
+                    <div class="pres-kpi-top">
+                        <div class="pres-kpi-icon">🏆</div>
+                    </div>
+                    <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
+                    <div class="pres-kpi-label">Taux Validation</div>
+                    <div class="pres-kpi-sub">Objectif › 90%</div>
+                </div>
+            </div>
+            <div class="pres-reports-bottom">
+                <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
+                    <span class="pres-action-icon">📊</span>
+                    <span style="font-size:1rem;">Tous les Rapports</span>
+                </a>
+                <div class="pres-tips">
+                    <div class="pres-tips-title">💡 Astuces Suivi</div>
+                    <ul>
+                        <li>Vérifiez la géolocalisation avant validation</li>
+                        <li>Signalez toute anomalie de +15 min de retard</li>
+                        <li>Validez avant 18h pour les stats du jour</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── TOP RETARDS & ABSENCES ────────────────────────── --}}
+        <div class="pres-charts-grid mt-6">
+
+            {{-- Top 10 Retards --}}
+            <div class="pres-table-card">
+                <div class="pres-table-head">
+                    <span class="pres-table-head-title">🚨 Top 10 Retards</span>
+                    <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
+                </div>
+                <table class="pres-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Utilisateur</th>
+                            <th>Total</th>
+                            <th>Jours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($topLate ?? [] as $i => $user)
+                        <tr>
+                            <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
+                            <td style="font-weight:500;">{{ $user->name }}</td>
+                            <td><span class="pres-tag tag-amber">{{ $user->total_late }} min</span></td>
+                            <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4">
+                                <div class="pres-empty">
+                                    <div class="pres-empty-icon">✅</div>Aucun retard détecté
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Absences --}}
+            <div class="pres-table-card">
+                <div class="pres-table-head">
+                    <span class="pres-table-head-title">⭕ Absences</span>
+                    <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
+                </div>
+                @if(empty($absences))
+                <div class="pres-empty">
+                    <div class="pres-empty-icon">🎉</div>Aucune absence détectée
+                </div>
+                @else
+                <table class="pres-table">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Jours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($absences as $userName => $count)
+                        <tr>
+                            <td style="font-weight:500;">{{ $userName }}</td>
+                            <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+
+        </div>
+
+    </div>{{-- /pres-page --}}
     </div>{{-- /pres-wrap --}}
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-    Chart.defaults.font.family = "'DM Sans', sans-serif";
-    Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = "'DM Sans', sans-serif";
+            Chart.defaults.color = '#9ca3af';
 
-    // 🔥 DATA SAFE (ultra important)
-    const labels = @json(($globalStats['chart_data']['labels'] ?? collect())->values());
-    const present = @json(($globalStats['chart_data']['present'] ?? collect())->values());
-    const lateMinutes = @json(($globalStats['chart_data']['late_minutes'] ?? collect())->values());
-    const lateDays = @json(($globalStats['chart_data']['late_days'] ?? collect())->values());
+            // 🔥 DATA SAFE (ultra important)
+            const labels = @json($globalStats['chart_data']['labels'] ?? []);
+            const present = @json($globalStats['chart_data']['present'] ?? []);
+            const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
+            const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
 
-    // 🔥 calcul réel cohérent
-    const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
+            // 🔥 calcul réel cohérent
+            const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-    /* =========================================================
-       🎨 GRADIENTS (EFFET PREMIUM)
-    ========================================================= */
-    const createGradient = (ctx, color) => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-        return gradient;
-    };
+            /* =========================================================
+               🎨 GRADIENTS (EFFET PREMIUM)
+            ========================================================= */
+            const createGradient = (ctx, color) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                return gradient;
+            };
 
-    /* =========================================================
-       📈 GRAPHE PRINCIPAL (COURBES PRO)
-    ========================================================= */
-    const ctxG = document.getElementById('chartGlobal');
+            /* =========================================================
+               📈 GRAPHE PRINCIPAL (COURBES PRO)
+            ========================================================= */
+            const ctxG = document.getElementById('chartGlobal');
 
-    if (ctxG && labels.length > 0) {
+            if (ctxG && labels.length > 0) {
 
-        const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
-        const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
-        const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
+                const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
+                const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
+                const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
 
-        new Chart(ctxG, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Présence',
-                        data: present,
-                        borderColor: '#10b981',
-                        backgroundColor: gradientGreen,
-                        fill: true,
-                        tension: 0.45,
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                new Chart(ctxG, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                                label: 'Présence',
+                                data: present,
+                                borderColor: '#10b981',
+                                backgroundColor: gradientGreen,
+                                fill: true,
+                                tension: 0.45,
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: "À l'heure",
+                                data: onTime,
+                                borderColor: '#3b82f6',
+                                backgroundColor: gradientBlue,
+                                fill: true,
+                                tension: 0.45,
+                                borderWidth: 2,
+                                pointRadius: 4
+                            },
+                            {
+                                label: 'Retards (min)',
+                                data: lateMinutes,
+                                borderColor: '#f59e0b',
+                                backgroundColor: gradientOrange,
+                                fill: true,
+                                tension: 0.45,
+                                borderWidth: 2,
+                                yAxisID: 'y1',
+                                pointRadius: 4
+                            }
+                        ]
                     },
-                    {
-                        label: "À l'heure",
-                        data: onTime,
-                        borderColor: '#3b82f6',
-                        backgroundColor: gradientBlue,
-                        fill: true,
-                        tension: 0.45,
-                        borderWidth: 2,
-                        pointRadius: 4
-                    },
-                    {
-                        label: 'Retards (min)',
-                        data: lateMinutes,
-                        borderColor: '#f59e0b',
-                        backgroundColor: gradientOrange,
-                        fill: true,
-                        tension: 0.45,
-                        borderWidth: 2,
-                        yAxisID: 'y1',
-                        pointRadius: 4
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
+
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e5e7eb',
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#111827',
+                                borderColor: '#374151',
+                                borderWidth: 1,
+                                titleColor: '#fff',
+                                bodyColor: '#d1d5db'
+                            }
+                        },
+
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                position: 'left',
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                }
+                            },
+                            y1: {
+                                beginAtZero: true,
+                                position: 'right',
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        }
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                animation: {
-                    duration: 1200,
-                    easing: 'easeOutQuart'
-                },
-
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#e5e7eb',
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: '#111827',
-                        borderColor: '#374151',
-                        borderWidth: 1,
-                        titleColor: '#fff',
-                        bodyColor: '#d1d5db'
-                    }
-                },
-
-                scales: {
-                    x: {
-                        grid: {
-                            color: 'rgba(255,255,255,0.05)'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        position: 'left',
-                        grid: {
-                            color: 'rgba(255,255,255,0.05)'
-                        }
-                    },
-                    y1: {
-                        beginAtZero: true,
-                        position: 'right',
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
+                });
             }
-        });
-    }
 
-    /* =========================================================
-       📊 BAR CHART (clean)
-    ========================================================= */
-    const ctxOv = document.getElementById('chartOverview');
+            /* =========================================================
+               📊 BAR CHART (clean)
+            ========================================================= */
+            const ctxOv = document.getElementById('chartOverview');
 
-    if (ctxOv && labels.length > 0) {
-        new Chart(ctxOv, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Présents',
-                        data: present,
-                        backgroundColor: '#10b981'
+            if (ctxOv && labels.length > 0) {
+                new Chart(ctxOv, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                                label: 'Présents',
+                                data: present,
+                                backgroundColor: '#10b981'
+                            },
+                            {
+                                label: "À l'heure",
+                                data: onTime,
+                                backgroundColor: '#3b82f6'
+                            },
+                            {
+                                label: 'Retards (min)',
+                                data: lateMinutes,
+                                backgroundColor: '#f59e0b'
+                            }
+                        ]
                     },
-                    {
-                        label: "À l'heure",
-                        data: onTime,
-                        backgroundColor: '#3b82f6'
-                    },
-                    {
-                        label: 'Retards (min)',
-                        data: lateMinutes,
-                        backgroundColor: '#f59e0b'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
 
-                animation: {
-                    duration: 1000
-                },
+                        animation: {
+                            duration: 1000
+                        },
 
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#e5e7eb'
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e5e7eb'
+                                }
+                            }
+                        },
+
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
                         }
                     }
-                },
-
-                scales: {
-                    x: {
-                        grid: { display: false }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+                });
             }
-        });
-    }
 
-});
-</script>
-@endpush
+        });
+    </script>
+    @endpush
 </x-app-layout>

@@ -13,29 +13,64 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        [x-cloak] { display: none !important; }
-        
-        #loader-overlay {
-            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
-            z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        [x-cloak] {
+            display: none !important;
         }
-        #loader-overlay.active { opacity: 1; pointer-events: all; }
-        .dark #loader-overlay { background: rgba(17, 24, 39, 0.7); }
+
+        #loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #loader-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .dark #loader-overlay {
+            background: rgba(17, 24, 39, 0.7);
+        }
 
         /* Gestion de la sidebar (w-72 = 18rem) */
-        .main-content { transition: margin-left 0.3s ease; }
-        @media (min-width: 1024px) { .main-content { margin-left: 18rem; } }
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 18rem;
+            }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
     </style>
 </head>
 
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900">
 
-    <div id="loader-overlay"><div class="spinner"></div></div>
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+    </div>
 
     <div class="min-h-screen flex">
         {{-- Navigation Sidebar --}}
@@ -43,7 +78,7 @@
 
         {{-- Zone de contenu principale --}}
         <div class="flex-1 flex flex-col main-content">
-            
+
             {{-- Header --}}
             <header class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -76,13 +111,19 @@
                             </div>
 
                             <button @click="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                <svg x-show="!isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
-                                <svg x-show="isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" /></svg>
+                                <svg x-show="!isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                </svg>
+                                <svg x-show="isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" />
+                                </svg>
                             </button>
 
                             <div class="relative">
                                 <button @click="notifyOpen = !notifyOpen" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition relative">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -118,5 +159,7 @@
             }
         });
     </script>
+    @stack('scripts')
 </body>
+
 </html>

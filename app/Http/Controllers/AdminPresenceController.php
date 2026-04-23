@@ -22,14 +22,16 @@ class AdminPresenceController extends Controller
      */
     public function index(Request $request)
     {
-        $period = $request->get('period', 'today');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $period = $request->get('period', ($dateFrom || $dateTo) ? 'custom' : 'today');
         $group = $request->get('group', 'all');
 
         $overview = $this->presenceService->getTodayOverview();
-        $globalStats = $this->presenceService->getGlobalStats($period);
-        $groupStats = $this->presenceService->getStatsByGroup($group, $period);
-        $topLate = AttendanceDay::topLate(10, $period)->get();
-        $absences = $this->presenceService->getAbsences($period);
+        $globalStats = $this->presenceService->getGlobalStats($period, $dateFrom, $dateTo);
+        $groupStats = $this->presenceService->getStatsByGroup($group, $period, $dateFrom, $dateTo);
+        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->get();
+        $absences = $this->presenceService->getAbsences($period, $dateFrom, $dateTo);
 
         $days = $this->presenceService->listAttendanceDays($request->only([
             'date_from',
@@ -82,10 +84,14 @@ class AdminPresenceController extends Controller
         $period = $request->get('period', 'today');
         $group = $request->get('group', 'all');
 
-        $globalStats = $this->presenceService->getGlobalStats($period);
-        $groupStats = $this->presenceService->getStatsByGroup($group, $period);
-        $topLate = AttendanceDay::topLate(10, $period)->get();
-        $absences = $this->presenceService->getAbsences($period);
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $period = $request->get('period', ($dateFrom || $dateTo) ? 'custom' : 'today');
+
+        $globalStats = $this->presenceService->getGlobalStats($period, $dateFrom, $dateTo);
+        $groupStats = $this->presenceService->getStatsByGroup($group, $period, $dateFrom, $dateTo);
+        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->get();
+        $absences = $this->presenceService->getAbsences($period, $dateFrom, $dateTo);
 
         if ($request->wantsJson()) {
             return response()->json([

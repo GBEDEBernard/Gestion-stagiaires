@@ -175,29 +175,36 @@ class AdminPresenceService
     /**
      * Stats globales selon la période.
      */
-   public function getGlobalStats(string $period = 'today')
-{
-    $query = AttendanceDay::query();
+    public function getGlobalStats(string $period = 'today', ?string $dateFrom = null, ?string $dateTo = null)
+    {
+        $query = AttendanceDay::query();
 
-    // Filtre période
-    switch ($period) {
-        case 'today':
-            $query->whereDate('attendance_date', today());
-            break;
-        case 'week':
-            $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
-            break;
-        case 'month':
-            $query->whereMonth('attendance_date', now()->month)
-                  ->whereYear('attendance_date', now()->year);
-            break;
-        case 'year':
-            $query->whereYear('attendance_date', now()->year);
-            break;
-    }
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) {
+                $query->whereDate('attendance_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $query->whereDate('attendance_date', '<=', $dateTo);
+            }
+        } else {
+            switch ($period) {
+                case 'week':
+                    $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $query->whereMonth('attendance_date', now()->month)
+                        ->whereYear('attendance_date', now()->year);
+                    break;
+                case 'year':
+                    $query->whereYear('attendance_date', now()->year);
+                    break;
+                default:
+                    $query->whereDate('attendance_date', today());
+            }
+        }
 
-    $dailyStats = $query
-        ->selectRaw('
+        $dailyStats = $query
+            ->selectRaw('
             DATE(attendance_date) as date,
             COUNT(*) as total_days,
             SUM(CASE WHEN first_check_in_at IS NOT NULL THEN 1 ELSE 0 END) as present,
@@ -205,77 +212,99 @@ class AdminPresenceService
             SUM(CASE WHEN arrival_status = "late" THEN 1 ELSE 0 END) as late_days,
             SUM(worked_minutes) as worked_minutes
         ')
-        ->groupBy('date')
-        ->orderBy('date')
-        ->get();
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
 
-    $totalDays = $dailyStats->sum('total_days');
-    $presentDays = $dailyStats->sum('present');
-    $totalLateMinutes = $dailyStats->sum('late_minutes');
-    $totalWorkedMinutes = $dailyStats->sum('worked_minutes');
-    $totalLateDays = $dailyStats->sum('late_days');
+        $totalDays = $dailyStats->sum('total_days');
+        $presentDays = $dailyStats->sum('present');
+        $totalLateMinutes = $dailyStats->sum('late_minutes');
+        $totalWorkedMinutes = $dailyStats->sum('worked_minutes');
+        $totalLateDays = $dailyStats->sum('late_days');
 
-    $tauxPresence = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
+        $tauxPresence = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
 
-    return [
-        'taux_presence'       => $tauxPresence,
-        'present_days'        => $presentDays,
-        'total_days'          => $totalDays,
-        'total_late_minutes'  => $totalLateMinutes,
-        'total_late_days'     => $totalLateDays,
-        'total_worked_hours'  => round($totalWorkedMinutes / 60, 1),
-        'total_anomalies'     => AttendanceAnomaly::where('status', 'open')->count(),
-        'chart_data' => [
-            'labels'       => $dailyStats->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d/m')),
-            'present'      => $dailyStats->pluck('present'),
-            'late_minutes' => $dailyStats->pluck('late_minutes'),
-            'late_days'    => $dailyStats->pluck('late_days'),   // ← important
-        ],
-    ];
-}
+        $anomaliesQuery = AttendanceAnomaly::where('status', 'open');
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) {
+                $anomaliesQuery->whereDate('detected_at', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $anomaliesQuery->whereDate('detected_at', '<=', $dateTo);
+            }
+        } else {
+            switch ($period) {
+                case 'week':
+                    $anomaliesQuery->whereBetween('detected_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                    break;
+                case 'month':
+                    $anomaliesQuery->whereMonth('detected_at', now()->month)
+                        ->whereYear('detected_at', now()->year);
+                    break;
+                case 'year':
+                    $anomaliesQuery->whereYear('detected_at', now()->year);
+                    break;
+                default:
+                    $anomaliesQuery->whereDate('detected_at', today());
+            }
+        }
+
+        return [
+            'taux_presence'       => $tauxPresence,
+            'present_days'        => $presentDays,
+            'total_days'          => $totalDays,
+            'total_late_minutes'  => $totalLateMinutes,
+            'total_late_days'     => $totalLateDays,
+            'total_worked_hours'  => round($totalWorkedMinutes / 60, 1),
+            'total_anomalies'     => $anomaliesQuery->count(),
+            'chart_data' => [
+                'labels'       => $dailyStats->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d/m'))->values()->all(),
+                'present'      => $dailyStats->pluck('present')->map(fn($value) => (int) $value)->values()->all(),
+                'late_minutes' => $dailyStats->pluck('late_minutes')->map(fn($value) => (int) $value)->values()->all(),
+                'late_days'    => $dailyStats->pluck('late_days')->map(fn($value) => (int) $value)->values()->all(),
+            ],
+        ];
+    }
     /**
      * Stats par groupe (étudiants vs employés).
      */
     /**
      * Stats par groupe (étudiants vs employés).
      */
-    public function getStatsByGroup(string $group = 'all', string $period = 'today'): array
+    public function getStatsByGroup(string $group = 'all', string $period = 'today', ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $etudiantsQuery = AttendanceDay::whereNotNull('etudiant_id');
         $employesQuery  = AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id');
 
-        // Appliquer le filtre de période
-        if ($period !== 'today') {
-            $start = match ($period) {
-                'week'  => now()->startOfWeek(),
-                'month' => now()->startOfMonth(),
-                'year'  => now()->startOfYear(),
-                default => today()
-            };
-
-            $end = match ($period) {
-                'week'  => now()->endOfWeek(),
-                'month' => now()->endOfMonth(),
-                'year'  => now()->endOfYear(),
-                default => today()
-            };
-
-            $etudiantsQuery->whereBetween('attendance_date', [$start, $end]);
-            $employesQuery->whereBetween('attendance_date', [$start, $end]);
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) {
+                $etudiantsQuery->whereDate('attendance_date', '>=', $dateFrom);
+                $employesQuery->whereDate('attendance_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $etudiantsQuery->whereDate('attendance_date', '<=', $dateTo);
+                $employesQuery->whereDate('attendance_date', '<=', $dateTo);
+            }
+        } else {
+            $etudiantsQuery->globalStats($period);
+            $employesQuery->globalStats($period);
         }
+
+        $etudiantsBase = clone $etudiantsQuery;
+        $employesBase = clone $employesQuery;
 
         return [
             'etudiants' => [
-                'count'            => $etudiantsQuery->count(),
-                'present'          => $etudiantsQuery->whereNotNull('first_check_in_at')->count(),
-                'late'             => $etudiantsQuery->where('arrival_status', 'late')->count(),
-                'avg_worked_hours' => round(($etudiantsQuery->avg('worked_minutes') ?? 0) / 60, 1),
+                'count'            => $etudiantsBase->count(),
+                'present'          => (clone $etudiantsQuery)->whereNotNull('first_check_in_at')->count(),
+                'late'             => (clone $etudiantsQuery)->where('arrival_status', 'late')->count(),
+                'avg_worked_hours' => round(((clone $etudiantsQuery)->avg('worked_minutes') ?? 0) / 60, 1),
             ],
             'employes' => [
-                'count'            => $employesQuery->count(),
-                'present'          => $employesQuery->whereNotNull('first_check_in_at')->count(),
-                'late'             => $employesQuery->where('arrival_status', 'late')->count(),
-                'avg_worked_hours' => round(($employesQuery->avg('worked_minutes') ?? 0) / 60, 1),
+                'count'            => $employesBase->count(),
+                'present'          => (clone $employesQuery)->whereNotNull('first_check_in_at')->count(),
+                'late'             => (clone $employesQuery)->where('arrival_status', 'late')->count(),
+                'avg_worked_hours' => round(((clone $employesQuery)->avg('worked_minutes') ?? 0) / 60, 1),
             ],
         ];
     }
@@ -337,15 +366,24 @@ class AdminPresenceService
     /**
      * Jours d'absence.
      */
-    public function getAbsences(string $period = 'month'): array
+    public function getAbsences(string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        // Simplified: days with no check-in
-        return AttendanceDay::whereNull('first_check_in_at')
-            ->whereMonth('attendance_date', now()->month)
-            ->whereYear('attendance_date', now()->year)
-            ->with(['user', 'etudiant.user'])
+        $query = AttendanceDay::whereNull('first_check_in_at');
+
+        if ($dateFrom || $dateTo) {
+            if ($dateFrom) {
+                $query->whereDate('attendance_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $query->whereDate('attendance_date', '<=', $dateTo);
+            }
+        } else {
+            $query->globalStats($period);
+        }
+
+        return $query->with(['user', 'etudiant.user'])
             ->get()
-            ->groupBy(fn($day) => $day->user?->name ?? $day->etudiant->user->name)
+            ->groupBy(fn($day) => $day->user?->name ?? $day->etudiant?->user?->name ?? 'Inconnu')
             ->map(fn($group) => $group->count())
             ->sortDesc()
             ->take(10)

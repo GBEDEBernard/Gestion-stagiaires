@@ -144,11 +144,9 @@ class AttendanceDay extends Model
     /**
      * Scope top retards.
      */
-    public function scopeTopLate($query, $limit = 10, $period = null)
+    public function scopeTopLate($query, $limit = 10, $period = 'today', ?string $dateFrom = null, ?string $dateTo = null)
     {
-        if ($period && $period !== 'today') {
-            $query->globalStats($period);
-        }
+        $query->globalStats($period, $dateFrom, $dateTo);
 
         return $query->selectRaw('
                 COALESCE(etudiant_users.id, direct_users.id) as user_id,
