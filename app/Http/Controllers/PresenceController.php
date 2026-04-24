@@ -130,8 +130,8 @@ class PresenceController extends Controller
         } else {
             // Logique pour employé
             $request->validate([
-                'latitude' => 'required|numeric',
-                'longitude' => 'required|numeric',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
                 'accuracy_meters' => 'nullable|numeric|min:0',
                 'device_fingerprint' => 'required|string',
             ]);
@@ -233,8 +233,8 @@ class PresenceController extends Controller
         } else {
             // Logique pour employé
             $request->validate([
-                'latitude' => 'required|numeric',
-                'longitude' => 'required|numeric',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
                 'accuracy_meters' => 'nullable|numeric|min:0',
                 'device_fingerprint' => 'required|string',
             ]);

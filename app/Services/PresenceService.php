@@ -46,11 +46,7 @@ class PresenceService
     protected function registerEmployeeEvent(User $user, array $payload, string $eventType): AttendanceEvent
     {
         return DB::transaction(function () use ($user, $payload, $eventType) {
-            if (!isset($payload['latitude'], $payload['longitude'])) {
-                throw ValidationException::withMessages([
-                    'presence' => 'Coordonnées GPS manquantes.'
-                ]);
-            }
+            $hasCoordinates = isset($payload['latitude'], $payload['longitude']) && $payload['latitude'] !== null && $payload['longitude'] !== null;
 
             $domaine = $user->domaine;
             if (!$domaine) {
@@ -58,9 +54,17 @@ class PresenceService
             }
 
             $device = $this->resolveTrustedDevice($user, $payload);
-            [$site, $geofence, $distance] = $this->resolveEmployeeSiteGeofence($domaine, $payload);
 
-            $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance);
+            if ($hasCoordinates) {
+                [$site, $geofence, $distance] = $this->resolveEmployeeSiteGeofence($domaine, $payload);
+            } else {
+                // No GPS, assume at primary site
+                $site = $domaine->sites()->first();
+                $geofence = $site?->geofences()->where('is_active', true)->first();
+                $distance = 0;
+            }
+
+            $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance, $hasCoordinates);
 
             $event = AttendanceEvent::create([
                 'stage_id' => null,
@@ -140,7 +144,7 @@ class PresenceService
         return [$best['site'], $best['geofence'], $best['distance']];
     }
 
-    protected function evaluateEmployeeEvent(User $user, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
+    protected function evaluateEmployeeEvent(User $user, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance, bool $hasCoordinates = true): array
     {
         $day = AttendanceDay::where('user_id', $user->id)
             ->whereDate('attendance_date', today())
@@ -181,6 +185,16 @@ class PresenceService
                 'status' => 'approved', // No geofence = OK for employees
                 'reason_code' => 'no_geofence',
                 'message' => 'Pointage enregistré (aucune géofence configurée).',
+            ];
+        }
+
+        if (!$hasCoordinates) {
+            return [
+                'status' => 'approved',
+                'reason_code' => 'no_gps',
+                'message' => 'Pointage enregistré (GPS non disponible).',
+                'anomaly' => 'no_gps',
+                'severity' => 'low',
             ];
         }
 

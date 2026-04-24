@@ -17,20 +17,22 @@
 
             @php
             $user = Auth::user();
-            $activeStage = $user->etudiant?->stages()
-            ->where('date_debut', '<=', now())
-                ->where('date_fin', '>=', now())
-                ->first();
-                $attendanceDay = $activeStage ? \App\Models\AttendanceDay::where('stage_id', $activeStage->id)->whereDate('attendance_date', today())->first() : null;
-                @endphp
+            $isEmployee = isset($domaine);
+            $canCheckIn = $isEmployee ? true : ($activeStage ? true : false);
+            @endphp
 
-                @if(!$activeStage)
+            @if(!$canCheckIn)
                 <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-10 text-center">
                     <i data-lucide="calendar-off" class="w-10 h-10 text-slate-400 mx-auto mb-4"></i>
-                    <h2 class="text-xl font-semibold">Aucun stage actif</h2>
-                    <p class="text-slate-500">Contactez l'administration.</p>
+                    @if($isEmployee)
+                        <h2 class="text-xl font-semibold">Accès non autorisé</h2>
+                        <p class="text-slate-500">Votre compte n'est pas rattaché à un domaine de travail.</p>
+                    @else
+                        <h2 class="text-xl font-semibold">Aucun stage actif</h2>
+                        <p class="text-slate-500">Contactez l'administration.</p>
+                    @endif
                 </div>
-                @else
+            @else
                 <div class="bg-white dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm mb-8">
                     <h3 class="text-xs font-semibold text-[#4154f1] uppercase tracking-wider mb-6 text-center md:text-left">Statut de présence</h3>
                     <div class="flex flex-row items-center justify-around md:justify-start md:gap-12">
@@ -59,28 +61,32 @@
                     @php $hasCheckIn = $attendanceDay && $attendanceDay->first_check_in_at; $hasCheckOut = $attendanceDay && $attendanceDay->last_check_out_at; @endphp
                     @if(!$hasCheckOut)
                     {{-- Arrivée --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="flex-1 presence-form">
+                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="flex-1 presence-form" {{ $isEmployee ? 'data-is-employee="true"' : '' }}>
                         @csrf
-                        <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        @if(!$isEmployee)
+                            <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        @endif
                         <input type="hidden" name="latitude"><input type="hidden" name="longitude">
                         <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
                         <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
                         <input type="hidden" name="platform"><input type="hidden" name="browser">
                         <input type="hidden" name="app_version" value="presence-web-v1">
-                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ $hasCheckIn ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-[#4154f1] text-white' }}" {{ $hasCheckIn ? 'disabled' : '' }}>
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ $hasCheckIn ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-[#4154f1] text-white' }}" {{ $hasCheckIn ? 'disabled' : '' }} data-action="arrivée">
                             <i data-lucide="check" class="w-5 h-5"></i> Pointer l'arrivée
                         </button>
                     </form>
                     {{-- Départ --}}
-                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="flex-1 presence-form">
+                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="flex-1 presence-form" {{ $isEmployee ? 'data-is-employee="true"' : '' }}>
                         @csrf
-                        <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        @if(!$isEmployee)
+                            <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        @endif
                         <input type="hidden" name="latitude"><input type="hidden" name="longitude">
                         <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
                         <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
                         <input type="hidden" name="platform"><input type="hidden" name="browser">
                         <input type="hidden" name="app_version" value="presence-web-v1">
-                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ !$hasCheckIn ? 'bg-red-50 border border-[#eb0000] text-[#eb0000] cursor-not-allowed' : 'bg-white border-2 border-[#eb0000] text-[#eb0000] hover:bg-[#eb0000] hover:text-white' }}" {{ !$hasCheckIn ? 'disabled' : '' }}>
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ !$hasCheckIn ? 'bg-red-50 border border-[#eb0000] text-[#eb0000] cursor-not-allowed' : 'bg-white border-2 border-[#eb0000] text-[#eb0000] hover:bg-[#eb0000] hover:text-white' }}" {{ !$hasCheckIn ? 'disabled' : '' }} data-action="départ">
                             <i data-lucide="log-out" class="w-5 h-5"></i> Pointer le départ
                         </button>
                     </form>
@@ -173,7 +179,7 @@
             // ─── Bind click sur chaque formulaire ───────────────────────────
             forms.forEach(form => {
                 const btn = form.querySelector('.presence-submit');
-                const actionName = form.dataset.action || 'présence';
+                const actionName = btn.dataset.action || 'présence';
 
                 btn.addEventListener('click', () => {
                     btn.disabled = true;
@@ -206,10 +212,18 @@
                             if (err.code === err.TIMEOUT) msg = '⏱️ GPS trop lent. Essaie en plein air ou près d\'une fenêtre.';
                             if (err.code === err.POSITION_UNAVAILABLE) msg = '📡 Position indisponible pour le moment.';
 
+                            // For employees, allow check-in without GPS
+                            if (form.hasAttribute('data-is-employee')) {
+                                status.textContent = `⚠️ ${msg} — Pointage sans GPS en cours...`;
+                                status.className = 'p-4 bg-yellow-50 text-yellow-700 rounded-xl text-center text-sm';
+                                form.submit();
+                                return;
+                            }
+
                             status.textContent = msg;
                             status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
                             btn.disabled = false;
-                            btn.textContent = actionName === 'arrivée' ? 'Pointer arrivée' : 'Pointer départ';
+                            btn.textContent = actionName === 'arrivée' ? 'Pointer l\'arrivée' : 'Pointer le départ';
                         }, {
                             enableHighAccuracy: true,
                             timeout: 15000,
