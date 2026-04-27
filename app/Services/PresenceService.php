@@ -239,14 +239,9 @@ class PresenceService
         if ($event->event_type === 'check_in' && in_array($event->status, ['approved', 'flagged'])) {
             $day->check_in_event_id = $event->id;
             $day->first_check_in_at = $event->occurred_at;
-            $day->late_minutes = 0; // Fixed hours or config later
+            $day->late_minutes = $this->computeLateMinutes(null, $event->occurred_at);
             $day->arrival_status = $this->computeArrivalStatus($event->occurred_at);
-            $day->day_status = match ($day->arrival_status) {
-                'late' => 'late',
-                'warning' => 'warning',
-                'ontime' => 'present',
-                default => 'present',
-            };
+            $day->day_status = $day->arrival_status === 'late' ? 'late' : 'present';
             $day->validation_status = 'auto_approved';
         }
 
@@ -568,18 +563,12 @@ class PresenceService
         return now()->between($stage->date_debut->copy()->startOfDay(), $stage->date_fin->copy()->endOfDay());
     }
 
-    protected function computeLateMinutes(Stage $stage, $occurredAt): int
+    protected function computeLateMinutes(?Stage $stage, $occurredAt): int
     {
-        if (!$stage->expected_check_in_time) {
-            return 0;
-        }
+        $expected = $occurredAt->copy()->setTime(8, 0);
 
-        $expected = $occurredAt->copy()->setTimeFromTimeString($stage->expected_check_in_time);
-        $grace = (int) ($stage->allowed_late_minutes ?? 0);
-        $effectiveExpected = $expected->copy()->addMinutes($grace);
-
-        return $occurredAt->greaterThan($effectiveExpected)
-            ? $effectiveExpected->diffInMinutes($occurredAt)
+        return $occurredAt->greaterThan($expected)
+            ? $expected->diffInMinutes($occurredAt)
             : 0;
     }
 
@@ -603,18 +592,11 @@ class PresenceService
      */
     protected function computeArrivalStatus($occurredAt): string
     {
-        $hour = $occurredAt->hour;
-        $minute = $occurredAt->minute;
+        $threshold = $occurredAt->copy()->setTime(8, 0);
 
-        $timeMinutes = $hour * 60 + $minute;
-
-        if ($timeMinutes <= (7 * 60 + 45)) {
-            return 'ontime'; // Vert: à l'heure
-        } elseif ($timeMinutes <= (7 * 60 + 59)) {
-            return 'warning'; // Jaune: tend vers le retard
-        } else {
-            return 'late'; // Rouge: en retard
-        }
+        return $occurredAt->lessThan($threshold)
+            ? 'ontime'
+            : 'late';
     }
 
     protected function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
