@@ -134,7 +134,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             @unless(auth()->user()->hasRole('etudiant'))
             <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
 
-                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
+                @if(auth()->user()->hasRole('superviseur') && !auth()->user()->hasRole('admin'))
                 <div class="space-y-1.5">
                     @can('presence.admin.view')
                     <a href="{{ route('admin.presence.index') }}"
@@ -338,11 +338,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                                 </svg>
                             </div>
                             <span>Stages</span>
-                            @if($stagesCount > 0)
-                            <span class="px-2.5 py-0.5 text-xs font-bold bg-blue-500 text-white rounded-full shadow-lg animate-pulse">
-                                {{ $stagesCount }}
-                            </span>
-                            @endif
+                           
                         </div>
                         <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
@@ -418,38 +414,42 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcanany
                 @endrole
 
-                <!-- Employés avec Sous-menu -->
-                @canany(['domaines.view', 'users.view'])
+                <!-- Gestion Personnel avec Sous-menu -->
+                @canany(['domaines.view', 'users.view', 'sites.view', 'tasks.view'])
                 <div class="mb-3" x-data="{ open: false }">
                     <button @click="open = !open"
                         class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden"
-                        :class="open ? 'bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
+                        :class="open ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-blue-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
                             <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm"
                                 :class="open ? 'bg-white/20' : 'bg-slate-700/50'">
-                                <svg class="w-5 h-5" :class="open ? 'text-white' : 'text-cyan-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                <svg class="w-5 h-5" :class="open ? 'text-white' : 'text-red-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
-                            <span>Employés</span>
+                            
+                            <span>Gestion des <br>Personnels</span>
                         </div>
                         <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
 
-                    <!-- Sous-menu Employés -->
+                    <!-- Sous-menu Gestion Personnel -->
                     <div x-show="open" x-collapse @click.outside="open = false"
                         class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('domaines.view')
                         <a href="{{ route('domaines.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
-                            <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-400 transition-colors"></div>
+                            <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span>Gérer Domaines</span>
+                            <div class="flex flex-col">
+                                <span>Domaines</span>
+                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Groupes employés</p>
+                            </div>
                         </a>
                         @endcan
                         @foreach($domaines as $domaine)
@@ -462,6 +462,49 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>{{ $domaine->nom }}</span>
                         </a>
                         @endforeach
+                        @role('admin')
+                        <a href="{{ route('admin.users.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-orange-500 group-hover:bg-orange-400 transition-colors"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check-fill" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+                                <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                            </svg>
+                            <div class="flex flex-col">
+                                <span>Utilisateurs</span>
+                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Gestion comptes</p>
+                            </div>
+                           
+                        </a>
+                        @endrole
+                        @can('sites.view')
+                        <a href="{{ route('sites.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                          
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-globe-europe-africa-fill" viewBox="0 0 16 16">
+                               <path fill-rule="evenodd" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1a6.97 6.97 0 0 0-4.335 1.505l-.285.641a.847.847 0 0 0 1.48.816l.244-.368a.81.81 0 0 1 1.035-.275.81.81 0 0 0 .722 0l.262-.13a1 1 0 0 1 .775-.05l.984.34q.118.04.243.054c.784.093.855.377.694.801a.84.84 0 0 1-1.035.487l-.01-.003C8.273 4.663 7.747 4.5 6 4.5 4.8 4.5 3.5 5.62 3.5 7c0 3 1.935 1.89 3 3 1.146 1.194-1 4 2 4 1.75 0 3-3.5 3-4.5 0-.704 1.5-1 1-2.5-.097-.291-.396-.568-.642-.756-.173-.133-.206-.396-.051-.55a.334.334 0 0 1 .42-.043l1.085.724a.276.276 0 0 0 .348-.035c.15-.15.414-.083.488.117.16.428.445 1.046.847 1.354A7 7 0 0 0 8 1"/>
+                            </svg>
+                    
+                            <div class="flex flex-col">
+                                <span>Sites</span>
+                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Lieux & géofencing</p>
+                            </div>
+                        </a>
+                        @endcan
+                        @role('admin')
+                        <a href="{{ route('tasks.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill" viewBox="0 0 16 16">
+  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
+</svg>
+                            <div class="flex flex-col">
+                                <span>Tâches</span>
+                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Système & automation</p>
+                            </div>
+                        </a>
+                        @endrole
                     </div>
                 </div>
                 @endcanany
@@ -479,11 +522,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </div>
                         <span>Étudiants</span>
                     </div>
-                    @if($etudiantsCount > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">
-                        {{ $etudiantsCount }}
-                    </span>
-                    @endif
+                  
                 </a>
                 @endunlessrole
                 @endcan
@@ -509,28 +548,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 </a>
                 @endunlessrole
                 @endcan
-
-                <!-- Utilisateurs (Admin only) -->
-                @role('admin')
-                <a href="{{ route('admin.users.index') }}"
-                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
-                    <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div class="flex items-center gap-3 relative z-10">
-                        <div class="p-2 rounded-xl bg-orange-500/20">
-                            <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292 4 4 0 010-5.292zM15 12H9m4.354-11.646l2.121 2.121a4 4 0 01-5.656 5.656l-2.121-2.121a4 4 0 015.656-5.656z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <span>Utilisateurs</span>
-                    </div>
-                    @if($usersCount > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-400 rounded-full border border-orange-500/30">
-                        {{ $usersCount }}
-                    </span>
-                    @endif
-                </a>
-                @endrole
 
                 <!-- Rôles (Admin only) -->
                 @role('admin')
@@ -573,32 +590,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     @endif
                 </a>
                 @endcan
-                @can('sites.view')
-                <a href="{{ route('sites.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Sites</span>
-                </a>
-                @endcan
-                @role('admin')
-                <a href="{{ route('tasks.index') }}"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-
-                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
-
-                    <svg class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9m-7 6h.01M12 3l7 7m-7-7v4a3 3 0 003 3h4" />
-                    </svg>
-
-                    <span>Tâches</span>
-                </a>
-                @endrole
                 <!-- Divider -->
                 @can('dashboard.view')
                 @unlessrole('etudiant')

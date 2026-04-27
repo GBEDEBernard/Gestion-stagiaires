@@ -513,5 +513,4 @@ class PresenceController extends Controller
 
         return view('employee.presence.historique', compact('attendanceDays', 'period'));
     }
- }
-  
+}
