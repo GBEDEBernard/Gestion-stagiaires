@@ -1285,6 +1285,7 @@
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
+            const absences = @json($globalStats['chart_data']['absences'] ?? []);
 
             // 🔥 calcul réel cohérent
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
@@ -1309,6 +1310,7 @@
                 const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
                 const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
                 const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
+                const gradientRed = createGradient(ctxG.getContext('2d'), 'rgba(244,63,94,0.4)');
 
                 new Chart(ctxG, {
                     type: 'line',
@@ -1345,6 +1347,17 @@
                                 borderWidth: 2,
                                 yAxisID: 'y1',
                                 pointRadius: 4
+                            },
+                            {
+                                label: 'Absences',
+                                data: absences,
+                                borderColor: '#f43f5e',
+                                backgroundColor: gradientRed,
+                                fill: true,
+                                tension: 0.45,
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
                             }
                         ]
                     },
@@ -1427,6 +1440,11 @@
                                 label: 'Retards (min)',
                                 data: lateMinutes,
                                 backgroundColor: '#f59e0b'
+                            },
+                            {
+                                label: 'Absences',
+                                data: absences,
+                                backgroundColor: '#f43f5e'
                             }
                         ]
                     },
