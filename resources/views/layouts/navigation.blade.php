@@ -464,7 +464,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @can('etudiants.view')
                 @unlessrole('etudiant')
                 <a href="{{ route('etudiants.index') }}"
-                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
+                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-emerald-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-emerald-500/20">
@@ -484,7 +484,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @can('badges.view')
                 @unlessrole('etudiant')
                 <a href="{{ route('badges.index') }}"
-                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
+                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-purple-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-purple-500/20">
@@ -504,7 +504,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 <!-- Rôles (Admin only) -->
                 @role('admin')
                 <a href="{{ route('admin.roles.index') }}"
-                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
+                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-indigo-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-indigo-500/20">
@@ -541,7 +541,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
                 <!-- Lien Dashboard -->
                 <a href="{{ route('dashboard') }}"
-                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
+                    class="flex items-center justify-between px-4 py-3.5 mb-2 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-cyan-800/60 hover:text-white transition-all duration-300 group relative overflow-hidden">
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-cyan-500/20">
