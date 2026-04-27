@@ -18,7 +18,7 @@
 
         {{-- Period Tabs --}}
         <div class="bg-white rounded-2xl border border-slate-200 p-1 shadow-sm">
-            <nav class="-mb-px flex space-x-8">
+            <nav class="-mb-px flex flex-wrap gap-3 overflow-x-auto pb-1">
                 <a href="?period=week" class="group inline-flex items-center px-4 py-3 border-b-2 {{ request('period') === 'week' ? 'border-emerald-500 text-emerald-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700' }} text-sm transition-colors">
                     {{ request('period') === 'week' ? '📅 Semaine' : 'Semaine' }}
                 </a>

@@ -1,38 +1,38 @@
 <x-app-layout>
-
-    {{-- ════════════════════════════════════════════════════════
-         BANNER
-    ════════════════════════════════════════════════════════ --}}
-    <div class="relative ml-4 overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 rounded-2xl mt-8">
-        <div class="absolute inset-0 bg-white/5"></div>
-        <div class="relative px-8 py-0">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div>
-                    <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2">Notifications</h1>
-                    <p class="text-violet-200 text-lg">Toutes vos notifications</p>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10 self-start">
-                    <div class="flex items-center gap-2 text-white">
-                        <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        <span class="font-medium">{{ $unreadCount ?? $notificationCount ?? 0 }} non lu(s)</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {{-- ════════════════════════════════════════════════════════
+             BANNER
+        ════════════════════════════════════════════════════════ --}}
+        <div class="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-700 to-indigo-800 rounded-2xl mt-8">
+            <div class="absolute inset-0 bg-white/5"></div>
+            <div class="relative px-8 py-0">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div>
+                        <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2">Notifications</h1>
+                        <p class="text-violet-200 text-lg">Toutes vos notifications</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-white/10 self-start">
+                        <div class="flex items-center gap-2 text-white">
+                            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span class="font-medium">{{ $unreadCount ?? $notificationCount ?? 0 }} non lu(s)</span>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="absolute bottom-0 left-0 right-0">
+                <svg viewBox="0 0 1440 80" fill="none" class="w-full h-12">
+                    <path d="M0 80C240 80 480 80 720 60C960 40 1200 40 1440 60L1440 80H0Z"
+                        fill="rgb(249,250,251)" class="dark:fill-gray-900" />
+                </svg>
+            </div>
         </div>
-        <div class="absolute bottom-0 left-0 right-0">
-            <svg viewBox="0 0 1440 80" fill="none" class="w-full h-12">
-                <path d="M0 80C240 80 480 80 720 60C960 40 1200 40 1440 60L1440 80H0Z"
-                    fill="rgb(249,250,251)" class="dark:fill-gray-900" />
-            </svg>
-        </div>
-    </div>
 
-    <div class="space-y-6 ml-4 mr-4">
+        <div class="space-y-6">
         {{-- Actions --}}
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="text-sm text-gray-500 dark:text-gray-400">
                 {{ $notifications->count() }} notification(s) au total
             </div>
