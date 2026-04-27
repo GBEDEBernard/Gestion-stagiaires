@@ -1,6 +1,5 @@
 <x-app-layout>
-    <div class="max-w-3xl mx-auto px-4 py-8">
-        @if ($errors->any())
+<div class="w-full max-w-3xl mx-auto">        @if ($errors->any())
         <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700">
             Le pointage n'a pas pu être validé.
             <ul class="mt-2 space-y-1 text-sm">

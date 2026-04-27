@@ -434,10 +434,20 @@
             color: #94a3b8;
         }
 
+        .pres-filter-form {
+            flex-wrap: wrap;
+        }
+
         .pres-filter-actions {
             display: flex;
             gap: .75rem;
             flex-wrap: wrap;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        .pres-filter-actions .pres-btn {
+            min-width: 140px;
         }
 
         .pres-btn-secondary {
@@ -481,6 +491,18 @@
             background: rgba(255, 255, 255, .06);
         }
 
+        .pres-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pres-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
         .pres-btn {
             display: inline-flex;
             align-items: center;
@@ -492,6 +514,66 @@
             font-weight: 600;
             font-size: .85rem;
             text-decoration: none;
+        }
+
+        @media(max-width: 1024px) {
+            .pres-page {
+                padding: 1rem 1rem 2.5rem;
+            }
+
+            .pres-header {
+                gap: .75rem;
+            }
+
+            .pres-filter-panel {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .pres-filter-actions {
+                justify-content: flex-start;
+            }
+        }
+
+        @media(max-width: 700px) {
+            .pres-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pres-header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .pres-header-title {
+                font-size: 1.45rem;
+            }
+
+            .pres-header-sub {
+                font-size: .82rem;
+            }
+
+            .pres-filter-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .pres-filter-form {
+                align-items: stretch;
+            }
+
+            .pres-filter-panel .pres-filter-field,
+            .pres-filter-actions {
+                width: 100%;
+            }
+
+            .pres-filter-actions .pres-btn {
+                flex: 1 1 100%;
+            }
+
+            .pres-tab {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
         }
 
         .pres-btn-primary {
@@ -878,7 +960,7 @@
             </div>
 
             <div class="pres-filter-panel text-gray-600">
-                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form flex items-end gap-4 w-full">
+                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form flex flex-wrap items-end gap-4 w-full">
                     <input type="hidden" name="period" value="custom" />
                     <input type="hidden" name="group" value="{{ $group }}" />
 
@@ -892,7 +974,7 @@
                         <input type="date" name="date_to" value="{{ request('date_to', today()->format('Y-m-d')) }}" class="pres-filter-input" />
                     </label>
 
-                    <div class=" flex  bg-slate-900">
+                    <div class="pres-filter-actions">
                         <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
                         <a href="{{ route('admin.presence.index') }}" class="pres-btn pres-btn-secondary">Réinitialiser</a>
                     </div>

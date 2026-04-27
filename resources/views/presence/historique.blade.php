@@ -1,6 +1,5 @@
 <x-app-layout title="Historique de présence">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 dark:bg-gray-900/50 min-h-screen pb-20 sm:pb-24">
-
+<div class="w-full max-w-3xl mx-auto">
         {{-- SUCCESS BANNER --}}
         @if (session('success'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)"
