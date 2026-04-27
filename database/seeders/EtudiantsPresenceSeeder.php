@@ -159,7 +159,7 @@ class EtudiantsPresenceSeeder extends Seeder
         return Site::where('code', 'TFG-HQ')
             ->orWhere(function ($query) {
                 $query->where('code', 'like', 'TFG%')
-                      ->orWhere('name', 'like', '%TFG%');
+                    ->orWhere('name', 'like', '%TFG%');
             })
             ->orderBy('code')
             ->first();

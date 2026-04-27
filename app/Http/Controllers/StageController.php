@@ -62,7 +62,7 @@ class StageController extends Controller
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
-                      ->orWhere('name', 'like', '%TFG%');
+                    ->orWhere('name', 'like', '%TFG%');
             })
             ->orderBy('name')
             ->get();
@@ -231,7 +231,7 @@ class StageController extends Controller
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
-                      ->orWhere('name', 'like', '%TFG%');
+                    ->orWhere('name', 'like', '%TFG%');
             })
             ->orderBy('name')
             ->get();
