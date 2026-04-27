@@ -17,19 +17,23 @@ test('profile information can be updated', function () {
 
     $response = $this
         ->actingAs($user)
-        ->patch('/profile', [
+        ->put('/profile', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone' => '0102030405',
+            'bio' => 'Nouvelle bio',
         ]);
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
+        ->assertRedirect(route('profile.edit', absolute: false));
 
     $user->refresh();
 
     $this->assertSame('Test User', $user->name);
     $this->assertSame('test@example.com', $user->email);
+    $this->assertSame('0102030405', $user->phone);
+    $this->assertSame('Nouvelle bio', $user->bio);
     $this->assertNull($user->email_verified_at);
 });
 
@@ -38,16 +42,18 @@ test('email verification status is unchanged when the email address is unchanged
 
     $response = $this
         ->actingAs($user)
-        ->patch('/profile', [
+        ->put('/profile', [
             'name' => 'Test User',
             'email' => $user->email,
+            'phone' => null,
+            'bio' => null,
         ]);
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
+        ->assertRedirect(route('profile.edit', absolute: false));
 
-    $this->assertNotNull($user->refresh()->email_verified_at);
+    $this->assertNotNull($user->fresh()->email_verified_at);
 });
 
 test('user can delete their account', function () {
@@ -64,7 +70,7 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    $this->assertSoftDeleted($user);
 });
 
 test('correct password must be provided to delete account', function () {

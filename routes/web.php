@@ -24,6 +24,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\SuperviseurDashboardController;
 use App\Http\Controllers\DomaineController;
 
@@ -70,6 +71,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('create', [EtudiantController::class, 'create'])->name('etudiants.create')->middleware('permission:etudiants.create');
         Route::post('/', [EtudiantController::class, 'store'])->name('etudiants.store')->middleware('permission:etudiants.create');
         Route::post('sync-accounts', [EtudiantController::class, 'syncAccounts'])->name('etudiants.syncAccounts')->middleware('permission:etudiants.edit');
+        Route::get('{etudiant}/services', [StageController::class, 'servicesDisponibles'])->name('etudiants.services')->middleware('permission:stages.create');
         Route::get('{etudiant}/edit', [EtudiantController::class, 'edit'])->name('etudiants.edit')->middleware('permission:etudiants.edit');
         Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
@@ -254,6 +256,29 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         // création (étudiant ou employé autorisé via logique controller)
         Route::post('/', [DailyReportController::class, 'store'])
             ->name('reports.store');
+        Route::put('/{report}', [DailyReportController::class, 'update'])
+            ->name('reports.update');
+    });
+
+    // ---------------- Demandes de permission ----------------
+    Route::prefix('permissions')->group(function () {
+        Route::get('/', [PermissionRequestController::class, 'index'])
+            ->name('permission-requests.index');
+        Route::post('/', [PermissionRequestController::class, 'store'])
+            ->name('permission-requests.store');
+        Route::get('/{permissionRequest}', [PermissionRequestController::class, 'show'])
+            ->name('permission-requests.show');
+        Route::get('/{permissionRequest}/pdf', [PermissionRequestController::class, 'downloadPdf'])
+            ->name('permission-requests.pdf');
+    });
+
+    Route::prefix('admin/permission-requests')->group(function () {
+        Route::get('/', [PermissionRequestController::class, 'reviewIndex'])
+            ->name('permission-requests.review.index');
+        Route::post('/{permissionRequest}/approve', [PermissionRequestController::class, 'approve'])
+            ->name('permission-requests.review.approve');
+        Route::post('/{permissionRequest}/reject', [PermissionRequestController::class, 'reject'])
+            ->name('permission-requests.review.reject');
     });
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
@@ -280,6 +305,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     // ---------------- Suivi des Rapports Admin ----------------
     Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
         Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
+        Route::post('/{report}/review', [AdminReportTrackingController::class, 'review'])->name('admin.reports.review');
     });
 
     // ---------------- Notifications ----------------

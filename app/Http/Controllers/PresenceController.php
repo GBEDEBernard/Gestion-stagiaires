@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
-use App\Models\AttendanceEvent;
 use App\Services\AdminPresenceService;
 use App\Services\PresenceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PresenceController extends Controller
@@ -15,21 +13,15 @@ class PresenceController extends Controller
     public function __construct(
         private PresenceService $presenceService,
         private AdminPresenceService $adminPresenceService
-    ) {}
+    ) {
+    }
 
-    /**
-     * Affiche la page de pointage avec statut actuel.
-     */
     public function pointage(Request $request)
     {
         $user = $request->user();
         $etudiant = $user->etudiant;
 
         if ($etudiant) {
-            // Logique pour stagiaire
-            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
-
-            // Trouve le stage actif (le plus récent en cours)
             $activeStage = $etudiant->stages()
                 ->where('date_debut', '<=', now())
                 ->where('date_fin', '>=', now())
@@ -41,340 +33,144 @@ class PresenceController extends Controller
                 return view('presence.pointage', compact('activeStage'));
             }
 
-            // Statut du jour
             $attendanceDay = AttendanceDay::where('stage_id', $activeStage->id)
                 ->whereDate('attendance_date', today())
                 ->first();
 
             return view('presence.pointage', compact('activeStage', 'attendanceDay'));
-        } else {
-            // Logique pour employé - utilise la vue dédiée aux employés
-            $domaine = $user->domaine;
-
-            if (!$domaine) {
-                abort(403, "Votre compte n'est pas rattaché à un domaine de travail.");
-            }
-
-            // Query today's attendance for employee
-            $attendanceDay = AttendanceDay::where('user_id', $user->id)
-                ->whereDate('attendance_date', today())
-                ->first();
-
-            return view('employee.presence.pointage', compact('attendanceDay', 'user'));
         }
+
+        $domaine = $user->domaine;
+
+        if (!$domaine) {
+            abort(403, "Votre compte n'est pas rattaché à un domaine de travail.");
+        }
+
+        $activeStage = null;
+        $attendanceDay = AttendanceDay::where('user_id', $user->id)
+            ->whereDate('attendance_date', today())
+            ->first();
+
+        return view('presence.pointage', compact('activeStage', 'attendanceDay', 'domaine'));
     }
 
-    /**
-     * Prépare la validation du check-in (stocke en session, affiche page validation).
-     */
     public function prepareCheckIn(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
 
-        if ($etudiant) {
-            // Logique pour stagiaire
-            $request->validate([
-                'stage_id' => 'required|exists:stages,id',
-                'latitude' => 'required|numeric',
-                'longitude' => 'required|numeric',
-                'accuracy_meters' => 'nullable|numeric|min:0',
-                'device_fingerprint' => 'required|string',
-            ]);
-
-            $stage = $etudiant->stages()->findOrFail($request->stage_id);
-
-            $previewData = [
-                'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
-                'site_name' => $stage->site?->name ?? 'Site principal',
-                'theme' => $stage->theme,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy' => $request->accuracy_meters ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => 'arrivée',
-            ];
-
-            // Calculer distance si geofence disponible
-            $geofence = $stage->site?->geofences()->where('is_active', true)->first();
-            if ($geofence) {
-                $distance = $this->calculateDistance(
-                    $request->latitude,
-                    $request->longitude,
-                    $geofence->center_latitude,
-                    $geofence->center_longitude
-                );
-                $previewData['distance'] = $distance;
-            }
-
-            // Stocker données complètes pour confirmation
-            session(['pending_pointage' => [
-                'type' => 'check_in',
-                'stage_id' => $request->stage_id,
-                'user_type' => 'etudiant',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy_meters' => $request->accuracy_meters,
-                'device_fingerprint' => $request->device_fingerprint,
-                'device_uuid' => $request->device_uuid ?? '',
-                'device_label' => $request->device_label ?? '',
-                'platform' => $request->platform ?? '',
-                'browser' => $request->browser ?? '',
-                'app_version' => $request->app_version ?? '',
-            ]]);
-
-            return view('presence.validate', $previewData);
-        } else {
-            // Logique pour employé
-            $request->validate([
-                'latitude' => 'nullable|numeric',
-                'longitude' => 'nullable|numeric',
-                'accuracy_meters' => 'nullable|numeric|min:0',
-                'device_fingerprint' => 'required|string',
-            ]);
-
-            $domaine = $user->domaine;
-            abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
-
-            $previewData = [
-                'user_name' => $user->name,
-                'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy' => $request->accuracy_meters ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => 'arrivée',
-            ];
-
-            // No geofence for employee preview (calculated later in service)
-            session(['pending_pointage' => [
-                'type' => 'check_in',
-                'user_id' => $user->id,
-                'user_type' => 'employe',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy_meters' => $request->accuracy_meters,
-                'device_fingerprint' => $request->device_fingerprint,
-                'device_uuid' => $request->device_uuid ?? '',
-                'device_label' => $request->device_label ?? '',
-                'platform' => $request->platform ?? '',
-                'browser' => $request->browser ?? '',
-                'app_version' => $request->app_version ?? '',
-            ]]);
-
-            return view('presence.validate', $previewData);
+        if ($user->etudiant) {
+            return $this->prepareStudentPreview($request, 'check_in');
         }
+
+        return $this->prepareEmployeePreview($request, 'check_in');
     }
 
-    /**
-     * Prépare la validation du check-out (stocke en session, affiche page validation).
-     */
     public function prepareCheckOut(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
 
-        if ($etudiant) {
-            // Logique pour stagiaire
-            $request->validate([
-                'stage_id' => 'required|exists:stages,id',
-                'latitude' => 'required|numeric',
-                'longitude' => 'required|numeric',
-                'accuracy_meters' => 'nullable|numeric|min:0',
-                'device_fingerprint' => 'required|string',
-            ]);
-
-            $stage = $etudiant->stages()->findOrFail($request->stage_id);
-
-            $previewData = [
-                'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
-                'site_name' => $stage->site?->name ?? 'Site principal',
-                'theme' => $stage->theme,
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy' => $request->accuracy_meters ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => 'départ',
-            ];
-
-            // Calculer distance si geofence disponible
-            $geofence = $stage->site?->geofences()->where('is_active', true)->first();
-            if ($geofence) {
-                $distance = $this->calculateDistance(
-                    $request->latitude,
-                    $request->longitude,
-                    $geofence->center_latitude,
-                    $geofence->center_longitude
-                );
-                $previewData['distance'] = $distance;
-            }
-
-            // Stocker données complètes pour confirmation
-            session(['pending_pointage' => [
-                'type' => 'check_out',
-                'stage_id' => $request->stage_id,
-                'user_type' => 'etudiant',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy_meters' => $request->accuracy_meters,
-                'device_fingerprint' => $request->device_fingerprint,
-                'device_uuid' => $request->device_uuid ?? '',
-                'device_label' => $request->device_label ?? '',
-                'platform' => $request->platform ?? '',
-                'browser' => $request->browser ?? '',
-                'app_version' => $request->app_version ?? '',
-            ]]);
-
-            return view('presence.validate', $previewData);
-        } else {
-            // Logique pour employé
-            $request->validate([
-                'latitude' => 'nullable|numeric',
-                'longitude' => 'nullable|numeric',
-                'accuracy_meters' => 'nullable|numeric|min:0',
-                'device_fingerprint' => 'required|string',
-            ]);
-
-            $domaine = $user->domaine;
-            abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
-
-            $previewData = [
-                'user_name' => $user->name,
-                'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy' => $request->accuracy_meters ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => 'départ',
-            ];
-
-            // No geofence for employee preview (calculated later in service)
-            session(['pending_pointage' => [
-                'type' => 'check_out',
-                'user_id' => $user->id,
-                'user_type' => 'employe',
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'accuracy_meters' => $request->accuracy_meters,
-                'device_fingerprint' => $request->device_fingerprint,
-                'device_uuid' => $request->device_uuid ?? '',
-                'device_label' => $request->device_label ?? '',
-                'platform' => $request->platform ?? '',
-                'browser' => $request->browser ?? '',
-                'app_version' => $request->app_version ?? '',
-            ]]);
-
-            return view('presence.validate', $previewData);
+        if ($user->etudiant) {
+            return $this->prepareStudentPreview($request, 'check_out');
         }
+
+        return $this->prepareEmployeePreview($request, 'check_out');
     }
 
-    /**
-     * Affiche la page de validation (récupère depuis session).
-     */
     public function showValidation(Request $request)
     {
         $pending = session('pending_pointage');
+
         if (!$pending) {
             return redirect()->route('presence.pointage')->with('error', 'Aucune donnée de pointage en attente.');
         }
 
         $user = $request->user();
 
-        if ($pending['user_type'] === 'etudiant') {
-            // Logique pour stagiaire
+        if (($pending['user_type'] ?? null) === 'etudiant') {
             $etudiant = $user->etudiant;
+            abort_if(!$etudiant, 403, "Votre compte n'est pas rattaché à une fiche étudiant.");
+
             $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
+            $previewContext = $this->presenceService->resolveStagePreviewContext($stage, $pending);
 
             $previewData = [
                 'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
-                'site_name' => $stage->site?->name ?? 'Site principal',
+                'site_name' => $previewContext['site']?->name ?? $stage->site?->name ?? 'Site principal',
                 'theme' => $stage->theme,
                 'latitude' => $pending['latitude'],
                 'longitude' => $pending['longitude'],
                 'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
-                'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
+                'type' => ($pending['type'] ?? 'check_in') === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
             ];
 
-            // Distance
-            $geofence = $stage->site?->geofences()->where('is_active', true)->first();
-            if ($geofence) {
-                $distance = $this->calculateDistance(
-                    $pending['latitude'],
-                    $pending['longitude'],
-                    $geofence->center_latitude,
-                    $geofence->center_longitude
-                );
-                $previewData['distance'] = $distance;
+            if ($previewContext['distance'] !== null) {
+                $previewData['distance'] = $previewContext['distance'];
             }
-        } else {
-            // Logique pour employé
-            $domaine = $user->domaine;
 
-            $previewData = [
-                'user_name' => $user->name,
-                'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal',
-                'latitude' => $pending['latitude'],
-                'longitude' => $pending['longitude'],
-                'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
-                'form_data' => $pending,
-            ];
+            return view('presence.validate', $previewData);
+        }
 
-            // No geofence preview for employees
+        $domaine = $user->domaine;
+        abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
+
+        $previewContext = $this->presenceService->resolveEmployeePreviewContext($user, $pending);
+
+        $previewData = [
+            'user_name' => $user->name,
+            'domaine_name' => $domaine->nom,
+            'site_name' => $previewContext['site']?->name ?? 'Site principal',
+            'latitude' => $pending['latitude'],
+            'longitude' => $pending['longitude'],
+            'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => ($pending['type'] ?? 'check_in') === 'check_in' ? 'arrivée' : 'départ',
+            'form_data' => $pending,
+        ];
+
+        if ($previewContext['distance'] !== null) {
+            $previewData['distance'] = $previewContext['distance'];
         }
 
         return view('presence.validate', $previewData);
     }
 
-    /**
-     * Confirme et enregistre le pointage depuis session.
-     */
     public function confirm(Request $request)
     {
         $pending = session('pending_pointage');
+
         if (!$pending) {
             return redirect()->route('presence.pointage')->with('error', 'Données de pointage expirées.');
         }
 
         try {
             $user = $request->user();
-
             $data = $pending;
-            $data['device_uuid'] = $pending['device_uuid'];
-            $data['device_label'] = $pending['device_label'];
-            $data['platform'] = $pending['platform'];
-            $data['browser'] = $pending['browser'];
-            $data['app_version'] = $pending['app_version'];
 
-            if ($pending['user_type'] === 'etudiant') {
-                // Logique pour stagiaire
-                $stage = $user->etudiant->stages()->findOrFail($pending['stage_id']);
+            $data['device_uuid'] = $pending['device_uuid'] ?? null;
+            $data['device_label'] = $pending['device_label'] ?? null;
+            $data['platform'] = $pending['platform'] ?? null;
+            $data['browser'] = $pending['browser'] ?? null;
+            $data['app_version'] = $pending['app_version'] ?? null;
 
-                if ($pending['type'] === 'check_in') {
-                    $event = $this->presenceService->registerCheckIn($stage, $user, $data);
-                } else {
-                    $event = $this->presenceService->registerCheckOut($stage, $user, $data);
-                }
+            if (($pending['user_type'] ?? null) === 'etudiant') {
+                $stage = $user->etudiant?->stages()->findOrFail($pending['stage_id']);
+
+                $event = ($pending['type'] ?? 'check_in') === 'check_in'
+                    ? $this->presenceService->registerCheckIn($stage, $user, $data)
+                    : $this->presenceService->registerCheckOut($stage, $user, $data);
             } else {
-                // Logique pour employé
-                if ($pending['type'] === 'check_in') {
-                    $event = $this->presenceService->registerEmployeeCheckIn($user, $data);
-                } else {
-                    $event = $this->presenceService->registerEmployeeCheckOut($user, $data);
-                }
+                $event = ($pending['type'] ?? 'check_in') === 'check_in'
+                    ? $this->presenceService->registerEmployeeCheckIn($user, $data)
+                    : $this->presenceService->registerEmployeeCheckOut($user, $data);
             }
 
-            // Nettoyer session
-            request()->session()->forget('pending_pointage');
+            $request->session()->forget('pending_pointage');
 
             if ($event->status === 'rejected') {
-                return redirect()->route('presence.pointage')
+                return redirect()
+                    ->route('presence.pointage')
                     ->with('rejection_reason', $event->rejection_reason)
                     ->with('reason_code', $event->reason_code);
             }
@@ -383,48 +179,43 @@ class PresenceController extends Controller
                 ? '✅ Pointage confirmé et enregistré !'
                 : '⚠️ Pointage enregistré mais nécessite validation admin.';
 
-            return redirect()->route('presence.historique')
+            return redirect()
+                ->route('presence.historique')
                 ->with('success', $message);
-        } catch (\Exception $e) {
-            Log::error('Pointage confirmation failed: ' . $e->getMessage(), ['user_id' => $request->user()->id]);
-            return redirect()->route('presence.pointage')
-                ->with('error', 'Erreur lors de l\'enregistrement. Réessayez ou contactez l\'admin.');
+        } catch (\Throwable $exception) {
+            Log::error('Pointage confirmation failed: ' . $exception->getMessage(), [
+                'user_id' => $request->user()->id,
+            ]);
+
+            return redirect()
+                ->route('presence.pointage')
+                ->with('error', "Erreur lors de l'enregistrement. Réessayez ou contactez l'admin.");
         }
     }
 
-    /**
-     * Enregistre l'arrivée (check-in) - Ancienne méthode (compatibilité).
-     */
     public function checkIn(Request $request)
     {
         return $this->prepareCheckIn($request);
     }
 
-    /**
-     * Enregistre le départ (check-out) - Ancienne méthode (compatibilité).
-     */
     public function checkOut(Request $request)
     {
         return $this->prepareCheckOut($request);
     }
 
-    /**
-     * Historique des présences.
-     */
     public function historique(Request $request)
     {
         $user = $request->user();
         $etudiant = $user->etudiant;
         $period = $request->get('period', 'month');
 
-        // Stats détaillées via service
         $userStats = $this->adminPresenceService->getUserDetailedStats($user->id, $period);
 
         $dateFrom = match ($period) {
             'week' => now()->subWeek()->startOfWeek(),
             'month' => now()->subMonth()->startOfMonth(),
             'year' => now()->subYear()->startOfYear(),
-            default => now()->subWeek()
+            default => now()->subWeek(),
         };
 
         $filters = [
@@ -433,30 +224,19 @@ class PresenceController extends Controller
             $etudiant ? 'etudiant_id' : 'user_id' => $etudiant ? $etudiant->id : $user->id,
         ];
 
-        $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-            ->with(['stage.site', 'anomalies', 'dailyReports']);
+        $attendanceDays = $this->adminPresenceService
+            ->listAttendanceDays($filters, 100)
+            ->with(['stage.site', 'anomalies', 'dailyReports'])
+            ->get();
 
-        $attendanceDays = $attendanceDaysQuery->get();
-
-        if ($etudiant) {
-            return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
-        } else {
-            $attendanceDays = $attendanceDays->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
-            return view('employee.presence.historique', compact('attendanceDays', 'period'));
-        }
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
     }
 
-    /**
-     * Affiche la page de pointage pour les employés.
-     */
     public function employeePointage(Request $request)
     {
         $user = $request->user();
-
-        // Vérifier que l'utilisateur a un domaine
         abort_if(!$user->domaine, 403, "Votre compte n'est pas encore rattaché à un domaine.");
 
-        // Statut du jour pour l'employé
         $attendanceDay = AttendanceDay::where('user_id', $user->id)
             ->whereDate('attendance_date', today())
             ->first();
@@ -464,32 +244,9 @@ class PresenceController extends Controller
         return view('employee.presence.pointage', compact('attendanceDay', 'user'));
     }
 
-    /**
-     * Calculate distance between two GPS coordinates (copied from PresenceService)
-     */
-    private function calculateDistance(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
-    {
-        $earthRadius = 6371000;
-
-        $latDelta = deg2rad($latTo - $latFrom);
-        $lngDelta = deg2rad($lngTo - $lngFrom);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2)
-            + cos(deg2rad($latFrom)) * cos(deg2rad($latTo))
-            * sin($lngDelta / 2) * sin($lngDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return (int) round($earthRadius * $c);
-    }
-
-    /**
-     * Historique des présences pour les employés.
-     */
     public function employeeHistorique(Request $request)
     {
         $user = $request->user();
-
         abort_if(!$user->domaine, 403, "Votre compte n'est pas encore rattaché à un domaine.");
 
         $period = $request->get('period', 'week');
@@ -498,7 +255,7 @@ class PresenceController extends Controller
             'week' => now()->subWeek()->startOfWeek(),
             'month' => now()->subMonth()->startOfMonth(),
             'year' => now()->subYear()->startOfYear(),
-            default => now()->subWeek()
+            default => now()->subWeek(),
         };
 
         $filters = [
@@ -507,12 +264,124 @@ class PresenceController extends Controller
             'user_id' => $user->id,
         ];
 
-        $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-            ->with(['anomalies']);
-
-        $attendanceDays = $attendanceDaysQuery->get()
+        $attendanceDays = $this->adminPresenceService
+            ->listAttendanceDays($filters, 100)
+            ->with(['anomalies'])
+            ->get()
             ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
 
         return view('employee.presence.historique', compact('attendanceDays', 'period'));
+    }
+
+    private function prepareStudentPreview(Request $request, string $eventType)
+    {
+        $user = $request->user();
+        $etudiant = $user->etudiant;
+
+        abort_if(!$etudiant, 403, "Votre compte n'est pas rattaché à une fiche étudiant.");
+
+        $request->validate([
+            'stage_id' => 'required|exists:stages,id',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'accuracy_meters' => 'nullable|numeric|min:0',
+            'device_fingerprint' => 'required|string',
+        ]);
+
+        $stage = $etudiant->stages()->findOrFail($request->stage_id);
+        $previewContext = $this->presenceService->resolveStagePreviewContext($stage, $request->only([
+            'latitude',
+            'longitude',
+            'accuracy_meters',
+        ]));
+
+        $previewData = [
+            'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
+            'site_name' => $previewContext['site']?->name ?? $stage->site?->name ?? 'Site principal',
+            'theme' => $stage->theme,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy' => $request->accuracy_meters ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => $eventType === 'check_in' ? 'arrivée' : 'départ',
+        ];
+
+        if ($previewContext['distance'] !== null) {
+            $previewData['distance'] = $previewContext['distance'];
+        }
+
+        session(['pending_pointage' => [
+            'type' => $eventType,
+            'stage_id' => $request->stage_id,
+            'user_type' => 'etudiant',
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy_meters' => $request->accuracy_meters,
+            'resolved_site_id' => $previewContext['site']?->id,
+            'resolved_site_geofence_id' => $previewContext['geofence']?->id,
+            'device_fingerprint' => $request->device_fingerprint,
+            'device_uuid' => $request->device_uuid ?? '',
+            'device_label' => $request->device_label ?? '',
+            'platform' => $request->platform ?? '',
+            'browser' => $request->browser ?? '',
+            'app_version' => $request->app_version ?? '',
+        ]]);
+
+        return view('presence.validate', $previewData);
+    }
+
+    private function prepareEmployeePreview(Request $request, string $eventType)
+    {
+        $user = $request->user();
+        $domaine = $user->domaine;
+
+        abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
+
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'accuracy_meters' => 'nullable|numeric|min:0',
+            'device_fingerprint' => 'required|string',
+        ]);
+
+        $previewContext = $this->presenceService->resolveEmployeePreviewContext($user, $request->only([
+            'latitude',
+            'longitude',
+            'accuracy_meters',
+        ]));
+
+        $previewData = [
+            'user_name' => $user->name,
+            'domaine_name' => $domaine->nom,
+            'site_name' => $previewContext['site']?->name ?? 'Site principal',
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy' => $request->accuracy_meters ?? 'N/A',
+            'pointage_time' => now()->format('H:i'),
+            'type' => $eventType === 'check_in' ? 'arrivée' : 'départ',
+        ];
+
+        if ($previewContext['distance'] !== null) {
+            $previewData['distance'] = $previewContext['distance'];
+        }
+
+        session(['pending_pointage' => [
+            'type' => $eventType,
+            'user_id' => $user->id,
+            'user_type' => 'employe',
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'accuracy_meters' => $request->accuracy_meters,
+            'resolved_site_id' => $previewContext['site']?->id,
+            'resolved_site_geofence_id' => $previewContext['geofence']?->id,
+            'device_fingerprint' => $request->device_fingerprint,
+            'device_uuid' => $request->device_uuid ?? '',
+            'device_label' => $request->device_label ?? '',
+            'platform' => $request->platform ?? '',
+            'browser' => $request->browser ?? '',
+            'app_version' => $request->app_version ?? '',
+        ]]);
+
+        return view('presence.validate', $previewData);
     }
 }

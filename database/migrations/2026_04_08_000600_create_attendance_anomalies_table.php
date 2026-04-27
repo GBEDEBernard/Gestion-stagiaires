@@ -12,8 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('attendance_event_id')->nullable()->constrained('attendance_events')->nullOnDelete();
             $table->foreignId('attendance_day_id')->nullable()->constrained('attendance_days')->nullOnDelete();
-            $table->foreignId('stage_id')->constrained('stages')->cascadeOnDelete();
-            $table->foreignId('etudiant_id')->constrained('etudiants')->cascadeOnDelete();
+            $table->foreignId('stage_id')->nullable()->constrained('stages')->nullOnDelete();
+            $table->foreignId('etudiant_id')->nullable()->constrained('etudiants')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('anomaly_type');
             $table->string('severity')->default('medium');
@@ -27,6 +28,8 @@ return new class extends Migration
             $table->index(['status', 'severity']);
             $table->index(['stage_id', 'detected_at']);
             $table->index(['etudiant_id', 'detected_at']);
+            $table->index(['user_id', 'detected_at']);
+            $table->index(['status', 'severity', 'user_id']);
         });
     }
 

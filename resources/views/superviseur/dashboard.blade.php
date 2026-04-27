@@ -1,109 +1,176 @@
-<xai:tool_usage_card>
-    Superviseur Dashboard created: lists supervised stages, today's attendance, pending reports.
-</xai:tool_usage_card>
-@extends('layouts.app')
-
-@section('title', 'Dashboard Superviseur')
-
-@section('content')
-<div class="p-6">
-    <div class="flex flex-col md:flex-row gap-6">
-        <div class="flex-1">
-            <h1 class="text-2xl font-bold mb-8">Dashboard Superviseur</h1>
-
-            @if($supervisedStages->isEmpty())
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-                <h3 class="text-lg font-semibold text-blue-800 mb-2">Aucun stage actif</h3>
-                <p>Vous n'avez pas de stages à superviser actuellement.</p>
+<x-app-layout title="Dashboard superviseur">
+    <x-slot name="header">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">Supervision</p>
+                <h1 class="mt-2 text-3xl font-bold text-slate-900">Dashboard superviseur</h1>
+                <p class="mt-1 text-slate-500">Suivi des stages actifs, des pointages du jour et des rapports a relire.</p>
             </div>
-            @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                @foreach($supervisedStages as $stage)
-                <div class="bg-white border rounded-lg p-6 shadow-sm">
-                    <h3 class="font-semibold text-lg mb-2">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</h3>
-                    <p class="text-sm text-gray-600 mb-4">{{ $stage->service->name }} - {{ $stage->site->name }}</p>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex justify-between">
-                            <span>Pointage aujourd'hui:</span>
-                            <span class="{{ $stage->attendanceDays->first()?->check_in_time ? 'text-green-600' : 'text-orange-600' }}">
-                                {{ $stage->attendanceDays->first()?->check_in_time ? 'OK' : 'En attente' }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Rapport du jour:</span>
-                            <span class="text-green-600">{{ $stage->dailyReports->first()?->status ?? 'Non soumis' }}</span>
-                        </div>
-                    </div>
-                    <a href="{{ encrypted_route('stages.show', $stage) }}" class="btn-primary w-full text-center">Voir stage</a>
-                </div>
-                @endforeach
-            </div>
-            @endif
 
-            @if($pendingReviews->isNotEmpty())
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                <h3 class="text-lg font-semibold text-yellow-800 mb-4">Rapports en attente ({{ $pendingReviews->count() }})</h3>
-                <ul class="space-y-2">
-                    @foreach($pendingReviews->take(5) as $report)
-                    <li class="flex justify-between items-center p-3 bg-white rounded">
-                        <span>{{ $report->stage->etudiant->prenom }} {{ $report->stage->etudiant->nom }} - {{ $report->report_date->format('d/m') }}</span>
-                        <a href="#" class="text-blue-600 hover:underline text-sm">Valider</a>
-                    </li>
-                    @endforeach
-                </ul>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('presence.pointage') }}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Mon pointage
+                </a>
+                <a href="{{ route('admin.reports.index') }}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                    Rapports
+                </a>
             </div>
-            @endif
+        </div>
+    </x-slot>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm uppercase text-slate-500">Stages actifs</p>
+                <p class="mt-3 text-3xl font-bold text-slate-900">{{ $summary['active_stages'] }}</p>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm uppercase text-slate-500">Arrivees du jour</p>
+                <p class="mt-3 text-3xl font-bold text-emerald-600">{{ $summary['checked_in_today'] }}</p>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm uppercase text-slate-500">Jours termines</p>
+                <p class="mt-3 text-3xl font-bold text-blue-600">{{ $summary['completed_days'] }}</p>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm uppercase text-slate-500">Rapports a relire</p>
+                <p class="mt-3 text-3xl font-bold text-amber-600">{{ $summary['pending_reviews'] }}</p>
+            </div>
         </div>
 
-        <div class="w-full md:w-80">
-            <!-- Pointage rapide -->
-            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg p-6 mb-6">
-                <h3 class="text-lg font-semibold mb-4">Mon pointage</h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between">
-                        <span>Aujourd'hui</span>
-                        <span id="today-status" class="font-semibold">En attente</span>
-                    </div>
-                    <button id="checkin-btn" class="w-full bg-white/20 backdrop-blur-sm rounded p-3 text-sm font-medium hover:bg-white/30 transition-all">
-                        Pointer arrivée
-                    </button>
-                    <button id="checkout-btn" class="w-full bg-white/20 backdrop-blur-sm rounded p-3 text-sm font-medium hover:bg-white/30 transition-all opacity-50" disabled>
-                        Pointer départ
-                    </button>
+        <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1.5fr,1fr]">
+            <section class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-slate-900">Stages supervises aujourd'hui</h2>
+                    <p class="mt-1 text-sm text-slate-500">Etat du pointage et du rapport quotidien pour chaque stagiaire actif.</p>
                 </div>
-            </div>
 
-            <!-- Actions rapides -->
-            <div class="bg-white border rounded-lg p-6">
-                <h4 class="font-semibold mb-4">Actions rapides</h4>
-                <div class="space-y-2">
-                    <a href="{{ route('reports.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">
-                        📋 Nouveau rapport journalier
-                    </a>
-                    <a href="{{ route('presence.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">
-                        📍 Pointages détaillés
-                    </a>
-                    <a href="{{ route('admin.presence.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">
-                        👥 Superviser équipe
-                    </a>
+                <div class="divide-y divide-slate-200">
+                    @forelse($supervisedStages as $stage)
+                        @php
+                            $day = $stage->attendanceDays->first();
+                            $report = $stage->dailyReports->first();
+                        @endphp
+
+                        <div class="px-6 py-5">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-900">
+                                        {{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}
+                                    </h3>
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        {{ $stage->service?->nom ?? 'Service non assigne' }} · {{ $stage->site?->name ?? 'Site non assigne' }}
+                                    </p>
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Stage jusqu'au {{ $stage->date_fin?->format('d/m/Y') ?? 'N/A' }}
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <div class="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+                                        <div class="text-slate-500">Arrivee</div>
+                                        <div class="mt-1 font-semibold text-slate-900">{{ $day?->first_check_in_at?->format('H:i') ?? 'En attente' }}</div>
+                                    </div>
+                                    <div class="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+                                        <div class="text-slate-500">Depart</div>
+                                        <div class="mt-1 font-semibold text-slate-900">{{ $day?->last_check_out_at?->format('H:i') ?? 'En cours' }}</div>
+                                    </div>
+                                    <div class="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+                                        <div class="text-slate-500">Rapport</div>
+                                        <div class="mt-1 font-semibold {{ $report?->status === 'submitted' ? 'text-amber-600' : ($report?->status === 'approved' ? 'text-emerald-600' : 'text-slate-900') }}">
+                                            {{ $report?->status ? ucfirst(str_replace('_', ' ', $report->status)) : 'Aucun' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <a
+                                    href="{{ encrypted_route('stages.show', $stage) }}"
+                                    class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                >
+                                    Ouvrir le stage
+                                </a>
+                                <a
+                                    href="{{ route('admin.reports.index', ['period' => 'daily', 'date' => now()->format('Y-m-d')]) }}"
+                                    class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                                >
+                                    Voir les rapports
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="px-6 py-10 text-center text-slate-500">
+                            Aucun stage actif ne vous est actuellement assigne.
+                        </div>
+                    @endforelse
                 </div>
-            </div>
+            </section>
+
+            <section class="space-y-6">
+                <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                    <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-slate-900">Rapports en attente</h2>
+                    </div>
+
+                    <div class="divide-y divide-slate-200">
+                        @forelse($pendingReviews as $report)
+                            <div class="px-6 py-5 space-y-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">
+                                        {{ $report->stage?->etudiant?->nom }} {{ $report->stage?->etudiant?->prenom }}
+                                    </p>
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        {{ $report->report_date?->format('d/m/Y') }} · {{ $report->stage?->theme ?? 'Rapport journalier' }}
+                                    </p>
+                                </div>
+
+                                <p class="text-sm text-slate-600">{{ \Illuminate\Support\Str::limit($report->summary, 120) }}</p>
+
+                                <div class="flex flex-wrap gap-2">
+                                    <form method="POST" action="{{ route('admin.reports.review', $report) }}">
+                                        @csrf
+                                        <input type="hidden" name="action" value="approved">
+                                        <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+                                            Approuver
+                                        </button>
+                                    </form>
+
+                                    <form method="POST" action="{{ route('admin.reports.review', $report) }}">
+                                        @csrf
+                                        <input type="hidden" name="action" value="changes_requested">
+                                        <button type="submit" class="rounded-xl border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">
+                                            Demander une reprise
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="px-6 py-10 text-center text-slate-500">
+                                Aucun rapport en attente aujourd'hui.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900">Raccourcis utiles</h2>
+                    <div class="mt-4 space-y-3">
+                        <a href="{{ route('presence.historique') }}" class="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Consulter mon historique de presence
+                        </a>
+                        <a href="{{ route('reports.index') }}" class="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Ouvrir mes rapports journaliers
+                        </a>
+                        <a href="{{ route('stages.index') }}" class="block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            Parcourir les stages
+                        </a>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
-</div>
-
-@endsection
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // JS pour pointage en temps reel (geolocation)
-        const checkinBtn = document.getElementById('checkin-btn');
-        const checkoutBtn = document.getElementById('checkout-btn');
-
-        navigator.geolocation.getCurrentPosition(position => {
-            // Update status based on current position vs site geofence
-        });
-    });
-</script>
-@endpush>
+</x-app-layout>

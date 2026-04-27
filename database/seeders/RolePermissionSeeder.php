@@ -37,6 +37,7 @@ class RolePermissionSeeder extends Seeder
             'presence_stats',
             // ✅ FIX 403 : Permissions Admin explicites pour anomalies
             'presence.admin',
+            'permission_requests',
         ];
 
         $actions = [
@@ -91,6 +92,10 @@ class RolePermissionSeeder extends Seeder
                 }
 
                 if ($entity === 'presence_stats' && !in_array($action, ['view'])) {
+                    continue;
+                }
+
+                if ($entity === 'permission_requests' && !in_array($action, ['view', 'create', 'submit', 'review', 'approve', 'download'])) {
                     continue;
                 }
 

@@ -83,9 +83,12 @@
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($events ?? [] as $event)
+                        @php
+                            $attendanceDay = $event->event_type === 'check_in' ? $event->checkInDay : $event->checkOutDay;
+                        @endphp
                         <tr class="hover:bg-slate-50 dark:hover:bg-gray-900 transition-colors">
                             <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                                {{ $event->user?->name ?? $event->attendanceDay->etudiant?->user?->name ?? 'N/A' }}
+                                {{ $event->user?->name ?? $attendanceDay?->etudiant?->user?->name ?? 'N/A' }}
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full
@@ -97,11 +100,11 @@
                                 {{ $event->occurred_at?->format('d/m H:i') }}
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                                {{ $event->attendanceDay?->stage?->site?->nom ?? 'Hors site' }}
+                                {{ $attendanceDay?->stage?->site?->name ?? 'Hors site' }}
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
-                                    {{ $event->gps_accuracy ?? 'N/A' }}m
+                                    {{ $event->accuracy_meters ?? 'N/A' }}m
                                 </span>
                             </td>
                             <td class="px-6 py-4">

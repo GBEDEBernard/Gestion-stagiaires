@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DailyReport\StoreDailyReportRequest;
-use App\Models\AttendanceDay;
 use App\Models\DailyReport;
 use App\Services\DailyReportService;
 use Illuminate\Http\Request;
@@ -14,9 +13,6 @@ class DailyReportController extends Controller
         protected DailyReportService $dailyReportService
     ) {}
 
-    /**
-     * 📊 AFFICHAGE (daily / history)
-     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -33,19 +29,25 @@ class DailyReportController extends Controller
             ? $this->dailyReportService->resolveActiveStageForUser($user)
             : null;
 
-        $query = DailyReport::query()->visibleTo($user)
-            ->with(['items', 'reviews'])
+        $query = DailyReport::query()
+            ->visibleTo($user)
+            ->with(['items', 'reviews.reviewer'])
             ->orderByDesc('report_date');
 
-        /* ======================
-       DAILY
-    ====================== */
-        if ($period === 'daily') {
+        $ownedReports = $this->ownedReportsQuery($user)
+            ->with(['items', 'reviews.reviewer'])
+            ->orderByDesc('report_date');
 
-            $todayReport = (clone $query)
+        $editReport = $request->filled('edit')
+            ? (clone $ownedReports)->findOrFail((int) $request->get('edit'))
+            : null;
+
+        if ($period === 'daily') {
+            $todayReport = (clone $ownedReports)
                 ->whereDate('report_date', today())
                 ->first();
 
+            $editReport ??= $todayReport;
             $reports = (clone $query)->limit(10)->get();
 
             return view('reports.index', compact(
@@ -53,18 +55,15 @@ class DailyReportController extends Controller
                 'reports',
                 'period',
                 'activeStage',
-                'isEmployee'
+                'isEmployee',
+                'editReport'
             ));
         }
-
-        /* ======================
-       WEEKLY / MONTHLY
-    ====================== */
 
         $dateFrom = match ($period) {
             'weekly' => now()->startOfWeek(),
             'monthly' => now()->startOfMonth(),
-            default => now()->startOfWeek()
+            default => now()->startOfWeek(),
         };
 
         $reports = $query
@@ -75,7 +74,8 @@ class DailyReportController extends Controller
             'reports',
             'period',
             'activeStage',
-            'isEmployee'
+            'isEmployee',
+            'editReport'
         ));
     }
 
@@ -84,27 +84,53 @@ class DailyReportController extends Controller
         $this->dailyReportService
             ->storeForToday($request->user(), $request->validated());
 
-        return back()->with('success', 'Rapport enregistré.');
+        return back()->with('success', 'Rapport enregistre.');
     }
 
     public function update(Request $request, DailyReport $report)
     {
         $user = $request->user();
 
-        if (
-            $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($user->etudiant)->id
-        ) {
+        if (!(clone $this->ownedReportsQuery($user))->whereKey($report->id)->exists()) {
             abort(403);
         }
 
-        $report->update($request->validate([
+        $validated = $request->validate([
+            'status_action' => 'required|in:draft,submit',
             'summary' => 'required|string',
             'blockers' => 'nullable|string',
             'next_steps' => 'nullable|string',
             'hours_declared' => 'nullable|numeric|min:0|max:24',
-        ]));
+        ]);
 
-        return back()->with('success', 'Rapport mis à jour.');
+        $status = $validated['status_action'] === 'submit'
+            ? 'submitted'
+            : 'draft';
+
+        $report->fill([
+            'summary' => $validated['summary'],
+            'blockers' => $validated['blockers'] ?? null,
+            'next_steps' => $validated['next_steps'] ?? null,
+            'hours_declared' => $validated['hours_declared'] ?? 0,
+            'status' => $status,
+            'submitted_at' => $status === 'submitted' ? now() : null,
+            // Une nouvelle edition relance le workflow de validation.
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+            'supervisor_comment' => null,
+        ])->save();
+
+        return back()->with('success', 'Rapport mis a jour.');
+    }
+
+    protected function ownedReportsQuery($user)
+    {
+        return DailyReport::query()->where(function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+
+            if ($user->etudiant) {
+                $query->orWhere('etudiant_id', $user->etudiant->id);
+            }
+        });
     }
 }

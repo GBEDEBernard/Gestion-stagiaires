@@ -43,6 +43,10 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                'permission_requests.view',
+                'permission_requests.create',
+                'permission_requests.submit',
+                'permission_requests.download',
             ],
             'superviseur' => [
                 'dashboard.view',
@@ -63,7 +67,10 @@ class RolePermissionPresetService
                 'attendance_anomalies.view',
                 'attendance_anomalies.review',
                 'presence_stats.view',
-
+                'permission_requests.view',
+                'permission_requests.review',
+                'permission_requests.approve',
+                'permission_requests.download',
             ],
             'etudiant' => [
                 'presence.view',
@@ -73,6 +80,10 @@ class RolePermissionPresetService
                 'daily_reports.create',
                 'daily_reports.submit',
                 'tasks.view',
+                'permission_requests.view',
+                'permission_requests.create',
+                'permission_requests.submit',
+                'permission_requests.download',
             ],
         ];
     }

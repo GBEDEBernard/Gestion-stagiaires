@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyReport;
+use App\Models\DailyReportReview;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -10,32 +11,32 @@ class AdminReportTrackingController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
+        abort_if($user->hasRole('etudiant'), 403);
+
         $period = $request->get('period', 'daily');
         $dateFilter = $request->get('date', now()->format('Y-m-d'));
         $filterDate = Carbon::createFromFormat('Y-m-d', $dateFilter);
 
-        $query = DailyReport::with(['etudiant.user', 'user', 'stage'])
-            ->where(function ($query) {
-                $query->whereNotNull('etudiant_id')
-                    ->orWhere(function ($query) {
-                        $query->whereNull('etudiant_id')
-                            ->where('user_id', '<>', auth()->id());
-                    });
-            });
+        $query = DailyReport::query()
+            ->visibleTo($user)
+            ->with(['etudiant.user', 'user', 'stage.service', 'reviews.reviewer']);
 
         if ($period === 'weekly') {
-            $startOfWeek = $filterDate->copy()->startOfWeek();
-            $endOfWeek = $filterDate->copy()->endOfWeek();
-            $query->whereBetween('report_date', [$startOfWeek, $endOfWeek]);
+            $query->whereBetween('report_date', [
+                $filterDate->copy()->startOfWeek(),
+                $filterDate->copy()->endOfWeek(),
+            ]);
         } elseif ($period === 'monthly') {
-            $startOfMonth = $filterDate->copy()->startOfMonth();
-            $endOfMonth = $filterDate->copy()->endOfMonth();
-            $query->whereBetween('report_date', [$startOfMonth, $endOfMonth]);
+            $query->whereBetween('report_date', [
+                $filterDate->copy()->startOfMonth(),
+                $filterDate->copy()->endOfMonth(),
+            ]);
         } else {
             $query->whereDate('report_date', $filterDate);
         }
 
-        $reports = $query->orderBy('report_date', 'desc')->get();
+        $reports = $query->orderByDesc('report_date')->get();
 
         $studentReports = $reports->filter(fn($report) => $report->etudiant_id !== null);
         $employeeReports = $reports->filter(fn($report) => $report->etudiant_id === null);
@@ -53,7 +54,39 @@ class AdminReportTrackingController extends Controller
             'reports',
             'studentReports',
             'employeeReports',
-            'summary'
+            'summary',
+            'user'
         ));
+    }
+
+    public function review(Request $request, DailyReport $report)
+    {
+        $user = $request->user();
+
+        abort_if($user->hasRole('etudiant'), 403);
+        abort_unless($user->can('daily_reports.review') || $user->can('daily_reports.approve'), 403);
+        abort_unless(DailyReport::query()->visibleTo($user)->whereKey($report->id)->exists(), 403);
+
+        $validated = $request->validate([
+            'action' => 'required|in:approved,rejected,changes_requested',
+            'comment' => 'nullable|string|max:5000',
+        ]);
+
+        $report->update([
+            'status' => $validated['action'],
+            'reviewed_by' => $user->id,
+            'reviewed_at' => now(),
+            'supervisor_comment' => $validated['comment'] ?? null,
+        ]);
+
+        DailyReportReview::create([
+            'daily_report_id' => $report->id,
+            'reviewer_id' => $user->id,
+            'action' => $validated['action'],
+            'comment' => $validated['comment'] ?? null,
+            'reviewed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Rapport revu avec succes.');
     }
 }

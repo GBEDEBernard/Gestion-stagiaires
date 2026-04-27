@@ -179,6 +179,7 @@
                                      ?? $anomaly->user?->name
                                      ?? 'Inconnu';
                                 $initial = strtoupper(substr($name, 0, 2));
+                                $eventLabel = $anomaly->attendanceEvent?->event_type === 'check_in' ? 'Entree' : 'Sortie';
                             @endphp
                             <tr>
                                 <td>
@@ -186,20 +187,20 @@
                                         <div class="an-avatar">{{ $initial }}</div>
                                         <div>
                                             <div class="an-user-name">{{ $name }}</div>
-                                            <div class="an-user-event">{{ $anomaly->attendanceEvent->type }}</div>
+                                            <div class="an-user-event">{{ $eventLabel }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <div style="font-weight:500;color:#fff;font-size:.85rem;">{{ $anomaly->attendanceEvent->type }}</div>
-                                    <div class="an-date">{{ $anomaly->attendanceEvent->occurred_at->format('H:i') }}</div>
+                                    <div style="font-weight:500;color:#fff;font-size:.85rem;">{{ $eventLabel }}</div>
+                                    <div class="an-date">{{ $anomaly->attendanceEvent?->occurred_at?->format('H:i') }}</div>
                                 </td>
                                 <td>
                                     <div class="an-date" style="color:var(--text);">{{ $anomaly->detected_at->format('d/m/Y') }}</div>
                                     <div class="an-date">{{ $anomaly->detected_at->format('H:i') }}</div>
                                 </td>
                                 <td>
-                                    <span class="an-tag tag-rose">{{ ucfirst($anomaly->type) }}</span>
+                                    <span class="an-tag tag-rose">{{ ucfirst(str_replace('_', ' ', $anomaly->anomaly_type)) }}</span>
                                 </td>
                                 <td style="text-align:right;">
                                     <form action="{{ route('admin.presence.anomalies.resolve', $anomaly->id) }}"

@@ -17,6 +17,79 @@ use Illuminate\Validation\ValidationException;
 
 class PresenceService
 {
+    public function resolveStagePreviewContext(Stage $stage, array $payload): array
+    {
+        $stage->loadMissing('site.geofences');
+
+        $geofence = null;
+
+        if ($stage->site) {
+            $activeGeofences = $stage->site->geofences
+                ->where('is_active', true)
+                ->values();
+
+            $resolvedGeofenceId = isset($payload['resolved_site_geofence_id'])
+                ? (int) $payload['resolved_site_geofence_id']
+                : null;
+
+            if ($resolvedGeofenceId) {
+                $geofence = $activeGeofences->firstWhere('id', $resolvedGeofenceId);
+            }
+
+            if (!$geofence) {
+                $geofence = $activeGeofences
+                    ->sortByDesc(fn (SiteGeofence $candidate) => (int) $candidate->is_primary)
+                    ->first();
+            }
+        }
+
+        $distance = null;
+
+        if ($geofence && isset($payload['latitude'], $payload['longitude'])) {
+            $distance = $this->calculateDistanceMeters(
+                (float) $payload['latitude'],
+                (float) $payload['longitude'],
+                (float) $geofence->center_latitude,
+                (float) $geofence->center_longitude
+            );
+        }
+
+        return [
+            'site' => $stage->site,
+            'geofence' => $geofence,
+            'distance' => $distance,
+        ];
+    }
+
+    public function resolveEmployeePreviewContext(User $user, array $payload): array
+    {
+        $user->loadMissing('domaine.sites.geofences');
+
+        $domaine = $user->domaine;
+
+        if (!$domaine) {
+            throw ValidationException::withMessages([
+                'presence' => 'Aucun domaine assigné pour le pointage.',
+            ]);
+        }
+
+        [$site, $geofence, $distance] = $this->resolveEmployeeSiteGeofence($domaine, $payload);
+
+        if (!$site) {
+            $site = $domaine->sites()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->first();
+        }
+
+        return [
+            'domaine' => $domaine,
+            'site' => $site,
+            'geofence' => $geofence,
+            'distance' => $distance,
+        ];
+    }
+
     public function registerCheckIn(Stage $stage, User $user, array $payload): AttendanceEvent
     {
         return $this->registerEvent($stage, $user, $payload, 'check_in');
@@ -112,12 +185,35 @@ class PresenceService
     {
         $latitude = (float) $payload['latitude'];
         $longitude = (float) $payload['longitude'];
+        $accuracy = isset($payload['accuracy_meters']) ? (float) $payload['accuracy_meters'] : null;
 
         $sites = $domaine->sites()->with(['geofences' => function ($query) {
             $query->where('is_active', true);
         }])->where('is_active', true)->get();
 
-        $best = null;
+        $resolvedSiteId = isset($payload['resolved_site_id']) ? (int) $payload['resolved_site_id'] : null;
+        $resolvedGeofenceId = isset($payload['resolved_site_geofence_id']) ? (int) $payload['resolved_site_geofence_id'] : null;
+
+        if ($resolvedSiteId && $resolvedGeofenceId) {
+            $resolvedSite = $sites->firstWhere('id', $resolvedSiteId);
+            $resolvedGeofence = $resolvedSite?->geofences->firstWhere('id', $resolvedGeofenceId);
+
+            if ($resolvedSite && $resolvedGeofence) {
+                return [
+                    $resolvedSite,
+                    $resolvedGeofence,
+                    $this->calculateDistanceMeters(
+                        $latitude,
+                        $longitude,
+                        (float) $resolvedGeofence->center_latitude,
+                        (float) $resolvedGeofence->center_longitude
+                    ),
+                ];
+            }
+        }
+
+        $candidates = [];
+
         foreach ($sites as $site) {
             foreach ($site->geofences as $geofence) {
                 $distance = $this->calculateDistanceMeters(
@@ -127,19 +223,39 @@ class PresenceService
                     (float) $geofence->center_longitude
                 );
 
-                if ($best === null || $distance < $best['distance']) {
-                    $best = [
-                        'site' => $site,
-                        'geofence' => $geofence,
-                        'distance' => $distance,
-                    ];
-                }
+                $candidates[] = [
+                    'site' => $site,
+                    'geofence' => $geofence,
+                    'distance' => $distance,
+                    'inside' => $distance <= (int) $geofence->radius_meters,
+                    'accuracy_ok' => $accuracy === null || $accuracy <= (float) $geofence->allowed_accuracy_meters,
+                    'is_primary' => (bool) $geofence->is_primary,
+                ];
             }
         }
 
-        if (!$best) {
+        if ($candidates === []) {
             return [null, null, null];
         }
+
+        usort($candidates, function (array $left, array $right) {
+            $comparisons = [
+                (int) $right['inside'] <=> (int) $left['inside'],
+                (int) $right['accuracy_ok'] <=> (int) $left['accuracy_ok'],
+                (int) $right['is_primary'] <=> (int) $left['is_primary'],
+                $left['distance'] <=> $right['distance'],
+            ];
+
+            foreach ($comparisons as $comparison) {
+                if ($comparison !== 0) {
+                    return $comparison;
+                }
+            }
+
+            return 0;
+        });
+
+        $best = $candidates[0];
 
         return [$best['site'], $best['geofence'], $best['distance']];
     }

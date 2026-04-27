@@ -29,6 +29,11 @@ class Domaine extends Model
         return $this->hasMany(Stage::class, 'domaine_id');
     }
 
+    public function permissionRequests()
+    {
+        return $this->hasMany(PermissionRequest::class);
+    }
+
     public function sites()
     {
         return $this->belongsToMany(Site::class, 'domaine_site');

@@ -14,7 +14,9 @@ class Signataire extends Model
         'nom',
         'poste',
         'sigle',
+        'email',
         'ordre',
+        'is_active',
         'peut_par_ordre',
     ];
 

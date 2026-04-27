@@ -1,40 +1,33 @@
-<x-app-layout>
-    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-
-            {{-- Header --}}
-            <div class="bg-white border-b border-gray-200 px-6 py-4">
+<x-app-layout title="Confirmer le pointage">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
                 <div class="flex items-center justify-center">
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-500/10 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                 </div>
-                <h1 class="mt-4 text-xl font-semibold text-gray-900 text-center">Confirmer le pointage</h1>
-                <p class="mt-1 text-sm text-gray-500 text-center">{{ ucfirst($type) }} • {{ now()->format('d/m/Y H:i') }}</p>
+                <h1 class="mt-4 text-xl font-semibold text-gray-900 dark:text-white text-center">Confirmer le pointage</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-slate-400 text-center">{{ ucfirst($type) }} • {{ now()->format('d/m/Y H:i') }}</p>
             </div>
 
-            {{-- Errors --}}
             @if ($errors->any())
-            <div class="px-6 py-4 bg-red-50 border-b border-red-200">
-                <div class="text-red-800 text-sm">
-                    <strong>Erreurs de validation :</strong>
-                    <ul class="mt-2 list-disc list-inside space-y-1">
-                        @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                <div class="px-6 py-4 bg-red-50 dark:bg-red-500/10 border-b border-red-200 dark:border-red-500/20">
+                    <div class="text-red-800 dark:text-red-300 text-sm">
+                        <strong>Erreurs de validation :</strong>
+                        <ul class="mt-2 list-disc list-inside space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
-            </div>
             @endif
 
             <div class="px-6 py-6 space-y-6">
-
-                {{-- Détails --}}
                 <div class="space-y-4">
-
-                    {{-- Site --}}
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,17 +35,16 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ isset($user_name) ? 'Domaine / Site' : 'Entreprise / Site' }}</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ $site_name }}</p>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ isset($user_name) ? 'Domaine / Site' : 'Entreprise / Site' }}</p>
+                            <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $site_name }}</p>
                             @if(isset($domaine_name))
-                            <p class="text-sm text-gray-500">{{ $domaine_name }}</p>
+                                <p class="text-sm text-gray-500 dark:text-slate-400">{{ $domaine_name }}</p>
                             @elseif(isset($theme))
-                            <p class="text-sm text-gray-500">{{ $theme }}</p>
+                                <p class="text-sm text-gray-500 dark:text-slate-400">{{ $theme }}</p>
                             @endif
                         </div>
                     </div>
 
-                    {{-- GPS --}}
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,27 +53,24 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-900">Position GPS</p>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Position GPS</p>
                             <div class="mt-1 grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                    <span class="text-gray-500">Latitude:</span>
-                                    <span class="font-mono text-gray-900">{{ $latitude }}</span>
+                                    <span class="text-gray-500 dark:text-slate-400">Latitude:</span>
+                                    <span class="font-mono text-gray-900 dark:text-white">{{ $latitude }}</span>
                                 </div>
                                 <div>
-                                    <span class="text-gray-500">Longitude:</span>
-                                    <span class="font-mono text-gray-900">{{ $longitude }}</span>
+                                    <span class="text-gray-500 dark:text-slate-400">Longitude:</span>
+                                    <span class="font-mono text-gray-900 dark:text-white">{{ $longitude }}</span>
                                 </div>
                             </div>
                             @if(isset($distance))
-                            <p class="mt-2 text-sm text-green-600">
-                                Distance du site: {{ $distance }}m
-                            </p>
+                                <p class="mt-2 text-sm text-green-600 dark:text-green-300">Distance du site: {{ $distance }}m</p>
                             @endif
-                            <p class="text-xs text-gray-500">Précision: {{ $accuracy ?? 'N/A' }} mètres</p>
+                            <p class="text-xs text-gray-500 dark:text-slate-400">Précision: {{ $accuracy ?? 'N/A' }} mètres</p>
                         </div>
                     </div>
 
-                    {{-- Heure --}}
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
                             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,23 +78,20 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">Heure de pointage</p>
-                            <p class="text-xl font-bold text-gray-900">{{ $pointage_time }}</p>
-                            <p class="text-sm text-gray-500">{{ now()->diffForHumans() }}</p>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">Heure de pointage</p>
+                            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $pointage_time }}</p>
+                            <p class="text-sm text-gray-500 dark:text-slate-400">{{ now()->diffForHumans() }}</p>
                         </div>
                     </div>
-
                 </div>
 
-                {{-- Actions --}}
                 <div class="space-y-3">
                     <form id="pointageForm" method="POST" action="{{ route('presence.confirm') }}">
                         @csrf
                         @foreach($form_data ?? [] as $key => $value)
-                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endforeach
-                        <button type="submit" id="submitBtn"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center relative">
+                        <button type="submit" id="submitBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center relative">
                             <span id="buttonText" class="flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -121,48 +107,51 @@
                         </button>
                     </form>
 
-                    <a href="{{ route('presence.pointage') }}"
-                        class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-md transition-colors duration-200 text-center block">
-                        Annuler & Modifier
+                    <a href="{{ route('presence.pointage') }}" class="w-full bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium py-3 px-4 rounded-md transition-colors duration-200 text-center block">
+                        Annuler et modifier
                     </a>
                 </div>
 
-                {{-- Optimistic preview --}}
-                <div id="optimisticPreview" class="hidden p-4 bg-green-50 border border-green-200 rounded-md">
+                <div id="optimisticPreview" class="hidden p-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-md">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <svg class="w-5 h-5 text-green-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 text-green-600 dark:text-green-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm font-medium text-green-800">Pointage en cours de validation...</p>
-                            <p class="text-sm text-green-700">Redirection vers l'historique.</p>
+                            <p class="text-sm font-medium text-green-800 dark:text-green-200">Pointage en cours de validation...</p>
+                            <p class="text-sm text-green-700 dark:text-green-300">Redirection vers l'historique.</p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('pointageForm');
-            const submitBtn = document.getElementById('submitBtn');
-            const spinner = document.getElementById('spinner');
-            const buttonText = document.getElementById('buttonText');
-            const optimisticPreview = document.getElementById('optimisticPreview');
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('pointageForm');
+                const submitBtn = document.getElementById('submitBtn');
+                const spinner = document.getElementById('spinner');
+                const buttonText = document.getElementById('buttonText');
+                const optimisticPreview = document.getElementById('optimisticPreview');
 
-            form.addEventListener('submit', function(e) {
-                submitBtn.disabled = true;
-                buttonText.style.opacity = '0';
-                spinner.classList.remove('opacity-0');
+                if (!form) {
+                    return;
+                }
 
-                setTimeout(() => {
-                    optimisticPreview.classList.remove('hidden');
-                }, 300);
+                form.addEventListener('submit', function() {
+                    submitBtn.disabled = true;
+                    buttonText.style.opacity = '0';
+                    spinner.classList.remove('opacity-0');
+
+                    setTimeout(() => {
+                        optimisticPreview.classList.remove('hidden');
+                    }, 300);
+                });
             });
-        });
-    </script>
+        </script>
+    @endpush
 </x-app-layout>

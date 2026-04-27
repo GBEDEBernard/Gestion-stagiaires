@@ -23,12 +23,13 @@ class SuperviseurDashboardController extends Controller
         abort_if(!$user->hasRole('superviseur'), 403);
 
         $supervisedStages = $user->supervisedStages()
-            ->with(['etudiant.user', 'site', 'attendanceDays' => function ($query) {
+            ->with(['etudiant.user', 'service', 'site', 'attendanceDays' => function ($query) {
                 $query->whereDate('attendance_date', today());
             }, 'dailyReports' => function ($query) {
                 $query->whereDate('report_date', today())->latest();
             }])
-            ->active() // assume scope for active stages
+            ->active()
+            ->orderBy('date_fin')
             ->get();
 
         $todayAttendanceDays = AttendanceDay::whereIn('stage_id', $supervisedStages->pluck('id'))
@@ -41,6 +42,12 @@ class SuperviseurDashboardController extends Controller
             'supervisedStages' => $supervisedStages,
             'todayAttendanceDays' => $todayAttendanceDays,
             'pendingReviews' => $pendingReviews,
+            'summary' => [
+                'active_stages' => $supervisedStages->count(),
+                'checked_in_today' => $todayAttendanceDays->whereNotNull('first_check_in_at')->count(),
+                'pending_reviews' => $pendingReviews->count(),
+                'completed_days' => $todayAttendanceDays->whereNotNull('last_check_out_at')->count(),
+            ],
         ]);
     }
 }

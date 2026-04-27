@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -95,6 +96,11 @@ class Stage extends Model
         return $this->hasMany(DailyReport::class);
     }
 
+    public function permissionRequests()
+    {
+        return $this->hasMany(PermissionRequest::class);
+    }
+
     public function tasks()
     {
         return $this->hasMany(Task::class);
@@ -122,5 +128,12 @@ class Stage extends Model
         }
 
         return 'Termine';
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query
+            ->whereDate('date_debut', '<=', today())
+            ->whereDate('date_fin', '>=', today());
     }
 }

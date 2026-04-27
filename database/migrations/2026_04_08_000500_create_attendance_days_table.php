@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('attendance_days', function (Blueprint $table) {
             $table->id();
             $table->foreignId('stage_id')->nullable()->constrained('stages')->nullOnDelete();
-            $table->foreignId('etudiant_id')->constrained('etudiants')->cascadeOnDelete();
+            $table->foreignId('etudiant_id')->nullable()->constrained('etudiants')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('site_id')->nullable()->constrained('sites')->nullOnDelete();
             $table->foreignId('check_in_event_id')->nullable()->constrained('attendance_events')->nullOnDelete();
             $table->foreignId('check_out_event_id')->nullable()->constrained('attendance_events')->nullOnDelete();
@@ -20,6 +21,8 @@ return new class extends Migration
             $table->timestamp('last_check_out_at')->nullable();
             $table->unsignedInteger('worked_minutes')->default(0);
             $table->unsignedInteger('late_minutes')->default(0);
+            $table->enum('arrival_status', ['ontime', 'warning', 'late'])->nullable();
+            $table->string('departure_status')->nullable();
             $table->unsignedInteger('early_departure_minutes')->default(0);
             $table->unsignedSmallInteger('anomaly_count')->default(0);
             $table->string('day_status')->default('pending');
@@ -31,6 +34,7 @@ return new class extends Migration
 
             $table->unique(['stage_id', 'attendance_date']);
             $table->index(['etudiant_id', 'attendance_date']);
+            $table->index(['user_id', 'attendance_date']);
             $table->index(['validation_status', 'attendance_date']);
         });
     }

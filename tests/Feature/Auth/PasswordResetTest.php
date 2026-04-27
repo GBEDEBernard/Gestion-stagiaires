@@ -1,60 +1,75 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\SendPasswordResetPin;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
 test('reset password link screen can be rendered', function () {
     $response = $this->get('/forgot-password');
 
-    $response->assertStatus(200);
+    $response->assertOk();
 });
 
-test('reset password link can be requested', function () {
+test('password reset pin can be requested', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $response = $this->post('/forgot-password', ['email' => $user->email]);
+
+    $response->assertRedirect(route('password.verify-pin-show', ['email' => $user->email], false));
+    Notification::assertSentTo($user, SendPasswordResetPin::class);
+    $this->assertDatabaseHas('password_reset_pins', [
+        'email' => $user->email,
+        'used' => false,
+    ]);
+});
+
+test('valid password reset pin redirects to the reset form', function () {
     Notification::fake();
 
     $user = User::factory()->create();
 
     $this->post('/forgot-password', ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class);
+    $pin = DB::table('password_reset_pins')
+        ->where('email', $user->email)
+        ->value('pin');
+
+    $response = $this->post('/verify-pin', [
+        'email' => $user->email,
+        'pin' => $pin,
+    ]);
+
+    $response->assertRedirect(route('password.reset-form', [
+        'email' => $user->email,
+        'pin' => $pin,
+    ], false));
 });
 
-test('reset password screen can be rendered', function () {
+test('password can be reset with valid pin', function () {
     Notification::fake();
 
     $user = User::factory()->create();
 
     $this->post('/forgot-password', ['email' => $user->email]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get('/reset-password/'.$notification->token);
+    $pin = DB::table('password_reset_pins')
+        ->where('email', $user->email)
+        ->value('pin');
 
-        $response->assertStatus(200);
+    $response = $this->post('/reset-password-with-pin', [
+        'email' => $user->email,
+        'pin' => $pin,
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ]);
 
-        return true;
-    });
-});
-
-test('password can be reset with valid token', function () {
-    Notification::fake();
-
-    $user = User::factory()->create();
-
-    $this->post('/forgot-password', ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post('/reset-password', [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'));
-
-        return true;
-    });
+    $response->assertRedirect(route('login', absolute: false));
+    expect(Hash::check('new-password', $user->fresh()->password))->toBeTrue();
+    $this->assertDatabaseMissing('password_reset_pins', [
+        'email' => $user->email,
+    ]);
 });

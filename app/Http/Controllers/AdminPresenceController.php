@@ -118,9 +118,11 @@ class AdminPresenceController extends Controller
     public function userStats(User $user, Request $request)
     {
         $period = $request->get('period', 'month');
+        $user->loadMissing('etudiant');
 
         $userStats = $this->presenceService->getUserDetailedStats($user->id, $period);
-        $anomalies = AttendanceAnomaly::where('user_id', $user->id)
+        $anomalies = AttendanceAnomaly::query()
+            ->where($user->etudiant ? 'etudiant_id' : 'user_id', $user->etudiant?->id ?? $user->id)
             ->whereIn('status', ['open', 'flagged'])
             ->with('attendanceEvent.stage.site')
             ->latest()
@@ -221,8 +223,8 @@ class AdminPresenceController extends Controller
                 $event->occurred_at->format('d/m/Y H:i'),
                 $event->user?->name ?? 'N/A',
                 $event->event_type === 'check_in' ? 'Entrée' : 'Sortie',
-                $event->attendanceDay?->stage?->site?->nom ?? 'Hors site',
-                $event->gps_accuracy ?? 'N/A',
+                ($event->event_type === 'check_in' ? $event->checkInDay?->stage?->site?->name : $event->checkOutDay?->stage?->site?->name) ?? 'Hors site',
+                $event->accuracy_meters ?? 'N/A',
                 $event->status,
             ];
         });

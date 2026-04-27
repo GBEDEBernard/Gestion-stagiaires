@@ -50,6 +50,16 @@
                 </div>
 
                 <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email de diffusion</label>
+                    <input type="email" name="email" id="email" value="{{ old('email', $signataire->email) }}"
+                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-gray-900 dark:text-white placeholder-gray-400"
+                        placeholder="Ex: signataire@tfg.local">
+                    @error('email')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="ordre" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ordre</label>
                     <input type="number" name="ordre" id="ordre" value="{{ old('ordre', $signataire->ordre) }}" min="1"
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition text-gray-900 dark:text-white placeholder-gray-400"
@@ -58,6 +68,11 @@
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <label class="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                    <span>Activer ce signataire dans le circuit mail/PDF</span>
+                    <input type="checkbox" name="is_active" value="1" class="h-5 w-5 rounded border-gray-300 text-violet-600" @checked(old('is_active', $signataire->is_active))>
+                </label>
 
                 <!-- Boutons -->
                 <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">

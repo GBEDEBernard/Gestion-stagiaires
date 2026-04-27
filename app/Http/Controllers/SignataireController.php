@@ -33,8 +33,12 @@ class SignataireController extends Controller
             'nom'   => 'required|string|max:255',
             'poste' => 'required|string|max:255',
             'sigle' => 'required|string|max:10',
-            'ordre' => 'nullable|integer|min:1'
+            'email' => 'nullable|email|max:255',
+            'ordre' => 'nullable|integer|min:1',
+            'is_active' => 'nullable|boolean',
         ]);
+
+        $validated['is_active'] = $request->boolean('is_active', true);
 
         Signataire::create($validated);
 
@@ -59,8 +63,12 @@ class SignataireController extends Controller
             'nom'   => 'required|string|max:255',
             'poste' => 'required|string|max:255',
             'sigle' => 'required|string|max:10',
-            'ordre' => 'nullable|integer|min:1'
+            'email' => 'nullable|email|max:255',
+            'ordre' => 'nullable|integer|min:1',
+            'is_active' => 'nullable|boolean',
         ]);
+
+        $validated['is_active'] = $request->boolean('is_active');
 
         $signataire->update($validated);
 

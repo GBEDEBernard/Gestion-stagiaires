@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
-use App\Notifications\VerifyEmailNotification;
 use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    // jb -> Le compte utilisateur porte a la fois l'identite, les roles
-    // et l'etat d'onboarding (verification email + mot de passe temporaire).
     use MustVerifyEmailTrait;
     use HasFactory;
     use Notifiable;
@@ -52,25 +50,26 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-
+    public function requiresPasswordChange(): bool
+    {
+        // Point d'entree unique pour l'onboarding des comptes crees par l'admin.
+        return (bool) $this->must_change_password;
+    }
 
     public function homeRouteName(): string
     {
-        // 👑 Admin
         if ($this->hasRole('admin')) {
             return 'dashboard';
         }
 
-        // 👨‍🎓 Étudiants + fonctionnaires + superviseurs → pointage
-        if (
-            $this->hasRole('etudiant') ||
-            $this->hasRole('fonctionnaire') ||
-            $this->hasRole('superviseur')
-        ) {
+        if ($this->hasRole('superviseur')) {
+            return 'superviseur.dashboard';
+        }
+
+        if ($this->hasRole('etudiant') || $this->hasRole('employe')) {
             return 'presence.pointage';
         }
 
-        // fallback sécurisé
         return 'dashboard';
     }
 
@@ -81,8 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification()
     {
-        // jb -> On force ici la notification de verification du projet
-        // pour garder un texte et un ton coherents lors des renvois.
+        // On force la notification projet pour garder des messages coherents.
         $this->notify(new VerifyEmailNotification());
     }
 
@@ -121,20 +119,30 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(AttendanceAnomaly::class, 'reviewed_by');
     }
 
+    public function permissionRequests()
+    {
+        return $this->hasMany(PermissionRequest::class);
+    }
+
+    public function permissionRequestsToReview()
+    {
+        return $this->hasMany(PermissionRequest::class, 'first_approver_id');
+    }
+
+    public function reviewedPermissionRequests()
+    {
+        return $this->hasMany(PermissionRequest::class, 'reviewed_by_id');
+    }
+
     public function reviewedDailyReports()
     {
         return $this->hasMany(DailyReport::class, 'reviewed_by');
     }
 
-    /**
-     * Attendance days for employees (user_id).
-     */
     public function attendanceDays()
     {
         return $this->hasMany(AttendanceDay::class);
     }
-
-
 
     public function dailyReportReviews()
     {
