@@ -134,60 +134,9 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             @unless(auth()->user()->hasRole('etudiant'))
             <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
 
-                @if(auth()->user()->hasRole('superviseur') && !auth()->user()->hasRole('admin'))
+                @if(auth()->user()->hasRole('superviseur') || auth()->user()->hasRole('admin'))
                 <div class="space-y-1.5">
-                    @can('presence.admin.view')
-                    <a href="{{ route('admin.presence.index') }}"
-                        class="flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold text-emerald-200 hover:bg-emerald-500/20 hover:text-emerald-100 hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300 bg-slate-800/30">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-xl bg-emerald-500/30 ring-1 ring-emerald-500/40">
-                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <span>Pointage Admin</span>
-                        </div>
-                        @if(($anomaliesCount ?? 0) > 0)
-                        <span class="px-2.5 py-1 text-xs font-bold bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-full shadow-lg animate-pulse ring-1 ring-rose-400/50">{{ $anomaliesCount }}</span>
-                        @endif
-                    </a>
-                    @endcan
-
-                    {{-- NEW PRÉSENCE DROPDOWN --}}
-                    @can('presence.admin.view')
-                    <div x-data="{ presenceOpen: false }" class="space-y-1">
-                        <button @click="presenceOpen = !presenceOpen" type="button"
-                            class="group w-full flex items-center justify-between px-5 py-4 rounded-2xl text-sm font-bold text-amber-200 hover:bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:text-amber-100 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-400 bg-slate-800/40 relative overflow-hidden">
-                            <div class="absolute inset-0 bg-gradient-to-r from-amber-400/10 to-orange-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400 -skew-x-12"></div>
-                            <div class="flex items-center gap-4 relative z-10">
-                                <div class="p-2.5 rounded-xl bg-gradient-to-br from-amber-400/30 to-orange-400/30 ring-1 ring-amber-500/50">
-                                    <svg class="w-5 h-5 text-amber-500 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 012 2h-4a2 2 0 012-2z" />
-                                    </svg>
-                                </div>
-                                <span class="text-white text-xl font-bold">Présence</span>
-                                <span class="px-3 py-1 text-xs bg-amber-500/30 text-gray-200 font-bold rounded-full ring-1 ring-amber-800/50">Admin</span>
-                            </div>
-                            <svg x-bind:class="presenceOpen ? 'rotate-180' : 'rotate-0'" class="w-5 h-5 text-amber-300 transform transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="presenceOpen" x-cloak="presenceOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 space-y-1.5 pl-3 border-l-2 border-amber-500/30 bg-slate-900/50 rounded-2xl p-3">
-                            <a href="{{ route('admin.presence.anomalies') }}"
-                                class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-rose-600/20 hover:text-rose-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-rose-500/50">
-                                🚨 Tableau Anomalies
-                                @if(($anomaliesCount ?? 0) > 0)
-                                <span class="ml-2 inline-flex px-2 py-1 text-xs font-bold bg-gradient-to-r from-rose-500 to-red-500 text-white rounded-full shadow-lg ml-auto float-right">{{ $anomaliesCount }}</span>
-                                @endif
-                            </a>
-                            <a href="{{ route('admin.presence.pointage-suivi') ?? route('admin.presence.index') }}"
-                                class="block pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 hover:translate-x-1 transition-all duration-300 relative bg-slate-800/20 before:absolute before:left-2 before:top-1/2 before:-translate-y-1/2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-emerald-500/50">
-                                📊 Suivi Pointages
-                            </a>
-                        </div>
-                    </div>
-                    @endcan
-
+                    <h2 class="text-sm font-bold text-center text-slate-400 uppercase tracking-wide">Administration</h2>    
                     <div x-data="{ open: false }" class="space-y-1">
                         <button @click="open = !open" type="button"
                             class="group w-full flex items-center justify-between px-5 py-4 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 bg-slate-800/40 relative overflow-hidden">
@@ -338,7 +287,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                                 </svg>
                             </div>
                             <span>Stages</span>
-                           
+
                         </div>
                         <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
@@ -424,11 +373,12 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <div class="flex items-center gap-3 relative z-10">
                             <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm"
                                 :class="open ? 'bg-white/20' : 'bg-slate-700/50'">
-                                <svg class="w-5 h-5" :class="open ? 'text-white' : 'text-red-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-blue-400 bi bi-people" viewBox="0 0 16 16">
+                                    <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
                                 </svg>
+
                             </div>
-                            
+
                             <span>Gestion des <br>Personnels</span>
                         </div>
                         <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="open ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
@@ -443,6 +393,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <a href="{{ route('domaines.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-400 transition-colors"></div>
+
                             <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
@@ -466,26 +417,27 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <a href="{{ route('admin.users.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500 group-hover:bg-orange-400 transition-colors"></div>
+
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check-fill" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
-                                <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                                <path fill-rule="evenodd" d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0" />
+                                <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
                             </svg>
                             <div class="flex flex-col">
                                 <span>Utilisateurs</span>
                                 <p class="text-xs text-slate-500 group-hover:text-slate-400">Gestion comptes</p>
                             </div>
-                           
+
                         </a>
                         @endrole
                         @can('sites.view')
                         <a href="{{ route('sites.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
-                          
+
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-globe-europe-africa-fill" viewBox="0 0 16 16">
-                               <path fill-rule="evenodd" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1a6.97 6.97 0 0 0-4.335 1.505l-.285.641a.847.847 0 0 0 1.48.816l.244-.368a.81.81 0 0 1 1.035-.275.81.81 0 0 0 .722 0l.262-.13a1 1 0 0 1 .775-.05l.984.34q.118.04.243.054c.784.093.855.377.694.801a.84.84 0 0 1-1.035.487l-.01-.003C8.273 4.663 7.747 4.5 6 4.5 4.8 4.5 3.5 5.62 3.5 7c0 3 1.935 1.89 3 3 1.146 1.194-1 4 2 4 1.75 0 3-3.5 3-4.5 0-.704 1.5-1 1-2.5-.097-.291-.396-.568-.642-.756-.173-.133-.206-.396-.051-.55a.334.334 0 0 1 .42-.043l1.085.724a.276.276 0 0 0 .348-.035c.15-.15.414-.083.488.117.16.428.445 1.046.847 1.354A7 7 0 0 0 8 1"/>
+                                <path fill-rule="evenodd" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0m0 1a6.97 6.97 0 0 0-4.335 1.505l-.285.641a.847.847 0 0 0 1.48.816l.244-.368a.81.81 0 0 1 1.035-.275.81.81 0 0 0 .722 0l.262-.13a1 1 0 0 1 .775-.05l.984.34q.118.04.243.054c.784.093.855.377.694.801a.84.84 0 0 1-1.035.487l-.01-.003C8.273 4.663 7.747 4.5 6 4.5 4.8 4.5 3.5 5.62 3.5 7c0 3 1.935 1.89 3 3 1.146 1.194-1 4 2 4 1.75 0 3-3.5 3-4.5 0-.704 1.5-1 1-2.5-.097-.291-.396-.568-.642-.756-.173-.133-.206-.396-.051-.55a.334.334 0 0 1 .42-.043l1.085.724a.276.276 0 0 0 .348-.035c.15-.15.414-.083.488.117.16.428.445 1.046.847 1.354A7 7 0 0 0 8 1" />
                             </svg>
-                    
+
                             <div class="flex flex-col">
                                 <span>Sites</span>
                                 <p class="text-xs text-slate-500 group-hover:text-slate-400">Lieux & géofencing</p>
@@ -497,8 +449,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors"></div>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill" viewBox="0 0 16 16">
-  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
-</svg>
+                                <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001" />
+                            </svg>
                             <div class="flex flex-col">
                                 <span>Tâches</span>
                                 <p class="text-xs text-slate-500 group-hover:text-slate-400">Système & automation</p>
@@ -516,13 +468,15 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-emerald-500/20">
-                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292 4 4 0 010-5.292zM15 12H9m4.354-11.646l2.121 2.121a4 4 0 01-5.656 5.656l-2.121-2.121a4 4 0 015.656-5.656z" />
+
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-walking" viewBox="0 0 16 16">
+                                <path d="M9.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0M6.44 3.752A.75.75 0 0 1 7 3.5h1.445c.742 0 1.32.643 1.243 1.38l-.43 4.083a1.8 1.8 0 0 1-.088.395l-.318.906.213.242a.8.8 0 0 1 .114.175l2 4.25a.75.75 0 1 1-1.357.638l-1.956-4.154-1.68-1.921A.75.75 0 0 1 6 8.96l.138-2.613-.435.489-.464 2.786a.75.75 0 1 1-1.48-.246l.5-3a.75.75 0 0 1 .18-.375l2-2.25Z" />
+                                <path d="M6.25 11.745v-1.418l1.204 1.375.261.524a.8.8 0 0 1-.12.231l-2.5 3.25a.75.75 0 1 1-1.19-.914zm4.22-4.215-.494-.494.205-1.843.006-.067 1.124 1.124h1.44a.75.75 0 0 1 0 1.5H11a.75.75 0 0 1-.531-.22Z" />
                             </svg>
                         </div>
                         <span>Étudiants</span>
                     </div>
-                  
+
                 </a>
                 @endunlessrole
                 @endcan
@@ -534,17 +488,15 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 rounded-xl bg-purple-500/20">
-                            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m0 0c-1.745-2.772-2.747-6.054-2.747-9.571m5.5 0c0 3.517 1.009 6.799 2.753 9.571m0 0c1.745-2.772 2.747-6.054 2.747-9.571M12 11a9 9 0 00-9 9m0 0a9 9 0 018.354 5.646M12 11a9 9 0 019 9m-9-9a9 9 0 018.354 5.646" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-badge text-purple-400" viewBox="0 0 16 16">
+                                <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+                                <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v10.795a4.2 4.2 0 0 0-.776-.492C11.392 12.387 10.063 12 8 12s-3.392.387-4.224.803a4.2 4.2 0 0 0-.776.492z" />
                             </svg>
+
                         </div>
                         <span>Badges</span>
                     </div>
-                    @if($badgesCount > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30">
-                        {{ $badgesCount }}
-                    </span>
-                    @endif
+
                 </a>
                 @endunlessrole
                 @endcan
@@ -562,11 +514,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </div>
                         <span>Rôles</span>
                     </div>
-                    @if($rolesCount > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-indigo-500/20 text-indigo-400 rounded-full border border-indigo-500/30">
-                        {{ $rolesCount }}
-                    </span>
-                    @endif
+
                 </a>
                 @endrole
 
@@ -583,11 +531,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </div>
                         <span>Corbeille</span>
                     </div>
-                    @if($trashCount > 0)
-                    <span class="px-2.5 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 rounded-full border border-red-500/30 animate-pulse">
-                        {{ $trashCount }}
-                    </span>
-                    @endif
+
                 </a>
                 @endcan
                 <!-- Divider -->
