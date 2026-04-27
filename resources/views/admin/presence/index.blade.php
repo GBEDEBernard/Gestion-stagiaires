@@ -19,7 +19,7 @@
         </div>
     </x-slot>
 
-    {{-- ─── STYLES ─────────────────────────────────────────────── --}}
+    {{-- ─── STYLES UNIFIÉS (sans doublons) ─────────────────────── --}}
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
@@ -42,8 +42,7 @@
             --mono: 'DM Mono', monospace;
         }
 
-        /* ── BASE ── */
-        .pres-wrap * {
+        * {
             box-sizing: border-box;
         }
 
@@ -52,7 +51,7 @@
             color: var(--text);
         }
 
-        /* ── HEADER ── */
+        /* HEADER */
         .pres-header {
             display: flex;
             justify-content: space-between;
@@ -147,22 +146,29 @@
             transform: translateY(-1px);
         }
 
-        /* ── LAYOUT ── */
+        /* LAYOUT */
         .pres-page {
             max-width: 1400px;
             margin: 0 auto;
             padding: 1.5rem 1.5rem 3rem;
         }
 
-        /* ── PERIOD TABS ── */
+        /* TABS */
         .pres-tabs {
             display: flex;
+            flex-wrap: wrap;
             gap: .25rem;
             background: var(--bg2);
             border: 1px solid var(--border);
             border-radius: .75rem;
             padding: .3rem;
             width: fit-content;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .pres-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .pres-tab {
@@ -197,7 +203,140 @@
             vertical-align: middle;
         }
 
-        /* ── KPI GRID ── */
+        /* FILTRE RESPONSIVE (version propre) */
+        .pres-filter-panel {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #111;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        }
+
+        .dark .pres-filter-panel {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: var(--muted);
+            box-shadow: none;
+        }
+
+        .pres-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .pres-filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .dark .pres-filter-field {
+            color: var(--muted);
+        }
+
+        .pres-filter-field label {
+            font-weight: 500;
+        }
+
+        .pres-filter-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 0.75rem;
+            background: #ffffff;
+            color: #111;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .pres-filter-input:focus {
+            outline: none;
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        .dark .pres-filter-input {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.14);
+            color: #fff;
+        }
+
+        .pres-filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .pres-filter-actions .pres-btn {
+            flex: 1;
+            text-align: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        /* RESPONSIVE FILTRE */
+        @media (max-width: 900px) {
+            .pres-filter-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pres-filter-actions {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .pres-filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pres-filter-actions {
+                grid-column: span 1;
+            }
+
+            .pres-filter-actions .pres-btn {
+                flex: 1;
+            }
+        }
+
+        /* BOUTONS */
+        .pres-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            padding: .85rem 1.1rem;
+            border-radius: .85rem;
+            border: 1px solid transparent;
+            font-weight: 600;
+            font-size: .85rem;
+            text-decoration: none;
+            text-color: #000;
+        }
+
+        .pres-btn-primary {
+            background: var(--emerald);
+            color: #fff;
+        }
+
+        .pres-btn-secondary {
+            background: transparent;
+            border-color: rgba(255, 255, 255, .12);
+            color: #e5e7eb;
+        }
+
+        .pres-btn-secondary:hover {
+            background: rgba(255, 255, 255, .06);
+        }
+
+        /* KPI CARDS */
         .pres-kpis {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -286,7 +425,6 @@
             border-top: 1px solid var(--border);
         }
 
-        /* KPI color variants */
         .kpi-emerald .pres-kpi-accent {
             background: var(--emerald);
         }
@@ -343,7 +481,7 @@
             color: var(--rose);
         }
 
-        /* ── SECTION TITLE ── */
+        /* SECTIONS */
         .pres-section-title {
             font-size: 1rem;
             font-weight: 600;
@@ -363,7 +501,7 @@
             background: var(--emerald);
         }
 
-        /* ── CHARTS AREA ── */
+        /* CHARTS */
         .pres-charts-grid {
             display: grid;
             grid-template-columns: 1.6fr 1fr;
@@ -372,18 +510,6 @@
 
         @media(max-width:900px) {
             .pres-charts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-charts-triple {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        @media(max-width:900px) {
-            .pres-charts-triple {
                 grid-template-columns: 1fr;
             }
         }
@@ -400,203 +526,12 @@
             border-color: var(--border-hi);
         }
 
-        .pres-filter-panel {
-            margin-top: 1rem;
-            padding: 1rem 1rem 0;
-            background: rgba(255, 255, 255, .92);
-            border: 1px solid rgba(0, 0, 0, .08);
-            border-radius: 1rem;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-            align-items: end;
-            color: #111;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
-        }
-
-        .pres-filter-field {
-            display: grid;
-            gap: .5rem;
-            font-size: .85rem;
-            color: #374151;
-        }
-
-        .pres-filter-input {
-            width: 100%;
-            border: 1px solid rgba(148, 163, 184, .35);
-            border-radius: .75rem;
-            background: #ffffff;
-            color: #111;
-            padding: .85rem 1rem;
-        }
-
-        .pres-filter-input::placeholder {
-            color: #94a3b8;
-        }
-
-        .pres-filter-form {
-            flex-wrap: wrap;
-        }
-
-        .pres-filter-actions {
-            display: flex;
-            gap: .75rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            width: 100%;
-        }
-
-        .pres-filter-actions .pres-btn {
-            min-width: 140px;
-        }
-
-        .pres-btn-secondary {
-            background: #f8fafc;
-            border-color: rgba(148, 163, 184, .35);
-            color: #111;
-        }
-
-        .pres-btn-secondary:hover {
-            background: #eef2ff;
-        }
-
-        .dark .pres-filter-panel {
-            background: rgba(255, 255, 255, .06);
-            border-color: rgba(255, 255, 255, .12);
-            color: var(--muted);
-            box-shadow: none;
-        }
-
-        .dark .pres-filter-field {
-            color: var(--muted);
-        }
-
-        .dark .pres-filter-input {
-            background: rgba(255, 255, 255, .08);
-            border-color: rgba(255, 255, 255, .14);
-            color: #fff;
-        }
-
-        .dark .pres-filter-input::placeholder {
-            color: rgba(229, 231, 235, .8);
-        }
-
-        .dark .pres-btn-secondary {
-            background: transparent;
-            border-color: rgba(255, 255, 255, .12);
-            color: #e5e7eb;
-        }
-
-        .dark .pres-btn-secondary:hover {
-            background: rgba(255, 255, 255, .06);
-        }
-
-        .pres-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .25rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .pres-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .pres-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .5rem;
-            padding: .85rem 1.1rem;
-            border-radius: .85rem;
-            border: 1px solid transparent;
-            font-weight: 600;
-            font-size: .85rem;
-            text-decoration: none;
-        }
-
-        @media(max-width: 1024px) {
-            .pres-page {
-                padding: 1rem 1rem 2.5rem;
-            }
-
-            .pres-header {
-                gap: .75rem;
-            }
-
-            .pres-filter-panel {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .pres-filter-actions {
-                justify-content: flex-start;
-            }
-        }
-
-        @media(max-width: 700px) {
-            .pres-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .pres-header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .pres-header-title {
-                font-size: 1.45rem;
-            }
-
-            .pres-header-sub {
-                font-size: .82rem;
-            }
-
-            .pres-filter-panel {
-                grid-template-columns: 1fr;
-            }
-
-            .pres-filter-form {
-                align-items: stretch;
-            }
-
-            .pres-filter-panel .pres-filter-field,
-            .pres-filter-actions {
-                width: 100%;
-            }
-
-            .pres-filter-actions .pres-btn {
-                flex: 1 1 100%;
-            }
-
-            .pres-tab {
-                flex: 1 1 auto;
-                min-width: 120px;
-            }
-        }
-
-        .pres-btn-primary {
-            background: var(--emerald);
-            color: #fff;
-        }
-
-        .pres-btn-secondary {
-            background: transparent;
-            border-color: rgba(255, 255, 255, .12);
-            color: #e5e7eb;
-        }
-
-        .pres-btn-secondary:hover {
-            background: rgba(255, 255, 255, .06);
-        }
-
         .pres-chart-wrap {
             position: relative;
             height: 220px;
         }
 
-        /* ── QUICK ACTIONS ── */
+        /* QUICK ACTIONS */
         .pres-actions-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -683,19 +618,7 @@
             background: var(--blue);
         }
 
-        /* ── GROUPS ── */
-        .pres-groups-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        @media(max-width:600px) {
-            .pres-groups-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        /* GROUP CARDS */
         .pres-group-card {
             background: var(--bg2);
             border: 1px solid var(--border);
@@ -754,7 +677,7 @@
             transition: width .8s cubic-bezier(.34, 1.56, .64, 1);
         }
 
-        /* ── TABLES ── */
+        /* TABLES */
         .pres-table-card {
             background: var(--bg2);
             border: 1px solid var(--border);
@@ -872,7 +795,7 @@
             margin-bottom: .5rem;
         }
 
-        /* ── REPORTS SECTION ── */
+        /* REPORTS SECTION */
         .pres-reports-kpis {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -936,7 +859,6 @@
             flex-shrink: 0;
         }
 
-        /* ── SPACING ── */
         .mt-6 {
             margin-top: 1.5rem;
         }
@@ -944,47 +866,91 @@
         .mt-4 {
             margin-top: 1rem;
         }
+
+        /* RESPONSIVE GENERAL */
+        @media(max-width: 1024px) {
+            .pres-page {
+                padding: 1rem 1rem 2.5rem;
+            }
+
+            .pres-header {
+                gap: .75rem;
+            }
+        }
+
+        @media(max-width: 700px) {
+            .pres-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pres-header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .pres-header-title {
+                font-size: 1.45rem;
+            }
+
+            .pres-header-sub {
+                font-size: .82rem;
+            }
+
+            .pres-tab {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+        }
     </style>
 
     <div class="pres-wrap">
+        <h1 class="pres-section-title bg-gray-400 border-b rounded-md  w-fit px-2 py-1 mb-4" style="color: #92405e; font-size: 1.2rem; font-weight: 700;">
+                Statistiques de Présence
+        </h1>
         <div class="pres-page">
 
-            {{-- ── PERIOD TABS ──────────────────────────────────── --}}
-            <div class="pres-tabs">
+            {{-- PERIOD TABS --}}
+            <div class="pres-tabs" style="background-color: #f3f4f6; border-color: rgba(0, 0, 0, 0.08);">
                 @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
-                <a href="?period={{ $k }}" class="pres-tab {{ request('period',$k==='today'?'today':null)===$k?'active':'' }}">
+                <a href="?period={{ $k }}" class="pres-tab {{ request('period',$k==='today'?'today':null)===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
                     {{ $lbl }}
                     @if(request('period')===$k)<span class="pres-tab-indicator"></span>@endif
                 </a>
                 @endforeach
             </div>
 
-            <div class="pres-filter-panel text-gray-600">
-                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form flex flex-wrap items-end gap-4 w-full">
+            {{-- FILTRE DATE RESPONSIVE --}}
+            <div class="pres-filter-panel">
+                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form">
                     <input type="hidden" name="period" value="custom" />
-                    <input type="hidden" name="group" value="{{ $group }}" />
+                    <input type="hidden" name="group" value="{{ $group ?? '' }}" />
 
-                    <label class="pres-filter-field" text-gray-600>
-                        <span>Du</span>
-                        <input type="date" name="date_from" value="{{ request('date_from', today()->format('Y-m-d')) }}" class="pres-filter-input" />
-                    </label>
+                    <div class="pres-filter-grid">
+                        <div class="pres-filter-field">
+                            <label>Du</label>
+                            <input type="date" name="date_from"
+                                value="{{ request('date_from', today()->format('Y-m-d')) }}"
+                                class="pres-filter-input" />
+                        </div>
 
-                    <label class="pres-filter-field">
-                        <span>Au</span>
-                        <input type="date" name="date_to" value="{{ request('date_to', today()->format('Y-m-d')) }}" class="pres-filter-input" />
-                    </label>
+                        <div class="pres-filter-field">
+                            <label>Au</label>
+                            <input type="date" name="date_to"
+                                value="{{ request('date_to', today()->format('Y-m-d')) }}"
+                                class="pres-filter-input" />
+                        </div>
 
-                    <div class="pres-filter-actions">
-                        <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
-                        <a href="{{ route('admin.presence.index') }}" class="pres-btn pres-btn-secondary">Réinitialiser</a>
+                        <div class="pres-filter-actions">
+                            <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
+                            <a href="{{ route('admin.presence.index') }}" class="pres-btn pres-btn-secondary " style="color: #000;font-weight: 600;font-size: 16px; background:#9ca3af; transform: translateY(-1px);">Réinitialiser</a>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            {{-- ── KPI CARDS ────────────────────────────────────── --}}
+            {{-- KPI CARDS --}}
             <div class="pres-kpis mt-6">
-
-                {{-- Taux présence --}}
                 <div class="pres-kpi kpi-emerald">
                     <div class="pres-kpi-accent"></div>
                     <div class="pres-kpi-top">
@@ -1004,7 +970,6 @@
                     <div class="pres-kpi-sub">{{ $globalStats['present_days'] ?? 0 }} jours présents</div>
                 </div>
 
-                {{-- Retards --}}
                 <div class="pres-kpi kpi-amber">
                     <div class="pres-kpi-accent"></div>
                     <div class="pres-kpi-top">
@@ -1021,7 +986,6 @@
                     <div class="pres-kpi-sub">{{ number_format($globalStats['total_late_minutes'] ?? 0) }} min au total</div>
                 </div>
 
-                {{-- Heures travaillées --}}
                 <div class="pres-kpi kpi-blue">
                     <div class="pres-kpi-accent"></div>
                     <div class="pres-kpi-top">
@@ -1038,7 +1002,6 @@
                     <div class="pres-kpi-sub">{{ number_format($globalStats['total_days'] ?? 0) }} jours pointés</div>
                 </div>
 
-                {{-- Anomalies --}}
                 <div class="pres-kpi kpi-rose">
                     <div class="pres-kpi-accent"></div>
                     <div class="pres-kpi-top">
@@ -1055,10 +1018,9 @@
                     <div class="pres-kpi-label">Anomalies Ouvertes</div>
                     <div class="pres-kpi-sub">À reviewer</div>
                 </div>
-
             </div>
 
-            {{-- ── QUICK ACTIONS ─────────────────────────────────── --}}
+            {{-- QUICK ACTIONS --}}
             <div class="mt-6">
                 <div class="pres-section-title">Actions Rapides</div>
                 <div class="pres-actions-grid">
@@ -1078,9 +1040,9 @@
                 </div>
             </div>
 
+            {{-- CHARTS --}}
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
-
                 <div class="pres-card">
                     <div class="pres-chart-wrap" style="height:280px;">
                         <canvas id="chartGlobal"></canvas>
@@ -1094,9 +1056,9 @@
                     <canvas id="chartOverview"></canvas>
                 </div>
             </div>
-            {{-- Groups --}}
-            <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
 
+            {{-- GROUP STATS --}}
+            <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
                 <div class="pres-group-card">
                     <div class="pres-group-head">
                         <div>
@@ -1136,163 +1098,150 @@
                         {{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%
                     </div>
                 </div>
-
-            </div>
-        </div>
-
-        {{-- ── REPORTS SECTION ───────────────────────────────── --}}
-        <div class="mt-6">
-            <div class="pres-section-title">Suivi des Rapports Journaliers</div>
-            <div class="pres-reports-kpis">
-                <div class="pres-kpi" style="background:var(--bg2);border-color:var(--border);">
-                    <div class="pres-kpi-accent" style="background:var(--muted);"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
-                    </div>
-                    <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
-                    <div class="pres-kpi-label">Brouillons</div>
-                    <div class="pres-kpi-sub">À compléter aujourd'hui</div>
-                </div>
-                <div class="pres-kpi kpi-amber">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">⏳</div>
-                    </div>
-                    <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
-                    <div class="pres-kpi-label">En Attente</div>
-                    <div class="pres-kpi-sub">À reviewer par sup.</div>
-                </div>
-                <div class="pres-kpi kpi-emerald">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">✅</div>
-                    </div>
-                    <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
-                    <div class="pres-kpi-label">Approuvés</div>
-                    <div class="pres-kpi-sub">Cette semaine</div>
-                </div>
-                <div class="pres-kpi kpi-blue">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">🏆</div>
-                    </div>
-                    <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
-                    <div class="pres-kpi-label">Taux Validation</div>
-                    <div class="pres-kpi-sub">Objectif › 90%</div>
-                </div>
-            </div>
-            <div class="pres-reports-bottom">
-                <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
-                    <span class="pres-action-icon">📊</span>
-                    <span style="font-size:1rem;">Tous les Rapports</span>
-                </a>
-                <div class="pres-tips">
-                    <div class="pres-tips-title">💡 Astuces Suivi</div>
-                    <ul>
-                        <li>Vérifiez la géolocalisation avant validation</li>
-                        <li>Signalez toute anomalie de +15 min de retard</li>
-                        <li>Validez avant 18h pour les stats du jour</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        {{-- ── TOP RETARDS & ABSENCES ────────────────────────── --}}
-        <div class="pres-charts-grid mt-6">
-
-            {{-- Top 10 Retards --}}
-            <div class="pres-table-card">
-                <div class="pres-table-head">
-                    <span class="pres-table-head-title">🚨 Top 10 Retards</span>
-                    <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
-                </div>
-                <table class="pres-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Utilisateur</th>
-                            <th>Total</th>
-                            <th>Jours</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($topLate ?? [] as $i => $user)
-                        <tr>
-                            <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
-                            <td style="font-weight:500;">{{ $user->name }}</td>
-                            <td><span class="pres-tag tag-amber">{{ $user->total_late }} min</span></td>
-                            <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4">
-                                <div class="pres-empty">
-                                    <div class="pres-empty-icon">✅</div>Aucun retard détecté
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
 
-            {{-- Absences --}}
-            <div class="pres-table-card">
-                <div class="pres-table-head">
-                    <span class="pres-table-head-title">⭕ Absences</span>
-                    <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
+            {{-- REPORTS SECTION --}}
+            <div class="mt-6">
+                <div class="pres-section-title">Suivi des Rapports Journaliers</div>
+                <div class="pres-reports-kpis">
+                    <div class="pres-kpi" style="background:var(--bg2);border-color:var(--border);">
+                        <div class="pres-kpi-accent" style="background:var(--muted);"></div>
+                        <div class="pres-kpi-top">
+                            <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
+                        </div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
+                        <div class="pres-kpi-label">Brouillons</div>
+                        <div class="pres-kpi-sub">À compléter aujourd'hui</div>
+                    </div>
+                    <div class="pres-kpi kpi-amber">
+                        <div class="pres-kpi-accent"></div>
+                        <div class="pres-kpi-top">
+                            <div class="pres-kpi-icon">⏳</div>
+                        </div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
+                        <div class="pres-kpi-label">En Attente</div>
+                        <div class="pres-kpi-sub">À reviewer par sup.</div>
+                    </div>
+                    <div class="pres-kpi kpi-emerald">
+                        <div class="pres-kpi-accent"></div>
+                        <div class="pres-kpi-top">
+                            <div class="pres-kpi-icon">✅</div>
+                        </div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
+                        <div class="pres-kpi-label">Approuvés</div>
+                        <div class="pres-kpi-sub">Cette semaine</div>
+                    </div>
+                    <div class="pres-kpi kpi-blue">
+                        <div class="pres-kpi-accent"></div>
+                        <div class="pres-kpi-top">
+                            <div class="pres-kpi-icon">🏆</div>
+                        </div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
+                        <div class="pres-kpi-label">Taux Validation</div>
+                        <div class="pres-kpi-sub">Objectif › 90%</div>
+                    </div>
                 </div>
-                @if(empty($absences))
-                <div class="pres-empty">
-                    <div class="pres-empty-icon">🎉</div>Aucune absence détectée
+                <div class="pres-reports-bottom">
+                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
+                        <span class="pres-action-icon">📊</span>
+                        <span style="font-size:1rem;">Tous les Rapports</span>
+                    </a>
+                    <div class="pres-tips">
+                        <div class="pres-tips-title">💡 Astuces Suivi</div>
+                        <ul>
+                            <li>Vérifiez la géolocalisation avant validation</li>
+                            <li>Signalez toute anomalie de +15 min de retard</li>
+                            <li>Validez avant 18h pour les stats du jour</li>
+                        </ul>
+                    </div>
                 </div>
-                @else
-                <table class="pres-table">
-                    <thead>
-                        <tr>
-                            <th>Utilisateur</th>
-                            <th>Jours</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($absences as $userName => $count)
-                        <tr>
-                            <td style="font-weight:500;">{{ $userName }}</td>
-                            <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                @endif
+            </div>
+
+            {{-- TOP RETARDS & ABSENCES --}}
+            <div class="pres-charts-grid mt-6">
+                <div class="pres-table-card">
+                    <div class="pres-table-head">
+                        <span class="pres-table-head-title">🚨 Top 10 Retards</span>
+                        <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
+                    </div>
+                    <table class="pres-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Utilisateur</th>
+                                <th>Total</th>
+                                <th>Jours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($topLate ?? [] as $i => $user)
+                            <tr>
+                                <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
+                                <td style="font-weight:500;">{{ $user->name }}</td>
+                                <td><span class="pres-tag tag-amber">{{ $user->total_late }} min</span></td>
+                                <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="pres-empty">
+                                        <div class="pres-empty-icon">✅</div>Aucun retard détecté
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pres-table-card">
+                    <div class="pres-table-head">
+                        <span class="pres-table-head-title">⭕ Absences</span>
+                        <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
+                    </div>
+                    @if(empty($absences))
+                    <div class="pres-empty">
+                        <div class="pres-empty-icon">🎉</div>Aucune absence détectée
+                    </div>
+                    @else
+                    <table class="pres-table">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Jours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($absences as $userName => $count)
+                            <tr>
+                                <td style="font-weight:500;">{{ $userName }}</td>
+                                <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @endif
+                </div>
             </div>
 
         </div>
-
-    </div>{{-- /pres-page --}}
-    </div>{{-- /pres-wrap --}}
+    </div>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-
             Chart.defaults.font.family = "'DM Sans', sans-serif";
             Chart.defaults.color = '#9ca3af';
 
-            // 🔥 DATA SAFE (ultra important)
             const labels = @json($globalStats['chart_data']['labels'] ?? []);
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absences'] ?? []);
 
-            // 🔥 calcul réel cohérent
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-            /* =========================================================
-               🎨 GRADIENTS (EFFET PREMIUM)
-            ========================================================= */
             const createGradient = (ctx, color) => {
                 const gradient = ctx.createLinearGradient(0, 0, 0, 260);
                 gradient.addColorStop(0, color);
@@ -1300,13 +1249,8 @@
                 return gradient;
             };
 
-            /* =========================================================
-               📈 GRAPHE PRINCIPAL (COURBES PRO)
-            ========================================================= */
             const ctxG = document.getElementById('chartGlobal');
-
             if (ctxG && labels.length > 0) {
-
                 const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
                 const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
                 const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
@@ -1364,120 +1308,43 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-
-                        animation: {
-                            duration: 1200,
-                            easing: 'easeOutQuart'
-                        },
-
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-
+                        animation: { duration: 1200, easing: 'easeOutQuart' },
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#e5e7eb',
-                                    usePointStyle: true
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: '#111827',
-                                borderColor: '#374151',
-                                borderWidth: 1,
-                                titleColor: '#fff',
-                                bodyColor: '#d1d5db'
-                            }
+                            legend: { labels: { color: '#e5e7eb', usePointStyle: true } },
+                            tooltip: { backgroundColor: '#111827', borderColor: '#374151', borderWidth: 1, titleColor: '#fff', bodyColor: '#d1d5db' }
                         },
-
                         scales: {
-                            x: {
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                position: 'left',
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                }
-                            },
-                            y1: {
-                                beginAtZero: true,
-                                position: 'right',
-                                grid: {
-                                    drawOnChartArea: false
-                                }
-                            }
+                            x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
                         }
                     }
                 });
             }
 
-            /* =========================================================
-               📊 BAR CHART (clean)
-            ========================================================= */
             const ctxOv = document.getElementById('chartOverview');
-
             if (ctxOv && labels.length > 0) {
                 new Chart(ctxOv, {
                     type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: [{
-                                label: 'Présents',
-                                data: present,
-                                backgroundColor: '#10b981'
-                            },
-                            {
-                                label: "À l'heure",
-                                data: onTime,
-                                backgroundColor: '#3b82f6'
-                            },
-                            {
-                                label: 'Retards (min)',
-                                data: lateMinutes,
-                                backgroundColor: '#f59e0b'
-                            },
-                            {
-                                label: 'Absences',
-                                data: absences,
-                                backgroundColor: '#f43f5e'
-                            }
+                        datasets: [
+                            { label: 'Présents', data: present, backgroundColor: '#10b981' },
+                            { label: "À l'heure", data: onTime, backgroundColor: '#3b82f6' },
+                            { label: 'Retards (min)', data: lateMinutes, backgroundColor: '#f59e0b' },
+                            { label: 'Absences', data: absences, backgroundColor: '#f43f5e' }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-
-                        animation: {
-                            duration: 1000
-                        },
-
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#e5e7eb'
-                                }
-                            }
-                        },
-
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
+                        animation: { duration: 1000 },
+                        plugins: { legend: { labels: { color: '#e5e7eb' } } },
+                        scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
                     }
                 });
             }
-
         });
     </script>
     @endpush
