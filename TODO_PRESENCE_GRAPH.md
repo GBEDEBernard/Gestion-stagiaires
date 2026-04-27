@@ -1,18 +1,28 @@
-# TODO: Graphique Évolution Présence Unique
+# TODO - Refonte Graphe Présence Professionnel
 
-## Étapes complétées ✅
+## Étapes
 
-- [x] Créer fichier TODO
-- [x] Modifier index.blade.php: Remplacer 3 graphiques séparés par 1 graphique multi-courbes
-- [x] Modifier AdminPresenceService.php: 'late' → total_late_minutes par jour
-- [x] Ajouter canvas #chartEvolution avec 3 datasets (Présence, À l'heure, Retards minutes)
-- [x] CSS responsive full-width + legend + courbes smooth (tension 0.45)
+- [x] 1. Analyser les fichiers et comprendre le problème
+- [ ] 2. Corriger `AdminPresenceService::getUserDetailedStats()` - ne pas marquer les jours futurs comme absents
+- [ ] 3. Refonte graphe `resources/views/presence/historique.blade.php` (chartGlobal + chartOverview)
+- [ ] 4. Refonte graphe `resources/views/admin/presence/index.blade.php` (chartGlobal + chartOverview)
+- [ ] 5. Refonte graphe `resources/views/attendance/tracking/index.blade.php` (presenceChart)
+- [ ] 6. Tester et vérifier le rendu
 
-## À tester
+## Détails techniques
 
-- [ ] Vérifier tous les periods (aujourd'hui/semaine/mois/année)
-- [ ] Vérifier courbes smooths, tooltips, mobile responsive
-- [ ] Confirmer retards en minutes (pas count jours)
-- [ ] `php artisan serve` → /admin/presence
+### Problème 1 : Absences sur jours futurs
+Dans `getUserDetailedStats()`, la boucle parcourt tous les jours de la période (startDate → endDate). Les jours futurs sans pointage sont marqués comme absents (absences[] = 1). Il faut ajouter une condition `$currentDate <= $today` pour ne marquer l'absence que sur les jours passés ou aujourd'hui.
 
-## Complété par BLACKBOXAI
+### Problème 2 : Graphe non professionnel
+- Les datasets binaires (0/1) doivent utiliser `stepped: 'before'` pour des pics nets
+- L'axe Y gauche doit être borné à max 1.2 pour bien voir les pics
+- Les minutes de retard doivent être sur un axe Y droit séparé
+- Ajouter des points visibles quand valeur > 0
+- Tooltips informatifs avec emoji
+
+### Résultat attendu (Noah)
+Jour 1 (présent à l'heure) : Présence=1, À l'heure=1, Retard=0, Absence=0
+Jour 2 (retard 30min) : Présence=1, Retard(jours)=1, Retard(min)=30, À l'heure=0
+Jour 3 (absent) : Absence=1, tout le reste=0
+

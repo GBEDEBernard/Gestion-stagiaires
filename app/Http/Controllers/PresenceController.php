@@ -413,25 +413,60 @@ class PresenceController extends Controller
      */
     public function historique(Request $request)
     {
-        $user = $request->user();
-        $etudiant = $user->etudiant;
-        $period = $request->get('period', 'month');
+          $user = $request->user();
+    $etudiant = $user->etudiant;
+    $period = $request->get('period', 'month');
+    $dateFrom = $request->get('date_from');
+    $dateTo = $request->get('date_to');
+    
+    // Stats détaillées via service
+    // ⚠️ ICI : passer les dates au service
+    
+    $userStats = $this->adminPresenceService->getUserDetailedStats(
+        $user->id,
+        $period,
+        $dateFrom,
+        $dateTo
+    );
 
-        // Stats détaillées via service
-        $userStats = $this->adminPresenceService->getUserDetailedStats($user->id, $period);
 
-        $dateFrom = match ($period) {
-            'week' => now()->subWeek()->startOfWeek(),
-            'month' => now()->subMonth()->startOfMonth(),
-            'year' => now()->subYear()->startOfYear(),
-            default => now()->subWeek()
-        };
+        if ($dateFrom || $dateTo) {
+            $startDate = $dateFrom ? \Carbon\Carbon::parse($dateFrom) : now()->startOfMonth();
+            $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo) : now()->endOfMonth();
+        } else {
+            switch ($period) {
+                case 'today':
+                    $startDate = today();
+                    $endDate = today();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->subWeek();
+                    $endDate = now();
+            }
+        }
 
         $filters = [
-            'date_from' => $dateFrom->format('Y-m-d'),
-            'date_to' => now()->format('Y-m-d'),
-            $etudiant ? 'etudiant_id' : 'user_id' => $etudiant ? $etudiant->id : $user->id,
+            'date_from' => $startDate->format('Y-m-d'),
+            'date_to' => $endDate->format('Y-m-d'),
         ];
+
+        if ($etudiant) {
+            $filters['etudiant_id'] = $etudiant->id;
+        } else {
+            $filters['user_id'] = $user->id;
+        }
 
         $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
             ->with(['stage.site', 'anomalies', 'dailyReports']);
@@ -439,10 +474,9 @@ class PresenceController extends Controller
         $attendanceDays = $attendanceDaysQuery->get();
 
         if ($etudiant) {
-            return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
+            return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
         } else {
-            $attendanceDays = $attendanceDays->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
-            return view('employee.presence.historique', compact('attendanceDays', 'period'));
+            return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
         }
     }
 
@@ -492,27 +526,50 @@ class PresenceController extends Controller
 
         abort_if(!$user->domaine, 403, "Votre compte n'est pas encore rattaché à un domaine.");
 
-        $period = $request->get('period', 'week');
+        $period = $request->get('period', 'month');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
 
-        $dateFrom = match ($period) {
-            'week' => now()->subWeek()->startOfWeek(),
-            'month' => now()->subMonth()->startOfMonth(),
-            'year' => now()->subYear()->startOfYear(),
-            default => now()->subWeek()
-        };
+        // Stats détaillées via service
+        $userStats = $this->adminPresenceService->getUserDetailedStats($user->id, $period, $dateFrom, $dateTo);
+         if ($dateFrom || $dateTo) {
+            $startDate = $dateFrom ? \Carbon\Carbon::parse($dateFrom) : now()->startOfMonth();
+            $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo) : now()->endOfMonth();
+        } else {
+            switch ($period) {
+                case 'today':
+                    $startDate = today();
+                    $endDate = today();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->subWeek();
+                    $endDate = now();
+            }
+        }
 
         $filters = [
-            'date_from' => $dateFrom->format('Y-m-d'),
-            'date_to' => now()->format('Y-m-d'),
+            'date_from' => $startDate->format('Y-m-d'),
+            'date_to' => $endDate->format('Y-m-d'),
             'user_id' => $user->id,
         ];
 
         $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
             ->with(['anomalies']);
 
-        $attendanceDays = $attendanceDaysQuery->get()
-            ->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
+        $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('employee.presence.historique', compact('attendanceDays', 'period'));
+        return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
     }
 }

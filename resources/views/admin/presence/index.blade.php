@@ -906,7 +906,7 @@
 
     <div class="pres-wrap">
         <h1 class="pres-section-title bg-gray-400 border-b rounded-md  w-fit px-2 py-1 mb-4" style="color: #92405e; font-size: 1.2rem; font-weight: 700;">
-                Statistiques de Présence
+            Statistiques de Présence
         </h1>
         <div class="pres-page">
 
@@ -1238,86 +1238,232 @@
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
-            const absences = @json($globalStats['chart_data']['absences'] ?? []);
+            const absences = @json($globalStats['chart_data']['absent'] ?? []);
+            const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-            const createGradient = (ctx, color) => {
-                const gradient = ctx.createLinearGradient(0, 0, 0, 260);
-                gradient.addColorStop(0, color);
-                gradient.addColorStop(1, 'rgba(0,0,0,0)');
-                return gradient;
+            const createGradient = (ctx, c1, c2) => {
+                const g = ctx.createLinearGradient(0, 0, 0, 280);
+                g.addColorStop(0, c1);
+                g.addColorStop(1, c2);
+                return g;
             };
 
             const ctxG = document.getElementById('chartGlobal');
             if (ctxG && labels.length > 0) {
-                const gradientGreen = createGradient(ctxG.getContext('2d'), 'rgba(16,185,129,0.4)');
-                const gradientBlue = createGradient(ctxG.getContext('2d'), 'rgba(59,130,246,0.4)');
-                const gradientOrange = createGradient(ctxG.getContext('2d'), 'rgba(245,158,11,0.4)');
-                const gradientRed = createGradient(ctxG.getContext('2d'), 'rgba(244,63,94,0.4)');
+                const g = ctxG.getContext('2d');
 
                 new Chart(ctxG, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [{
-                                label: 'Présence',
+                                label: '✅ Présence',
                                 data: present,
                                 borderColor: '#10b981',
-                                backgroundColor: gradientGreen,
+                                backgroundColor: createGradient(g, 'rgba(16,185,129,0.25)', 'rgba(16,185,129,0.02)'),
                                 fill: true,
-                                tension: 0.45,
-                                borderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
+                                stepped: 'before',
+                                tension: 0,
+                                borderWidth: 2.5,
+                                pointRadius: present.map(v => v > 0 ? 6 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#10b981',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yBinary'
                             },
                             {
-                                label: "À l'heure",
+                                label: "🟢 À l'heure",
                                 data: onTime,
                                 borderColor: '#3b82f6',
-                                backgroundColor: gradientBlue,
+                                backgroundColor: createGradient(g, 'rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
                                 fill: true,
-                                tension: 0.45,
-                                borderWidth: 2,
-                                pointRadius: 4
+                                stepped: 'before',
+                                tension: 0,
+                                borderWidth: 2.5,
+                                pointRadius: onTime.map(v => v > 0 ? 6 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yBinary'
                             },
                             {
-                                label: 'Retards (min)',
-                                data: lateMinutes,
+                                label: '⚠️ Jours retard',
+                                data: lateDays,
                                 borderColor: '#f59e0b',
-                                backgroundColor: gradientOrange,
+                                backgroundColor: createGradient(g, 'rgba(245,158,11,0.18)', 'rgba(245,158,11,0.02)'),
                                 fill: true,
-                                tension: 0.45,
-                                borderWidth: 2,
-                                yAxisID: 'y1',
-                                pointRadius: 4
+                                stepped: 'before',
+                                tension: 0,
+                                borderWidth: 2.5,
+                                pointRadius: lateDays.map(v => v > 0 ? 6 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#f59e0b',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yBinary'
                             },
                             {
-                                label: 'Absences',
+                                label: '🔴 Absences',
                                 data: absences,
                                 borderColor: '#f43f5e',
-                                backgroundColor: gradientRed,
+                                backgroundColor: createGradient(g, 'rgba(244,63,94,0.18)', 'rgba(244,63,94,0.02)'),
                                 fill: true,
-                                tension: 0.45,
+                                stepped: 'before',
+                                tension: 0,
+                                borderWidth: 2.5,
+                                pointRadius: absences.map(v => v > 0 ? 6 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#f43f5e',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yBinary'
+                            },
+                            {
+                                label: '⏱️ Minutes retard',
+                                data: lateMinutes,
+                                borderColor: '#f97316',
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.35,
                                 borderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6
+                                borderDash: [6, 4],
+                                pointRadius: lateMinutes.map(v => v > 0 ? 5 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#f97316',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yMinutes'
+                            },
+                            {
+                                label: '💼 Heures travaillées',
+                                data: workedHours,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: workedHours.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                yAxisID: 'yMinutes'
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 1200, easing: 'easeOutQuart' },
-                        interaction: { mode: 'index', intersect: false },
+                        animation: {
+                            duration: 900,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         plugins: {
-                            legend: { labels: { color: '#e5e7eb', usePointStyle: true } },
-                            tooltip: { backgroundColor: '#111827', borderColor: '#374151', borderWidth: 1, titleColor: '#fff', bodyColor: '#d1d5db' }
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#e5e7eb',
+                                    usePointStyle: true,
+                                    padding: 14,
+                                    font: {
+                                        size: 11,
+                                        weight: '600'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#1c2333',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                titleColor: '#fff',
+                                bodyColor: '#d1d5db',
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.parsed.y;
+                                        const label = context.dataset.label;
+                                        if (label.includes('Minutes')) return `${label}: ${val} min`;
+                                        if (label.includes('Heures')) return `${label}: ${val}h`;
+                                        if (val === 1) return `${label}: OUI`;
+                                        if (val === 0) return `${label}: non`;
+                                        return `${label}: ${val}`;
+                                    }
+                                }
+                            }
                         },
                         scales: {
-                            x: { grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+                            x: {
+                                grid: {
+                                    color: 'rgba(255,255,255,0.04)'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45
+                                }
+                            },
+                            yBinary: {
+                                type: 'linear',
+                                position: 'left',
+                                min: 0,
+                                max: 1.25,
+                                title: {
+                                    display: true,
+                                    text: 'État (0 = non / 1 = oui)',
+                                    color: '#6b7280',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: function(v) {
+                                        if (v === 0) return '0';
+                                        if (v === 1) return '1 ▲';
+                                        return '';
+                                    },
+                                    color: '#6b7280',
+                                    font: {
+                                        size: 10,
+                                        weight: 'bold'
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                }
+                            },
+                            yMinutes: {
+                                type: 'linear',
+                                position: 'right',
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Minutes / Heures',
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            }
                         }
                     }
                 });
@@ -1329,19 +1475,136 @@
                     type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: [
-                            { label: 'Présents', data: present, backgroundColor: '#10b981' },
-                            { label: "À l'heure", data: onTime, backgroundColor: '#3b82f6' },
-                            { label: 'Retards (min)', data: lateMinutes, backgroundColor: '#f59e0b' },
-                            { label: 'Absences', data: absences, backgroundColor: '#f43f5e' }
+                        datasets: [{
+                                label: '✅ Présents',
+                                data: present,
+                                backgroundColor: '#10b981',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            },
+                            {
+                                label: "🟢 À l'heure",
+                                data: onTime,
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            },
+                            {
+                                label: '⚠️ Jours retard',
+                                data: lateDays,
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            },
+                            {
+                                label: '🔴 Absences',
+                                data: absences,
+                                backgroundColor: '#f43f5e',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            },
+                            {
+                                label: '⏱️ Min retard',
+                                data: lateMinutes,
+                                backgroundColor: '#f97316',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8,
+                                yAxisID: 'yMinutes'
+                            },
+                            {
+                                label: '💼 Heures',
+                                data: workedHours,
+                                backgroundColor: '#8b5cf6',
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8,
+                                yAxisID: 'yMinutes'
+                            }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 1000 },
-                        plugins: { legend: { labels: { color: '#e5e7eb' } } },
-                        scales: { x: { grid: { display: false } }, y: { beginAtZero: true } }
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#e5e7eb',
+                                    usePointStyle: true,
+                                    padding: 10,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#1c2333',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                titleColor: '#fff',
+                                bodyColor: '#d1d5db',
+                                padding: 10,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 1.25,
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: v => v === 1 ? '1 ▲' : (v === 0 ? '0' : ''),
+                                    color: '#6b7280',
+                                    font: {
+                                        size: 10,
+                                        weight: 'bold'
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                }
+                            },
+                            yMinutes: {
+                                type: 'linear',
+                                position: 'right',
+                                display: true,
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
             }

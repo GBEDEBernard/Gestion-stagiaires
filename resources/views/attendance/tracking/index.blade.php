@@ -12,27 +12,27 @@
         <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 shadow-sm">
             <div class="flex flex-col gap-3 sm:gap-4">
                 <div class="flex flex-wrap gap-1.5 sm:gap-2">
-                    <a href="?period=day{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" 
-                       class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=day{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📅 Jour
                     </a>
-                    <a href="?period=week{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" 
-                       class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=week{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📊 Semaine
                     </a>
-                    <a href="?period=month{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" 
-                       class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=month{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📈 Mois
                     </a>
-                    <a href="?period=year{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" 
-                       class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                    <a href="?period=year{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                         📊 Année
                     </a>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-                    <select id="userFilter" name="user_id" 
-                            class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <select id="userFilter" name="user_id"
+                        class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
                         <option value="">Tous les utilisateurs</option>
                         @foreach($allUsers as $user)
                         <option value="{{ $user['id'] }}" {{ request('user_id') == $user['id'] ? 'selected' : '' }}>
@@ -40,10 +40,10 @@
                         </option>
                         @endforeach
                     </select>
-                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}" 
-                           class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                    <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}" 
-                       class="px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all text-center text-sm sm:text-base">
+                    <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}"
+                        class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                    <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
+                        class="px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all text-center text-sm sm:text-base">
                         📥 Exporter CSV
                     </a>
                 </div>
@@ -89,7 +89,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Étudiants</h3>
                 </div>
-                
+
                 {{-- Version mobile : cartes --}}
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($attendanceStudents as $day)
@@ -118,7 +118,7 @@
                         </div>
                         <div class="pt-2">
                             <a href="{{ route('attendance.tracking.user.historique', $day->etudiant->user) }}"
-                               class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                 👁️ Voir
                             </a>
                         </div>
@@ -127,7 +127,7 @@
                     <div class="p-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</div>
                     @endforelse
                 </div>
-                
+
                 {{-- Version desktop : tableau --}}
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -150,63 +150,63 @@
                             $statusClass = 'bg-gray-100 text-gray-800';
                             $statusText = 'Absent';
                             if ($hour !== null) {
-                                if ($hour < 8 || ($hour == 7 && $minute <= 45)) {
-                                    $statusClass = 'bg-emerald-100 text-emerald-800';
-                                    $statusText = '👍 À l\' heure';
-                                } elseif ($hour == 7 && $minute > 45 && $minute < 60) {
-                                    $statusClass = 'bg-amber-100 text-amber-800';
-                                    $statusText = '⚠️ Tard';
-                                } else {
-                                    $statusClass = 'bg-red-100 text-red-800';
-                                    $statusText = '👎 Retard';
-                                }
-                            }
-                            @endphp
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $day->etudiant?->user?->name ?? 'N/A' }}</td>
-                                <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
-                                    @if($day->first_check_in_at)
-                                    <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
-                                    @if($day->last_check_out_at)
-                                    <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    @if($day->stage?->site)
-                                    <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">TFG SARL</span>
-                                    @else
-                                    <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">À distance</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    <span class="px-2 lg:px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm font-semibold">
-                                    @if($day->late_minutes > 0)
-                                    <span class="text-red-600">{{ $day->late_minutes }} min</span>
-                                    @else
-                                    <span class="text-emerald-600">0 min</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $day->etudiant->user) }}"
-                                        class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
-                                        👁️ Voir
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</td>
-                            </tr>
-                            @endforelse
+                            if ($hour < 8 || ($hour==7 && $minute <=45)) {
+                                $statusClass='bg-emerald-100 text-emerald-800' ;
+                                $statusText='👍 À l\' heure';
+                                } elseif ($hour==7 && $minute> 45 && $minute < 60) {
+                                    $statusClass='bg-amber-100 text-amber-800' ;
+                                    $statusText='⚠️ Tard' ;
+                                    } else {
+                                    $statusClass='bg-red-100 text-red-800' ;
+                                    $statusText='👎 Retard' ;
+                                    }
+                                    }
+                                    @endphp
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $day->etudiant?->user?->name ?? 'N/A' }}</td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
+                                        @if($day->first_check_in_at)
+                                        <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
+                                        @else
+                                        <span class="text-slate-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
+                                        @if($day->last_check_out_at)
+                                        <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
+                                        @else
+                                        <span class="text-slate-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        @if($day->stage?->site)
+                                        <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">TFG SARL</span>
+                                        @else
+                                        <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">À distance</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        <span class="px-2 lg:px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm font-semibold">
+                                        @if($day->late_minutes > 0)
+                                        <span class="text-red-600">{{ $day->late_minutes }} min</span>
+                                        @else
+                                        <span class="text-emerald-600">0 min</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        <a href="{{ route('attendance.tracking.user.historique', $day->etudiant->user) }}"
+                                            class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                            👁️ Voir
+                                        </a>
+                                    </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</td>
+                                    </tr>
+                                    @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -217,7 +217,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Employés</h3>
                 </div>
-                
+
                 {{-- Version mobile : cartes --}}
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($attendanceEmployees as $day)
@@ -246,7 +246,7 @@
                         </div>
                         <div class="pt-2">
                             <a href="{{ route('attendance.tracking.user.historique', $day->user) }}"
-                               class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
                                 👁️ Voir
                             </a>
                         </div>
@@ -255,7 +255,7 @@
                     <div class="p-8 text-center text-slate-500">Aucun pointage employé pour cette date.</div>
                     @endforelse
                 </div>
-                
+
                 {{-- Version desktop : tableau --}}
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -278,63 +278,63 @@
                             $statusClass = 'bg-gray-100 text-gray-800';
                             $statusText = 'Absent';
                             if ($hour !== null) {
-                                if ($hour < 8 || ($hour == 7 && $minute <= 45)) {
-                                    $statusClass = 'bg-emerald-100 text-emerald-800';
-                                    $statusText = '👍 À l\' heure';
-                                } elseif ($hour == 7 && $minute > 45 && $minute < 60) {
-                                    $statusClass = 'bg-amber-100 text-amber-800';
-                                    $statusText = '⚠️ Tard';
-                                } else {
-                                    $statusClass = 'bg-red-100 text-red-800';
-                                    $statusText = '👎 Retard';
-                                }
-                            }
-                            @endphp
-                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $day->user?->name ?? 'N/A' }}</td>
-                                <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
-                                    @if($day->first_check_in_at)
-                                    <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
-                                    @if($day->last_check_out_at)
-                                    <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    @if($day->stage?->site)
-                                    <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">TFG SARL</span>
-                                    @else
-                                    <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">À distance</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    <span class="px-2 lg:px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm font-semibold">
-                                    @if($day->late_minutes > 0)
-                                    <span class="text-red-600">{{ $day->late_minutes }} min</span>
-                                    @else
-                                    <span class="text-emerald-600">0 min</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 lg:px-6 py-3 text-sm">
-                                    <a href="{{ route('attendance.tracking.user.historique', $day->user) }}"
-                                        class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
-                                        👁️ Voir
-                                    </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-slate-500">Aucun pointage employé pour cette date.</td>
-                            </tr>
-                            @endforelse
+                            if ($hour < 8 || ($hour==7 && $minute <=45)) {
+                                $statusClass='bg-emerald-100 text-emerald-800' ;
+                                $statusText='👍 À l\' heure';
+                                } elseif ($hour==7 && $minute> 45 && $minute < 60) {
+                                    $statusClass='bg-amber-100 text-amber-800' ;
+                                    $statusText='⚠️ Tard' ;
+                                    } else {
+                                    $statusClass='bg-red-100 text-red-800' ;
+                                    $statusText='👎 Retard' ;
+                                    }
+                                    }
+                                    @endphp
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $day->user?->name ?? 'N/A' }}</td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
+                                        @if($day->first_check_in_at)
+                                        <span class="font-semibold">{{ $day->first_check_in_at->format('H:i') }}</span>
+                                        @else
+                                        <span class="text-slate-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm text-slate-700 dark:text-slate-300">
+                                        @if($day->last_check_out_at)
+                                        <span class="font-semibold">{{ $day->last_check_out_at->format('H:i') }}</span>
+                                        @else
+                                        <span class="text-slate-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        @if($day->stage?->site)
+                                        <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">TFG SARL</span>
+                                        @else
+                                        <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">À distance</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        <span class="px-2 lg:px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm font-semibold">
+                                        @if($day->late_minutes > 0)
+                                        <span class="text-red-600">{{ $day->late_minutes }} min</span>
+                                        @else
+                                        <span class="text-emerald-600">0 min</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 lg:px-6 py-3 text-sm">
+                                        <a href="{{ route('attendance.tracking.user.historique', $day->user) }}"
+                                            class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                            👁️ Voir
+                                        </a>
+                                    </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">Aucun pointage employé pour cette date.</td>
+                                    </tr>
+                                    @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -349,7 +349,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Étudiants</h3>
                 </div>
-                
+
                 {{-- Version mobile --}}
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($studentWeekData as $data)
@@ -365,7 +365,7 @@
                         </div>
                         <div class="pt-2">
                             <a href="{{ route('attendance.tracking.user.historique', $data['owner']->user) }}"
-                               class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
                                 👁️ Voir
                             </a>
                         </div>
@@ -374,7 +374,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette semaine.</div>
                     @endforelse
                 </div>
-                
+
                 {{-- Version desktop --}}
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -413,7 +413,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Employés</h3>
                 </div>
-                
+
                 {{-- Version mobile --}}
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($employeeWeekData as $data)
@@ -429,7 +429,7 @@
                         </div>
                         <div class="pt-2">
                             <a href="{{ route('attendance.tracking.user.historique', $data['owner']) }}"
-                               class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
                                 👁️ Voir
                             </a>
                         </div>
@@ -438,7 +438,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée employé pour cette semaine.</div>
                     @endforelse
                 </div>
-                
+
                 {{-- Version desktop --}}
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -482,7 +482,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Étudiants</h3>
                 </div>
-                
+
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($studentMonthlySummary as $summary)
                     <div class="p-4 space-y-2">
@@ -497,7 +497,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</div>
                     @endforelse
                 </div>
-                
+
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
@@ -515,14 +515,14 @@
                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
-                             </tr>
+                            </tr>
                             @empty
                             <tr>
                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</td>
-                             </tr>
+                            </tr>
                             @endforelse
                         </tbody>
-                     </table>
+                    </table>
                 </div>
             </div>
 
@@ -530,7 +530,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Employés</h3>
                 </div>
-                
+
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($employeeMonthlySummary as $summary)
                     <div class="p-4 space-y-2">
@@ -545,7 +545,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée employé pour ce mois.</div>
                     @endforelse
                 </div>
-                
+
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
@@ -554,7 +554,7 @@
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Jours présents</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Heures travaillées</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Retard cumulé</th>
-                             </tr>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @forelse($employeeMonthlySummary as $summary)
@@ -563,14 +563,14 @@
                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
-                             </tr>
+                            </tr>
                             @empty
                             <tr>
                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée employé pour ce mois.</td>
-                             </tr>
+                            </tr>
                             @endforelse
                         </tbody>
-                     </table>
+                    </table>
                 </div>
             </div>
         </div>
@@ -583,7 +583,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Étudiants</h3>
                 </div>
-                
+
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($studentYearlySummary as $summary)
                     <div class="p-4 space-y-2">
@@ -599,7 +599,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</div>
                     @endforelse
                 </div>
-                
+
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
@@ -609,7 +609,7 @@
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Heures travaillées</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Retard cumulé</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Anomalies</th>
-                             </tr>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @forelse($studentYearlySummary as $summary)
@@ -619,14 +619,14 @@
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></td>
-                             </tr>
+                            </tr>
                             @empty
                             <tr>
                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</td>
-                             </tr>
+                            </tr>
                             @endforelse
                         </tbody>
-                     </table>
+                    </table>
                 </div>
             </div>
 
@@ -634,7 +634,7 @@
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Employés</h3>
                 </div>
-                
+
                 <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($employeeYearlySummary as $summary)
                     <div class="p-4 space-y-2">
@@ -650,7 +650,7 @@
                     <div class="p-8 text-center text-slate-500">Aucune donnée employé pour cette année.</div>
                     @endforelse
                 </div>
-                
+
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                         <thead>
@@ -660,7 +660,7 @@
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Heures travaillées</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Retard cumulé</th>
                                 <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Anomalies</th>
-                             </tr>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                             @forelse($employeeYearlySummary as $summary)
@@ -670,14 +670,14 @@
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></td>
-                             </tr>
+                            </tr>
                             @empty
                             <tr>
                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée employé pour cette année.</td>
-                             </tr>
+                            </tr>
                             @endforelse
                         </tbody>
-                     </table>
+                    </table>
                 </div>
             </div>
         </div>
@@ -721,41 +721,135 @@
         @if($userStats && $userStats['chart_data'])
         var chartData = @json($userStats['chart_data'] ?? []);
         var labels = Array.isArray(chartData.labels) ? chartData.labels : [];
+        var present = Array.isArray(chartData.present) ? chartData.present : [];
+        var onTime = Array.isArray(chartData.on_time) ? chartData.on_time : [];
+        var lateDays = Array.isArray(chartData.late_days) ? chartData.late_days : [];
+        var absences = Array.isArray(chartData.absences) ? chartData.absences : [];
         var workedHours = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
         var lateMinutes = Array.isArray(chartData.late_minutes) ? chartData.late_minutes : [];
 
         var canvas = document.getElementById('presenceChart');
-        if (canvas) {
+        if (canvas && labels.length > 0) {
+            var isMobile = window.innerWidth < 640;
+            var ctx = canvas.getContext('2d');
+            var grad = (c1, c2) => {
+                var g = ctx.createLinearGradient(0, 0, 0, 400);
+                g.addColorStop(0, c1);
+                g.addColorStop(1, c2);
+                return g;
+            };
+
             new Chart(canvas, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                            label: 'Heures travaillées',
-                            data: workedHours,
-                            borderColor: 'rgb(16, 185, 129)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            yAxisID: 'y',
-                            tension: 0.4,
-                            fill: true
+                            label: '✅ Présence',
+                            data: present,
+                            borderColor: '#10b981',
+                            backgroundColor: grad('rgba(16,185,129,0.25)', 'rgba(16,185,129,0.02)'),
+                            fill: true,
+                            stepped: 'before',
+                            tension: 0,
+                            borderWidth: 2.5,
+                            pointRadius: present.map(v => v > 0 ? (isMobile ? 5 : 6) : 0),
+                            pointHoverRadius: isMobile ? 6 : 8,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yBinary'
                         },
                         {
-                            label: 'Minutes de retard',
+                            label: "🟢 À l'heure",
+                            data: onTime,
+                            borderColor: '#3b82f6',
+                            backgroundColor: grad('rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
+                            fill: true,
+                            stepped: 'before',
+                            tension: 0,
+                            borderWidth: 2.5,
+                            pointRadius: onTime.map(v => v > 0 ? (isMobile ? 5 : 6) : 0),
+                            pointHoverRadius: isMobile ? 6 : 8,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yBinary'
+                        },
+                        {
+                            label: '⚠️ Jours retard',
+                            data: lateDays,
+                            borderColor: '#f59e0b',
+                            backgroundColor: grad('rgba(245,158,11,0.18)', 'rgba(245,158,11,0.02)'),
+                            fill: true,
+                            stepped: 'before',
+                            tension: 0,
+                            borderWidth: 2.5,
+                            pointRadius: lateDays.map(v => v > 0 ? (isMobile ? 5 : 6) : 0),
+                            pointHoverRadius: isMobile ? 6 : 8,
+                            pointBackgroundColor: '#f59e0b',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yBinary'
+                        },
+                        {
+                            label: '🔴 Absences',
+                            data: absences,
+                            borderColor: '#f43f5e',
+                            backgroundColor: grad('rgba(244,63,94,0.18)', 'rgba(244,63,94,0.02)'),
+                            fill: true,
+                            stepped: 'before',
+                            tension: 0,
+                            borderWidth: 2.5,
+                            pointRadius: absences.map(v => v > 0 ? (isMobile ? 5 : 6) : 0),
+                            pointHoverRadius: isMobile ? 6 : 8,
+                            pointBackgroundColor: '#f43f5e',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yBinary'
+                        },
+                        {
+                            label: '⏱️ Minutes retard',
                             data: lateMinutes,
-                            borderColor: 'rgb(239, 68, 68)',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            yAxisID: 'y1',
-                            tension: 0.4,
-                            fill: true
+                            borderColor: '#f97316',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.35,
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            pointRadius: lateMinutes.map(v => v > 0 ? (isMobile ? 4 : 5) : 0),
+                            pointHoverRadius: isMobile ? 5 : 7,
+                            pointBackgroundColor: '#f97316',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yMinutes'
+                        },
+                        {
+                            label: '💼 Heures travaillées',
+                            data: workedHours,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: workedHours.map(v => v > 0 ? (isMobile ? 3 : 4) : 0),
+                            pointHoverRadius: isMobile ? 4 : 6,
+                            pointBackgroundColor: '#8b5cf6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            yAxisID: 'yMinutes'
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
                     interaction: {
                         mode: 'index',
-                        intersect: false,
+                        intersect: false
                     },
                     plugins: {
                         title: {
@@ -765,83 +859,110 @@
                             display: true,
                             position: 'top',
                             labels: {
-                                boxWidth: 10,
-                                padding: 10,
+                                boxWidth: 8,
+                                padding: isMobile ? 6 : 10,
                                 font: {
-                                    size: window.innerWidth < 640 ? 10 : 12
+                                    size: isMobile ? 9 : 11,
+                                    weight: '600'
+                                },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: '#d1d5db',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    var val = context.parsed.y;
+                                    var label = context.dataset.label;
+                                    if (label.includes('Minutes')) return label + ': ' + val + ' min';
+                                    if (label.includes('Heures')) return label + ': ' + val + 'h';
+                                    if (val === 1) return label + ': OUI';
+                                    if (val === 0) return label + ': non';
+                                    return label + ': ' + val;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            display: true,
-                            title: {
-                                display: false
-                            },
                             ticks: {
                                 maxRotation: 45,
                                 minRotation: 45,
                                 font: {
-                                    size: window.innerWidth < 640 ? 9 : 11
+                                    size: isMobile ? 9 : 11
                                 },
                                 autoSkip: true,
-                                maxTicksLimit: window.innerWidth < 640 ? 5 : 10
+                                maxTicksLimit: isMobile ? 5 : 10
+                            },
+                            grid: {
+                                color: 'rgba(148,163,184,0.1)'
                             }
                         },
-                        y: {
+                        yBinary: {
                             type: 'linear',
                             display: true,
                             position: 'left',
+                            min: 0,
+                            max: 1.25,
                             title: {
                                 display: true,
-                                text: 'Heures travaillées',
+                                text: 'État (0/1)',
                                 font: {
-                                    size: window.innerWidth < 640 ? 10 : 12
+                                    size: isMobile ? 9 : 11
+                                }
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(v) {
+                                    if (v === 0) return '0';
+                                    if (v === 1) return '1 ▲';
+                                    return '';
+                                },
+                                font: {
+                                    size: isMobile ? 9 : 11,
+                                    weight: 'bold'
                                 }
                             },
                             grid: {
-                                drawOnChartArea: false
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value + 'h';
-                                },
-                                font: {
-                                    size: window.innerWidth < 640 ? 9 : 11
-                                }
+                                color: 'rgba(148,163,184,0.1)'
                             }
                         },
-                        y1: {
+                        yMinutes: {
                             type: 'linear',
                             display: true,
                             position: 'right',
                             title: {
                                 display: true,
-                                text: 'Minutes de retard',
+                                text: 'Min / Heures',
                                 font: {
-                                    size: window.innerWidth < 640 ? 10 : 12
-                                }
+                                    size: isMobile ? 9 : 11,
+                                    weight: '600'
+                                },
+                                color: '#f97316'
                             },
                             grid: {
                                 drawOnChartArea: false
                             },
                             ticks: {
-                                callback: function(value) {
-                                    return value + 'min';
-                                },
                                 font: {
-                                    size: window.innerWidth < 640 ? 9 : 11
-                                }
+                                    size: isMobile ? 9 : 11
+                                },
+                                color: '#f97316'
                             }
                         }
                     },
                     elements: {
                         point: {
-                            radius: window.innerWidth < 640 ? 3 : 4
+                            radius: isMobile ? 3 : 4
                         },
                         line: {
-                            borderWidth: window.innerWidth < 640 ? 1.5 : 2
+                            borderWidth: isMobile ? 1.5 : 2
                         }
                     }
                 }
