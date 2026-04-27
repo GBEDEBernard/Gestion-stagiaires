@@ -33,7 +33,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         <button
             x-show="sidebarOpen"
             @click="sidebarOpen = false"
-            class="lg:hidden absolute top-8 right-2 z-[60] p-1 text-white bg-blue-700 rounded-full"
+            class="lg:hidden absolute top-8 right-2 z-[50] w-4  text-white bg-blue-700 rounded-full"
             x-transition>
             ✕
         </button>
