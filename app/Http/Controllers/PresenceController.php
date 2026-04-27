@@ -48,22 +48,19 @@ class PresenceController extends Controller
 
             return view('presence.pointage', compact('activeStage', 'attendanceDay'));
         } else {
-            // Logique pour employé
+            // Logique pour employé - utilise la vue dédiée aux employés
             $domaine = $user->domaine;
 
             if (!$domaine) {
                 abort(403, "Votre compte n'est pas rattaché à un domaine de travail.");
             }
 
-            // Pour les employés, on peut créer un "stage virtuel" ou utiliser une logique différente
-            // Pour l'instant, utilisons la même logique mais sans stage
-            $activeStage = null; // Pas de stage pour les employés
             // Query today's attendance for employee
             $attendanceDay = AttendanceDay::where('user_id', $user->id)
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('presence.pointage', compact('activeStage', 'attendanceDay', 'domaine'));
+            return view('employee.presence.pointage', compact('attendanceDay', 'user'));
         }
     }
 
@@ -441,7 +438,11 @@ class PresenceController extends Controller
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
+        if ($etudiant) {
+            return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
+        } else {
+            return view('employee.presence.historique', compact('attendanceDays', 'period'));
+        }
     }
 
     /**

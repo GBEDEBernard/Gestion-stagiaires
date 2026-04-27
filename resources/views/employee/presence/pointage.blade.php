@@ -69,11 +69,20 @@
 
                 {{-- Boutons d'action --}}
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <form action="{{ route('employee.presence.prepareCheckin') }}" method="POST" class="flex-1">
+                    <form action="{{ route('presence.prepareCheckin') }}" method="POST" class="flex-1 presence-form">
                         @csrf
-                        <button type="submit"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-3"
-                            {{ $attendanceDay && $attendanceDay->first_check_in_at ? 'disabled class="opacity-50 cursor-not-allowed"' : '' }}>
+                        <input type="hidden" name="latitude">
+                        <input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters">
+                        <input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid">
+                        <input type="hidden" name="device_label">
+                        <input type="hidden" name="platform">
+                        <input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+                        <button type="button" class="presence-submit w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-3"
+                            {{ $attendanceDay && $attendanceDay->first_check_in_at ? 'disabled' : '' }}
+                            {{ $attendanceDay && $attendanceDay->first_check_in_at ? 'style=opacity:0.5;cursor:not-allowed' : '' }}>
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                             </svg>
@@ -81,11 +90,20 @@
                         </button>
                     </form>
 
-                    <form action="{{ route('employee.presence.prepareCheckout') }}" method="POST" class="flex-1">
+                    <form action="{{ route('presence.prepareCheckout') }}" method="POST" class="flex-1 presence-form">
                         @csrf
-                        <button type="submit"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-red-600/20 flex items-center justify-center gap-3"
-                            {{ !$attendanceDay || !$attendanceDay->first_check_in_at ? 'disabled class="opacity-50 cursor-not-allowed"' : '' }}>
+                        <input type="hidden" name="latitude">
+                        <input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters">
+                        <input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid">
+                        <input type="hidden" name="device_label">
+                        <input type="hidden" name="platform">
+                        <input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+                        <button type="button" class="presence-submit w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-red-600/20 flex items-center justify-center gap-3"
+                            {{ !$attendanceDay || !$attendanceDay->first_check_in_at ? 'disabled' : '' }}
+                            {{ !$attendanceDay || !$attendanceDay->first_check_in_at ? 'style=opacity:0.5;cursor:not-allowed' : '' }}>
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
@@ -96,7 +114,7 @@
 
                 {{-- Historique rapide --}}
                 <div class="pt-4 border-t">
-                    <a href="{{ route('employee.presence.historique') }}"
+                    <a href="{{ route('presence.historique') }}"
                         class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -105,8 +123,101 @@
                     </a>
                 </div>
 
-                @endif
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ─── Utilitaires device ──────────────────────────────────────────
+            function getOrCreateDeviceUuid() {
+                const key = 'jb_presence_device_uuid';
+                let uuid = localStorage.getItem(key);
+                if (!uuid) {
+                    uuid = (crypto.randomUUID) ?
+                        crypto.randomUUID() :
+                        `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    localStorage.setItem(key, uuid);
+                }
+                return uuid;
+            }
+
+            function generateFingerprint(deviceUuid) {
+                const raw = [
+                    navigator.userAgent,
+                    navigator.platform || '',
+                    screen.width,
+                    screen.height,
+                    Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    deviceUuid,
+                ].join('|');
+                let hash = 0;
+                for (let i = 0; i < raw.length; i++) {
+                    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                    hash |= 0;
+                }
+                return `jb-${Math.abs(hash)}`;
+            }
+
+            function detectBrowser() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Edg/')) return 'Edge';
+                if (ua.includes('Chrome/')) return 'Chrome';
+                if (ua.includes('Firefox/')) return 'Firefox';
+                if (ua.includes('Safari/')) return 'Safari';
+                return 'Unknown';
+            }
+
+            // ─── Init ────────────────────────────────────────────────────────
+            const forms = document.querySelectorAll('.presence-form');
+            const deviceUuid = getOrCreateDeviceUuid();
+            const fingerprint = generateFingerprint(deviceUuid);
+            const browserName = detectBrowser();
+            const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
+            const deviceLabel = `${browserName} / ${platformName}`;
+
+            // ─── Localisation et soumission ───────────────────────────────────
+            forms.forEach(form => {
+                const submitBtn = form.querySelector('.presence-submit');
+                
+                submitBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    // Récupérer la géolocalisation
+                    if (navigator.geolocation) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '⏳ Localisation...';
+
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                // Remplir les champs cachés
+                                form.querySelector('input[name="latitude"]').value = position.coords.latitude;
+                                form.querySelector('input[name="longitude"]').value = position.coords.longitude;
+                                form.querySelector('input[name="accuracy_meters"]').value = position.coords.accuracy;
+                                form.querySelector('input[name="device_fingerprint"]').value = fingerprint;
+                                form.querySelector('input[name="device_uuid"]').value = deviceUuid;
+                                form.querySelector('input[name="device_label"]').value = deviceLabel;
+                                form.querySelector('input[name="platform"]').value = platformName;
+                                form.querySelector('input[name="browser"]').value = browserName;
+
+                                // Soumettre le formulaire
+                                form.submit();
+                            },
+                            (error) => {
+                                console.error('Erreur géolocalisation:', error);
+                                alert('Erreur de géolocalisation. Vérifiez vos permissions.');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = form.querySelector('svg').outerHTML + ' Réessayer';
+                            }
+                        );
+                    } else {
+                        alert('La géolocalisation n\'est pas disponible. Réessayez sur un navigateur compatible.');
+                    }
+                });
+            });
+        });
+    </script>
+    @endpush
+
 </x-app-layout>

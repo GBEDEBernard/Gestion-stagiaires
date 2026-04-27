@@ -1,244 +1,225 @@
 <x-app-layout>
-    <div class="w-full max-w-3xl mx-auto">
-        @if ($errors->any())
-        <div class="mb-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700">
-            Le pointage n'a pas pu être validé.
-            <ul class="mt-2 space-y-1 text-sm">
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-200 flex items-center gap-2">
-                <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <div>
-                    <p class="font-bold text-slate-900 text-sm sm:text-base">Pointage de présence</p>
-                    <p class="text-xs text-slate-500">Pointage géolocalisé</p>
-                </div>
+<main class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                    Bonjour, <span class="text-[#4154f1]">{{ explode(' ', Auth::user()->name)[0] }}</span>
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">
+                    {{ now()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}
+                </p>
             </div>
 
-            <div class="p-4 sm:p-6 space-y-5">
-                @if (session('success'))
-                <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-700 text-sm">
-                    {{ session('success') }}
-                </div>
-                @endif
+            @if(session('success'))
+            <div class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-100 rounded-xl text-green-700 dark:text-green-400 flex items-center gap-3">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> {{ session('success') }}
+            </div>
+            @endif
 
-                @if (session('error'))
-                <div class="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700 text-sm">
-                    {{ session('error') }}
-                </div>
-                @endif
+            @php
+            $user = Auth::user();
+            $activeStage = $user->etudiant?->stages()
+            ->where('date_debut', '<=', now())
+                ->where('date_fin', '>=', now())
+                ->first();
+                $attendanceDay = $activeStage ? \App\Models\AttendanceDay::where('stage_id', $activeStage->id)->whereDate('attendance_date', today())->first() : null;
+                @endphp
 
-                @if (! $activeStage)
-                <div class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-4 text-amber-800 text-sm">
-                    Aucun stage actif n'est disponible pour le pointage aujourd'hui.
+                @if(!$activeStage)
+                <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-10 text-center">
+                    <i data-lucide="calendar-off" class="w-10 h-10 text-slate-400 mx-auto mb-4"></i>
+                    <h2 class="text-xl font-semibold">Aucun stage actif</h2>
+                    <p class="text-slate-500">Contactez l'administration.</p>
                 </div>
                 @else
-                <div class="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                        <p class="text-xs text-slate-500 mb-1">Stage actif</p>
-                        <p class="text-base font-semibold text-slate-900">{{ $activeStage->theme ?: 'Stage sans thème' }}</p>
-                        <p class="text-sm text-slate-600 mt-0.5">{{ $activeStage->site?->name ?: 'Site non défini' }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                        <p class="text-xs text-slate-500 mb-1">Statut du jour</p>
-                        <p class="text-base font-semibold text-slate-900 capitalize">{{ $attendanceDay?->day_status ?: 'En attente' }}</p>
-                        <p class="text-sm text-slate-600 mt-0.5">
-                            Arrivée : <strong>{{ $attendanceDay?->first_check_in_at?->format('H:i') ?: '--:--' }}</strong>
-                            &nbsp;·&nbsp;
-                            Départ : <strong>{{ $attendanceDay?->last_check_out_at?->format('H:i') ?: '--:--' }}</strong>
-                        </p>
+                <div class="bg-white dark:bg-slate-800/50 border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm mb-8">
+                    <h3 class="text-xs font-semibold text-[#4154f1] uppercase tracking-wider mb-6 text-center md:text-left">Statut de présence</h3>
+                    <div class="flex flex-row items-center justify-around md:justify-start md:gap-12">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Arrivée</p>
+                            <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->first_check_in_at ? ($attendanceDay->isLate() ? 'text-[#eb0000]' : 'text-emerald-600') : 'text-slate-400' }}">
+                                {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--:--' }}
+                            </p>
+                        </div>
+                        <div class="w-px h-10 bg-slate-200"></div>
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Départ</p>
+                            <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->last_check_out_at ? 'text-slate-900 dark:text-white' : 'text-slate-400' }}">
+                                {{ $attendanceDay?->last_check_out_at?->format('H:i') ?? '--:--' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 p-4 sm:p-5">
-                    <p class="text-sm font-semibold text-slate-700 mb-3">Pointage rapide</p>
+                <div id="presence-status" class="mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-[#4154f1]"></i>
+                    <span>Prêt pour la localisation</span>
+                </div>
 
-                    <div id="presence-status" class="mb-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600">
-                        La localisation sera capturée automatiquement au moment du pointage.
-                    </div>
-
+                <div class="flex flex-col sm:flex-row gap-4">
+                    @php $hasCheckIn = $attendanceDay && $attendanceDay->first_check_in_at; $hasCheckOut = $attendanceDay && $attendanceDay->last_check_out_at; @endphp
+                    @if(!$hasCheckOut)
                     {{-- Arrivée --}}
-                    <form method="POST" action="{{ route('presence.checkin') }}" class="presence-form" data-presence-action="arrivee" novalidate>
+                    <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="flex-1 presence-form">
                         @csrf
-                        <input type="hidden" name="stage_id"          value="{{ $activeStage->id }}">
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version"       value="presence-web-v1">
-                        <button type="button"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white presence-submit hover:bg-slate-700 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                            </svg>
-                            Pointer l'arrivée
+                        <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
+                        <input type="hidden" name="platform"><input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ $hasCheckIn ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-[#4154f1] text-white' }}" {{ $hasCheckIn ? 'disabled' : '' }}>
+                            <i data-lucide="check" class="w-5 h-5"></i> Pointer l'arrivée
                         </button>
                     </form>
-
                     {{-- Départ --}}
-                    <form method="POST" action="{{ route('presence.checkout') }}" class="presence-form mt-3" data-presence-action="depart" novalidate>
+                    <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="flex-1 presence-form">
                         @csrf
-                        <input type="hidden" name="stage_id"          value="{{ $activeStage->id }}">
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version"       value="presence-web-v1">
-                        <button type="button"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white presence-submit hover:bg-emerald-700 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                            </svg>
-                            Pointer le départ
+                        <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
+                        <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+                        <input type="hidden" name="accuracy_meters"><input type="hidden" name="device_fingerprint">
+                        <input type="hidden" name="device_uuid"><input type="hidden" name="device_label">
+                        <input type="hidden" name="platform"><input type="hidden" name="browser">
+                        <input type="hidden" name="app_version" value="presence-web-v1">
+                        <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm {{ !$hasCheckIn ? 'bg-red-50 border border-[#eb0000] text-[#eb0000] cursor-not-allowed' : 'bg-white border-2 border-[#eb0000] text-[#eb0000] hover:bg-[#eb0000] hover:text-white' }}" {{ !$hasCheckIn ? 'disabled' : '' }}>
+                            <i data-lucide="log-out" class="w-5 h-5"></i> Pointer le départ
                         </button>
                     </form>
-
-                    <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                        Besoin de décrire la journée ensuite ?
-                        <a href="{{ route('reports.index') }}" class="font-semibold text-slate-900 underline underline-offset-2 hover:text-emerald-700">
-                            Ouvrir le rapport journalier →
-                        </a>
+                    @else
+                    <div class="w-full p-8 bg-blue-50/50 border border-blue-100 rounded-2xl flex flex-col items-center gap-3">
+                        <i data-lucide="check-circle-2" class="w-8 h-8 text-[#4154f1]"></i>
+                        <p class="text-lg font-semibold text-[#4154f1]">Journée terminée</p>
                     </div>
+                    @endif
                 </div>
-
-                @if($activeStage && isset($attendanceDays))
-                <x-presence-history-table :attendance-days="$attendanceDays" :period="$period" />
                 @endif
-                @endif
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+        </main>
 
-@push('scripts')
-<script>
-    const bootPresenceForms = () => {
-        const forms = document.querySelectorAll('.presence-form');
-        const statusBox = document.getElementById('presence-status');
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
 
-        if (!forms.length || !statusBox) return;
+            // ─── Utilitaires device ──────────────────────────────────────────
+            function getOrCreateDeviceUuid() {
+                const key = 'jb_presence_device_uuid';
+                let uuid = localStorage.getItem(key);
+                if (!uuid) {
+                    uuid = (crypto.randomUUID) ?
+                        crypto.randomUUID() :
+                        `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    localStorage.setItem(key, uuid);
+                }
+                return uuid;
+            }
 
-        if (!('geolocation' in navigator)) {
-            statusBox.textContent = 'La géolocalisation n\'est pas disponible sur ce navigateur.';
-            statusBox.className = 'mb-4 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700';
-            forms.forEach(form => form.querySelector('.presence-submit').disabled = true);
-            return;
-        }
+            function generateFingerprint(deviceUuid) {
+                const raw = [
+                    navigator.userAgent,
+                    navigator.platform || '',
+                    screen.width,
+                    screen.height,
+                    Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    deviceUuid,
+                ].join('|');
+                let hash = 0;
+                for (let i = 0; i < raw.length; i++) {
+                    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                    hash |= 0;
+                }
+                return `jb-${Math.abs(hash)}`;
+            }
 
-        const browserName   = detectBrowser();
-        const deviceUuid    = getDeviceUuid();
-        const platformName  = navigator.userAgentData?.platform || navigator.platform || 'unknown';
-        const fingerprint   = hashValue([navigator.userAgent, platformName, window.screen.width, window.screen.height, Intl.DateTimeFormat().resolvedOptions().timeZone, deviceUuid].join('|'));
+            function detectBrowser() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Edg/')) return 'Edge';
+                if (ua.includes('Chrome/')) return 'Chrome';
+                if (ua.includes('Firefox/')) return 'Firefox';
+                if (ua.includes('Safari/')) return 'Safari';
+                return 'Unknown';
+            }
 
-        forms.forEach(form => {
-            const submitButton = form.querySelector('.presence-submit');
-            if (!submitButton || submitButton.dataset.presenceBound === 'true') return;
-            submitButton.dataset.presenceBound = 'true';
+            // ─── Init ────────────────────────────────────────────────────────
+            const forms = document.querySelectorAll('.presence-form');
+            const status = document.getElementById('presence-status');
 
-            form.querySelector('[name="device_uuid"]').value        = deviceUuid;
-            form.querySelector('[name="device_label"]').value       = `${browserName} / ${platformName}`;
-            form.querySelector('[name="device_fingerprint"]').value = fingerprint;
-            form.querySelector('[name="platform"]').value           = platformName;
-            form.querySelector('[name="browser"]').value            = browserName;
+            // Pré-calcul des valeurs device (une seule fois)
+            const deviceUuid = getOrCreateDeviceUuid();
+            const fingerprint = generateFingerprint(deviceUuid);
+            const browserName = detectBrowser();
+            const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
+            const deviceLabel = `${browserName} / ${platformName}`;
 
-            submitButton.addEventListener('click', () => {
-                const actionLabel = form.dataset.presenceAction || 'présence';
-                submitButton.disabled = true;
-                submitButton.dataset.originalLabel = submitButton.textContent.trim();
-                submitButton.textContent = 'Localisation en cours...';
-                setStatus(`Vérification de la localisation pour le pointage ${actionLabel}...`, 'info');
+            // ─── Vérification SweetAlert (rejet serveur) ────────────────────
+            @if(session('rejection_reason'))
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: '🚫 Pointage refusé',
+                    html: "{{ addslashes(session('rejection_reason')) }}<br><small>Déplacez-vous vers le site et réessayez.</small>",
+                    confirmButtonText: 'OK, nouveau pointage',
+                    confirmButtonColor: '#10b981',
+                    allowOutsideClick: true,
+                });
+            }
+            @endif
 
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        form.querySelector('[name="latitude"]').value        = position.coords.latitude;
-                        form.querySelector('[name="longitude"]').value       = position.coords.longitude;
-                        form.querySelector('[name="accuracy_meters"]').value = Math.round(position.coords.accuracy || 0);
-                        setStatus(`Localisation capturée (${Math.round(position.coords.accuracy || 0)} m). Validation en cours...`, 'success');
-                        form.submit();
-                    },
-                    error => {
-                        let message = 'Impossible de récupérer votre position.';
-                        if (error.code === error.PERMISSION_DENIED)      message = 'Autorisez la localisation pour valider la présence.';
-                        else if (error.code === error.TIMEOUT)           message = 'Le GPS a mis trop de temps à répondre. Réessayez plus près du site.';
-                        else if (error.code === error.POSITION_UNAVAILABLE) message = 'La position n\'est pas disponible pour le moment.';
-                        setStatus(message, 'error');
-                        submitButton.disabled = false;
-                        submitButton.textContent = submitButton.dataset.originalLabel || 'Pointer';
-                    },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                );
+            // ─── GPS non disponible ──────────────────────────────────────────
+            if (!navigator.geolocation) {
+                status.textContent = '❌ GPS non supporté sur ce navigateur.';
+                status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
+                forms.forEach(f => f.querySelector('.presence-submit').disabled = true);
+                return;
+            }
+
+            // ─── Bind click sur chaque formulaire ───────────────────────────
+            forms.forEach(form => {
+                const btn = form.querySelector('.presence-submit');
+                const actionName = form.dataset.action || 'présence';
+
+                btn.addEventListener('click', () => {
+                    btn.disabled = true;
+                    btn.textContent = '📡 Recherche GPS...';
+                    status.textContent = '📡 Localisation en cours...';
+                    status.className = 'p-4 bg-blue-50 text-blue-700 rounded-xl text-center text-sm';
+
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            // ── Coordonnées GPS ──────────────────────────────
+                            form.querySelector('[name="latitude"]').value = pos.coords.latitude;
+                            form.querySelector('[name="longitude"]').value = pos.coords.longitude;
+                            form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy || 0);
+
+                            // ── Informations device (CORRECTION PRINCIPALE) ──
+                            form.querySelector('[name="device_fingerprint"]').value = fingerprint;
+                            form.querySelector('[name="device_uuid"]').value = deviceUuid;
+                            form.querySelector('[name="device_label"]').value = deviceLabel;
+                            form.querySelector('[name="platform"]').value = platformName;
+                            form.querySelector('[name="browser"]').value = browserName;
+
+                            status.textContent = `✅ Position capturée (précision: ${Math.round(pos.coords.accuracy)}m) — envoi en cours...`;
+                            status.className = 'p-4 bg-green-50 text-green-700 rounded-xl text-center text-sm';
+
+                            form.submit();
+                        },
+                        (err) => {
+                            let msg = 'Impossible de récupérer votre position.';
+                            if (err.code === err.PERMISSION_DENIED) msg = '🔒 Autorise la localisation dans ton navigateur.';
+                            if (err.code === err.TIMEOUT) msg = '⏱️ GPS trop lent. Essaie en plein air ou près d\'une fenêtre.';
+                            if (err.code === err.POSITION_UNAVAILABLE) msg = '📡 Position indisponible pour le moment.';
+
+                            status.textContent = msg;
+                            status.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-center text-sm';
+                            btn.disabled = false;
+                            btn.textContent = actionName === 'arrivée' ? 'Pointer arrivée' : 'Pointer départ';
+                        }, {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0,
+                        }
+                    );
+                });
             });
         });
+    </script>
+    @endpush
 
-        function setStatus(message, tone) {
-            statusBox.textContent = message;
-            const map = {
-                info:    'mb-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600',
-                success: 'mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700',
-                error:   'mb-4 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700',
-            };
-            statusBox.className = map[tone] || map.info;
-        }
-
-        function getDeviceUuid() {
-            const key = 'jb_presence_device_uuid';
-            let uuid = window.localStorage.getItem(key);
-            if (!uuid) {
-                uuid = window.crypto?.randomUUID ? window.crypto.randomUUID() : `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-                window.localStorage.setItem(key, uuid);
-            }
-            return uuid;
-        }
-
-        function detectBrowser() {
-            const ua = navigator.userAgent;
-            if (ua.includes('Edg/'))     return 'Edge';
-            if (ua.includes('Chrome/'))  return 'Chrome';
-            if (ua.includes('Firefox/')) return 'Firefox';
-            if (ua.includes('Safari/'))  return 'Safari';
-            return 'Unknown';
-        }
-
-        function hashValue(value) {
-            let hash = 0;
-            for (let i = 0; i < value.length; i++) {
-                hash = ((hash << 5) - hash) + value.charCodeAt(i);
-                hash |= 0;
-            }
-            return `jb-${Math.abs(hash)}`;
-        }
-    };
-
-    @if(session('rejection_reason'))
-    Swal.fire({
-        icon: 'error',
-        title: '🚫 Pointage refusé',
-        html: `{!! addslashes(session('rejection_reason')) !!}<br><br><strong>Déplacez-vous vers le site et réessayez.</strong>`,
-        confirmButtonText: 'OK, je réessaie',
-        confirmButtonColor: '#10b981',
-    });
-    @endif
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bootPresenceForms);
-    } else {
-        bootPresenceForms();
-    }
-</script>
-@endpush
+</x-app-layout>
