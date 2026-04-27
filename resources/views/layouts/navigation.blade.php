@@ -44,10 +44,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 <!-- Texte -->
                 <div class="flex flex-col leading-tight">
                     <h1 class="text-base font-semibold text-white tracking-tight">
-                        Gestion Pro
+                        @if(auth()->user()->hasRole('admin'))
+                        Gestions
+                        @else
+                        Gestions
+                        @endif
                     </h1>
                     <p class="text-xs text-slate-400">
+                        @if(auth()->user()->hasRole('admin'))
                         Administrative TFG
+                        @else
+                        Pointage et rapports
+                        @endif
                     </p>
                 </div>
 
@@ -136,7 +144,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
                 @if(auth()->user()->hasRole('superviseur') || auth()->user()->hasRole('admin'))
                 <div class="space-y-1.5">
-                    <h2 class="text-sm font-bold text-center text-slate-400 uppercase tracking-wide">Administration</h2>    
+                    <h2 class="text-sm font-bold text-center text-slate-400 uppercase tracking-wide">Administration</h2>
                     <div x-data="{ open: false }" class="space-y-1">
                         <button @click="open = !open" type="button"
                             class="group w-full flex items-center justify-between px-5 py-4 rounded-2xl text-sm font-bold text-slate-200 hover:bg-gradient-to-r from-emerald-600/20 to-blue-600/20 hover:text-emerald-100 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-400 bg-slate-800/40 relative overflow-hidden">
