@@ -70,8 +70,8 @@ class SiteGeofenceSeeder extends Seeder
         ]);
 
         $this->command->info('✅ Geofences TFG SARL créés avec rayons réalistes: site_id=' . $tfgSite->id);
-        $this->command->info('   → Primaire  : 100m rayon / 50m tolérance GPS');
-        $this->command->info('   → Secondaire: 200m rayon / 80m tolérance GPS');
+        $this->command->info('   → Primaire  : 30m rayon / 30m tolérance GPS');
+        $this->command->info('   → Secondaire: 100m rayon / 50m tolérance GPS');
         $this->command->line('');
         $this->command->warn('⚠️  Pour appliquer: php artisan db:seed --class=SiteGeofenceSeeder');
     }

@@ -29,6 +29,7 @@ class EtudiantsPresenceSeeder extends Seeder
         $this->ensureTypeStages();
         $this->ensureJours();
 
+        $tfgSite = $this->getTfgSite();
         $presetService = app(RolePermissionPresetService::class);
 
         $etudiantsData = [
@@ -95,7 +96,7 @@ class EtudiantsPresenceSeeder extends Seeder
                 'etudiant_id' => $etudiant->id,
                 'typestage_id' => TypeStage::inRandomOrder()->first()->id,
                 'service_id' => Service::inRandomOrder()->first()->id,
-                'site_id' => Site::inRandomOrder()->first()->id,
+                'site_id' => $tfgSite->id,
                 'supervisor_id' => User::role('superviseur')->first()?->id ?? 1,
                 'date_debut' => now()->subWeek()->format('Y-m-d'),
                 'date_fin' => now()->addMonth()->format('Y-m-d'),
@@ -134,11 +135,34 @@ class EtudiantsPresenceSeeder extends Seeder
 
     protected function ensureSites(): void
     {
-        if (Site::count() === 0) {
-            Site::create(['code' => 'TFG01', 'name' => 'Site Principal TFG', 'address' => '123 Rue Industrielle', 'city' => 'Paris', 'latitude' => '48.8566', 'longitude' => '2.3522']);
+        Site::updateOrCreate(
+            ['code' => 'TFG-HQ'],
+            [
+                'name' => 'TFG SARL',
+                'address' => 'Siège TFG SARL',
+                'city' => 'Cotonou',
+                'country' => 'Benin',
+                'latitude' => '6.4086988853745686',
+                'longitude' => '2.3304884846605294',
+                'is_active' => true,
+            ]
+        );
+
+        if (Site::count() === 1) {
             Site::create(['code' => 'TFG02', 'name' => 'Site Technique', 'address' => '456 Avenue Maintenance', 'city' => 'Lyon', 'latitude' => '45.7640', 'longitude' => '4.8357']);
             Site::create(['code' => 'TFG03', 'name' => 'Site Opérationnel', 'address' => '789 Boulevard Production', 'city' => 'Marseille', 'latitude' => '43.2965', 'longitude' => '5.3698']);
         }
+    }
+
+    protected function getTfgSite(): Site
+    {
+        return Site::where('code', 'TFG-HQ')
+            ->orWhere(function ($query) {
+                $query->where('code', 'like', 'TFG%')
+                      ->orWhere('name', 'like', '%TFG%');
+            })
+            ->orderBy('code')
+            ->first();
     }
 
     protected function ensureTypeStages(): void

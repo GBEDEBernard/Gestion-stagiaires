@@ -13,6 +13,7 @@ use App\Models\Stage;
 use App\Models\TypeStage;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class StageController extends Controller
@@ -58,7 +59,16 @@ class StageController extends Controller
 
         $typestages = TypeStage::all();
         $services = Service::all();
-        $sites = Site::where('is_active', true)->orderBy('name')->get();
+        $sites = Site::where('is_active', true)
+            ->where(function ($query) {
+                $query->where('code', 'like', 'TFG%')
+                      ->orWhere('name', 'like', '%TFG%');
+            })
+            ->orderBy('name')
+            ->get();
+        if ($sites->isEmpty()) {
+            $sites = Site::where('is_active', true)->orderBy('name')->get();
+        }
         $supervisors = User::role(['admin', 'superviseur'])->orderBy('name')->get();
         $jours = Jour::all();
 
@@ -88,6 +98,13 @@ class StageController extends Controller
             'jours_id' => 'required|array',
             'jours_id.*' => 'exists:jours,id',
         ]);
+
+        if ($request->filled('site_id')) {
+            $site = Site::find($request->site_id);
+            if ($site && !Str::startsWith($site->code, 'TFG') && !Str::contains($site->name, 'TFG')) {
+                return back()->withErrors(['site_id' => 'Les stagiaires doivent être rattachés à un site TFG.'])->withInput();
+            }
+        }
 
         $etudiant = Etudiant::findOrFail($request->etudiant_id);
         $badge = $request->filled('badge_id') ? Badge::findOrFail($request->badge_id) : null;
@@ -211,7 +228,16 @@ class StageController extends Controller
         $etudiants = Etudiant::all();
         $typestages = TypeStage::all();
         $services = Service::all();
-        $sites = Site::where('is_active', true)->orderBy('name')->get();
+        $sites = Site::where('is_active', true)
+            ->where(function ($query) {
+                $query->where('code', 'like', 'TFG%')
+                      ->orWhere('name', 'like', '%TFG%');
+            })
+            ->orderBy('name')
+            ->get();
+        if ($sites->isEmpty()) {
+            $sites = Site::where('is_active', true)->orderBy('name')->get();
+        }
         $supervisors = User::role(['admin', 'superviseur'])->orderBy('name')->get();
         $badges = Badge::all();
         $jours = Jour::all();
