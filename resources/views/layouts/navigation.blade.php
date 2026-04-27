@@ -54,7 +54,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @if(auth()->user()->hasRole('admin'))
                         Administrative TFG
                         @else
-                        Pointage et rapports
+                        Pointage et rapports TFG
                         @endif
                     </p>
                 </div>
