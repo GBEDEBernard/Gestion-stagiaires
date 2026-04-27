@@ -356,7 +356,7 @@
                     <div class="flex items-center h-14 sm:h-16 gap-3">
 
                         {{-- Espace pour le bouton ☰ de la sidebar (mobile) --}}
-                        <div class="lg:hidden w-12 flex-shrink-0"></div>
+                        <div class="lg:hidden w-5 mr-8  flex-shrink-0"></div>
 
                         {{-- Titre --}}
                         <h2 class="flex-1 text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate capitalize">

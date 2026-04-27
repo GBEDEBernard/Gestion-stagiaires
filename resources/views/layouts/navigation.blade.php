@@ -8,9 +8,20 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     <button
         x-show="!sidebarOpen"
         @click="sidebarOpen = true"
-        class="lg:hidden fixed top-4 left-4 z-[60] p-3 bg-slate-900 text-white rounded-xl"
+        class="lg:hidden fixed display flex top-4 left-2  z-[60]  bg-slate-900 p-1 text-white rounded"
         x-transition>
-        ☰
+       <svg xmlns="http://www.w3.org/2000/svg"
+        class="w-5 h-5 flex-shrink-0"
+        fill="currentColor"
+        viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
+        <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
+        <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
+    </svg>
+
+    <span class="text-sm font-medium  sm:inline">
+        Menu
+    </span>
     </button>
 
     <nav
