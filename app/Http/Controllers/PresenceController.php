@@ -441,6 +441,7 @@ class PresenceController extends Controller
         if ($etudiant) {
             return view('presence.historique', compact('attendanceDays', 'period', 'userStats'));
         } else {
+            $attendanceDays = $attendanceDays->groupBy(fn($day) => $day->attendance_date->format('Y-W'));
             return view('employee.presence.historique', compact('attendanceDays', 'period'));
         }
     }

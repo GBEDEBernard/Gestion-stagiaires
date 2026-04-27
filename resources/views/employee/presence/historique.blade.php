@@ -7,7 +7,7 @@
                 <p class="mt-2 text-xl text-slate-600">Tous tes pointages par période</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ route('employee.presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all">
+                <a href="{{ route('presence.pointage') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z">
                     </svg>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-slate-600">Heures travaillées</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ $attendanceDays->flatten()->sum('worked_minutes') / 60 }}h</p>
+                        <p class="text-xl font-bold text-slate-900">{{ $attendanceDays->flatten()->sum('worked_minutes') / 60 }}h</p>
                     </div>
                 </div>
             </div>
@@ -81,8 +81,7 @@
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
                     <h3 class="text-lg font-semibold text-slate-900">
-                        Semaine du {{ \Carbon\Carbon::createFromFormat('Y-W', $weekKey . '-1')->startOfWeek()->format('d/m/Y') }}
-                    </h3>
+Semaine du {{ \Carbon\Carbon::createFromFormat('Y-m-d', $weekKey . '-1')->startOfWeek()->format('d/m/Y') }}                    </h3>
                 </div>
                 <div class="divide-y divide-slate-200">
                     @foreach($days as $day)

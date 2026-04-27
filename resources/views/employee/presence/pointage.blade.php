@@ -180,7 +180,7 @@
             // ─── Localisation et soumission ───────────────────────────────────
             forms.forEach(form => {
                 const submitBtn = form.querySelector('.presence-submit');
-                
+
                 submitBtn.addEventListener('click', (e) => {
                     e.preventDefault();
 
