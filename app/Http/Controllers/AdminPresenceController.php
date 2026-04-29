@@ -158,53 +158,71 @@ class AdminPresenceController extends Controller
     /**
      * ✅ Suivi Pointage - Admin
      */
-    public function pointageSuivi(Request $request)
-    {
-        $date = $request->get('date', today()->format('Y-m-d'));
-        $userId = $request->get('user_id');
+   public function pointageSuivi(Request $request)
+{
+    $date = $request->get('date', today()->format('Y-m-d'));
+    $userId = $request->get('user_id');
+    $siteId = $request->get('site_id');
+    $schoolFilter = $request->get('school');  // ← on utilise 'school' au lieu de 'domaine_id'
 
-        // Stats rapides
-        $today = today();
-        $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
-        $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
-        $checkoutsToday = \App\Models\AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
-        $recentAnomalies = \App\Models\AttendanceAnomaly::where('status', 'open')
-            ->where('detected_at', '>=', now()->subDays(7))
-            ->count();
-        $avgAccuracy = 0; // gps_accuracy column missing - disabled
+    // Stats rapides
+    $today = today();
+    $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
+    $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
+    $checkoutsToday = \App\Models\AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
+    $recentAnomalies = \App\Models\AttendanceAnomaly::where('status', 'open')
+        ->where('detected_at', '>=', now()->subDays(7))
+        ->count();
+    $avgAccuracy = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
 
-        // Users pour filtre
-        $users = \App\Models\User::select('id', 'name')
-            ->whereHas('attendanceEvents')
-            ->orderBy('name')
-            ->limit(50)
-            ->get();
+    // Liste des utilisateurs ayant des pointages
+    $users = \App\Models\User::whereHas('attendanceEvents')
+        ->orderBy('name')
+        ->get(['id', 'name']);
 
-        // Events récents
-        $query = \App\Models\AttendanceEvent::with(['user', 'checkInDay.stage.site', 'checkOutDay.stage.site', 'anomalies'])
-            ->orderByDesc('occurred_at');
+    // Liste des sites actifs
+    $sites = \App\Models\Site::where('is_active', true)
+        ->orderBy('name')
+        ->get();
 
-        if ($date) {
-            $query->whereDate('occurred_at', $date);
-        }
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
+    // Liste des écoles distinctes (valeurs non nulles dans la colonne 'ecole' de la table 'etudiants')
+    $schools = \App\Models\Etudiant::whereNotNull('ecole')
+        ->distinct()
+        ->pluck('ecole')
+        ->sort()
+        ->values();
 
-        $events = $query->paginate(50);
+    // Requête avec les jointures nécessaires pour filtrer par site et école
+    $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
+        ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
+        ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
+        ->leftJoin('sites', 'stages.site_id', '=', 'sites.id')
+        ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id')
+        ->orderByDesc('attendance_events.occurred_at');
 
-        return view('admin.presence.pointage-suivi', compact(
-            'events',
-            'todayCount',
-            'checkinsToday',
-            'checkoutsToday',
-            'recentAnomalies',
-            'avgAccuracy',
-            'users',
-            'date',
-            'userId'
-        ));
+    if ($date) {
+        $query->whereDate('attendance_events.occurred_at', $date);
     }
+    if ($userId) {
+        $query->where('attendance_events.user_id', $userId);
+    }
+    if ($siteId) {
+        $query->where('sites.id', $siteId);
+    }
+    if ($schoolFilter) {
+        $query->where('etudiants.ecole', $schoolFilter);
+    }
+
+    $events = $query->select('attendance_events.*')
+        ->paginate(10)
+        ->appends($request->query());
+
+    return view('admin.presence.pointage-suivi', compact(
+        'events', 'todayCount', 'checkinsToday', 'checkoutsToday',
+        'recentAnomalies', 'avgAccuracy', 'users', 'sites', 'schools',
+        'date', 'userId', 'siteId', 'schoolFilter'
+    ));
+}
     /**
      * Export pointages CSV
      */

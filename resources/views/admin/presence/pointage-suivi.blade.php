@@ -23,27 +23,50 @@
 
         {{-- Filtres --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 shadow-sm p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date</label>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">📅 Date</label>
                     <input type="date" name="date" value="{{ request('date') }}" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Utilisateur</label>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">👤 Utilisateur</label>
                     <select name="user_id" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
-                        <option value="">Tous</option>
+                        <option value="">Tous les utilisateurs</option>
                         @foreach($users ?? [] as $user)
                         <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">🏢 Site</label>
+                    <select name="site_id" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
+                        <option value="">Tous les sites</option>
+                        @foreach($sites ?? [] as $site)
+                        <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">🏫 École (étudiant)</label>
+                    <select name="school" class="w-full px-4 py-2 border rounded-xl">
+                        <option value="">Toutes les écoles</option>
+                        @foreach($schools ?? [] as $ecole)
+                        <option value="{{ $ecole }}" {{ request('school') == $ecole ? 'selected' : '' }}>{{ $ecole }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="md:col-span-2 flex items-end gap-3">
                     <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
-                        🔍 Filtrer
+                        🔍 Filtrer les résultats
                     </button>
                     <a href="{{ route('admin.presence.pointage-suivi') }}" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-xl shadow-sm transition-all">
-                        Reset
+                        ↺ Reset
                     </a>
+
+                    <button onclick="printTable()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all" title="Imprimer UNIQUEMENT le tableau">
+                        🖨️ Imprimer Tableau
+                    </button>
+
                 </div>
             </form>
         </div>
@@ -97,11 +120,11 @@
                                 {{ $event->occurred_at?->format('d/m H:i') }}
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                                {{ $event->attendanceDay?->stage?->site?->nom ?? 'Hors site' }}
+                                {{ $event->attendanceDay?->stage?->site?->name ?? 'Hors site' }}
                             </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
-                                    {{ $event->gps_accuracy ?? 'N/A' }}m
+                                    {{ number_format($event->accuracy_meters ?? 0, 0) }}m
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -143,14 +166,105 @@
 
     </div>
 
+    @push('styles')
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #print-table,
+            #print-table * {
+                visibility: visible;
+            }
+
+            #print-table {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            nav,
+            header,
+            footer,
+            button,
+            .no-print {
+                display: none !important;
+            }
+
+            #print-table table {
+                font-size: 11px;
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            #print-table th,
+            #print-table td {
+                border: 1px solid black;
+                padding: 6px 8px;
+                color: black !important;
+                background: white !important;
+            }
+
+            #print-table th {
+                background: #f0f0f0 !important;
+                font-weight: bold;
+            }
+        }
+    </style>
+    @endpush
+
+
     @push('scripts')
     <script>
-        // Auto-refresh toutes les 30s pour temps réel
-        setInterval(() => {
-            if (window.location.pathname.includes('pointage-suivi')) {
-                location.reload();
-            }
-        }, 30000);
+        let autoRefreshEnabled = true;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle auto-refresh
+            const toggle = document.createElement('label');
+            toggle.innerHTML = `
+<input type="checkbox" id="autoRefreshToggle" checked>
+<span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">🔄 Auto-refresh (30s)</span>
+`;
+            toggle.className = 'flex items-center cursor-pointer absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-md';
+            document.querySelector('.max-w-7xl').parentNode.insertBefore(toggle, document.querySelector('.max-w-7xl'));
+
+            document.getElementById('autoRefreshToggle').addEventListener('change', function() {
+                autoRefreshEnabled = this.checked;
+            });
+
+            // Auto-refresh
+            setInterval(() => {
+                if (autoRefreshEnabled && window.location.pathname.includes('pointage-suivi')) {
+                    location.reload();
+                }
+            }, 30000);
+        });
+
+        // Print UNIQUEMENT le tableau
+        function printTable() {
+            const printContent = document.querySelector('.bg-white.dark\\:bg-gray-800.rounded-2xl.border.border-slate-200.shadow-sm.overflow-hidden table').outerHTML;
+            const w = window.open();
+            w.document.write(`
+        <html>
+        <head>
+            <title>Pointages</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                table { border-collapse: collapse; width: 100%; font-size: 12px; }
+                th, td { border: 1px solid black; padding: 8px; text-align: left; }
+                th { background: #f0f0f0; font-weight: bold; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body onload="window.print();setTimeout(() => window.close(), 1000)">
+            <h2>Pointages</h2>
+            ${printContent}
+        </body>
+        </html>
+    `);
+            w.document.close();
+        }
     </script>
     @endpush>
 
