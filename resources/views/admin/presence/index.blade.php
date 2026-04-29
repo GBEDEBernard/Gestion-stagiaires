@@ -20,17 +20,18 @@
     </x-slot>
 
     {{-- ─── STYLES UNIFIÉS (sans doublons) ─────────────────────── --}}
-    <style>
+     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
+        /* ===== MODE CLAIR (par défaut) ===== */
         :root {
-            --bg: #0f1117;
-            --bg2: #161b27;
-            --bg3: #1c2333;
-            --border: rgba(255, 255, 255, 0.07);
-            --border-hi: rgba(255, 255, 255, 0.14);
-            --text: #e8eaf0;
-            --muted: #6b7280;
+            --bg: #ffffff;
+            --bg2: #f8fafc;
+            --bg3: #f1f5f9;
+            --border: rgba(0, 0, 0, 0.08);
+            --border-hi: rgba(0, 0, 0, 0.14);
+            --text: #0f172a;
+            --muted: #475569;
             --emerald: #10b981;
             --emerald-d: #059669;
             --amber: #f59e0b;
@@ -42,13 +43,24 @@
             --mono: 'DM Mono', monospace;
         }
 
-        * {
-            box-sizing: border-box;
+        /* ===== MODE SOMBRE ===== */
+        .dark {
+            --bg: #0f1117;
+            --bg2: #161b27;
+            --bg3: #1c2333;
+            --border: rgba(255, 255, 255, 0.07);
+            --border-hi: rgba(255, 255, 255, 0.14);
+            --text: #e8eaf0;
+            --muted: #6b7280;
         }
+
+        * { box-sizing: border-box; }
 
         .pres-wrap {
             font-family: var(--font);
             color: var(--text);
+            background: var(--bg);
+            min-height: 100vh;
         }
 
         /* HEADER */
@@ -58,8 +70,8 @@
             align-items: flex-end;
             gap: 1rem;
             flex-wrap: wrap;
+            padding: 1rem 1.5rem 0 1.5rem;
         }
-
         .pres-header-badge {
             display: inline-block;
             font-size: .7rem;
@@ -73,27 +85,23 @@
             padding: .25rem .75rem;
             margin-bottom: .5rem;
         }
-
         .pres-header-title {
             font-size: 1.75rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text);
             margin: 0;
             line-height: 1.2;
         }
-
         .pres-header-sub {
             font-size: .9rem;
             color: var(--muted);
             margin: .25rem 0 0;
         }
-
         .pres-header-actions {
             display: flex;
             align-items: center;
             gap: .75rem;
         }
-
         .pres-live-dot {
             display: flex;
             align-items: center;
@@ -106,7 +114,6 @@
             border-radius: 999px;
             padding: .35rem .85rem;
         }
-
         .pres-live-dot span {
             width: 8px;
             height: 8px;
@@ -114,19 +121,10 @@
             border-radius: 50%;
             animation: pulse-dot 1.8s ease-in-out infinite;
         }
-
         @keyframes pulse-dot {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, .6);
-            }
-
-            50% {
-                box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
-            }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, .6); }
+            50% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
         }
-
         .pres-btn-export {
             display: flex;
             align-items: center;
@@ -140,7 +138,6 @@
             text-decoration: none;
             transition: all .2s;
         }
-
         .pres-btn-export:hover {
             background: var(--emerald-d);
             transform: translateY(-1px);
@@ -166,11 +163,7 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-
-        .pres-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
+        .pres-tabs::-webkit-scrollbar { display: none; }
         .pres-tab {
             padding: .45rem 1.1rem;
             border-radius: .5rem;
@@ -180,19 +173,16 @@
             text-decoration: none;
             transition: all .2s;
         }
-
         .pres-tab:hover {
             color: var(--text);
             background: var(--bg3);
         }
-
         .pres-tab.active {
             background: var(--bg3);
-            color: #fff;
+            color: var(--text);
             font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
         }
-
         .pres-tab-indicator {
             display: inline-block;
             width: 6px;
@@ -203,77 +193,50 @@
             vertical-align: middle;
         }
 
-        /* FILTRE RESPONSIVE (version propre) */
+        /* FILTRE */
         .pres-filter-panel {
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--bg2);
+            border: 1px solid var(--border);
             border-radius: 1rem;
             padding: 1rem;
             margin-top: 1rem;
-            color: #111;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-        }
-
-        .dark .pres-filter-panel {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.12);
-            color: var(--muted);
+            color: var(--text);
             box-shadow: none;
         }
-
         .pres-filter-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
             align-items: end;
         }
-
         .pres-filter-field {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
             font-size: 0.85rem;
             font-weight: 500;
-            color: #374151;
-        }
-
-        .dark .pres-filter-field {
             color: var(--muted);
         }
-
-        .pres-filter-field label {
-            font-weight: 500;
-        }
-
         .pres-filter-input {
             width: 100%;
             padding: 0.85rem 1rem;
-            border: 1px solid rgba(148, 163, 184, 0.35);
+            border: 1px solid var(--border);
             border-radius: 0.75rem;
-            background: #ffffff;
-            color: #111;
+            background: var(--bg);
+            color: var(--text);
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-
         .pres-filter-input:focus {
             outline: none;
             border-color: var(--emerald);
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
         }
-
-        .dark .pres-filter-input {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.14);
-            color: #fff;
-        }
-
         .pres-filter-actions {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
         }
-
         .pres-filter-actions .pres-btn {
             flex: 1;
             text-align: center;
@@ -281,29 +244,13 @@
             white-space: nowrap;
         }
 
-        /* RESPONSIVE FILTRE */
         @media (max-width: 900px) {
-            .pres-filter-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .pres-filter-actions {
-                grid-column: span 2;
-            }
+            .pres-filter-grid { grid-template-columns: repeat(2, 1fr); }
+            .pres-filter-actions { grid-column: span 2; }
         }
-
         @media (max-width: 640px) {
-            .pres-filter-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pres-filter-actions {
-                grid-column: span 1;
-            }
-
-            .pres-filter-actions .pres-btn {
-                flex: 1;
-            }
+            .pres-filter-grid { grid-template-columns: 1fr; }
+            .pres-filter-actions { grid-column: span 1; }
         }
 
         /* BOUTONS */
@@ -318,22 +265,19 @@
             font-weight: 600;
             font-size: .85rem;
             text-decoration: none;
-            text-color: #000;
+            cursor: pointer;
         }
-
         .pres-btn-primary {
             background: var(--emerald);
             color: #fff;
         }
-
         .pres-btn-secondary {
             background: transparent;
-            border-color: rgba(255, 255, 255, .12);
-            color: #e5e7eb;
+            border-color: var(--border);
+            color: var(--text);
         }
-
         .pres-btn-secondary:hover {
-            background: rgba(255, 255, 255, .06);
+            background: var(--bg3);
         }
 
         /* KPI CARDS */
@@ -342,19 +286,8 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
         }
-
-        @media(max-width:900px) {
-            .pres-kpis {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media(max-width:500px) {
-            .pres-kpis {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        @media(max-width:900px) { .pres-kpis { grid-template-columns: repeat(2, 1fr); } }
+        @media(max-width:500px) { .pres-kpis { grid-template-columns: 1fr; } }
         .pres-kpi {
             background: var(--bg2);
             border: 1px solid var(--border);
@@ -364,12 +297,10 @@
             overflow: hidden;
             transition: border-color .2s, transform .2s;
         }
-
         .pres-kpi:hover {
             border-color: var(--border-hi);
             transform: translateY(-2px);
         }
-
         .pres-kpi-accent {
             position: absolute;
             top: 0;
@@ -378,14 +309,12 @@
             height: 2px;
             border-radius: 1rem 1rem 0 0;
         }
-
         .pres-kpi-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: .75rem;
         }
-
         .pres-kpi-icon {
             width: 38px;
             height: 38px;
@@ -395,28 +324,24 @@
             justify-content: center;
             font-size: 1rem;
         }
-
         .pres-kpi-badge {
             font-size: .72rem;
             font-weight: 600;
             padding: .2rem .6rem;
             border-radius: 999px;
         }
-
         .pres-kpi-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text);
             line-height: 1;
             margin-bottom: .3rem;
             font-family: var(--mono);
         }
-
         .pres-kpi-label {
             font-size: .82rem;
             color: var(--muted);
         }
-
         .pres-kpi-sub {
             font-size: .75rem;
             color: var(--muted);
@@ -425,73 +350,33 @@
             border-top: 1px solid var(--border);
         }
 
-        .kpi-emerald .pres-kpi-accent {
-            background: var(--emerald);
-        }
+        /* Variantes KPI (les accents restent colorés) */
+        .kpi-emerald .pres-kpi-accent { background: var(--emerald); }
+        .kpi-emerald .pres-kpi-icon { background: rgba(16, 185, 129, .12); color: var(--emerald); }
+        .kpi-emerald .pres-kpi-badge { background: rgba(16, 185, 129, .12); color: var(--emerald); }
 
-        .kpi-emerald .pres-kpi-icon {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
+        .kpi-amber .pres-kpi-accent { background: var(--amber); }
+        .kpi-amber .pres-kpi-icon { background: rgba(245, 158, 11, .12); color: var(--amber); }
+        .kpi-amber .pres-kpi-badge { background: rgba(245, 158, 11, .12); color: var(--amber); }
 
-        .kpi-emerald .pres-kpi-badge {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
+        .kpi-blue .pres-kpi-accent { background: var(--blue); }
+        .kpi-blue .pres-kpi-icon { background: rgba(59, 130, 246, .12); color: var(--blue); }
+        .kpi-blue .pres-kpi-badge { background: rgba(59, 130, 246, .12); color: var(--blue); }
 
-        .kpi-amber .pres-kpi-accent {
-            background: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-icon {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-badge {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-blue .pres-kpi-accent {
-            background: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-icon {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-badge {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-rose .pres-kpi-accent {
-            background: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-icon {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-badge {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
+        .kpi-rose .pres-kpi-accent { background: var(--rose); }
+        .kpi-rose .pres-kpi-icon { background: rgba(244, 63, 94, .12); color: var(--rose); }
+        .kpi-rose .pres-kpi-badge { background: rgba(244, 63, 94, .12); color: var(--rose); }
 
         /* SECTIONS */
         .pres-section-title {
             font-size: 1rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text);
             margin: 0 0 1rem;
             display: flex;
             align-items: center;
             gap: .6rem;
         }
-
         .pres-section-title::before {
             content: '';
             display: inline-block;
@@ -507,12 +392,7 @@
             grid-template-columns: 1.6fr 1fr;
             gap: 1rem;
         }
-
-        @media(max-width:900px) {
-            .pres-charts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        @media(max-width:900px) { .pres-charts-grid { grid-template-columns: 1fr; } }
 
         .pres-card {
             background: var(--bg2);
@@ -521,15 +401,8 @@
             padding: 1.5rem;
             transition: border-color .2s;
         }
-
-        .pres-card:hover {
-            border-color: var(--border-hi);
-        }
-
-        .pres-chart-wrap {
-            position: relative;
-            height: 220px;
-        }
+        .pres-card:hover { border-color: var(--border-hi); }
+        .pres-chart-wrap { position: relative; height: 220px; }
 
         /* QUICK ACTIONS */
         .pres-actions-grid {
@@ -537,13 +410,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
         }
-
-        @media(max-width:700px) {
-            .pres-actions-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        @media(max-width:700px) { .pres-actions-grid { grid-template-columns: 1fr; } }
         .pres-action-card {
             display: flex;
             flex-direction: column;
@@ -561,7 +428,6 @@
             overflow: hidden;
             border: 1px solid transparent;
         }
-
         .pres-action-card::before {
             content: '';
             position: absolute;
@@ -569,54 +435,32 @@
             opacity: 0;
             transition: opacity .25s;
         }
-
-        .pres-action-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .pres-action-card:hover::before {
-            opacity: .08;
-        }
-
-        .pres-action-icon {
-            font-size: 1.6rem;
-        }
-
+        .pres-action-card:hover { transform: translateY(-3px); }
+        .pres-action-card:hover::before { opacity: .08; }
+        .pres-action-icon { font-size: 1.6rem; }
         .pres-action-count {
             font-size: 1.3rem;
             font-weight: 700;
             font-family: var(--mono);
         }
-
         .act-rose {
             background: linear-gradient(135deg, rgba(244, 63, 94, .18), rgba(244, 63, 94, .08));
             border-color: rgba(244, 63, 94, .25);
             color: var(--rose);
         }
-
-        .act-rose::before {
-            background: var(--rose);
-        }
-
+        .act-rose::before { background: var(--rose); }
         .act-emerald {
             background: linear-gradient(135deg, rgba(16, 185, 129, .18), rgba(16, 185, 129, .08));
             border-color: rgba(16, 185, 129, .25);
             color: var(--emerald);
         }
-
-        .act-emerald::before {
-            background: var(--emerald);
-        }
-
+        .act-emerald::before { background: var(--emerald); }
         .act-blue {
             background: linear-gradient(135deg, rgba(59, 130, 246, .18), rgba(59, 130, 246, .08));
             border-color: rgba(59, 130, 246, .25);
             color: var(--blue);
         }
-
-        .act-blue::before {
-            background: var(--blue);
-        }
+        .act-blue::before { background: var(--blue); }
 
         /* GROUP CARDS */
         .pres-group-card {
@@ -625,52 +469,44 @@
             border-radius: 1rem;
             padding: 1.4rem;
         }
-
         .pres-group-head {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
         }
-
         .pres-group-label {
             font-size: .95rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text);
         }
-
         .pres-group-role {
             font-size: .75rem;
             color: var(--muted);
             margin-top: .15rem;
         }
-
         .pres-group-count {
             font-size: 1.6rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text);
             font-family: var(--mono);
         }
-
         .pres-group-denom {
             font-size: .9rem;
             color: var(--muted);
             font-family: var(--mono);
         }
-
         .pres-group-avg {
             font-size: .78rem;
             color: var(--muted);
             margin-bottom: .65rem;
         }
-
         .pres-progress-bg {
             height: 6px;
             background: rgba(255, 255, 255, .07);
             border-radius: 99px;
             overflow: hidden;
         }
-
         .pres-progress-fill {
             height: 100%;
             border-radius: 99px;
@@ -684,7 +520,6 @@
             border-radius: 1rem;
             overflow: hidden;
         }
-
         .pres-table-head {
             padding: 1.2rem 1.5rem;
             border-bottom: 1px solid var(--border);
@@ -692,23 +527,19 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .pres-table-head-title {
             font-size: .92rem;
             font-weight: 600;
-            color: #fff;
+            color: var(--text);
         }
-
         .pres-table-head-meta {
             font-size: .75rem;
             color: var(--muted);
         }
-
         table.pres-table {
             width: 100%;
             border-collapse: collapse;
         }
-
         table.pres-table th {
             padding: .65rem 1.2rem;
             text-align: left;
@@ -717,22 +548,23 @@
             letter-spacing: .08em;
             text-transform: uppercase;
             color: var(--muted);
-            background: rgba(255, 255, 255, .02);
+            background: rgba(0, 0, 0, 0.02);
             border-bottom: 1px solid var(--border);
         }
-
+        .dark table.pres-table th {
+            background: rgba(255, 255, 255, .02);
+        }
         table.pres-table td {
             padding: .85rem 1.2rem;
             font-size: .85rem;
             color: var(--text);
-            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            border-bottom: 1px solid var(--border);
         }
-
-        table.pres-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
+        table.pres-table tbody tr:last-child td { border-bottom: none; }
         table.pres-table tbody tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        .dark table.pres-table tbody tr:hover td {
             background: rgba(255, 255, 255, .02);
         }
 
@@ -742,18 +574,9 @@
             font-family: var(--mono);
             color: var(--muted);
         }
-
-        .pres-rank-1 {
-            color: var(--amber);
-        }
-
-        .pres-rank-2 {
-            color: #9ca3af;
-        }
-
-        .pres-rank-3 {
-            color: #92400e;
-        }
+        .pres-rank-1 { color: var(--amber); }
+        .pres-rank-2 { color: #9ca3af; }
+        .pres-rank-3 { color: #92400e; }
 
         .pres-tag {
             display: inline-flex;
@@ -764,19 +587,16 @@
             font-size: .73rem;
             font-weight: 600;
         }
-
         .tag-amber {
             background: rgba(245, 158, 11, .12);
             color: var(--amber);
             border: 1px solid rgba(245, 158, 11, .2);
         }
-
         .tag-rose {
             background: rgba(244, 63, 94, .12);
             color: var(--rose);
             border: 1px solid rgba(244, 63, 94, .2);
         }
-
         .tag-emerald {
             background: rgba(16, 185, 129, .12);
             color: var(--emerald);
@@ -789,11 +609,7 @@
             color: var(--muted);
             font-size: .85rem;
         }
-
-        .pres-empty-icon {
-            font-size: 2rem;
-            margin-bottom: .5rem;
-        }
+        .pres-empty-icon { font-size: 2rem; margin-bottom: .5rem; }
 
         /* REPORTS SECTION */
         .pres-reports-kpis {
@@ -802,39 +618,25 @@
             gap: 1rem;
             margin-bottom: 1.25rem;
         }
-
-        @media(max-width:900px) {
-            .pres-reports-kpis {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
+        @media(max-width:900px) { .pres-reports-kpis { grid-template-columns: repeat(2, 1fr); } }
         .pres-reports-bottom {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
-
-        @media(max-width:700px) {
-            .pres-reports-bottom {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        @media(max-width:700px) { .pres-reports-bottom { grid-template-columns: 1fr; } }
         .pres-tips {
             background: rgba(16, 185, 129, .06);
             border: 1px solid rgba(16, 185, 129, .15);
             border-radius: .85rem;
             padding: 1.2rem 1.4rem;
         }
-
         .pres-tips-title {
             font-size: .87rem;
             font-weight: 700;
             color: var(--emerald);
             margin-bottom: .6rem;
         }
-
         .pres-tips ul {
             margin: 0;
             padding: 0;
@@ -843,7 +645,6 @@
             flex-direction: column;
             gap: .4rem;
         }
-
         .pres-tips li {
             font-size: .8rem;
             color: #6ee7b7;
@@ -851,7 +652,6 @@
             align-items: flex-start;
             gap: .5rem;
         }
-
         .pres-tips li::before {
             content: '›';
             color: var(--emerald);
@@ -859,53 +659,31 @@
             flex-shrink: 0;
         }
 
-        .mt-6 {
-            margin-top: 1.5rem;
-        }
-
-        .mt-4 {
-            margin-top: 1rem;
-        }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-4 { margin-top: 1rem; }
 
         /* RESPONSIVE GENERAL */
         @media(max-width: 1024px) {
-            .pres-page {
-                padding: 1rem 1rem 2.5rem;
-            }
-
-            .pres-header {
-                gap: .75rem;
-            }
+            .pres-page { padding: 1rem 1rem 2.5rem; }
+            .pres-header { gap: .75rem; }
         }
-
         @media(max-width: 700px) {
             .pres-header {
                 flex-direction: column;
                 align-items: stretch;
             }
-
             .pres-header-actions {
                 width: 100%;
                 justify-content: space-between;
             }
-
-            .pres-header-title {
-                font-size: 1.45rem;
-            }
-
-            .pres-header-sub {
-                font-size: .82rem;
-            }
-
-            .pres-tab {
-                flex: 1 1 auto;
-                min-width: 120px;
-            }
+            .pres-header-title { font-size: 1.45rem; }
+            .pres-header-sub { font-size: .82rem; }
+            .pres-tab { flex: 1 1 auto; min-width: 120px; }
         }
     </style>
 
     <div class="pres-wrap">
-        <h1 class="pres-section-title bg-gray-400 border-b rounded-md  w-fit px-2 py-1 mb-4" style="color: #92405e; font-size: 1.2rem; font-weight: 700;">
+        <h1 class="pres-section-title">
             Statistiques de Présence
         </h1>
         <div class="pres-page">
@@ -1227,12 +1005,18 @@
         </div>
     </div>
 
-    @push('scripts')
+   @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Récupération des couleurs thème pour les graphiques
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#e8eaf0' : '#0f172a';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const mutedColor = isDark ? '#6b7280' : '#475569';
+
             Chart.defaults.font.family = "'DM Sans', sans-serif";
-            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.color = textColor;
 
             const labels = @json($globalStats['chart_data']['labels'] ?? []);
             const present = @json($globalStats['chart_data']['present'] ?? []);
@@ -1243,226 +1027,78 @@
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-            const createGradient = (ctx, c1, c2) => {
-                const g = ctx.createLinearGradient(0, 0, 0, 280);
-                g.addColorStop(0, c1);
-                g.addColorStop(1, c2);
-                return g;
-            };
+            const ctx = document.getElementById('chartGlobal');
+            if (ctx && labels.length > 0) {
+                const g = ctx.getContext('2d');
+                const createGradient = (c1, c2) => {
+                    const grad = g.createLinearGradient(0, 0, 0, 280);
+                    grad.addColorStop(0, c1);
+                    grad.addColorStop(1, c2);
+                    return grad;
+                };
 
-            const ctxG = document.getElementById('chartGlobal');
-            if (ctxG && labels.length > 0) {
-                const g = ctxG.getContext('2d');
-
-                new Chart(ctxG, {
+                new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                                label: '✅ Présence',
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Présence',
                                 data: present,
                                 borderColor: '#10b981',
-                                backgroundColor: createGradient(g, 'rgba(16,185,129,0.25)', 'rgba(16,185,129,0.02)'),
-                                fill: true,
-                                stepped: 'before',
-                                tension: 0,
-                                borderWidth: 2.5,
-                                pointRadius: present.map(v => v > 0 ? 6 : 0),
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: '#10b981',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yBinary'
+                                backgroundColor: createGradient('rgba(16,185,129,0.3)','rgba(16,185,129,0.02)'),
+                                fill: true, tension: 0.4, borderWidth: 3, pointRadius: 5, yAxisID: 'yCount'
                             },
                             {
-                                label: "🟢 À l'heure",
+                                label: "À l'heure",
                                 data: onTime,
                                 borderColor: '#3b82f6',
-                                backgroundColor: createGradient(g, 'rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
-                                fill: true,
-                                stepped: 'before',
-                                tension: 0,
-                                borderWidth: 2.5,
-                                pointRadius: onTime.map(v => v > 0 ? 6 : 0),
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: '#3b82f6',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yBinary'
+                                backgroundColor: createGradient('rgba(59,130,246,0.25)','rgba(59,130,246,0.02)'),
+                                fill: true, tension: 0.4, borderWidth: 2, pointRadius: 4, yAxisID: 'yCount'
                             },
                             {
-                                label: '⚠️ Jours retard',
+                                label: 'Jours retard',
                                 data: lateDays,
                                 borderColor: '#f59e0b',
-                                backgroundColor: createGradient(g, 'rgba(245,158,11,0.18)', 'rgba(245,158,11,0.02)'),
-                                fill: true,
-                                stepped: 'before',
-                                tension: 0,
-                                borderWidth: 2.5,
-                                pointRadius: lateDays.map(v => v > 0 ? 6 : 0),
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: '#f59e0b',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yBinary'
+                                backgroundColor: createGradient('rgba(245,158,11,0.2)','rgba(245,158,11,0.02)'),
+                                fill: true, tension: 0.4, borderWidth: 2, pointRadius: 4, yAxisID: 'yCount'
                             },
                             {
-                                label: '🔴 Absences',
+                                label: 'Absences',
                                 data: absences,
                                 borderColor: '#f43f5e',
-                                backgroundColor: createGradient(g, 'rgba(244,63,94,0.18)', 'rgba(244,63,94,0.02)'),
-                                fill: true,
-                                stepped: 'before',
-                                tension: 0,
-                                borderWidth: 2.5,
-                                pointRadius: absences.map(v => v > 0 ? 6 : 0),
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: '#f43f5e',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yBinary'
+                                backgroundColor: createGradient('rgba(244,63,94,0.2)','rgba(244,63,94,0.02)'),
+                                fill: true, tension: 0.4, borderWidth: 2, pointRadius: 4, yAxisID: 'yCount'
                             },
                             {
-                                label: '⏱️ Minutes retard',
+                                label: 'Minutes retard',
                                 data: lateMinutes,
                                 borderColor: '#f97316',
-                                backgroundColor: 'transparent',
-                                fill: false,
-                                tension: 0.35,
-                                borderWidth: 2,
-                                borderDash: [6, 4],
-                                pointRadius: lateMinutes.map(v => v > 0 ? 5 : 0),
-                                pointHoverRadius: 7,
-                                pointBackgroundColor: '#f97316',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yMinutes'
+                                fill: false, tension: 0.3, borderDash: [6, 4], pointRadius: 5, yAxisID: 'yMinutes'
                             },
                             {
-                                label: '💼 Heures travaillées',
+                                label: 'Heures travaillées',
                                 data: workedHours,
                                 borderColor: '#8b5cf6',
-                                backgroundColor: 'transparent',
-                                fill: false,
-                                tension: 0.3,
-                                borderWidth: 2,
-                                pointRadius: workedHours.map(v => v > 0 ? 4 : 0),
-                                pointHoverRadius: 6,
-                                pointBackgroundColor: '#8b5cf6',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yMinutes'
+                                fill: false, tension: 0.4, pointRadius: 4, yAxisID: 'yMinutes'
                             }
                         ]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 900,
-                            easing: 'easeOutQuart'
-                        },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    color: '#e5e7eb',
-                                    usePointStyle: true,
-                                    padding: 14,
-                                    font: {
-                                        size: 11,
-                                        weight: '600'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: '#1c2333',
-                                borderColor: 'rgba(255,255,255,0.1)',
-                                borderWidth: 1,
-                                titleColor: '#fff',
-                                bodyColor: '#d1d5db',
-                                padding: 10,
-                                cornerRadius: 8,
-                                callbacks: {
-                                    label: function(context) {
-                                        const val = context.parsed.y;
-                                        const label = context.dataset.label;
-                                        if (label.includes('Minutes')) return `${label}: ${val} min`;
-                                        if (label.includes('Heures')) return `${label}: ${val}h`;
-                                        if (val === 1) return `${label}: OUI`;
-                                        if (val === 0) return `${label}: non`;
-                                        return `${label}: ${val}`;
-                                    }
-                                }
-                            }
-                        },
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'top', labels: { color: textColor } } },
                         scales: {
-                            x: {
-                                grid: {
-                                    color: 'rgba(255,255,255,0.04)'
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45
-                                }
-                            },
-                            yBinary: {
-                                type: 'linear',
-                                position: 'left',
-                                min: 0,
-                                max: 1.25,
-                                title: {
-                                    display: true,
-                                    text: 'État (0 = non / 1 = oui)',
-                                    color: '#6b7280',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: function(v) {
-                                        if (v === 0) return '0';
-                                        if (v === 1) return '1 ▲';
-                                        return '';
-                                    },
-                                    color: '#6b7280',
-                                    font: {
-                                        size: 10,
-                                        weight: 'bold'
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                }
+                            x: { grid: { color: gridColor }, ticks: { color: mutedColor } },
+                            yCount: {
+                                type: 'linear', position: 'left', beginAtZero: true,
+                                title: { display: true, text: 'Nombre de personnes', color: mutedColor },
+                                ticks: { color: '#10b981' }, grid: { color: gridColor }
                             },
                             yMinutes: {
-                                type: 'linear',
-                                position: 'right',
-                                display: true,
-                                title: {
-                                    display: true,
-                                    text: 'Minutes / Heures',
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                ticks: {
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                }
+                                type: 'linear', position: 'right', grid: { drawOnChartArea: false },
+                                title: { display: true, text: 'Minutes / Heures', color: mutedColor },
+                                ticks: { color: '#f97316' }
                             }
                         }
                     }
@@ -1474,135 +1110,43 @@
                 new Chart(ctxOv, {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                                label: '✅ Présents',
-                                data: present,
-                                backgroundColor: '#10b981',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: "🟢 À l'heure",
-                                data: onTime,
-                                backgroundColor: '#3b82f6',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: '⚠️ Jours retard',
-                                data: lateDays,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: '🔴 Absences',
-                                data: absences,
-                                backgroundColor: '#f43f5e',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: '⏱️ Min retard',
-                                data: lateMinutes,
-                                backgroundColor: '#f97316',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
-                            },
-                            {
-                                label: '💼 Heures',
-                                data: workedHours,
-                                backgroundColor: '#8b5cf6',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
-                            }
+                        labels,
+                        datasets: [
+                            { label: 'Présents', data: present, backgroundColor: '#10b981', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8 },
+                            { label: "À l'heure", data: onTime, backgroundColor: '#3b82f6', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8 },
+                            { label: 'Jours retard', data: lateDays, backgroundColor: '#f59e0b', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8 },
+                            { label: 'Absences', data: absences, backgroundColor: '#f43f5e', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8 },
+                            { label: 'Min retard', data: lateMinutes, backgroundColor: '#f97316', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8, yAxisID: 'yMinutes' },
+                            { label: 'Heures', data: workedHours, backgroundColor: '#8b5cf6', borderRadius: 5, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.8, yAxisID: 'yMinutes' }
                         ]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart'
-                        },
+                        responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 800, easing: 'easeOutQuart' },
                         plugins: {
                             legend: {
                                 position: 'top',
-                                labels: {
-                                    color: '#e5e7eb',
-                                    usePointStyle: true,
-                                    padding: 10,
-                                    font: {
-                                        size: 11
-                                    }
-                                }
+                                labels: { color: textColor, usePointStyle: true, padding: 10, font: { size: 11 } }
                             },
                             tooltip: {
-                                backgroundColor: '#1c2333',
-                                borderColor: 'rgba(255,255,255,0.1)',
+                                backgroundColor: isDark ? '#1c2333' : '#ffffff',
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                                 borderWidth: 1,
-                                titleColor: '#fff',
-                                bodyColor: '#d1d5db',
-                                padding: 10,
-                                cornerRadius: 8
+                                titleColor: isDark ? '#fff' : '#0f172a',
+                                bodyColor: isDark ? '#d1d5db' : '#475569',
+                                padding: 10, cornerRadius: 8
                             }
                         },
                         scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45
-                                }
-                            },
+                            x: { grid: { display: false }, ticks: { color: mutedColor, font: { size: 10 }, maxRotation: 45 } },
                             y: {
-                                beginAtZero: true,
-                                max: 1.25,
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: v => v === 1 ? '1 ▲' : (v === 0 ? '0' : ''),
-                                    color: '#6b7280',
-                                    font: {
-                                        size: 10,
-                                        weight: 'bold'
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                }
+                                beginAtZero: true, max: 1.25,
+                                ticks: { stepSize: 1, callback: v => v === 1 ? '1 ▲' : (v === 0 ? '0' : ''), color: mutedColor, font: { size: 10, weight: 'bold' } },
+                                grid: { color: gridColor }
                             },
                             yMinutes: {
-                                type: 'linear',
-                                position: 'right',
-                                display: true,
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                ticks: {
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                }
+                                type: 'linear', position: 'right', display: true, grid: { drawOnChartArea: false },
+                                ticks: { color: '#f97316', font: { size: 10 } }
                             }
                         }
                     }

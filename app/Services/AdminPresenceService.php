@@ -451,172 +451,196 @@ class AdminPresenceService
     /**
      * Stats détaillées utilisateur (pour vue admin individuelle et historique personnel).
      */
-    public function getUserDetailedStats(int $userId, string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
-    {
-        $user = User::with('etudiant')->findOrFail($userId);
-        $isEtudiant = $user->etudiant !== null;
-
-        // ---- 1. Définir la plage de dates (période ou dates custom) ----
-        if ($dateFrom && $dateTo) {
-            $startDate = Carbon::parse($dateFrom);
-            $endDate = Carbon::parse($dateTo);
-        } else {
-            switch ($period) {
-                case 'today':
-                    $startDate = today();
-                    $endDate = today();
-                    break;
-                case 'week':
-                    $startDate = now()->startOfWeek();
-                    $endDate = now()->endOfWeek();
-                    break;
-                case 'year':
-                    $startDate = now()->startOfYear();
-                    $endDate = now()->endOfYear();
-                    break;
-                case 'month':
-                default:
-                    $startDate = now()->startOfMonth();
-                    $endDate = now()->endOfMonth();
-            }
+   /* CORRECTION — AdminPresenceService::getUserDetailedStats()
+ *
+ * Remplace la méthode existante dans App\Services\AdminPresenceService
+ *
+ * Problèmes corrigés :
+ * 1. activationDate comparaison : utiliser ->startOfDay() + Carbon::parse() sécurisé
+ * 2. Absences : un jour n'est marqué absent QUE si le user était déjà actif ET le jour est passé
+ * 3. onTime = hasCheckIn && !isLate  (et non present - lateDays qui donne des négatifs)
+ * 4. chart_data 'on_time' reflète bien les jours à l'heure (binaire propre)
+ * 5. avg_daily_hours corrigé : basé uniquement sur les jours avec check-in
+ */
+ 
+public function getUserDetailedStats(
+    int $userId,
+    string $period = 'month',
+    ?string $dateFrom = null,
+    ?string $dateTo = null
+): array {
+    $user = User::with('etudiant')->findOrFail($userId);
+    $isEtudiant = $user->etudiant !== null;
+ 
+    // ── 1. Plage de dates ──────────────────────────────────────────────────────
+    if ($dateFrom && $dateTo) {
+        $startDate = Carbon::parse($dateFrom)->startOfDay();
+        $endDate   = Carbon::parse($dateTo)->endOfDay();
+    } else {
+        switch ($period) {
+            case 'today':
+                $startDate = today()->startOfDay();
+                $endDate   = today()->endOfDay();
+                break;
+            case 'week':
+                $startDate = now()->startOfWeek()->startOfDay();
+                $endDate   = now()->endOfWeek()->endOfDay();
+                break;
+            case 'year':
+                $startDate = now()->startOfYear()->startOfDay();
+                $endDate   = now()->endOfYear()->endOfDay();
+                break;
+            case 'month':
+            default:
+                $startDate = now()->startOfMonth()->startOfDay();
+                $endDate   = now()->endOfMonth()->endOfDay();
         }
-
-        // ---- 2. Date de début d’activité (inscription / embauche) ----
-        $activationDate = $user->created_at->copy()->startOfDay();
-
-        // ---- 3. Récupérer les pointages existants sur la plage ----
-        $query = AttendanceDay::query();
-        if ($isEtudiant) {
-            $query->where('etudiant_id', $user->etudiant->id);
-        } else {
-            $query->where('user_id', $user->id);
-        }
-        $query->whereBetween('attendance_date', [$startDate, $endDate]);
-        $days = $query->orderBy('attendance_date')->get()->keyBy('attendance_date');
-
-        // ---- 4. Parcourir TOUS les jours de la plage ----
-        $labels = [];
-        $present = [];
-        $onTime = [];
-        $lateDays = [];
-        $absences = [];
-        $lateMinutes = [];
-        $workedHours = [];
-
-        $today = today();
-        $currentDate = $startDate->copy();
-        while ($currentDate <= $endDate) {
-            $dateKey = $currentDate->toDateString();
-            $labels[] = $currentDate->isoFormat('D MMM');   // ex: "27 Avr"
-
-            $day = $days->get($dateKey);
-            $isActiveDay = $currentDate >= $activationDate;   // après activation
-            $isWeekend = $currentDate->isWeekend();            // samedi ou dimanche
-            $isFuture = $currentDate > $today;                 // jour futur
-
-            if ($day) {
-                // Jour avec pointage
-                $hasCheckIn = !is_null($day->first_check_in_at);
-                $isLate = $day->arrival_status === 'late' && $hasCheckIn;
-                $isOnTime = $hasCheckIn && !$isLate;
-
-                $present[] = $hasCheckIn ? 1 : 0;
-                $onTime[] = $isOnTime ? 1 : 0;
-                $lateDays[] = $isLate ? 1 : 0;
-                $absences[] = 0;   // présent donc pas absent
-                $lateMinutes[] = (int) $day->late_minutes;
-                $workedHours[] = round($day->worked_minutes / 60, 1);
-            } else {
-                // Aucun pointage ce jour-là
-                if (!$isActiveDay || $isFuture) {
-                    // avant activation ou jour futur : tout à zéro (pas d'absence)
-                    $present[] = 0;
-                    $onTime[] = 0;
-                    $lateDays[] = 0;
-                    $absences[] = 0;
-                    $lateMinutes[] = 0;
-                    $workedHours[] = 0;
-                } elseif ($isWeekend) {
-                    // week-end : pas d’absence attendue
-                    $present[] = 0;
-                    $onTime[] = 0;
-                    $lateDays[] = 0;
-                    $absences[] = 0;
-                    $lateMinutes[] = 0;
-                    $workedHours[] = 0;
-                } else {
-                    // jour ouvrable passé sans pointage → absence
-                    $present[] = 0;
-                    $onTime[] = 0;
-                    $lateDays[] = 0;
-                    $absences[] = 1;
-                    $lateMinutes[] = 0;
-                    $workedHours[] = 0;
-                }
-            }
-
-            $currentDate->addDay();
-        }
-
-        // ---- 5. Calcul des KPI (uniquement sur les jours ouvrables attendus) ----
-        $totalExpectedDays = 0;
-        $presentDays = 0;
-        $lateDaysCount = 0;
-        $totalLateMinutes = 0;
-        $totalWorkedMinutes = 0;
-
-        $checkDate = $startDate->copy();
-        while ($checkDate <= $endDate) {
-            $isActive = $checkDate >= $activationDate;
-            $isWeekend = $checkDate->isWeekend();
-            if ($isActive && !$isWeekend) {
-                $totalExpectedDays++;
-                $dayKey = $checkDate->toDateString();
-                $day = $days->get($dayKey);
-                if ($day) {
-                    if (!is_null($day->first_check_in_at)) {
-                        $presentDays++;
-                        if ($day->arrival_status === 'late') {
-                            $lateDaysCount++;
-                        }
-                    }
-                    $totalLateMinutes += $day->late_minutes;
-                    $totalWorkedMinutes += $day->worked_minutes;
-                }
-            }
-            $checkDate->addDay();
-        }
-
-        // Anomalies ouvertes
-        $anomalies = AttendanceAnomaly::where('user_id', $userId)
-            ->whereIn('status', ['open', 'flagged'])
-            ->count();
-
-        return [
-            'user' => $user,
-            'is_etudiant' => $isEtudiant,
-            'total_days' => $totalExpectedDays,
-            'present_days' => $presentDays,
-            'late_days' => $lateDaysCount,
-            'total_late_minutes' => $totalLateMinutes,
-            'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
-            'avg_daily_hours' => $presentDays > 0 ? round(($totalWorkedMinutes / 60) / $presentDays, 1) : 0,
-            'open_anomalies' => $anomalies,
-            'chart_data' => [
-                'labels' => $labels,
-                'present' => $present,
-                'on_time' => $onTime,
-                'late_days' => $lateDays,
-                'absences' => $absences,
-                'late_minutes' => $lateMinutes,
-                'worked_hours' => $workedHours,
-            ],
-        ];
     }
-
+ 
+    // ── 2. Date d'activation : quand l'utilisateur a vraiment commencé ─────────
+    // Pour un étudiant : date_debut du stage le plus ancien
+    // Pour un employé  : created_at du user (date d'embauche)
+    if ($isEtudiant) {
+        $firstStage = $user->etudiant->stages()
+            ->orderBy('date_debut')
+            ->first();
+        $activationDate = $firstStage
+            ? Carbon::parse($firstStage->date_debut)->startOfDay()
+            : Carbon::parse($user->created_at)->startOfDay();
+    } else {
+        $activationDate = Carbon::parse($user->created_at)->startOfDay();
+    }
+ 
+    // ── 3. Récupérer les pointages sur la plage ────────────────────────────────
+    $query = AttendanceDay::query();
+    if ($isEtudiant) {
+        $query->where('etudiant_id', $user->etudiant->id);
+    } else {
+        $query->where('user_id', $user->id)->whereNull('etudiant_id');
+    }
+    $days = $query
+        ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+        ->orderBy('attendance_date')
+        ->get()
+        ->keyBy(fn($d) => Carbon::parse($d->attendance_date)->toDateString());
+ 
+    $today = today()->startOfDay();
+ 
+    // ── 4. Parcourir tous les jours de la plage ────────────────────────────────
+    $labels      = [];
+    $present     = [];
+    $onTime      = [];
+    $lateDays    = [];
+    $absences    = [];
+    $lateMinutes = [];
+    $workedHours = [];
+ 
+    $currentDate = $startDate->copy()->startOfDay();
+ 
+    while ($currentDate->lte($endDate->copy()->startOfDay())) {
+        $dateKey = $currentDate->toDateString();
+        $labels[] = $currentDate->isoFormat('D MMM');
+ 
+        $isBeforeActivation = $currentDate->lt($activationDate);
+        $isWeekend          = $currentDate->isWeekend();
+        $isFutureDay        = $currentDate->gt($today);
+ 
+        $day = $days->get($dateKey);
+ 
+        if ($day) {
+            // ── Jour avec un enregistrement ──────────────────────────────────
+            $hasCheckIn = !is_null($day->first_check_in_at);
+            $isLate     = $hasCheckIn && ($day->arrival_status === 'late');
+            $isOnTime   = $hasCheckIn && !$isLate;
+ 
+            $present[]     = $hasCheckIn ? 1 : 0;
+            $onTime[]      = $isOnTime   ? 1 : 0;
+            $lateDays[]    = $isLate     ? 1 : 0;
+            $absences[]    = 0; // présent dans la table → pas marqué absent
+            $lateMinutes[] = (int) ($day->late_minutes ?? 0);
+            $workedHours[] = round(($day->worked_minutes ?? 0) / 60, 1);
+        } else {
+            // ── Aucun enregistrement ─────────────────────────────────────────
+            // Absence RÉELLE seulement si :
+            //   • le jour est passé (pas futur)
+            //   • le user était déjà actif (après activationDate)
+            //   • c'est un jour ouvrable (pas week-end)
+            $isRealAbsence = !$isFutureDay
+                && !$isBeforeActivation
+                && !$isWeekend;
+ 
+            $present[]     = 0;
+            $onTime[]      = 0;
+            $lateDays[]    = 0;
+            $absences[]    = $isRealAbsence ? 1 : 0;
+            $lateMinutes[] = 0;
+            $workedHours[] = 0;
+        }
+ 
+        $currentDate->addDay();
+    }
+ 
+    // ── 5. KPI : uniquement jours ouvrables attendus ───────────────────────────
+    $totalExpectedDays  = 0;
+    $presentDays        = 0;
+    $lateDaysCount      = 0;
+    $totalLateMinutes   = 0;
+    $totalWorkedMinutes = 0;
+ 
+    $checkDate = $startDate->copy()->startOfDay();
+    while ($checkDate->lte($endDate->copy()->startOfDay())) {
+        $isActive  = $checkDate->gte($activationDate);
+        $isWeekend = $checkDate->isWeekend();
+        $isFuture  = $checkDate->gt($today);
+ 
+        if ($isActive && !$isWeekend && !$isFuture) {
+            $totalExpectedDays++;
+            $dayKey = $checkDate->toDateString();
+            $day    = $days->get($dayKey);
+            if ($day && !is_null($day->first_check_in_at)) {
+                $presentDays++;
+                if ($day->arrival_status === 'late') {
+                    $lateDaysCount++;
+                }
+                $totalLateMinutes   += (int) ($day->late_minutes   ?? 0);
+                $totalWorkedMinutes += (int) ($day->worked_minutes  ?? 0);
+            }
+        }
+        $checkDate->addDay();
+    }
+ 
+    // Anomalies ouvertes
+    $anomalies = AttendanceAnomaly::where('user_id', $userId)
+        ->whereIn('status', ['open', 'flagged'])
+        ->count();
+ 
+    return [
+        'user'                => $user,
+        'is_etudiant'         => $isEtudiant,
+        'total_days'          => $totalExpectedDays,
+        'present_days'        => $presentDays,
+        'late_days'           => $lateDaysCount,
+        'total_late_minutes'  => $totalLateMinutes,
+        'total_worked_hours'  => round($totalWorkedMinutes / 60, 1),
+        'avg_daily_hours'     => $presentDays > 0
+            ? round(($totalWorkedMinutes / 60) / $presentDays, 1)
+            : 0,
+        'open_anomalies'      => $anomalies,
+        'chart_data'          => [
+            'labels'       => $labels,
+            'present'      => $present,
+            'on_time'      => $onTime,
+            'late_days'    => $lateDays,
+            'absences'     => $absences,
+            'late_minutes' => $lateMinutes,
+            'worked_hours' => $workedHours,
+        ],
+    ];
+}
     /**
      * Top utilisateurs en retard.
      */
+    
     public function getTopLateUsers(int $limit = 10, string $period = 'month'): array
     {
         return AttendanceDay::topLate($limit, $period)->get()->toArray();
