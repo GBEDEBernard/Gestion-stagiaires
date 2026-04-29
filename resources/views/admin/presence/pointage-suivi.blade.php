@@ -27,14 +27,14 @@
 
             {{-- DATE --}}
             <div>
-                <label class="text-sm font-semibold">📅 Date</label>
+                <label class="text-sm font-semibold font-serif">Date</label>
                 <input type="date" name="date" value="{{ request('date') }}"
                     class="w-full px-4 py-2 border rounded-xl">
             </div>
 
             {{-- PERIOD --}}
             <div>
-                <label class="text-sm font-semibold">📊 Période</label>
+                <label class="text-sm font-semibold font-serif">Période</label>
                 <select name="period" class="w-full px-4 py-2 border rounded-xl">
                     <option value="day" {{ request('period') == 'day' ? 'selected' : '' }}>Jour</option>
                     <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Semaine</option>
@@ -44,7 +44,7 @@
 
             {{-- USER --}}
             <div>
-                <label class="text-sm font-semibold">👤 Utilisateur</label>
+                <label class="text-sm font-semibold font-serif">Utilisateur</label>
                 <select name="user_id" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Tous</option>
                     @foreach($users as $user)
@@ -57,7 +57,7 @@
 
             {{-- SITE --}}
             <div>
-                <label class="text-sm font-semibold">🏢 Site</label>
+                <label class="text-sm font-semibold">Site</label>
                 <select name="site_id" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Tous</option>
                     @foreach($sites as $site)
@@ -70,7 +70,7 @@
 
             {{-- ECOLE --}}
             <div>
-                <label class="text-sm font-semibold">🏫 École</label>
+                <label class="text-sm font-semibold">École</label>
                 <select name="school" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Toutes</option>
                     @foreach($schools as $ecole)
