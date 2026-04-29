@@ -168,7 +168,7 @@ class AdminPresenceController extends Controller
 
     $carbonDate = \Carbon\Carbon::parse($date);
 
-    // 🔥 STATS
+    //  STATS
     $today = today();
     $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
     $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
@@ -178,12 +178,12 @@ class AdminPresenceController extends Controller
         ->count();
     $avgAccuracy = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
 
-    // 🔥 LISTES
+    // LISTES
     $users = \App\Models\User::whereHas('attendanceEvents')->orderBy('name')->get(['id', 'name']);
     $sites = \App\Models\Site::where('is_active', true)->orderBy('name')->get();
     $schools = \App\Models\Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole');
 
-    // 🔥 QUERY PRINCIPALE
+    // QUERY PRINCIPALE
     $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
         ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
         ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
@@ -192,7 +192,7 @@ class AdminPresenceController extends Controller
         ->leftJoin('sites as site_via_geofence', 'site_geofences.site_id', '=', 'site_via_geofence.id')
         ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id');
 
-    // 📅 FILTRE DATE / PERIOD
+    //  FILTRE DATE / PERIOD
     if ($period === 'day') {
         $query->whereDate('attendance_events.occurred_at', $carbonDate);
     }
@@ -214,12 +214,12 @@ class AdminPresenceController extends Controller
         $query->where('attendance_events.user_id', $userId);
     }
 
-    // 🏫 FILTRE ECOLE
+    //  FILTRE ECOLE
     if ($schoolFilter) {
         $query->where('etudiants.ecole', $schoolFilter);
     }
 
-    // 🏢 FILTRE SITE
+    //  FILTRE SITE
     if ($siteId) {
         $query->where(function($q) use ($siteId) {
             $q->where('site_via_stage.id', $siteId)
@@ -227,7 +227,7 @@ class AdminPresenceController extends Controller
         });
     }
 
-    // 🔥 RESULTATS
+    //  RESULTATS
     $events = $query->select(
         'attendance_events.*',
         \DB::raw('COALESCE(site_via_stage.name, site_via_geofence.name) as resolved_site_name')
@@ -242,6 +242,42 @@ class AdminPresenceController extends Controller
         'users', 'sites', 'schools',
         'date', 'userId', 'siteId', 'schoolFilter', 'period'
     ));
+}
+/**
+ * Version imprimable de pointageSuivi (tous les résultats, pas de pagination)
+ */
+public function pointageSuiviPrint(Request $request)
+{
+    $date = $request->get('date', today()->format('Y-m-d'));
+    $userId = $request->get('user_id');
+    $siteId = $request->get('site_id');
+    $schoolFilter = $request->get('school');
+    
+    $query = \App\Models\AttendanceEvent::with(['user', 'anomalies', 'site', 'geofence.site']);
+    
+    if ($date) $query->whereDate('occurred_at', $date);
+    if ($userId) $query->where('user_id', $userId);
+    if ($siteId) $query->where('site_id', $siteId);
+    if ($schoolFilter) {
+        $query->whereHas('attendanceDay.stage.etudiant', fn($q) => $q->where('ecole', $schoolFilter));
+    }
+    
+    $events = $query->orderByDesc('occurred_at')->get(); // Tous, pas de paginate
+    
+    // On ajoute une propriété virtuelle pour le nom du site résolu
+    foreach ($events as $event) {
+        $event->resolved_site_name = $event->site?->name 
+            ?? $event->geofence?->site?->name 
+            ?? $event->attendanceDay?->stage?->site?->name 
+            ?? null;
+    }
+    
+    return view('admin.presence.print',
+     compact('events', 
+     'date', 'userId',
+      'siteId', 
+      'schoolFilter'
+      ));
 }
     /**
      * Export pointages CSV

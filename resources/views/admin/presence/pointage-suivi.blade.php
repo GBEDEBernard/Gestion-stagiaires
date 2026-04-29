@@ -258,53 +258,13 @@
 
     @push('scripts')
     <script>
-        let autoRefreshEnabled = true;
-        document.addEventListener('DOMContentLoaded', function() {
-            // Toggle auto-refresh
-            const toggle = document.createElement('label');
-            toggle.innerHTML = `
-<input type="checkbox" id="autoRefreshToggle" checked>
-<span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">🔄 Auto-refresh (30s)</span>
-`;
-            toggle.className = 'flex items-center cursor-pointer absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl shadow-md';
-            document.querySelector('.max-w-7xl').parentNode.insertBefore(toggle, document.querySelector('.max-w-7xl'));
-
-            document.getElementById('autoRefreshToggle').addEventListener('change', function() {
-                autoRefreshEnabled = this.checked;
-            });
-
-            // Auto-refresh
-            setInterval(() => {
-                if (autoRefreshEnabled && window.location.pathname.includes('pointage-suivi')) {
-                    location.reload();
-                }
-            }, 30000);
-        });
-
-        // Print UNIQUEMENT le tableau
-        function printTable() {
-            const printContent = document.querySelector('.bg-white.dark\\:bg-gray-800.rounded-2xl.border.border-slate-200.shadow-sm.overflow-hidden table').outerHTML;
-            const w = window.open();
-            w.document.write(`
-        <html>
-        <head>
-            <title>Pointages</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                table { border-collapse: collapse; width: 100%; font-size: 12px; }
-                th, td { border: 1px solid black; padding: 8px; text-align: left; }
-                th { background: #f0f0f0; font-weight: bold; }
-                @media print { body { margin: 0; } }
-            </style>
-        </head>
-        <body onload="window.print();setTimeout(() => window.close(), 1000)">
-            <h2>Pointages</h2>
-            ${printContent}
-        </body>
-        </html>
-    `);
-            w.document.close();
-        }
+      function printTable() {
+    // Récupérer tous les paramètres de filtres actuels
+    const params = new URLSearchParams(window.location.search);
+    // Ouvrir la route d'impression avec les mêmes filtres
+    const printUrl = "{{ route('admin.presence.print') }}?" + params.toString();
+    window.open(printUrl, '_blank', 'width=1000,height=800');
+}
     </script>
     @endpush>
 
