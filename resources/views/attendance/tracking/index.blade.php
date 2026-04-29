@@ -178,11 +178,17 @@
                                         <span class="text-slate-400">—</span>
                                         @endif
                                     </td>
+                                  {{-- Desktop  recuperation du site depuis la geoference --}}
                                     <td class="px-4 lg:px-6 py-3 text-sm">
-                                        @if($day->stage?->site)
-                                        <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">TFG SARL</span>
+                                        @php $resolvedSite = $day->stage?->site ?? $day->checkInEvent?->geofence?->site; @endphp
+                                        @if($resolvedSite)
+                                            <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                                {{ $resolvedSite->name }}
+                                            </span>
                                         @else
-                                        <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">À distance</span>
+                                            <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
+                                                À distance
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="px-4 lg:px-6 py-3 text-sm">
@@ -236,8 +242,11 @@
                                 <span class="font-semibold ml-1">{{ $day->last_check_out_at?->format('H:i') ?? '—' }}</span>
                             </div>
                             <div>
-                                <span class="text-slate-500">Position:</span>
-                                <span class="ml-1">{{ $day->stage?->site ? 'TFG SARL' : 'À distance' }}</span>
+                            <span class="text-slate-500">Position:</span>
+                                @php $resolvedSite = $day->stage?->site ?? $day->checkInEvent?->geofence?->site; @endphp
+                                <span class="ml-1">
+                                    {{ $resolvedSite ? $resolvedSite->name : 'À distance' }}
+                                </span>
                             </div>
                             <div>
                                 <span class="text-slate-500">Retard:</span>

@@ -193,29 +193,29 @@ class AdminPresenceController extends Controller
         ->values();
 
     // Requête avec les jointures nécessaires pour filtrer par site et école
-    $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
-        ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
-        ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
-        ->leftJoin('sites', 'stages.site_id', '=', 'sites.id')
-        ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id')
-        ->orderByDesc('attendance_events.occurred_at');
+            $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
+                ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
+                ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
+                ->leftJoin('sites as site_via_stage', 'stages.site_id', '=', 'site_via_stage.id')
+                ->leftJoin('site_geofences', 'attendance_events.site_geofence_id', '=', 'site_geofences.id')
+                ->leftJoin('sites as site_via_geofence', 'site_geofences.site_id', '=', 'site_via_geofence.id')
+                ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id')
+                ->orderByDesc('attendance_events.occurred_at');
 
-    if ($date) {
-        $query->whereDate('attendance_events.occurred_at', $date);
-    }
-    if ($userId) {
-        $query->where('attendance_events.user_id', $userId);
-    }
-    if ($siteId) {
-        $query->where('sites.id', $siteId);
-    }
-    if ($schoolFilter) {
-        $query->where('etudiants.ecole', $schoolFilter);
-    }
+            // Filtres (adapter site_id)
+            if ($siteId) {
+                $query->where(function($q) use ($siteId) {
+                    $q->where('site_via_stage.id', $siteId)
+                    ->orWhere('site_via_geofence.id', $siteId);
+                });
+            }
 
-    $events = $query->select('attendance_events.*')
-        ->paginate(10)
-        ->appends($request->query());
+            // Sélection avec le nom du site résolu
+            $events = $query->select(
+                'attendance_events.*',
+                \DB::raw('COALESCE(site_via_stage.name, site_via_geofence.name) as resolved_site_name'),
+                \DB::raw('COALESCE(site_via_stage.id, site_via_geofence.id) as resolved_site_id')
+            )->paginate(10)->appends($request->query());
 
     return view('admin.presence.pointage-suivi', compact(
         'events', 'todayCount', 'checkinsToday', 'checkoutsToday',

@@ -29,7 +29,6 @@ class AdminAttendanceTrackingController extends Controller
             default => $this->getDailyData($filterDate),
         };
 
-        // Get all users for dropdown
         $students = Etudiant::with('user')->get()->map(function ($etudiant) {
             return [
                 'id' => $etudiant->user->id,
@@ -75,7 +74,12 @@ class AdminAttendanceTrackingController extends Controller
     {
         $studentDays = AttendanceDay::whereDate('attendance_date', $date)
             ->whereNotNull('etudiant_id')
-            ->with(['etudiant.user', 'stage.site', 'anomalies'])
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->orderBy('etudiant_id')
             ->get();
 
@@ -83,7 +87,12 @@ class AdminAttendanceTrackingController extends Controller
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
-            ->with(['user', 'stage.site', 'anomalies'])
+            ->with([
+                'user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->orderBy('user_id')
             ->get();
 
@@ -112,7 +121,12 @@ class AdminAttendanceTrackingController extends Controller
 
         $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('etudiant_id')
-            ->with(['etudiant.user', 'stage.site', 'anomalies'])
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('etudiant_id');
 
@@ -120,7 +134,12 @@ class AdminAttendanceTrackingController extends Controller
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
-            ->with(['user', 'stage.site', 'anomalies'])
+            ->with([
+                'user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('user_id');
 
@@ -166,7 +185,11 @@ class AdminAttendanceTrackingController extends Controller
 
         $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('etudiant_id')
-            ->with(['etudiant.user', 'stage.site'])
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('etudiant_id');
 
@@ -174,7 +197,11 @@ class AdminAttendanceTrackingController extends Controller
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
-            ->with(['user', 'stage.site'])
+            ->with([
+                'user',
+                'stage.site',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('user_id');
 
@@ -222,7 +249,12 @@ class AdminAttendanceTrackingController extends Controller
 
         $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('etudiant_id')
-            ->with(['etudiant.user', 'stage.site'])
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('etudiant_id');
 
@@ -230,7 +262,12 @@ class AdminAttendanceTrackingController extends Controller
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
-            ->with(['user', 'stage.site'])
+            ->with([
+                'user',
+                'stage.site',
+                'anomalies',
+                'checkInEvent.geofence.site',
+            ])
             ->get()
             ->groupBy('user_id');
 
@@ -290,9 +327,6 @@ class AdminAttendanceTrackingController extends Controller
             $file = fopen('php://output', 'w');
 
             if ($period === 'month') {
-                $startOfMonth = $filterDate->clone()->startOfMonth();
-                $endOfMonth = $filterDate->clone()->endOfMonth();
-
                 fputcsv($file, ['Suivi - ' . $filterDate->translatedFormat('F Y')]);
                 fputcsv($file, []);
                 fputcsv($file, ['Nom', 'Jours présents', 'Retard total (min)', 'Heures travaillées']);
@@ -329,12 +363,10 @@ class AdminAttendanceTrackingController extends Controller
     {
         $period = $request->get('period', 'month');
 
-        // Déterminer si c'est un étudiant ou un employé
         $etudiant = $user->etudiant;
         $ownerType = $etudiant ? 'etudiant' : 'user';
         $ownerId = $etudiant ? $etudiant->id : $user->id;
 
-        // Stats détaillées via service (utiliser AdminPresenceService si disponible)
         $userStats = app(\App\Services\AdminPresenceService::class)->getUserDetailedStats($user->id, $period);
 
         $dateFrom = match ($period) {
@@ -351,7 +383,7 @@ class AdminAttendanceTrackingController extends Controller
         ];
 
         $attendanceDaysQuery = app(\App\Services\AdminPresenceService::class)->listAttendanceDays($filters, 100)
-            ->with(['stage.site', 'anomalies', 'dailyReports']);
+            ->with(['stage.site', 'anomalies', 'dailyReports', 'checkInEvent.geofence.site']);
 
         $attendanceDays = $attendanceDaysQuery->get();
 

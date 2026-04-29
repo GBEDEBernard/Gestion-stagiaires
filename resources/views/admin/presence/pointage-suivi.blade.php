@@ -119,9 +119,21 @@
                             <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 {{ $event->occurred_at?->format('d/m H:i') }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                                {{ $event->attendanceDay?->stage?->site?->name ?? 'Hors site' }}
-                            </td>
+                            <!-- Un événement peut connaître son site de deux façons : soit via la géofence 
+                             qui a validé le pointage (site_geofence_id → site_geofences → sites), soit via
+                              le stage associé à la journée (attendance_day → stage → site). Le COALESCE prend le premier 
+                             non-null. Dans tes données, les événements récents ont un site_geofence_id =  -->
+                           <td class="px-6 py-4">
+                            @if($event->resolved_site_name)
+                                <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full dark:bg-green-900 dark:text-green-200">
+                                    {{ $event->resolved_site_name }}
+                                </span>
+                            @else
+                                <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full dark:bg-gray-800 dark:text-gray-200">
+                                    À distance
+                                </span>
+                            @endif
+                        </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
                                     {{ number_format($event->accuracy_meters ?? 0, 0) }}m
