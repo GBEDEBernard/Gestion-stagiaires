@@ -27,14 +27,14 @@
 
             {{-- DATE --}}
             <div>
-                <label class="text-sm font-semibold font-serif">Date</label>
+                <label class="text-sm font-semibold font-serif dark:text-white dark:font-serif dark:font-bold dark:text-xl">Date</label>
                 <input type="date" name="date" value="{{ request('date') }}"
                     class="w-full px-4 py-2 border rounded-xl">
             </div>
 
             {{-- PERIOD --}}
             <div>
-                <label class="text-sm font-semibold font-serif">Période</label>
+                <label class="text-sm font-semibold font-serif dark:text-white dark:font-serif dark:font-bold dark:text-xl">Période</label>
                 <select name="period" class="w-full px-4 py-2 border rounded-xl">
                     <option value="day" {{ request('period') == 'day' ? 'selected' : '' }}>Jour</option>
                     <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Semaine</option>
@@ -44,7 +44,7 @@
 
             {{-- USER --}}
             <div>
-                <label class="text-sm font-semibold font-serif">Utilisateur</label>
+                <label class="text-sm font-semibold font-serif dark:text-white dark:font-serif dark:font-bold dark:text-xl">Utilisateur</label>
                 <select name="user_id" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Tous</option>
                     @foreach($users as $user)
@@ -57,7 +57,7 @@
 
             {{-- SITE --}}
             <div>
-                <label class="text-sm font-semibold">Site</label>
+                <label class="text-sm font-semibold dark:text-white dark:font-serif dark:font-bold dark:text-xl">Site</label>
                 <select name="site_id" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Tous</option>
                     @foreach($sites as $site)
@@ -70,7 +70,7 @@
 
             {{-- ECOLE --}}
             <div>
-                <label class="text-sm font-semibold">École</label>
+                <label class="text-sm font-semibold dark:text-white dark:font-serif dark:font-bold dark:text-xl">École</label>
                 <select name="school" class="w-full px-4 py-2 border rounded-xl">
                     <option value="">Toutes</option>
                     @foreach($schools as $ecole)
@@ -113,98 +113,110 @@
         </div>
 
         {{-- Tableau pointages --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 dark:bg-gray-700">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    📋 Historique Récent ({{ $events->count() }} résultats)
-                </h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                    <thead class="bg-slate-50 dark:bg-gray-700">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Utilisateur</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Heure</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Site</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Précision</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Statut</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @forelse($events ?? [] as $event)
-                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-900 transition-colors">
-                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                                {{ $event->user?->name ?? $event->attendanceDay->etudiant?->user?->name ?? 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full
-                                        {{ $event->event_type === 'check_in' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }}">
-                                    {{ $event->event_type === 'check_in' ? 'Entrée' : 'Sortie' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                {{ $event->occurred_at?->format('d/m H:i') }}
-                            </td>
-                            <!-- Un événement peut connaître son site de deux façons : soit via la géofence 
-                             qui a validé le pointage (site_geofence_id → site_geofences → sites), soit via
-                              le stage associé à la journée (attendance_day → stage → site). Le COALESCE prend le premier 
-                             non-null. Dans tes données, les événements récents ont un site_geofence_id =  -->
-                           <td class="px-6 py-4">
-                            @if($event->resolved_site_name)
-                                <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full dark:bg-green-900 dark:text-green-200">
-                                    {{ $event->resolved_site_name }}
-                                </span>
-                            @else
-                                <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full dark:bg-gray-800 dark:text-gray-200">
-                                    À distance
-                                </span>
-                            @endif
-                        </td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
-                                    {{ number_format($event->accuracy_meters ?? 0, 0) }}m
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                        {{ $event->status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900' : 'bg-amber-100 text-amber-800 dark:bg-amber-900' }}">
-                                    {{ ucfirst($event->status) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center gap-2 justify-end">
-                                    @if($event->anomalies->count() > 0)
-                                    <span class="text-rose-600 dark:text-rose-400 font-semibold">{{ $event->anomalies->count() }} anomalie{{ $event->anomalies->count() > 1 ? 's' : '' }}</span>
-                                    @endif
-                                    <a href="#" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                                        Détails
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0 -3.332.477 -4.5 1.253" />
-                                </svg>
-                                Aucun pointage trouvé
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($events->hasPages())
-            <div class="px-6 py-4 bg-slate-50 dark:bg-gray-700 border-t border-slate-200 dark:border-slate-600">
-                {{ $events->appends(request()->query())->links() }}
-            </div>
-            @endif
-        </div>
-
+<div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 dark:bg-gray-700">
+        <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            Historique Récent ({{ $days->total() }} résultats)
+        </h3>
     </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Utilisateur</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Heure</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Site</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Précision</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Statut</th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                @forelse($days ?? [] as $day)
+                @php
+                    $userName = $day->user?->name ?? $day->etudiant?->user?->name ?? 'N/A';
+                    $checkIn = $day->checkInEvent;
+                    $checkOut = $day->checkOutEvent;
+                    $statusBadge = $day->status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800';
+                    $statusText = ucfirst($day->status ?? 'pending');
+                @endphp
+                <tr class="hover:bg-slate-50 dark:hover:bg-gray-900 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                        {{ $userName }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                            Journée
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <div class="flex flex-col gap-0.5">
+                            @if($checkIn)
+                                <span class="text-emerald-600">Arrivée : {{ $checkIn->occurred_at->format('d/m H:i') }}</span>
+                            @else
+                                <span class="text-gray-400">Arrivée : —</span>
+                            @endif
+                            @if($checkOut)
+                                <span class="text-blue-600">Départ : {{ $checkOut->occurred_at->format('d/m H:i') }}</span>
+                            @else
+                                <span class="text-gray-400">Départ : —</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        @if($day->resolved_site_name)
+                            <span class="px-2 lg:px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full dark:bg-green-900 dark:text-green-200">
+                                {{ $day->resolved_site_name }}
+                            </span>
+                        @else
+                            <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full dark:bg-gray-800 dark:text-gray-200">
+                                À distance
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        @php $precision = $checkIn?->accuracy_meters ?? $checkOut?->accuracy_meters ?? 0; @endphp
+                        <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
+                            {{ number_format($precision, 0) }}m
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusBadge }}">
+                            {{ $statusText }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex items-center gap-2 justify-end">
+                            @if($day->anomalies->count() > 0)
+                                <span class="text-rose-600 dark:text-rose-400 font-semibold">{{ $day->anomalies->count() }} anomalie{{ $day->anomalies->count() > 1 ? 's' : '' }}</span>
+                            @endif
+                            <a href="#" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                                Détails
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                        <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0 -3.332.477 -4.5 1.253" />
+                        </svg>
+                        Aucun pointage trouvé
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($days->hasPages())
+    <div class="px-6 py-4 bg-slate-50 dark:bg-gray-700 border-t border-slate-200 dark:border-slate-600">
+        {{ $days->appends(request()->query())->links() }}
+    </div>
+    @endif
+</div>
+ </div>
 
     @push('styles')
     <style>
