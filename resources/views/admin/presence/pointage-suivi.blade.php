@@ -23,52 +23,80 @@
 
         {{-- Filtres --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 shadow-sm p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">📅 Date</label>
-                    <input type="date" name="date" value="{{ request('date') }}" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white transition-all">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">👤 Utilisateur</label>
-                    <select name="user_id" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
-                        <option value="">Tous les utilisateurs</option>
-                        @foreach($users ?? [] as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">🏢 Site</label>
-                    <select name="site_id" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white">
-                        <option value="">Tous les sites</option>
-                        @foreach($sites ?? [] as $site)
-                        <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">🏫 École (étudiant)</label>
-                    <select name="school" class="w-full px-4 py-2 border rounded-xl">
-                        <option value="">Toutes les écoles</option>
-                        @foreach($schools ?? [] as $ecole)
-                        <option value="{{ $ecole }}" {{ request('school') == $ecole ? 'selected' : '' }}>{{ $ecole }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="md:col-span-2 flex items-end gap-3">
-                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all">
-                        🔍 Filtrer les résultats
-                    </button>
-                    <a href="{{ route('admin.presence.pointage-suivi') }}" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold rounded-xl shadow-sm transition-all">
-                        ↺ Reset
-                    </a>
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-7 gap-4">
 
-                    <button onclick="printTable()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all" title="Imprimer UNIQUEMENT le tableau">
-                        🖨️ Imprimer Tableau
-                    </button>
+            {{-- DATE --}}
+            <div>
+                <label class="text-sm font-semibold">📅 Date</label>
+                <input type="date" name="date" value="{{ request('date') }}"
+                    class="w-full px-4 py-2 border rounded-xl">
+            </div>
 
-                </div>
-            </form>
+            {{-- PERIOD --}}
+            <div>
+                <label class="text-sm font-semibold">📊 Période</label>
+                <select name="period" class="w-full px-4 py-2 border rounded-xl">
+                    <option value="day" {{ request('period') == 'day' ? 'selected' : '' }}>Jour</option>
+                    <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>Semaine</option>
+                    <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Mois</option>
+                </select>
+            </div>
+
+            {{-- USER --}}
+            <div>
+                <label class="text-sm font-semibold">👤 Utilisateur</label>
+                <select name="user_id" class="w-full px-4 py-2 border rounded-xl">
+                    <option value="">Tous</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- SITE --}}
+            <div>
+                <label class="text-sm font-semibold">🏢 Site</label>
+                <select name="site_id" class="w-full px-4 py-2 border rounded-xl">
+                    <option value="">Tous</option>
+                    @foreach($sites as $site)
+                        <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>
+                            {{ $site->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- ECOLE --}}
+            <div>
+                <label class="text-sm font-semibold">🏫 École</label>
+                <select name="school" class="w-full px-4 py-2 border rounded-xl">
+                    <option value="">Toutes</option>
+                    @foreach($schools as $ecole)
+                        <option value="{{ $ecole }}" {{ request('school') == $ecole ? 'selected' : '' }}>
+                            {{ $ecole }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- BOUTONS --}}
+            <div class="md:col-span-2 flex items-end gap-2">
+                <button type="submit"
+                    class="flex-1 bg-emerald-600 text-white p-2 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition">
+                    🔍 Filtrer
+                </button>
+
+                <a href="{{ route('admin.presence.pointage-suivi') }}"
+                    class="bg-gray-300 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-gray-400 transition">
+                    Reset
+                </a>
+                <button onclick="printTable()" class="p-1 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all" title="Imprimer UNIQUEMENT le tableau">
+                                🖨️ Imprimer Tableau
+                </button>
+            </div>
+          </form>        
         </div>
 
         {{-- Stats rapides --}}

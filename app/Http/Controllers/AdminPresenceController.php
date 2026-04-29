@@ -158,14 +158,17 @@ class AdminPresenceController extends Controller
     /**
      * ✅ Suivi Pointage - Admin
      */
-   public function pointageSuivi(Request $request)
+ public function pointageSuivi(Request $request)
 {
-    $date = $request->get('date', today()->format('Y-m-d'));
+    $date = $request->get('date', now()->format('Y-m-d'));
     $userId = $request->get('user_id');
     $siteId = $request->get('site_id');
-    $schoolFilter = $request->get('school');  // ← on utilise 'school' au lieu de 'domaine_id'
+    $schoolFilter = $request->get('school');
+    $period = $request->get('period', 'day');
 
-    // Stats rapides
+    $carbonDate = \Carbon\Carbon::parse($date);
+
+    // 🔥 STATS
     $today = today();
     $todayCount = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->count();
     $checkinsToday = \App\Models\AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
@@ -175,52 +178,69 @@ class AdminPresenceController extends Controller
         ->count();
     $avgAccuracy = \App\Models\AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
 
-    // Liste des utilisateurs ayant des pointages
-    $users = \App\Models\User::whereHas('attendanceEvents')
-        ->orderBy('name')
-        ->get(['id', 'name']);
+    // 🔥 LISTES
+    $users = \App\Models\User::whereHas('attendanceEvents')->orderBy('name')->get(['id', 'name']);
+    $sites = \App\Models\Site::where('is_active', true)->orderBy('name')->get();
+    $schools = \App\Models\Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole');
 
-    // Liste des sites actifs
-    $sites = \App\Models\Site::where('is_active', true)
-        ->orderBy('name')
-        ->get();
+    // 🔥 QUERY PRINCIPALE
+    $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
+        ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
+        ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
+        ->leftJoin('sites as site_via_stage', 'stages.site_id', '=', 'site_via_stage.id')
+        ->leftJoin('site_geofences', 'attendance_events.site_geofence_id', '=', 'site_geofences.id')
+        ->leftJoin('sites as site_via_geofence', 'site_geofences.site_id', '=', 'site_via_geofence.id')
+        ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id');
 
-    // Liste des écoles distinctes (valeurs non nulles dans la colonne 'ecole' de la table 'etudiants')
-    $schools = \App\Models\Etudiant::whereNotNull('ecole')
-        ->distinct()
-        ->pluck('ecole')
-        ->sort()
-        ->values();
+    // 📅 FILTRE DATE / PERIOD
+    if ($period === 'day') {
+        $query->whereDate('attendance_events.occurred_at', $carbonDate);
+    }
 
-    // Requête avec les jointures nécessaires pour filtrer par site et école
-            $query = \App\Models\AttendanceEvent::with(['user', 'anomalies'])
-                ->leftJoin('attendance_days', 'attendance_events.id', '=', 'attendance_days.check_in_event_id')
-                ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
-                ->leftJoin('sites as site_via_stage', 'stages.site_id', '=', 'site_via_stage.id')
-                ->leftJoin('site_geofences', 'attendance_events.site_geofence_id', '=', 'site_geofences.id')
-                ->leftJoin('sites as site_via_geofence', 'site_geofences.site_id', '=', 'site_via_geofence.id')
-                ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id')
-                ->orderByDesc('attendance_events.occurred_at');
+    if ($period === 'week') {
+        $query->whereBetween('attendance_events.occurred_at', [
+            $carbonDate->copy()->startOfWeek(),
+            $carbonDate->copy()->endOfWeek()
+        ]);
+    }
 
-            // Filtres (adapter site_id)
-            if ($siteId) {
-                $query->where(function($q) use ($siteId) {
-                    $q->where('site_via_stage.id', $siteId)
-                    ->orWhere('site_via_geofence.id', $siteId);
-                });
-            }
+    if ($period === 'month') {
+        $query->whereMonth('attendance_events.occurred_at', $carbonDate->month)
+              ->whereYear('attendance_events.occurred_at', $carbonDate->year);
+    }
 
-            // Sélection avec le nom du site résolu
-            $events = $query->select(
-                'attendance_events.*',
-                \DB::raw('COALESCE(site_via_stage.name, site_via_geofence.name) as resolved_site_name'),
-                \DB::raw('COALESCE(site_via_stage.id, site_via_geofence.id) as resolved_site_id')
-            )->paginate(10)->appends($request->query());
+    // 👤 FILTRE USER
+    if ($userId) {
+        $query->where('attendance_events.user_id', $userId);
+    }
+
+    // 🏫 FILTRE ECOLE
+    if ($schoolFilter) {
+        $query->where('etudiants.ecole', $schoolFilter);
+    }
+
+    // 🏢 FILTRE SITE
+    if ($siteId) {
+        $query->where(function($q) use ($siteId) {
+            $q->where('site_via_stage.id', $siteId)
+              ->orWhere('site_via_geofence.id', $siteId);
+        });
+    }
+
+    // 🔥 RESULTATS
+    $events = $query->select(
+        'attendance_events.*',
+        \DB::raw('COALESCE(site_via_stage.name, site_via_geofence.name) as resolved_site_name')
+    )
+    ->orderByDesc('attendance_events.occurred_at')
+    ->paginate(10)
+    ->appends($request->query());
 
     return view('admin.presence.pointage-suivi', compact(
         'events', 'todayCount', 'checkinsToday', 'checkoutsToday',
-        'recentAnomalies', 'avgAccuracy', 'users', 'sites', 'schools',
-        'date', 'userId', 'siteId', 'schoolFilter'
+        'recentAnomalies', 'avgAccuracy',
+        'users', 'sites', 'schools',
+        'date', 'userId', 'siteId', 'schoolFilter', 'period'
     ));
 }
     /**
