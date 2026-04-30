@@ -20,7 +20,7 @@
         immediat de creation pour que l'admin puisse les transmettre une fois,
         sans laisser trainer ce secret partout dans l'interface. --}}
         @if (session('generated_account'))
-        <div class="max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 space-y-2">
+         <div class="max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 space-y-2">
             <p class="font-semibold">Compte cree avec mot de passe temporaire</p>
             <p class="text-sm">Le mot de passe a ete defini par l'admin. Un mail unique d'activation a ete prepare pour expliquer clairement l'email de connexion, le mot de passe temporaire et la verification de l'adresse.</p>
             <div class="grid gap-2 text-sm sm:grid-cols-3">
@@ -53,6 +53,7 @@
             <table class="w-full">
                 <thead class="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">N°</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Utilisateur</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rôles</th>
@@ -64,6 +65,7 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($users as $user)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm">

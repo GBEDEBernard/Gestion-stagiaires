@@ -36,7 +36,7 @@
         @if(session('generated_accounts'))
             @php
                 $generatedAccounts = session('generated_accounts', []);
-            @endphp
+           @endphp
             @if(count($generatedAccounts) > 0)
                 <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
                     <h2 class="text-base font-semibold text-amber-800">Comptes stagiaires crees automatiquement</h2>
@@ -45,6 +45,7 @@
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="text-left text-amber-800">
+                                    <th class="py-2 pr-4">N°</th>
                                     <th class="py-2 pr-4">Etudiant</th>
                                     <th class="py-2 pr-4">Email</th>
                                     <th class="py-2">Mot de passe temporaire</th>
@@ -54,6 +55,7 @@
                             <tbody>
                                 @foreach($generatedAccounts as $account)
                                     <tr class="border-t border-amber-200">
+                                        <td class="py-2 pr-4 text-amber-900">{{ $loop->iteration }}</td>
                                         <td class="py-2 pr-4 text-amber-900 font-medium">{{ $account['etudiant'] }}</td>
                                         <td class="py-2 pr-4 text-amber-900">{{ $account['email'] }}</td>
                                         <td class="py-2 text-amber-900 font-semibold">{{ $account['password'] }}</td>

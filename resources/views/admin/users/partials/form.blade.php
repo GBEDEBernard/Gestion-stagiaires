@@ -1,16 +1,15 @@
 @php
-$linkedEtudiant = $user?->etudiant;
-$selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
-$selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
-$shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
-$showDomaineSection = in_array('employe', $selectedRoleNames, true);
-$isCreate = !$user;
-$rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-$etudiantNomValue = old('etudiant_nom', $linkedEtudiant?->nom);
-$etudiantPrenomValue = old('etudiant_prenom', $linkedEtudiant?->prenom);
-$accountNameValue = old('name', $user?->name);
-$generatedEtudiantName = trim(($etudiantPrenomValue ?? '') . ' ' . ($etudiantNomValue ?? ''));
-$isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $generatedEtudiantName;
+    $linkedEtudiant = $user?->etudiant;
+    $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
+    $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
+    $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+    $showDomaineSection = in_array('employe', $selectedRoleNames, true);
+    $isCreate = !$user;
+    $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+    
+    // Pré-remplissage des champs nom/prénom
+    $nomValue = old('nom', $linkedEtudiant?->nom ?? ($user ? explode(' ', $user->name, 2)[1] ?? '' : ''));
+    $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $user->name, 2)[0] ?? '' : ''));
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -28,52 +27,65 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         <input type="hidden" name="permissions_overridden" value="{{ old('permissions_overridden', 0) }}" data-permissions-overridden>
 
         <div class="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700 space-y-1">
-            <p class="font-semibold">Parcours unifie de creation de compte</p>
-            <p>Tu choisis ici les roles du compte, les permissions se prechargent automatiquement, puis tu peux les ajuster librement.</p>
-            <p>Si le role <span class="font-semibold">etudiant</span> est coche, la fiche stagiaire est creee ou mise a jour dans ce meme formulaire.</p>
+            <p class="font-semibold">Parcours unifié de création de compte</p>
+            <p>Tu choisis ici les rôles du compte, les permissions se préchargent automatiquement, puis tu peux les ajuster librement.</p>
+            <p>Si le rôle <span class="font-semibold">étudiant</span> est coché, la fiche stagiaire est créée ou mise à jour dans ce même formulaire.</p>
         </div>
 
         @if($user)
         <div class="grid gap-3 md:grid-cols-2">
             <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                <p class="font-semibold text-gray-800 dark:text-gray-100">Verification email</p>
+                <p class="font-semibold text-gray-800 dark:text-gray-100">Vérification email</p>
                 <p class="mt-1 text-gray-600 dark:text-gray-400">
-                    {{ $user->hasVerifiedEmail() ? 'Email deja verifie.' : 'Email encore en attente de verification.' }}
+                    {{ $user->hasVerifiedEmail() ? 'Email déjà vérifié.' : 'Email encore en attente de vérification.' }}
                 </p>
             </div>
             <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
                 <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
                 <p class="mt-1 text-gray-600 dark:text-gray-400">
-                    {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel deja defini.' }}
+                    {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel déjà défini.' }}
                 </p>
             </div>
         </div>
         @endif
 
+        {{-- SECTION COMPTE UTILISATEUR --}}
         <section class="space-y-5">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Compte utilisateur</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Ces informations servent a la connexion, a l'envoi du mail et a l'identite globale du compte.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Ces informations servent à la connexion, à l'envoi du mail et à l'identité globale du compte.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom d'affichage</label>
+                    <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom <span class="text-red-500">*</span></label>
                     <input
                         type="text"
-                        name="name"
-                        id="name"
-                        value="{{ $accountNameValue }}"
+                        name="nom"
+                        id="nom"
+                        value="{{ $nomValue }}"
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Ex: Jean Dupont"
-                        data-account-name
-                        data-manual="{{ $isAccountNameManual ? 'true' : 'false' }}">
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pour un etudiant, ce champ est rempli automatiquement a partir du prenom et du nom.</p>
-                    @error('name')
+                        placeholder="Ex: Dupont">
+                    @error('nom')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
+                <div>
+                    <label for="prenom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prénom <span class="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        name="prenom"
+                        id="prenom"
+                        value="{{ $prenomValue }}"
+                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
+                        placeholder="Ex: Jean">
+                    @error('prenom')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email de connexion <span class="text-red-500">*</span></label>
                     <input
@@ -84,17 +96,15 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                         required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="exemple@email.com">
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cet email sera celui utilise par l'utilisateur pour se connecter.</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cet email sera celui utilisé par l'utilisateur pour se connecter.</p>
                     @error('email')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {{ $user ? 'Redefinir le mot de passe temporaire (optionnel)' : 'Mot de passe temporaire' }}
+                        {{ $user ? 'Redéfinir le mot de passe temporaire (optionnel)' : 'Mot de passe temporaire' }}
                         @unless($user)<span class="text-red-500">*</span>@endunless
                     </label>
                     <input
@@ -103,13 +113,13 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                         id="password"
                         @unless($user) required @endunless
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Definis le mot de passe initial">
+                        placeholder="Définis le mot de passe initial">
                     @error('password')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmation @unless($user)<span class="text-red-500">*</span>@endunless</label>
                     <input
                         type="password"
@@ -122,10 +132,11 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             </div>
         </section>
 
+        {{-- SECTION RÔLES ET PERMISSIONS --}}
         <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6">
             <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Roles et permissions</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Les roles servent de presets. Les permissions ci-dessous representent exactement ce que le compte pourra faire.</p>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Rôles et permissions</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Les rôles servent de presets. Les permissions ci-dessous représentent exactement ce que le compte pourra faire.</p>
             </div>
 
             <div>
@@ -142,14 +153,13 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
 
-                {{-- Hidden input for selected role --}}
                 <input type="hidden" name="roles[]" value="" id="hidden_role" data-role-input>
             </div>
 
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargees automatiquement selon le role.
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargées automatiquement selon le rôle.
                     @if($isCreate)
-                    Elles seront appliquees a la creation du compte et peuvent etre modifiees ensuite en edition de l'utilisateur ou du role.
+                    Elles seront appliquées à la création du compte et peuvent être modifiées ensuite en édition de l'utilisateur ou du rôle.
                     @else
                     Vous pouvez les ajuster librement pour ce compte.
                     @endif
@@ -183,6 +193,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             </div>
         </section>
 
+        {{-- SECTION DOMAINE DE TRAVAIL (pour employé) --}}
         <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $showDomaineSection ? '' : 'hidden' }}" data-domaine-section>
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Domaine de travail</h2>
@@ -209,44 +220,13 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             </div>
         </section>
 
+        {{-- SECTION FICHE ÉTUDIANT (sans nom/prénom) --}}
         <section
             class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $shouldShowEtudiantBlock ? '' : 'hidden' }}"
             data-etudiant-fields>
             <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Fiche etudiant</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Ce bloc apparait quand le role <span class="font-semibold">etudiant</span> est choisi. Il cree ou met a jour la fiche stagiaire dans le meme mouvement.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <label for="etudiant_nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom <span class="text-red-500">*</span></label>
-                    <input
-                        type="text"
-                        name="etudiant_nom"
-                        id="etudiant_nom"
-                        value="{{ $etudiantNomValue }}"
-                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Ex: Dupont"
-                        data-etudiant-nom>
-                    @error('etudiant_nom')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="etudiant_prenom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prenom <span class="text-red-500">*</span></label>
-                    <input
-                        type="text"
-                        name="etudiant_prenom"
-                        id="etudiant_prenom"
-                        value="{{ $etudiantPrenomValue }}"
-                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Ex: Jean"
-                        data-etudiant-prenom>
-                    @error('etudiant_prenom')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Fiche étudiant</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Ce bloc apparaît quand le rôle <span class="font-semibold">étudiant</span> est choisi. Il crée ou met à jour la fiche stagiaire dans le même mouvement.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -256,9 +236,9 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                         name="etudiant_genre"
                         id="etudiant_genre"
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
-                        <option value="">Selectionner...</option>
+                        <option value="">Sélectionner...</option>
                         <option value="Masculin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Masculin' ? 'selected' : '' }}>Masculin</option>
-                        <option value="Feminin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Feminin' ? 'selected' : '' }}>Feminin</option>
+                        <option value="Féminin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Féminin' ? 'selected' : '' }}>Féminin</option>
                     </select>
                     @error('etudiant_genre')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -266,7 +246,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                 </div>
 
                 <div>
-                    <label for="etudiant_telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Telephone</label>
+                    <label for="etudiant_telephone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Téléphone</label>
                     <input
                         type="text"
                         name="etudiant_telephone"
@@ -280,14 +260,14 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
                 </div>
 
                 <div>
-                    <label for="etudiant_ecole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ecole</label>
+                    <label for="etudiant_ecole" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">École</label>
                     <input
                         type="text"
                         name="etudiant_ecole"
                         id="etudiant_ecole"
                         value="{{ old('etudiant_ecole', $linkedEtudiant?->ecole) }}"
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Ex: Universite d'Abomey-Calavi">
+                        placeholder="Ex: Université d'Abomey-Calavi">
                     @error('etudiant_ecole')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
@@ -328,9 +308,6 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         const permissionCheckboxes = Array.from(form.querySelectorAll('.permission-checkbox'));
         const etudiantFields = form.querySelector('[data-etudiant-fields]');
         const permissionsOverriddenInput = form.querySelector('[data-permissions-overridden]');
-        const accountNameInput = form.querySelector('[data-account-name]');
-        const etudiantNomInput = form.querySelector('[data-etudiant-nom]');
-        const etudiantPrenomInput = form.querySelector('[data-etudiant-prenom]');
 
         const selectedRole = () => typeSelect ? [typeSelect.value] : [];
         const defaultPermissions = () => {
@@ -347,31 +324,16 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
             etudiantFields.classList.toggle('hidden', !hasEtudiantRole);
         };
 
-        const syncNameFromEtudiant = () => {
-            if (!selectedRole().includes('etudiant')) {
-                return;
-            }
-
-            if (accountNameInput.dataset.manual === 'true') {
-                return;
-            }
-
-            const generatedName = `${etudiantPrenomInput.value || ''} ${etudiantNomInput.value || ''}`.trim();
-
-            accountNameInput.value = generatedName;
+        const syncDomaineVisibility = () => {
+            const isEmploye = selectedRole().includes('employe');
+            domaineSection?.classList.toggle('hidden', !isEmploye);
         };
 
         const refreshManualFlags = () => {
             const defaults = defaultPermissions();
-
             permissionCheckboxes.forEach((checkbox) => {
                 checkbox.dataset.manual = String(checkbox.checked !== defaults.has(checkbox.value));
             });
-        };
-
-        const syncDomaineVisibility = () => {
-            const isEmploye = selectedRole().includes('employe');
-            domaineSection?.classList.toggle('hidden', !isEmploye);
         };
 
         const applyTypeDefaults = () => {
@@ -387,18 +349,7 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
 
             syncEtudiantVisibility();
             syncDomaineVisibility();
-            syncNameFromEtudiant();
         };
-
-        accountNameInput.addEventListener('input', () => {
-            accountNameInput.dataset.manual = accountNameInput.value.trim() !== '' ? 'true' : 'false';
-        });
-
-        [etudiantNomInput, etudiantPrenomInput].forEach((input) => {
-            input?.addEventListener('input', () => {
-                syncNameFromEtudiant();
-            });
-        });
 
         typeSelect.addEventListener('change', () => {
             permissionsOverriddenInput.value = '0';
@@ -416,6 +367,5 @@ $isAccountNameManual = filled($accountNameValue) && $accountNameValue !== $gener
         refreshManualFlags();
         syncEtudiantVisibility();
         syncDomaineVisibility();
-        syncNameFromEtudiant();
     });
 </script>
