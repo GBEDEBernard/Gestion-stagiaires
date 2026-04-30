@@ -1,143 +1,137 @@
 <x-app-layout>
-    <div class="max-w-4xl mx-auto px-4 py-6">
+    <main class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+        {{-- En-tête --}}
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                Bonjour, <span class="text-emerald-600 dark:text-emerald-400">{{ explode(' ', Auth::user()->name)[0] }}</span>
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 font-medium">
+                {{ now()->locale('fr')->isoFormat('dddd D MMMM YYYY') }}
+            </p>
+        </div>
 
-        {{-- Errors --}}
-        @if ($errors->any())
-        <div class="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
-            <strong>Erreur :</strong>
-            <ul class="mt-2 space-y-1">
-                @foreach ($errors->all() as $error)
-                <li>• {{ $error }}</li>
-                @endforeach
-            </ul>
+        {{-- Messages flash --}}
+        @if(session('success'))
+        <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 rounded-xl text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5"></i> {{ session('success') }}
         </div>
         @endif
 
-        <div class="bg-white rounded-2xl shadow border overflow-hidden">
+        @if(session('error'))
+        <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 rounded-xl text-red-700 dark:text-red-400 flex items-center gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5"></i> {{ session('error') }}
+        </div>
+        @endif
 
-            {{-- Header --}}
-            <div class="p-5 border-b bg-gray-50">
-                <h1 class="text-xl md:text-2xl font-bold">Pointage de présence - Employé</h1>
-                <p class="text-sm text-gray-500">Rapide • sécurisé • géolocalisé</p>
-            </div>
+        @if(session('rejection_reason'))
+        <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 rounded-xl text-amber-700 dark:text-amber-400 flex items-center gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i> {{ session('rejection_reason') }}
+        </div>
+        @endif
 
-            <div class="p-5 space-y-6">
-
-                {{-- Messages --}}
-                @if(session('success'))
-                <div class="p-3 bg-green-50 text-green-700 rounded-lg text-sm">
-                    {{ session('success') }}
+        {{-- Carte statut de présence --}}
+        <div class="bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 md:p-8 shadow-sm mb-8">
+            <h3 class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-6 text-center md:text-left">Statut de présence</h3>
+            <div class="flex flex-row items-center justify-around md:justify-start md:gap-12">
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase mb-1">Arrivée</p>
+                    <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->first_check_in_at ? ($attendanceDay->isLate() ? 'text-red-500' : 'text-emerald-600') : 'text-slate-400' }}">
+                        {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--:--' }}
+                    </p>
                 </div>
-                @endif
-
-                @if(session('error'))
-                <div class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                    {{ session('error') }}
+                <div class="w-px h-10 bg-slate-200 dark:bg-slate-700"></div>
+                <div>
+                    <p class="text-xs font-medium text-slate-400 uppercase mb-1">Départ</p>
+                    <p class="text-3xl md:text-4xl font-bold {{ $attendanceDay?->last_check_out_at ? 'text-slate-900 dark:text-white' : 'text-slate-400' }}">
+                        {{ $attendanceDay?->last_check_out_at?->format('H:i') ?? '--:--' }}
+                    </p>
                 </div>
-                @endif
-
-                {{-- Info employé --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-blue-50 rounded-xl border">
-                        <p class="text-sm text-blue-700 font-semibold">Employé</p>
-                        <p class="text-lg font-bold text-blue-900">{{ $user->name }}</p>
-                    </div>
-                    <div class="p-4 bg-purple-50 rounded-xl border">
-                        <p class="text-sm text-purple-700 font-semibold">Domaine</p>
-                        <p class="text-lg font-bold text-purple-900">{{ $user->domaine->nom }}</p>
-                    </div>
-                </div>
-
-                {{-- Statut du jour --}}
-                <div class="p-4 bg-gray-50 rounded-xl border">
-                    <h3 class="font-semibold mb-3">Statut d'aujourd'hui</h3>
-                    @if($attendanceDay)
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="text-gray-600">Arrivée:</span>
-                            <span class="font-semibold">{{ $attendanceDay->first_check_in_at?->format('H:i') ?? 'N/A' }}</span>
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Départ:</span>
-                            <span class="font-semibold">{{ $attendanceDay->last_check_out_at?->format('H:i') ?? 'N/A' }}</span>
-                        </div>
-                    </div>
-                    @else
-                    <p class="text-gray-600">Aucun pointage aujourd'hui</p>
-                    @endif
-                </div>
-
-                {{-- Boutons d'action --}}
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <form action="{{ route('presence.prepareCheckin') }}" method="POST" class="flex-1 presence-form">
-                        @csrf
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version" value="presence-web-v1">
-                        <button type="button" class="presence-submit w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-green-600/20 flex items-center justify-center gap-3"
-                            {{ $attendanceDay && $attendanceDay->first_check_in_at ? 'disabled' : '' }}
-                            {{ $attendanceDay && $attendanceDay->first_check_in_at ? 'style=opacity:0.5;cursor:not-allowed' : '' }}>
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                            </svg>
-                            Pointer mon arrivée
-                        </button>
-                    </form>
-
-                    <form action="{{ route('presence.prepareCheckout') }}" method="POST" class="flex-1 presence-form">
-                        @csrf
-                        <input type="hidden" name="latitude">
-                        <input type="hidden" name="longitude">
-                        <input type="hidden" name="accuracy_meters">
-                        <input type="hidden" name="device_fingerprint">
-                        <input type="hidden" name="device_uuid">
-                        <input type="hidden" name="device_label">
-                        <input type="hidden" name="platform">
-                        <input type="hidden" name="browser">
-                        <input type="hidden" name="app_version" value="presence-web-v1">
-                        <button type="button" class="presence-submit w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg shadow-red-600/20 flex items-center justify-center gap-3"
-                            {{ !$attendanceDay || !$attendanceDay->first_check_in_at ? 'disabled' : '' }}
-                            {{ !$attendanceDay || !$attendanceDay->first_check_in_at ? 'style=opacity:0.5;cursor:not-allowed' : '' }}>
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Pointer mon départ
-                        </button>
-                    </form>
-                </div>
-
-                {{-- Historique rapide --}}
-                <div class="pt-4 border-t">
-                    <a href="{{ route('presence.historique') }}"
-                        class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Voir mon historique
-                    </a>
-                </div>
-
             </div>
         </div>
-    </div>
+
+        {{-- Zone de statut GPS --}}
+        <div id="presence-status" class="mb-6 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl text-center text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700">
+            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>
+            <span>Prêt pour la localisation</span>
+        </div>
+
+        {{-- Boutons d'action --}}
+        @php
+            $hasCheckIn = $attendanceDay && $attendanceDay->first_check_in_at;
+            $hasCheckOut = $attendanceDay && $attendanceDay->last_check_out_at;
+        @endphp
+
+        <div class="flex flex-col sm:flex-row gap-4">
+            @if(!$hasCheckOut)
+                {{-- Arrivée --}}
+                <form method="POST" action="{{ route('presence.prepareCheckin') }}" class="flex-1 presence-form">
+                    @csrf
+                    <input type="hidden" name="latitude">
+                    <input type="hidden" name="longitude">
+                    <input type="hidden" name="accuracy_meters">
+                    <input type="hidden" name="device_fingerprint">
+                    <input type="hidden" name="device_uuid">
+                    <input type="hidden" name="device_label">
+                    <input type="hidden" name="platform">
+                    <input type="hidden" name="browser">
+                    <input type="hidden" name="app_version" value="presence-web-v1">
+                    <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm transition-all duration-200
+                        {{ $hasCheckIn ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white' }}"
+                        {{ $hasCheckIn ? 'disabled' : '' }}>
+                        <i data-lucide="check" class="w-5 h-5"></i> Pointer l'arrivée
+                    </button>
+                </form>
+
+                {{-- Départ --}}
+                <form method="POST" action="{{ route('presence.prepareCheckout') }}" class="flex-1 presence-form">
+                    @csrf
+                    <input type="hidden" name="latitude">
+                    <input type="hidden" name="longitude">
+                    <input type="hidden" name="accuracy_meters">
+                    <input type="hidden" name="device_fingerprint">
+                    <input type="hidden" name="device_uuid">
+                    <input type="hidden" name="device_label">
+                    <input type="hidden" name="platform">
+                    <input type="hidden" name="browser">
+                    <input type="hidden" name="app_version" value="presence-web-v1">
+                    <button type="button" class="presence-submit w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm transition-all duration-200
+                        {{ !$hasCheckIn ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 cursor-not-allowed' : 'bg-white dark:bg-slate-800 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white' }}"
+                        {{ !$hasCheckIn ? 'disabled' : '' }}>
+                        <i data-lucide="log-out" class="w-5 h-5"></i> Pointer le départ
+                    </button>
+                </form>
+            @else
+                <div class="w-full p-8 bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-2xl flex flex-col items-center gap-3">
+                    <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-600"></i>
+                    <p class="text-lg font-semibold text-emerald-600">Journée terminée</p>
+                </div>
+            @endif
+        </div>
+
+        {{-- Lien vers l'historique --}}
+        <div class="mt-8 text-center">
+            <a href="{{ route('presence.historique') }}" class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                Voir mon historique de présence
+            </a>
+        </div>
+    </main>
 
     @push('scripts')
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialiser les icônes Lucide
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
             // ─── Utilitaires device ──────────────────────────────────────────
             function getOrCreateDeviceUuid() {
                 const key = 'jb_presence_device_uuid';
                 let uuid = localStorage.getItem(key);
                 if (!uuid) {
-                    uuid = (crypto.randomUUID) ?
-                        crypto.randomUUID() :
-                        `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    uuid = (crypto.randomUUID) ? crypto.randomUUID() : `jb-${Date.now()}-${Math.random().toString(16).slice(2)}`;
                     localStorage.setItem(key, uuid);
                 }
                 return uuid;
@@ -169,55 +163,127 @@
                 return 'Unknown';
             }
 
-            // ─── Init ────────────────────────────────────────────────────────
+            // ─── Elements ────────────────────────────────────────────────────
             const forms = document.querySelectorAll('.presence-form');
+            const statusDiv = document.getElementById('presence-status');
+            const statusText = statusDiv?.querySelector('span') || statusDiv;
+            const statusIcon = statusDiv?.querySelector('i') || null;
+
+            // Pré‑calcul des données device (une seule fois)
             const deviceUuid = getOrCreateDeviceUuid();
             const fingerprint = generateFingerprint(deviceUuid);
             const browserName = detectBrowser();
             const platformName = navigator.userAgentData?.platform || navigator.platform || 'unknown';
             const deviceLabel = `${browserName} / ${platformName}`;
 
-            // ─── Localisation et soumission ───────────────────────────────────
+            // ─── GPS non disponible ──────────────────────────────────────────
+            if (!navigator.geolocation) {
+                if (statusText) statusText.textContent = '❌ GPS non supporté sur ce navigateur.';
+                if (statusDiv) statusDiv.className = 'mb-6 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-center text-sm font-medium text-red-700 dark:text-red-400 flex items-center justify-center gap-2 border border-red-200 dark:border-red-800';
+                forms.forEach(f => f.querySelector('.presence-submit').disabled = true);
+                return;
+            }
+
+            // ─── Fonction pour mettre à jour l'UI pendant la recherche ────────
+            function setSearchingState(formBtn, isSearching, message = null) {
+                if (isSearching) {
+                    const originalHtml = formBtn.innerHTML;
+                    formBtn.setAttribute('data-original', originalHtml);
+                    formBtn.disabled = true;
+                    formBtn.innerHTML = `
+                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Recherche GPS...
+                    `;
+                } else {
+                    const original = formBtn.getAttribute('data-original');
+                    if (original) formBtn.innerHTML = original;
+                    formBtn.disabled = false;
+                }
+            }
+
+            function setStatusMessage(message, type = 'info') {
+                if (!statusDiv) return;
+                let bgClass = '', textClass = '', borderClass = '', iconHtml = '';
+                switch (type) {
+                    case 'success':
+                        bgClass = 'bg-emerald-50 dark:bg-emerald-900/20';
+                        textClass = 'text-emerald-700 dark:text-emerald-400';
+                        borderClass = 'border-emerald-200 dark:border-emerald-800';
+                        iconHtml = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                        break;
+                    case 'error':
+                        bgClass = 'bg-red-50 dark:bg-red-900/20';
+                        textClass = 'text-red-700 dark:text-red-400';
+                        borderClass = 'border-red-200 dark:border-red-800';
+                        iconHtml = '<i data-lucide="alert-circle" class="w-4 h-4"></i>';
+                        break;
+                    default:
+                        bgClass = 'bg-blue-50 dark:bg-blue-900/20';
+                        textClass = 'text-blue-700 dark:text-blue-400';
+                        borderClass = 'border-blue-200 dark:border-blue-800';
+                        iconHtml = '<i data-lucide="map-pin" class="w-4 h-4"></i>';
+                }
+                statusDiv.className = `mb-6 p-3 rounded-xl text-center text-sm font-medium flex items-center justify-center gap-2 border ${bgClass} ${textClass} ${borderClass}`;
+                statusDiv.innerHTML = `${iconHtml}<span>${message}</span>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // ─── Traitement de chaque formulaire ──────────────────────────────
             forms.forEach(form => {
-                const submitBtn = form.querySelector('.presence-submit');
+                const btn = form.querySelector('.presence-submit');
+                if (!btn) return;
 
-                submitBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
+                btn.addEventListener('click', () => {
+                    // Désactiver tous les boutons pour éviter les doubles soumissions
+                    forms.forEach(f => {
+                        const b = f.querySelector('.presence-submit');
+                        if (b && b !== btn) b.disabled = true;
+                    });
 
-                    // Récupérer la géolocalisation
-                    if (navigator.geolocation) {
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = '⏳ Localisation...';
+                    setSearchingState(btn, true);
+                    setStatusMessage('📍 Recherche de votre position GPS...', 'info');
 
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                // Remplir les champs cachés
-                                form.querySelector('input[name="latitude"]').value = position.coords.latitude;
-                                form.querySelector('input[name="longitude"]').value = position.coords.longitude;
-                                form.querySelector('input[name="accuracy_meters"]').value = position.coords.accuracy;
-                                form.querySelector('input[name="device_fingerprint"]').value = fingerprint;
-                                form.querySelector('input[name="device_uuid"]').value = deviceUuid;
-                                form.querySelector('input[name="device_label"]').value = deviceLabel;
-                                form.querySelector('input[name="platform"]').value = platformName;
-                                form.querySelector('input[name="browser"]').value = browserName;
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            // Remplir les champs cachés
+                            form.querySelector('[name="latitude"]').value = pos.coords.latitude;
+                            form.querySelector('[name="longitude"]').value = pos.coords.longitude;
+                            form.querySelector('[name="accuracy_meters"]').value = Math.round(pos.coords.accuracy || 0);
+                            form.querySelector('[name="device_fingerprint"]').value = fingerprint;
+                            form.querySelector('[name="device_uuid"]').value = deviceUuid;
+                            form.querySelector('[name="device_label"]').value = deviceLabel;
+                            form.querySelector('[name="platform"]').value = platformName;
+                            form.querySelector('[name="browser"]').value = browserName;
 
-                                // Soumettre le formulaire
-                                form.submit();
-                            },
-                            (error) => {
-                                console.error('Erreur géolocalisation:', error);
-                                alert('Erreur de géolocalisation. Vérifiez vos permissions.');
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = form.querySelector('svg').outerHTML + ' Réessayer';
-                            }
-                        );
-                    } else {
-                        alert('La géolocalisation n\'est pas disponible. Réessayez sur un navigateur compatible.');
-                    }
+                            setStatusMessage(`✅ Position capturée (précision: ${Math.round(pos.coords.accuracy)}m) — envoi en cours...`, 'success');
+                            form.submit();
+                        },
+                        (err) => {
+                            let msg = 'Impossible de récupérer votre position.';
+                            if (err.code === err.PERMISSION_DENIED) msg = '🔒 Autorisez la localisation dans votre navigateur.';
+                            if (err.code === err.TIMEOUT) msg = '⏱️ GPS trop lent. Essayez en plein air ou près d\'une fenêtre.';
+                            if (err.code === err.POSITION_UNAVAILABLE) msg = '📡 Position indisponible pour le moment.';
+
+                            setStatusMessage(msg, 'error');
+                            setSearchingState(btn, false);
+                            // Réactiver les autres boutons
+                            forms.forEach(f => {
+                                const b = f.querySelector('.presence-submit');
+                                if (b && b !== btn && !b.hasAttribute('disabled')) b.disabled = false;
+                            });
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0,
+                        }
+                    );
                 });
             });
         });
     </script>
     @endpush
-
 </x-app-layout>
