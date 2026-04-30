@@ -53,7 +53,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
-
+    // ---------------- Admin Users ----------------
+Route::get('/admin/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
     // ---------------- Jours ----------------
     Route::prefix('admin/jours')->group(function () {
         Route::get('/', [JourController::class, 'index'])->name('jours.index')->middleware('permission:jour_stage.view');
@@ -270,7 +271,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
 //    route pour impression du suivi des pointages (version épurée pour impression)
-Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
+   Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
     ->name('admin.presence.print');
     // ---------------- Suivi des Pointages Admin ----------------
     Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {

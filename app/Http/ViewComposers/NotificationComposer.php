@@ -29,4 +29,5 @@ class NotificationComposer
             'menuNotifications' => $recent,
         ]);
     }
+    
 }

@@ -26,27 +26,31 @@ class NotificationService
             return;
         }
 
-        // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours)
-        $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
-            ->orderBy('created_at', 'desc')
-            ->get();
+                // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours)
+            $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        foreach ($nouveauxEtudiants as $etudiant) {
-            $this->createNotificationIfNotExists(
-                'etudiant_' . $etudiant->id,
-                $userId,
-                'nouveau_etudiant',
-                '👤 Nouvel étudiant',
-                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
-                'users',
-                'blue',
-                route('etudiants.edit', $etudiant->id),
-                $etudiant->id,
-                \App\Models\Etudiant::class
-            );
-        }
-
-        // 2️⃣ STAGES TERMINANT CETTE SEMAINE
+            foreach ($nouveauxEtudiants as $etudiant) {
+                // Récupérer l'ID utilisateur associé
+                $userId = $etudiant->user_id ?? $etudiant->user?->id;
+                if (!$userId) {
+                    continue; // sécurité : pas d'utilisateur lié
+                }
+                $this->createNotificationIfNotExists(
+                    'etudiant_' . $etudiant->id,
+                    $userId, // destinataire admin
+                    'nouveau_etudiant',
+                    '👤 Nouvel étudiant',
+                    $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                    'users',
+                    'blue',
+                    route('admin.users.show', $userId), // ← corrigé
+                    $etudiant->id,
+                    \App\Models\Etudiant::class
+                );
+            }
+        // 2STAGES TERMINANT CETTE SEMAINE
         $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
             ->with('etudiant')
@@ -58,7 +62,7 @@ class NotificationService
                 'stage_fin_' . $stage->id,
                 $userId,
                 'stage_fin_semaine',
-                '⏰ Stage bientôt terminé',
+                'Stage bientôt terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
                 'clock',
                 'amber',
@@ -68,7 +72,7 @@ class NotificationService
             );
         }
 
-        // 3️⃣ STAGES TERMINÉS (7 derniers jours)
+        // 3STAGES TERMINÉS (7 derniers jours)
         $stagesTermines = \App\Models\Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
             ->with('etudiant')
@@ -79,7 +83,7 @@ class NotificationService
                 'stage_termine_' . $stage->id,
                 $userId,
                 'stage_termine',
-                '✅ Stage terminé',
+                'Stage terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
                 'check-circle',
                 'green',
@@ -89,7 +93,7 @@ class NotificationService
             );
         }
 
-        // 🔥 4️⃣ ADMIN SPÉCIFIQUES : Anomalies Présence (24h)
+        // 🔥  ADMIN SPÉCIFIQUES : Anomalies Présence (24h)
         $anomalies = \App\Models\AttendanceAnomaly::where('created_at', '>=', now()->subDay())
             ->where('status', 'open')
             ->count();
@@ -129,7 +133,7 @@ class NotificationService
             );
         }
 
-        // 🔥 6️⃣ Badges à attribuer (étudiants sans badge récent) - DISABLED car pas de relation badges()
+        // 🔥 6️Badges à attribuer (étudiants sans badge récent) - DISABLED car pas de relation badges()
         /*
         $sansBadge = \App\Models\Etudiant::whereDoesntHave('badges', function ($q) {
             $q->where('created_at', '>=', now()->subDays(30));
@@ -167,20 +171,19 @@ class NotificationService
         // "metier" explose quand plusieurs comptes doivent la recevoir.
         $scopedUniqueId = $this->buildScopedUniqueId($uniqueId, $userId);
 
-        AppNotification::firstOrCreate(
+        AppNotification::updateOrCreate(
             ['unique_id' => $scopedUniqueId],
             [
-                'user_id' => $userId,
-                'type' => $type,
-                'title' => $title,
-                'message' => $message,
-                'icon' => $icon,
-                'color' => $color,
-                'url' => $url,
-                'reference_id' => $referenceId,
+                'user_id'        => $userId,
+                'type'           => $type,
+                'title'          => $title,
+                'message'        => $message,
+                'icon'           => $icon,
+                'color'          => $color,
+                'url'            => $url,   // ← l'URL sera corrigée à chaque regénération
+                'reference_id'   => $referenceId,
                 'reference_type' => $referenceType,
-                'created_at' => $time ?? now(),
-                'updated_at' => $time ?? now(),
+                'updated_at'     => now(),
             ]
         );
     }

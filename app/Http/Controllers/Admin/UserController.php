@@ -384,4 +384,35 @@ class UserController extends Controller
             'selectedDomaineId' => $selectedDomaineId,
         ];
     }
+// Cette méthode affiche les détails d'un utilisateur spécifique. Voici la logique détaillée de cette méthode :
+// 1. Chargement des relations : La méthode commence par charger les relations 'etudiant',
+// 'domaine' et 'roles' de l'utilisateur passé en paramètre. Cela permet d'avoir toutes les
+// informations nécessaires sur le profil étudiant, le domaine et les rôles de l'utilisateur pour
+// l'affichage des détails.
+// 2. Vérification du type d'utilisateur : La méthode vérifie si l'utilisateur a un profil étudiant associé. Si c'est le cas, cela signifie que l'utilisateur est un étudiant, et la méthode tente de récupérer le stage actif ou le premier stage de l'étudiant pour l'affichage. Si un stage est trouvé, l'utilisateur est redirigé vers la page de détails du stage. Si aucun stage n'est trouvé, l'utilisateur est redirigé vers la liste des étudiants avec un message d'information indiquant que cet étudiant n'a pas encore de stage attribué.
+// 3. Affichage du profil employé : Si l'utilisateur n'est pas un étudiant, cela signifie qu'il s'agit d'un employé. La méthode calcule alors le nombre de présences et le total d'heures travaillées pour cet employé en utilisant le modèle AttendanceDay. Enfin, la méthode retourne une vue appelée 'admin.users.show_employe', en passant l'utilisateur, le nombre de présences et le total d'heures travaillées à la vue via la fonction compact. Cette vue est responsable de l'affichage des détails de l'employé, y compris ses informations personnelles, ses rôles, et ses statistiques de présence et de travail.       
+    public function show(User $user)
+{
+    $user->load(['etudiant', 'domaine', 'roles']);
+    $isEtudiant = $user->etudiant !== null;
+
+    if ($isEtudiant) {
+        // Récupérer le stage actif ou le premier stage pour affichage
+        $stage = $user->etudiant->stages()
+                    ->where('date_fin', '>=', now())
+                    ->orderBy('date_debut')
+                    ->first();
+        if ($stage) {
+            return redirect()->route('stages.show', $stage);
+        }
+        // fallback : vue étudiant simplifiée (optionnelle)
+        // return view('admin.users.show_etudiant', compact('user'));
+        return redirect()->route('etudiants.index')->with('info', 'Cet étudiant n’a pas encore de stage attribué.');
+    }
+
+    // Profil employé
+    $nbPresences = \App\Models\AttendanceDay::where('user_id', $user->id)->count();
+    $totalHeures = \App\Models\AttendanceDay::where('user_id', $user->id)->sum('worked_minutes') / 60;
+    return view('admin.users.show_employe', compact('user', 'nbPresences', 'totalHeures'));
+}
 }
