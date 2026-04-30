@@ -104,7 +104,7 @@
                 <th>Journée</th>
                 <th>Arrivée / Départ</th>
                 <th>Site</th>
-                <th>Précision</th>
+                <th>Distance</th>
                 <th>Statut</th>
             </tr>
         </thead>
@@ -116,7 +116,6 @@
                 $checkOut = $day->checkOutEvent;
                 $hasCheckIn = !is_null($checkIn);
                 $hasCheckOut = !is_null($checkOut);
-                $precision = $checkIn?->accuracy_meters ?? $checkOut?->accuracy_meters ?? 0;
                 $status = $day->status ?? 'pending';
             @endphp
             <tr>
@@ -136,10 +135,18 @@
                     @endif
                 </td>
                 <td>{{ $day->resolved_site_name ?? 'À distance' }}</td>
-                <td>{{ number_format($precision, 0) }} m</td>
+                <td>
+                    @php
+                        $distance = $checkIn?->distance_to_site_meters ?? null;
+                        $precision = $checkIn?->accuracy_meters ?? null;
+                        $displayValue = $distance !== null
+                            ? round($distance) . ' m'
+                            : ($precision !== null ? round($precision) . ' m' : '—');
+                    @endphp
+                    {{ $displayValue }}
+                </td>
                 <td>
                 @php
-                    $checkIn = $day->checkInEvent;
                     $statutPonctualite = '';
                     $badgeClass = '';
                     if ($checkIn) {
@@ -160,12 +167,12 @@
                 @endphp
                 <span class="badge {{ $badgeClass }}">
                     {{ $statutPonctualite }}
-                </span>                                           
+                </span>
               </td>
             </tr>
             @empty
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:20px;">Aucun pointage trouvé</td>
+                    <td colspan="7" style="text-align:center; padding:20px;">Aucun pointage trouvé</td>
                 </tr>
             @endforelse
         </tbody>

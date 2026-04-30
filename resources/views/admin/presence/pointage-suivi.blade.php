@@ -127,7 +127,7 @@
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Heure</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Site</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Précision</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Distance du site</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Statut</th>
                             <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -174,38 +174,47 @@
                                     À distance
                                 </span>
                                 @endif
-                            </td>
-                            <td class="px-6 py-4">
-                                @php $precision = $checkIn?->accuracy_meters ?? $checkOut?->accuracy_meters ?? 0; @endphp
-                                <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
-                                    {{ number_format($precision, 0) }}m
-                                </span>
-                            </td>
-                           <td class="px-6 py-4">
+                       <td class="px-6 py-4">
     @php
-    $statutPonctualite = '';
-    $badgeClass = '';
-    $minutesRetard = 0;
-    if ($checkIn) {
-        $heureArrivee = $checkIn->occurred_at;
-        $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
-        if ($heureArrivee <= $heureReference) {
-            $statutPonctualite = 'À l\'heure';
-            $badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-        } else {
-            $minutesRetard = $heureArrivee->diffInMinutes($heureReference); // déjà entier
-            $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
-            $badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-        }
-    } else {
-        $statutPonctualite = 'Non pointé';
-        $badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-@endphp
-    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
-        {{ $statutPonctualite }}
+        $checkIn = $day->checkInEvent;
+        $distance = $checkIn?->distance_to_site_meters ?? null;
+        $precision = $checkIn?->accuracy_meters ?? null;
+
+        $displayValue = $distance !== null
+            ? round($distance) . ' m'
+            : ($precision !== null
+                ? round($precision) . ' m'
+                : '—');
+    @endphp
+    <span class="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs font-semibold rounded-full dark:bg-cyan-900 dark:text-cyan-200">
+        {{ $displayValue }}
     </span>
 </td>
+                           <td class="px-6 py-4">
+                                @php
+                                $statutPonctualite = '';
+                                $badgeClass = '';
+                                $minutesRetard = 0;
+                                if ($checkIn) {
+                                    $heureArrivee = $checkIn->occurred_at;
+                                    $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
+                                    if ($heureArrivee <= $heureReference) {
+                                        $statutPonctualite = 'À l\'heure';
+                                        $badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                                    } else {
+                                        $minutesRetard = $heureArrivee->diffInMinutes($heureReference); // déjà entier
+                                        $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
+                                        $badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                                    }
+                                } else {
+                                    $statutPonctualite = 'Non pointé';
+                                    $badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+                                }
+                            @endphp
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+                                    {{ $statutPonctualite }}
+                                </span>
+                            </td>
                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                              <div class="flex items-center gap-2 justify-end">
 
