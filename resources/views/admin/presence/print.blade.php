@@ -138,10 +138,30 @@
                 <td>{{ $day->resolved_site_name ?? 'À distance' }}</td>
                 <td>{{ number_format($precision, 0) }} m</td>
                 <td>
-                    <span class="badge {{ $status === 'approved' ? 'approved' : 'rejected' }}">
-                        {{ ucfirst($status) }}
-                    </span>
-                </td>
+                @php
+                    $checkIn = $day->checkInEvent;
+                    $statutPonctualite = '';
+                    $badgeClass = '';
+                    if ($checkIn) {
+                        $heureArrivee = $checkIn->occurred_at;
+                        $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
+                        if ($heureArrivee <= $heureReference) {
+                            $statutPonctualite = 'À l\'heure';
+                            $badgeClass = 'approved';
+                        } else {
+                            $minutesRetard = $heureArrivee->diffInMinutes($heureReference);
+                            $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
+                            $badgeClass = 'rejected';
+                        }
+                    } else {
+                        $statutPonctualite = 'Non pointé';
+                        $badgeClass = 'rejected';
+                    }
+                @endphp
+                <span class="badge {{ $badgeClass }}">
+                    {{ $statutPonctualite }}
+                </span>                                           
+              </td>
             </tr>
             @empty
                 <tr>

@@ -181,32 +181,57 @@
                                     {{ number_format($precision, 0) }}m
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusBadge }}">
-                                    {{ $statusText }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center gap-2 justify-end">
-                                    @if($day->anomalies->count() > 0)
-                                    <span class="text-rose-600 dark:text-rose-400 font-semibold">{{ $day->anomalies->count() }} anomalie{{ $day->anomalies->count() > 1 ? 's' : '' }}</span>
-                                    @endif
-                            <td class="px-4 lg:px-6 py-3 text-sm">
-                                @php
-                                $targetUser = $day->etudiant?->user ?? $day->user;
-                                @endphp
-                                @if($targetUser)
-                                <a href="{{ route('attendance.tracking.user.historique', $targetUser) }}"
-                                    class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
-                                    👁️ Voir
-                                </a>
-                                @else
-                                <span class="text-gray-400">—</span>
+                           <td class="px-6 py-4">
+    @php
+    $statutPonctualite = '';
+    $badgeClass = '';
+    $minutesRetard = 0;
+    if ($checkIn) {
+        $heureArrivee = $checkIn->occurred_at;
+        $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
+        if ($heureArrivee <= $heureReference) {
+            $statutPonctualite = 'À l\'heure';
+            $badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        } else {
+            $minutesRetard = $heureArrivee->diffInMinutes($heureReference); // déjà entier
+            $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
+            $badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        }
+    } else {
+        $statutPonctualite = 'Non pointé';
+        $badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+    }
+@endphp
+    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+        {{ $statutPonctualite }}
+    </span>
+</td>
+                           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                             <div class="flex items-center gap-2 justify-end">
+
+                                @if($day->anomalies->count() > 0)
+                                    <span class="text-rose-600 dark:text-rose-400 font-semibold">
+                                        {{ $day->anomalies->count() }} anomalie{{ $day->anomalies->count() > 1 ? 's' : '' }}
+                                    </span>
                                 @endif
-                            </td>
-            </div>
-            </td>
-            </tr>
+
+                                @php
+                                    $targetUser = $day->etudiant?->user ?? $day->user;
+                                @endphp
+
+                                @if($targetUser)
+                                    <a href="{{ route('attendance.tracking.user.historique', $targetUser) }}"
+                                        class="px-2 lg:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full hover:bg-blue-200 transition-colors">
+                                        👁️ Voir
+                                    </a>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+
+                            </div>
+                        </td>
+                 </div>
+             </tr>
             @empty
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
@@ -276,18 +301,15 @@
         }
     </style>
     @endpush
+   @push('scripts')
+<script>
+    function printTable() {
+        const params = new URLSearchParams(window.location.search);
+        const printUrl = "{{ route('admin.presence.print') }}?" + params.toString();
+        window.open(printUrl, '_blank', 'width=1000,height=800');
+    }
+</script>
+@endpush
 
-
-    @push('scripts')
-    <script>
-        function printTable() {
-            // Récupérer tous les paramètres de filtres actuels
-            const params = new URLSearchParams(window.location.search);
-            // Ouvrir la route d'impression avec les mêmes filtres
-            const printUrl = "{{ route('admin.presence.print') }}?" + params.toString();
-            window.open(printUrl, '_blank', 'width=1000,height=800');
-        }
-    </script>
-    @endpush>
 
 </x-app-layout>
