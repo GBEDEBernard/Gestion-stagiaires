@@ -188,7 +188,19 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 18l3-3m0 0l3 3m-3-3l3-3" />
                                     </svg>
                                 </div>
-                                <span>Suivi Pointages</span>
+                                <span>Pointages journalières</span>
+
+                            </a>
+                            @endcan
+                            @can('presence.view')
+                            <a href="{{ route('admin.presence.pointage-suivi') }}"
+                                class="group flex items-center gap-3 pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-200 hover:translate-x-1 transition-all duration-300 relative overflow-hidden">
+                                <div class="w-7 h-7 flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1v-5m10-10l2 2m-2-2v10a1 1 0 01-1 1v-5m-6 0a1 1 0 001-1v5" />
+                                    </svg>
+                                </div>
+                                <span>Historique general</span>
                             </a>
                             @endcan
 
@@ -227,6 +239,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                                 <span>Statistiques Globales</span>
                             </a>
                             @endcan
+                            
 
                         </div>
                     </div>

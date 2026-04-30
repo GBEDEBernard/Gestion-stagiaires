@@ -74,6 +74,11 @@ class AdminPresenceService
         if (!empty($filters['site_id'])) {
             $query->where('site_id', $filters['site_id']);
         }
+        if (!empty($filters['school'])) {
+            $query->whereHas('etudiant', function($q) use ($filters) {
+                $q->where('ecole', $filters['school']);
+            });
+        }
         if (!empty($filters['status'])) {
             $query->whereIn('validation_status', (array) $filters['status']);
         }

@@ -161,110 +161,134 @@ class AdminPresenceController extends Controller
     /**
      * ✅ Suivi Pointage - Admin
      */
-public function pointageSuivi(Request $request)
-{
-    $date = $request->get('date', today()->format('Y-m-d'));
-    $userId = $request->get('user_id');
-    $siteId = $request->get('site_id');
-    $schoolFilter = $request->get('school');
+    public function pointageSuivi(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $period = $request->get('period', 'day');
+        $userId = $request->get('user_id');
+        $siteId = $request->get('site_id');
+        $schoolFilter = $request->get('school');
 
-    // Requête sur AttendanceDay (un enregistrement par jour et par utilisateur)
-    $query = AttendanceDay::with([
-        'user',
-        'etudiant.user',
-        'stage.site',
-        'checkInEvent.site',
-        'checkInEvent.geofence.site',
-        'checkOutEvent',
-        'anomalies'
-    ])->whereDate('attendance_date', $date);
+        // Convertir period → date_from/to
+        $dateCarbon = Carbon::parse($date);
+        $dateFrom = $dateTo = $dateCarbon->format('Y-m-d');
 
-    if ($userId) {
-        $query->where(function($q) use ($userId) {
-            $q->where('user_id', $userId)
-              ->orWhereHas('etudiant', fn($q2) => $q2->where('user_id', $userId));
+        switch ($period) {
+            case 'week':
+                $dateFrom = $dateCarbon->copy()->startOfWeek()->format('Y-m-d');
+                $dateTo = $dateCarbon->copy()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'month':
+                $dateFrom = $dateCarbon->copy()->startOfMonth()->format('Y-m-d');
+                $dateTo = $dateCarbon->copy()->endOfMonth()->format('Y-m-d');
+                break;
+        }
+
+        $filters = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'user_id' => $userId,
+            'site_id' => $siteId,
+            'school' => $schoolFilter,
+        ];
+
+        $query = $this->presenceService->listAttendanceDays($filters, 9999)
+            ->with(['user', 'etudiant.user', 'stage.site', 'checkInEvent.site', 'checkInEvent.geofence.site', 'checkOutEvent', 'anomalies'])
+            ->orderByDesc('attendance_date');
+
+        $days = $query->paginate(10);
+
+        // Propriété virtuelle resolved_site_name
+        $days->getCollection()->transform(function ($day) {
+            $day->resolved_site_name = $day->checkInEvent?->site?->name
+                ?? $day->checkInEvent?->geofence?->site?->name
+                ?? $day->stage?->site?->name
+                ?? null;
+            return $day;
         });
+
+        // Stats
+        $today = today();
+        $todayCount = AttendanceEvent::whereDate('occurred_at', $today)->count();
+        $checkinsToday = AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
+        $checkoutsToday = AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
+        $recentAnomalies = AttendanceAnomaly::where('status', 'open')
+            ->where('detected_at', '>=', now()->subDays(7))
+            ->count();
+        $avgAccuracy = AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
+        $periodDays = Carbon::parse($dateFrom)->diffInDays(Carbon::parse($dateTo)) + 1;
+
+        // Listes filtres
+        $users = User::whereHas('attendanceDays')->orderBy('name')->limit(50)->get(['id', 'name']);
+        $sites = Site::where('is_active', true)->orderBy('name')->get();
+        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
+
+        return view('admin.presence.pointage-suivi', compact(
+            'days',
+            'todayCount',
+            'checkinsToday',
+            'checkoutsToday',
+            'recentAnomalies',
+            'avgAccuracy',
+            'users',
+            'sites',
+            'schools',
+            'date',
+            'period',
+            'userId',
+            'siteId',
+            'schoolFilter',
+            'periodDays'
+        ));
     }
-    if ($siteId) {
-        $query->whereHas('checkInEvent.site', fn($q) => $q->where('id', $siteId));
-    }
-    if ($schoolFilter) {
-        $query->whereHas('etudiant', fn($q) => $q->where('ecole', $schoolFilter));
-    }
+    // Version épurée pour impression (sans pagination, avec tous les résultats)
+    public function pointageSuiviPrint(Request $request)
+    {
+        $date = $request->get('date', today()->format('Y-m-d'));
+        $period = $request->get('period', 'day');
+        $userId = $request->get('user_id');
+        $siteId = $request->get('site_id');
+        $schoolFilter = $request->get('school');
 
-    // Pagination (10 résultats par page)
-    $days = $query->orderByDesc('attendance_date')->paginate(10);
+        // Même logique que pointageSuivi mais sans pagination
+        $dateCarbon = Carbon::parse($date);
+        $dateFrom = $dateTo = $dateCarbon->format('Y-m-d');
 
-    // Ajouter une propriété virtuelle "resolved_site_name"
-    foreach ($days as $day) {
-        $day->resolved_site_name = $day->checkInEvent?->site?->name
-            ?? $day->checkInEvent?->geofence?->site?->name
-            ?? $day->stage?->site?->name
-            ?? null;
-    }
+        switch ($period) {
+            case 'week':
+                $dateFrom = $dateCarbon->copy()->startOfWeek()->format('Y-m-d');
+                $dateTo = $dateCarbon->copy()->endOfWeek()->format('Y-m-d');
+                break;
+            case 'month':
+                $dateFrom = $dateCarbon->copy()->startOfMonth()->format('Y-m-d');
+                $dateTo = $dateCarbon->copy()->endOfMonth()->format('Y-m-d');
+                break;
+        }
 
-    // Statistiques rapides (inchangées)
-    $today = today();
-    $todayCount = AttendanceEvent::whereDate('occurred_at', $today)->count();
-    $checkinsToday = AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
-    $checkoutsToday = AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->count();
-    $recentAnomalies = AttendanceAnomaly::where('status', 'open')
-        ->where('detected_at', '>=', now()->subDays(7))
-        ->count();
-    $avgAccuracy = AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
+        $filters = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'user_id' => $userId,
+            'site_id' => $siteId,
+            'school' => $schoolFilter,
+        ];
 
-    // Listes pour les filtres
-    $users = User::whereHas('attendanceEvents')->orderBy('name')->get(['id', 'name']);
-    $sites = Site::where('is_active', true)->orderBy('name')->get();
-    $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
+        $query = $this->presenceService->listAttendanceDays($filters, 9999)
+            ->with(['user', 'etudiant.user', 'stage.site', 'checkInEvent.site', 'checkInEvent.geofence.site', 'checkOutEvent', 'anomalies'])
+            ->orderByDesc('attendance_date');
 
-    return view('admin.presence.pointage-suivi', compact(
-        'days', 'todayCount', 'checkinsToday', 'checkoutsToday', 'recentAnomalies',
-        'avgAccuracy', 'users', 'sites', 'schools', 'date', 'userId', 'siteId', 'schoolFilter'
-    ));
-}
-// Version épurée pour impression (sans pagination, avec tous les résultats)
-public function pointageSuiviPrint(Request $request)
-{
-    $date = $request->get('date', today()->format('Y-m-d'));
-    $userId = $request->get('user_id');
-    $siteId = $request->get('site_id');
-    $schoolFilter = $request->get('school');
+        $days = $query->get(); // Tous les résultats pour impression
 
-    $query = AttendanceDay::with([
-        'user',
-        'etudiant.user',
-        'stage.site',
-        'checkInEvent.site',
-        'checkInEvent.geofence.site',
-        'checkOutEvent',
-        'anomalies'
-    ])->whereDate('attendance_date', $date);
-
-    if ($userId) {
-        $query->where(function($q) use ($userId) {
-            $q->where('user_id', $userId)
-              ->orWhereHas('etudiant', fn($q2) => $q2->where('user_id', $userId));
+        $days->transform(function ($day) {
+            $day->resolved_site_name = $day->checkInEvent?->site?->name
+                ?? $day->checkInEvent?->geofence?->site?->name
+                ?? $day->stage?->site?->name
+                ?? null;
+            return $day;
         });
-    }
-    if ($siteId) {
-        $query->whereHas('checkInEvent.site', fn($q) => $q->where('id', $siteId));
-    }
-    if ($schoolFilter) {
-        $query->whereHas('etudiant', fn($q) => $q->where('ecole', $schoolFilter));
-    }
 
-    $days = $query->orderByDesc('attendance_date')->get(); // Pas de pagination, tout pour l'impression
-
-    foreach ($days as $day) {
-        $day->resolved_site_name = $day->checkInEvent?->site?->name
-            ?? $day->checkInEvent?->geofence?->site?->name
-            ?? $day->stage?->site?->name
-            ?? null;
+        return view('admin.presence.print', compact('days', 'date', 'period', 'userId', 'siteId', 'schoolFilter'));
     }
-
-    return view('admin.presence.print', compact('days', 'date', 'userId', 'siteId', 'schoolFilter'));
-}
     /**
      * Export pointages CSV
      */

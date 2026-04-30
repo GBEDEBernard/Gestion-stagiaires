@@ -340,7 +340,7 @@
                 <div class="signatures">
                     @foreach($signataires as $signataire)
                     <div class="sign director">
-                        <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                        <p><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
                         @php
                         $parOrdre = $signataire->pivot->par_ordre ?? false;
                         @endphp
