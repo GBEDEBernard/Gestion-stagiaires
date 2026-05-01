@@ -11,10 +11,7 @@
                     class="px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
                     ← Retour Suivi Pro
                 </a>
-                <a href="{{ route('admin.presence.export-pointages') }}"
-                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
-                    📥 Exporter CSV
-                </a>
+               
             </div>
         </div>
     </x-slot>

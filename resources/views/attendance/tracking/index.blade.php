@@ -3,7 +3,7 @@
         {{-- Header --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Suivi des Pointages</h1>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Suivi des Pointages journalières</h1>
                 <p class="mt-1 sm:mt-2 text-base sm:text-lg text-slate-600 dark:text-slate-300">Gestion complète des présences et absences</p>
             </div>
         </div>
@@ -42,10 +42,7 @@
                     </select>
                     <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}"
                         class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                    <a href="{{ route('attendance.tracking.export') }}?period={{ request('period', 'day') }}&date={{ $filterDate->format('Y-m-d') }}{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
-                        class="px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all text-center text-sm sm:text-base">
-                        📥 Exporter CSV
-                    </a>
+                   
                 </div>
             </div>
         </div>

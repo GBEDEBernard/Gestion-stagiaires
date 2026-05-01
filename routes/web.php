@@ -53,8 +53,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
-    // ---------------- Admin Users ----------------
-Route::get('/admin/users/{user}', [UserController::class, 'show'])->name('admin.users.show');
+ 
     // ---------------- Jours ----------------
     Route::prefix('admin/jours')->group(function () {
         Route::get('/', [JourController::class, 'index'])->name('jours.index')->middleware('permission:jour_stage.view');
@@ -199,13 +198,16 @@ Route::get('/admin/users/{user}', [UserController::class, 'show'])->name('admin.
         Route::get('/', [UserController::class, 'index'])->name('admin.users.index')->middleware('permission:users.view');
         Route::get('create', [UserController::class, 'create'])->name('admin.users.create')->middleware('permission:users.create');
         Route::post('/', [UserController::class, 'store'])->name('admin.users.store')->middleware('permission:users.create');
+
+        // ↓ show AVANT les routes {user} pour éviter que "create" soit capturé
+        Route::get('{user}', [UserController::class, 'show'])->name('admin.users.show')->middleware('permission:users.view');
+
         Route::get('{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
         Route::put('{user}', [UserController::class, 'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
 
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
 
-        // Corbeille - User restore and force delete
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
     });
