@@ -264,8 +264,9 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
-            ]]);
 
+            ]]);
+             
             return view('presence.validate', $previewData);
         }
     }
@@ -501,22 +502,14 @@ class PresenceController extends Controller
     /**
      * Calculate distance between two GPS coordinates (copied from PresenceService)
      */
-    private function calculateDistance(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
-    {
-        $earthRadius = 6371000;
-
-        $latDelta = deg2rad($latTo - $latFrom);
-        $lngDelta = deg2rad($lngTo - $lngFrom);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2)
-            + cos(deg2rad($latFrom)) * cos(deg2rad($latTo))
-            * sin($lngDelta / 2) * sin($lngDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return (int) round($earthRadius * $c);
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {        $earthRadius = 6371000; // in meters    
+        $dLat = deg2rad($lat2 - $lat1);  
+        $dLon = deg2rad($lon2 - $lon1);  
+        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);  
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));  
+        return $earthRadius * $c; 
     }
-
     /**
      * Historique des présences pour les employés.
      */
