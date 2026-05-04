@@ -24,6 +24,7 @@
             <table class="w-full">
                 <thead class="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
+                        <th>N°</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domaine</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sites associés</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employés</th>
@@ -33,7 +34,13 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($domaines as $domaine)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-6 py-4">
+                    <td  class="px-6 py-4">    
+                        <span class="inline-flex items-center justify-center w-6 h-6 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-medium">
+                            {{ $loop->iteration + ($domaines->currentPage() - 1) * $domaines->perPage() }}
+                        </span>
+                    </td>
+                    
+                    <td class="px-6 py-4">
                             <div>
                                 <p class="font-semibold text-gray-900 dark:text-white">{{ $domaine->nom }}</p>
                                 @if($domaine->description)

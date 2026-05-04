@@ -101,9 +101,7 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('site', function ($value) {
             return $this->resolveEncryptedModel($value, \App\Models\Site::class);
         });
-        Route::bind('domaine', function ($value) {
-            return $this->resolveEncryptedModel($value, \App\Models\Domaine::class);
-        });
+       
     }
 
     /**
