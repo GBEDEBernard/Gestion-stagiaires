@@ -40,7 +40,7 @@ class NavigationComposer
         $domaines = Domaine::with('sites')->get();
 
         // Récupérer les sites pour le menu (avec leurs domaines)
-        $sites = Site::with('domaines')->orderBy('name')->get();
+        $sites = Site::with('domaines.users')->orderBy('name')->get();
 
         // Compter les anomalies ouvertes
         $anomaliesCount = \App\Models\AttendanceAnomaly::where('status', 'open')->count();

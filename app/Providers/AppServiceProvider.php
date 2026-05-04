@@ -98,6 +98,12 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('signataire', function ($value) {
             return $this->resolveEncryptedModel($value, Signataire::class);
         });
+        Route::bind('site', function ($value) {
+            return $this->resolveEncryptedModel($value, \App\Models\Site::class);
+        });
+        Route::bind('domaine', function ($value) {
+            return $this->resolveEncryptedModel($value, \App\Models\Domaine::class);
+        });
     }
 
     /**
@@ -138,4 +144,5 @@ class AppServiceProvider extends ServiceProvider
         // and are not purely numeric
         return strlen($value) > 20 && !is_numeric($value);
     }
+    
 }
