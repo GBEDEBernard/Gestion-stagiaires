@@ -10,18 +10,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         @click="sidebarOpen = true"
         class="lg:hidden fixed display flex top-4 left-2  z-[60]  bg-slate-900 p-1 text-white rounded"
         x-transition>
-       <svg xmlns="http://www.w3.org/2000/svg"
-        class="w-5 h-5 flex-shrink-0"
-        fill="currentColor"
-        viewBox="0 0 16 16">
-        <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z"/>
-        <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z"/>
-        <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z"/>
-    </svg>
+        <svg xmlns="http://www.w3.org/2000/svg"
+            class="w-5 h-5 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z" />
+            <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 4a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1z" />
+            <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5zM2 7h1v1H2zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm1 .5H2v1h1z" />
+        </svg>
 
-    <span class="text-sm font-medium  sm:inline">
-        Menu
-    </span>
+        <span class="text-sm font-medium  sm:inline">
+            Menu
+        </span>
     </button>
 
     <nav
@@ -239,7 +239,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                                 <span>Statistiques Globales</span>
                             </a>
                             @endcan
-                            
+
 
                         </div>
                     </div>
@@ -422,29 +422,35 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <div x-show="open" x-collapse @click.outside="open = false"
                         class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('domaines.view')
-                        <a href="{{ route('domaines.index') }}"
-                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-400 transition-colors"></div>
-
-                            <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <div class="flex flex-col">
-                                <span>Domaines</span>
-                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Groupes employés</p>
+                        @foreach($sites as $site)
+                        <div x-data="{ siteOpen: false }" class="space-y-1">
+                            <button @click="siteOpen = !siteOpen"
+                                class="group w-full flex items-center justify-between pl-3 pr-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-indigo-600/20 hover:text-indigo-200 hover:translate-x-1 transition-all duration-300 relative overflow-hidden">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors"></div>
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    <span>{{ $site->name }}</span>
+                                </div>
+                                <svg x-bind:class="siteOpen ? 'rotate-180' : 'rotate-0'" class="w-4 h-4 text-slate-400 transform transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
+                                </svg>
+                            </button>
+                            <div x-show="siteOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="ml-6 space-y-1 pl-3 border-l-2 border-indigo-500/30 bg-slate-900/30 rounded-xl p-2">
+                                @foreach($site->domaines as $domaine)
+                                @if($domaine->users->count() > 0)
+                                <a href="{{ route('employes.by_domaine', $domaine) }}"
+                                    class="flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg text-sm text-slate-300 hover:bg-blue-600/20 hover:text-blue-200 hover:translate-x-1 transition-all duration-200">
+                                    <div class="w-1 h-1 rounded-full bg-blue-500"></div>
+                                    <span>{{ $domaine->nom }} ({{ $domaine->users->count() }} employés)</span>
+                                </a>
+                                @endif
+                                @endforeach
                             </div>
-                        </a>
-                        @endcan
-                        @foreach($domaines as $domaine)
-                        <a href="{{ route('employes.by_domaine', $domaine) }}"
-                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400 transition-colors"></div>
-                            <svg class="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span>{{ $domaine->nom }}</span>
-                        </a>
+                        </div>
                         @endforeach
+                        @endcan
                         @role('admin')
                         <a href="{{ route('admin.users.index') }}"
                             class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
@@ -473,6 +479,24 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <div class="flex flex-col">
                                 <span>Sites</span>
                                 <p class="text-xs text-slate-500 group-hover:text-slate-400">Lieux & géofencing</p>
+                            </div>
+                        </a>
+                        @endcan
+
+                        {{-- ← AJOUTER ICI le lien Domaines --}}
+                        @can('domaines.view')
+                        <a href="{{ route('domaines.index') }}"
+                            class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1
+                            {{ request()->routeIs('domaines.*') ? 'bg-indigo-600/20 text-indigo-200' : '' }}">
+                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500 group-hover:bg-indigo-400 transition-colors"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="text-slate-500 group-hover:text-indigo-400 transition-colors"
+                                viewBox="0 0 16 16">
+                                <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+                            </svg>
+                            <div class="flex flex-col">
+                                <span>Domaines</span>
+                                <p class="text-xs text-slate-500 group-hover:text-slate-400">Directions & services</p>
                             </div>
                         </a>
                         @endcan

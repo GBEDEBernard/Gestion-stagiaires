@@ -8,6 +8,7 @@ use App\Models\Etudiant;
 use App\Models\Badge;
 use App\Models\AttendanceDay;
 use App\Models\Domaine;
+use App\Models\Site;
 
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -36,7 +37,10 @@ class NavigationComposer
         $rolesCount = Role::count();
 
         // Récupérer les domaines pour le menu Employés
-        $domaines = Domaine::all();
+        $domaines = Domaine::with('sites')->get();
+
+        // Récupérer les sites pour le menu (avec leurs domaines)
+        $sites = Site::with('domaines')->orderBy('name')->get();
 
         // Compter les anomalies ouvertes
         $anomaliesCount = \App\Models\AttendanceAnomaly::where('status', 'open')->count();
@@ -73,6 +77,7 @@ class NavigationComposer
             'usersCount' => $usersCount,
             'rolesCount' => $rolesCount,
             'domaines' => $domaines,
+            'sites' => $sites,
             'trashCount' => $trashCount,
             'anomaliesCount' => $anomaliesCount,
             'activeStage' => $activeStage,

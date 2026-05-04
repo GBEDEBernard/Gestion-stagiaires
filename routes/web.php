@@ -53,7 +53,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
- 
+
     // ---------------- Jours ----------------
     Route::prefix('admin/jours')->group(function () {
         Route::get('/', [JourController::class, 'index'])->name('jours.index')->middleware('permission:jour_stage.view');
@@ -147,16 +147,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
-    // ---------------- Domaines ----------------
-    Route::prefix('admin/domaines')->group(function () {
-        Route::get('/', [DomaineController::class, 'index'])->name('domaines.index')->middleware('permission:domaines.view');
-        Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
-        Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
-        Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
-        Route::get('{domaine}', [DomaineController::class, 'show'])->name('domaines.show')->middleware('permission:domaines.view');
-        Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
-        Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
-    });
+  // ---------------- Domaines ----------------
+Route::prefix('admin/domaines')->group(function () {
+    Route::get('/', [DomaineController::class, 'index'])->name('domaines.index')->middleware('permission:domaines.view');
+    Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
+    Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
+    Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
+    Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
+    Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
+    Route::get('{domaine}', [DomaineController::class, 'show'])->name('domaines.show')->middleware('permission:domaines.view');
+});
 
     // ---------------- Employés par domaine ----------------
     Route::prefix('admin/employes')->group(function () {
@@ -172,6 +172,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{site}', [SiteController::class, 'update'])->name('sites.update')->middleware('permission:sites.edit');
         Route::delete('{site}', [SiteController::class, 'destroy'])->name('sites.destroy')->middleware('permission:sites.delete');
     });
+
+    // ---------------- API: Domaines par Site ----------------
+    // Route AJAX pour récupérer les domaines associés à un site (utilisée dans le formulaire utilisateur)
+    Route::get('/api/sites/{site}/domaines', function (App\Models\Site $site) {
+        $domaines = $site->domaines()->orderBy('nom')->get(['domaines.id', 'domaines.nom']);
+        return response()->json($domaines);
+    })->middleware('auth');
 
     // ---------------- Taches ----------------
     Route::prefix('admin/tasks')->group(function () {
@@ -272,9 +279,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
             ->middleware('can:reviewAdminAnomalies');
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
-//    route pour impression du suivi des pointages (version épurée pour impression)
-   Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
-    ->name('admin.presence.print');
+    //    route pour impression du suivi des pointages (version épurée pour impression)
+    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
+        ->name('admin.presence.print');
     // ---------------- Suivi des Pointages Admin ----------------
     Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');

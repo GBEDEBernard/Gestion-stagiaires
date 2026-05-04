@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Domaine;
+use App\Models\Site;
 use App\Models\User;
 use App\Models\Activity;
 use Illuminate\Http\Request;
@@ -10,16 +11,17 @@ use Illuminate\Http\Request;
 class DomaineController extends Controller
 {
     // Liste des domaines
-    public function index()
+        public function index()
     {
-        $domaines = Domaine::paginate(10);
+        $domaines = Domaine::with('sites')->orderBy('nom')->paginate(10);
         return view('admin.domaines.index', compact('domaines'));
     }
 
     // Formulaire création
     public function create()
     {
-        return view('admin.domaines.create');
+        $sites = Site::orderBy('name')->get();
+        return view('admin.domaines.create', compact('sites'));
     }
 
     // Enregistrer un nouveau domaine
@@ -28,6 +30,8 @@ class DomaineController extends Controller
         $request->validate([
             'nom' => 'required|string|max:255|unique:domaines,nom',
             'description' => 'nullable|string|max:1000',
+            'site_ids' => 'nullable|array',
+            'site_ids.*' => 'exists:sites,id',
         ]);
 
         $domaine = Domaine::create([
@@ -35,6 +39,11 @@ class DomaineController extends Controller
             'description' => $request->description,
             'created_by' => auth()->id(),
         ]);
+
+        // Associer aux sites sélectionnés
+        if ($request->has('site_ids')) {
+            $domaine->sites()->sync($request->site_ids);
+        }
 
         // Log activité
         Activity::create([
@@ -47,57 +56,73 @@ class DomaineController extends Controller
     }
 
     // Formulaire édition
-    public function edit(Domaine $domaine)
-    {
-        return view('admin.domaines.edit', compact('domaine'));
+public function edit($id)
+{
+    $domaine = Domaine::findOrFail($id);
+    $sites = Site::orderBy('name')->get();
+    $domaine->load('sites', 'users');
+    return view('admin.domaines.edit', compact('domaine', 'sites'));
+}
+
+// Mettre à jour
+public function update(Request $request, $id)
+{
+    $domaine = Domaine::findOrFail($id);
+
+    $request->validate([
+        'nom' => 'required|string|max:255|unique:domaines,nom,' . $domaine->id,
+        'description' => 'nullable|string|max:1000',
+        'site_ids' => 'nullable|array',
+        'site_ids.*' => 'exists:sites,id',
+    ]);
+
+    $old_nom = $domaine->nom;
+    $domaine->update($request->only(['nom', 'description']));
+
+    if ($request->has('site_ids')) {
+        $domaine->sites()->sync($request->site_ids);
+    } else {
+        $domaine->sites()->detach();
     }
 
-    // Mettre à jour
-    public function update(Request $request, Domaine $domaine)
-    {
-        $request->validate([
-            'nom' => 'required|string|max:255|unique:domaines,nom,' . $domaine->id,
-            'description' => 'nullable|string|max:1000',
-        ]);
+    Activity::create([
+        'user_id' => auth()->id(),
+        'action' => 'Mise à jour domaine',
+        'description' => "Domaine {$old_nom} → {$domaine->nom} modifié"
+    ]);
 
-        $old_nom = $domaine->nom;
-        $domaine->update($request->only(['nom', 'description']));
+    return redirect()->route('domaines.index')->with('success', 'Domaine mis à jour.');
+}
 
-        Activity::create([
-            'user_id' => auth()->id(),
-            'action' => 'Mise à jour domaine',
-            'description' => "Domaine {$old_nom} → {$domaine->nom} modifié"
-        ]);
+// Supprimer
+public function destroy($id)
+{
+    $domaine = Domaine::findOrFail($id);
+    $nom = $domaine->nom;
+    $domaine->delete();
 
-        return redirect()->route('domaines.index')->with('success', 'Domaine mis à jour.');
-    }
+    Activity::create([
+        'user_id' => auth()->id(),
+        'action' => 'Suppression domaine',
+        'description' => "Domaine {$nom} supprimé"
+    ]);
 
-    // Supprimer
-    public function destroy(Domaine $domaine)
-    {
-        $nom = $domaine->nom;
-        $domaine->delete();
+    return redirect()->route('domaines.index')->with('success', 'Domaine supprimé.');
+}
 
-        Activity::create([
-            'user_id' => auth()->id(),
-            'action' => 'Suppression domaine',
-            'description' => "Domaine {$nom} supprimé"
-        ]);
+// Afficher les détails
+public function show($id)
+{
+    $domaine = Domaine::findOrFail($id);
+    $domaine->loadCount(['users']);
+    $domaine->load('sites');
 
-        return redirect()->route('domaines.index')->with('success', 'Domaine supprimé.');
-    }
+    Activity::create([
+        'user_id' => auth()->id(),
+        'action' => 'Consultation domaine',
+        'description' => "Domaine {$domaine->nom} consulté"
+    ]);
 
-    // Afficher les détails d'un domaine
-    public function show(Domaine $domaine)
-    {
-        $domaine->loadCount(['users', 'stages']);
-
-        Activity::create([
-            'user_id' => auth()->id(),
-            'action' => 'Consultation domaine',
-            'description' => "Domaine {$domaine->nom} consulté"
-        ]);
-
-        return view('admin.domaines.show', compact('domaine'));
-    }
+    return view('admin.domaines.show', compact('domaine'));
+}
 }

@@ -1,15 +1,15 @@
 @php
-    $linkedEtudiant = $user?->etudiant;
-    $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
-    $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
-    $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
-    $showDomaineSection = in_array('employe', $selectedRoleNames, true);
-    $isCreate = !$user;
-    $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-    
-    // Pré-remplissage des champs nom/prénom
-    $nomValue = old('nom', $linkedEtudiant?->nom ?? ($user ? explode(' ', $user->name, 2)[1] ?? '' : ''));
-    $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $user->name, 2)[0] ?? '' : ''));
+$linkedEtudiant = $user?->etudiant;
+$selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
+$selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
+$shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+$showDomaineSection = in_array('employe', $selectedRoleNames, true);
+$isCreate = !$user;
+$rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+
+// Pré-remplissage des champs nom/prénom
+$nomValue = old('nom', $linkedEtudiant?->nom ?? ($user ? explode(' ', $user->name, 2)[1] ?? '' : ''));
+$prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $user->name, 2)[0] ?? '' : ''));
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -197,26 +197,45 @@
         <section class="space-y-5 border-t border-gray-100 dark:border-gray-700 pt-6 {{ $showDomaineSection ? '' : 'hidden' }}" data-domaine-section>
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Domaine de travail</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Assignez un domaine de travail pour les employés (non applicable aux étudiants).</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Sélectionnez d'abord le site, puis le domaine correspondant pour les employés.</p>
             </div>
 
-            <div>
-                <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
-                <select
-                    name="domaine_id"
-                    id="domaine_id"
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white">
-                    <option value="">Aucun domaine (Étudiant ou non assigné)</option>
-                    @foreach($domaines ?? [] as $domaine)
-                    <option value="{{ $domaine->id }}" {{ old('domaine_id', $user?->domaine_id ?? $selectedDomaineId) == $domaine->id ? 'selected' : '' }}>
-                        {{ $domaine->nom }}
-                    </option>
-                    @endforeach
-                </select>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
-                @error('domaine_id')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="site_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site <span class="text-red-500">*</span></label>
+                    <select
+                        name="site_id"
+                        id="site_id"
+                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white"
+                        required>
+                        <option value="">Sélectionner un site...</option>
+                        @foreach($sites ?? [] as $site)
+                        <option value="{{ $site->id }}" {{ old('site_id') == $site->id ? 'selected' : '' }}>
+                            {{ $site->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Le site détermine les domaines disponibles.</p>
+                    @error('site_id')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine <span class="text-red-500">*</span></label>
+                    <select
+                        name="domaine_id"
+                        id="domaine_id"
+                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white"
+                        required
+                        disabled>
+                        <option value="">Sélectionner un site d'abord...</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
+                    @error('domaine_id')
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
         </section>
 
@@ -367,5 +386,51 @@
         refreshManualFlags();
         syncEtudiantVisibility();
         syncDomaineVisibility();
+
+        // Gestion du chargement dynamique des domaines par site
+        const siteSelect = document.getElementById('site_id');
+        const domaineSelect = document.getElementById('domaine_id');
+
+        if (siteSelect && domaineSelect) {
+            // Charger les domaines quand le site change
+            siteSelect.addEventListener('change', async function() {
+                const siteId = this.value;
+
+                if (!siteId) {
+                    // Réinitialiser le select des domaines
+                    domaineSelect.innerHTML = '<option value="">Sélectionner un site d\'abord...</option>';
+                    domaineSelect.disabled = true;
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/sites/${siteId}/domaines`);
+                    const domaines = await response.json();
+
+                    if (domaines.length > 0) {
+                        domaineSelect.innerHTML = '<option value="">Sélectionner un domaine...</option>';
+                        domaines.forEach(domaine => {
+                            const option = document.createElement('option');
+                            option.value = domaine.id;
+                            option.textContent = domaine.nom;
+                            domaineSelect.appendChild(option);
+                        });
+                        domaineSelect.disabled = false;
+                    } else {
+                        domaineSelect.innerHTML = '<option value="">Aucun domaine pour ce site</option>';
+                        domaineSelect.disabled = true;
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement des domaines:', error);
+                    domaineSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                    domaineSelect.disabled = true;
+                }
+            });
+
+            // Déclencher le chargement si un site est déjà sélectionné (mode édition)
+            if (siteSelect.value) {
+                siteSelect.dispatchEvent(new Event('change'));
+            }
+        }
     });
 </script>
