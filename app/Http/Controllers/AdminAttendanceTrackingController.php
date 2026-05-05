@@ -37,13 +37,14 @@ class AdminAttendanceTrackingController extends Controller
             ];
         });
 
-        $employees = User::where('id', '!=', Auth::id())
-            ->whereDoesntHave('etudiant')
+        $employees = User::whereNotNull('domaine_id')
+            ->where('status', 'actif')
+            ->where('id', '!=', Auth::id())
             ->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'name' => $user->name . ' (Employé)',
+                    'name' => $user->name . ' (Employé - ' . ($user->domaine->nom ?? 'N/A') . ')',
                     'type' => 'employee'
                 ];
             });
@@ -96,11 +97,42 @@ class AdminAttendanceTrackingController extends Controller
             ->orderBy('user_id')
             ->get();
 
+        // Calcul des totaux réels (base attendue) - Étudiants en stage complet
+        $activeEtudiantsIds = Etudiant::whereHas('stages', function ($q) use ($date) {
+            $q->where('date_debut', '<=', $date)
+                ->where('date_fin', '>=', $date);
+        })->pluck('id');
+
+        $studentTotal = $activeEtudiantsIds->count();
+
+        $studentPresentIds = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereIn('etudiant_id', $activeEtudiantsIds)
+            ->whereNotNull('first_check_in_at')
+            ->distinct('etudiant_id')
+            ->pluck('etudiant_id');
+        $studentPresent = $studentPresentIds->count();
+
+        // Employés (utilisateurs sans étudiant)
+        $employeeUsersIds = User::whereNotNull('domaine_id')
+            ->where('status', 'actif')
+            ->where('id', '!=', Auth::id())
+            ->pluck('id');
+
+        $employeeTotal = $employeeUsersIds->count();
+
+        $employeePresentIds = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereNull('etudiant_id')
+            ->whereIn('user_id', $employeeUsersIds)
+            ->whereNotNull('first_check_in_at')
+            ->distinct('user_id')
+            ->pluck('user_id');
+        $employeePresent = $employeePresentIds->count();
+
         $summary = [
-            'student_total' => $studentDays->count(),
-            'student_present' => $studentDays->where('first_check_in_at', '!=', null)->count(),
-            'employee_total' => $employeeDays->count(),
-            'employee_present' => $employeeDays->where('first_check_in_at', '!=', null)->count(),
+            'student_total' => $studentTotal,
+            'student_present' => $studentPresent,
+            'employee_total' => $employeeTotal,
+            'employee_present' => $employeePresent,
         ];
 
         return [
