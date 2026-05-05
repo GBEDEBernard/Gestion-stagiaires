@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <clipPath id="rounded-corner">
+      <rect x="0" y="0" width="32" height="32" rx="6" ry="6"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" rx="6" ry="6" fill="#ffffff"/>
+  <g clip-path="url(#rounded-corner)">
+    <text x="16" y="22" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#3B82F6" text-anchor="middle">TFG</text>
+  </g>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="5.5" ry="5.5" fill="none" stroke="#3B82F6" stroke-width="1"/>
+</svg>
