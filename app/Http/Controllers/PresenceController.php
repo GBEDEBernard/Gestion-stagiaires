@@ -71,6 +71,7 @@ class PresenceController extends Controller
     {
         $user = $request->user();
         $etudiant = $user->etudiant;
+        $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 
         if ($etudiant) {
             // Logique pour stagiaire
@@ -93,6 +94,7 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'arrivée',
+                'is_late' => $isLate,
             ];
 
             // Calculer distance si geofence disponible
@@ -108,7 +110,7 @@ class PresenceController extends Controller
             }
 
             // Stocker données complètes pour confirmation
-            session(['pending_pointage' => [
+            $pendingData = [
                 'type' => 'check_in',
                 'stage_id' => $request->stage_id,
                 'user_type' => 'etudiant',
@@ -121,7 +123,9 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
-            ]]);
+                'is_late' => $isLate,
+            ];
+            session(['pending_pointage' => $pendingData]);
 
             return view('presence.validate', $previewData);
         } else {
@@ -145,10 +149,11 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'arrivée',
+                'is_late' => $isLate,
             ];
 
             // No geofence for employee preview (calculated later in service)
-            session(['pending_pointage' => [
+            $pendingData = [
                 'type' => 'check_in',
                 'user_id' => $user->id,
                 'user_type' => 'employe',
@@ -161,7 +166,9 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
-            ]]);
+                'is_late' => $isLate,
+            ];
+            session(['pending_pointage' => $pendingData]);
 
             return view('presence.validate', $previewData);
         }
@@ -266,7 +273,7 @@ class PresenceController extends Controller
                 'app_version' => $request->app_version ?? '',
 
             ]]);
-             
+
             return view('presence.validate', $previewData);
         }
     }
@@ -282,6 +289,7 @@ class PresenceController extends Controller
         }
 
         $user = $request->user();
+        $isLate = $pending['is_late'] ?? false;
 
         if ($pending['user_type'] === 'etudiant') {
             // Logique pour stagiaire
@@ -298,6 +306,7 @@ class PresenceController extends Controller
                 'pointage_time' => now()->format('H:i'),
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
+                'is_late' => $isLate,
             ];
 
             // Distance
@@ -325,6 +334,7 @@ class PresenceController extends Controller
                 'pointage_time' => now()->format('H:i'),
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
+                'is_late' => $isLate,
             ];
 
             // No geofence preview for employees
@@ -345,6 +355,11 @@ class PresenceController extends Controller
 
         try {
             $user = $request->user();
+            $isLate = $pending['is_late'] ?? false;
+
+            // Validation observation obligatoire si retard
+            $request->validate([
+            'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',            ]);
 
             $data = $pending;
             $data['device_uuid'] = $pending['device_uuid'];
@@ -352,20 +367,21 @@ class PresenceController extends Controller
             $data['platform'] = $pending['platform'];
             $data['browser'] = $pending['browser'];
             $data['app_version'] = $pending['app_version'];
+            $data['observation_message'] = $request->observation_message;
 
             if ($pending['user_type'] === 'etudiant') {
                 // Logique pour stagiaire
                 $stage = $user->etudiant->stages()->findOrFail($pending['stage_id']);
 
                 if ($pending['type'] === 'check_in') {
-                    $event = $this->presenceService->registerCheckIn($stage, $user, $data);
+                    $event = $this->presenceService->registerCheckIn($stage, $user, $data, $data['observation_message'] ?? null);
                 } else {
                     $event = $this->presenceService->registerCheckOut($stage, $user, $data);
                 }
             } else {
                 // Logique pour employé
                 if ($pending['type'] === 'check_in') {
-                    $event = $this->presenceService->registerEmployeeCheckIn($user, $data);
+                    $event = $this->presenceService->registerEmployeeCheckIn($user, $data, $data['observation_message'] ?? null);
                 } else {
                     $event = $this->presenceService->registerEmployeeCheckOut($user, $data);
                 }
@@ -380,9 +396,9 @@ class PresenceController extends Controller
                     ->with('reason_code', $event->reason_code);
             }
 
-            $message = $event->status === 'approved'
-                ? '✅ Pointage confirmé et enregistré !'
-                : '⚠️ Pointage enregistré mais nécessite validation admin.';
+            $message = ($event->status === 'approved' ? '✅ ' : '⚠️ ') .
+                'Pointage confirmé et enregistré' .
+                ($isLate ? ' avec observation.' : '!');
 
             return redirect()->route('presence.historique')
                 ->with('success', $message);
@@ -414,21 +430,21 @@ class PresenceController extends Controller
      */
     public function historique(Request $request)
     {
-          $user = $request->user();
-    $etudiant = $user->etudiant;
-    $period = $request->get('period', 'month');
-    $dateFrom = $request->get('date_from');
-    $dateTo = $request->get('date_to');
-    
-    // Stats détaillées via service
-    // ⚠️ ICI : passer les dates au service
-    
-    $userStats = $this->adminPresenceService->getUserDetailedStats(
-        $user->id,
-        $period,
-        $dateFrom,
-        $dateTo
-    );
+        $user = $request->user();
+        $etudiant = $user->etudiant;
+        $period = $request->get('period', 'month');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+
+        // Stats détaillées via service
+        // ⚠️ ICI : passer les dates au service
+
+        $userStats = $this->adminPresenceService->getUserDetailedStats(
+            $user->id,
+            $period,
+            $dateFrom,
+            $dateTo
+        );
 
 
         if ($dateFrom || $dateTo) {
@@ -503,12 +519,13 @@ class PresenceController extends Controller
      * Calculate distance between two GPS coordinates (copied from PresenceService)
      */
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {        $earthRadius = 6371000; // in meters    
-        $dLat = deg2rad($lat2 - $lat1);  
-        $dLon = deg2rad($lon2 - $lon1);  
-        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);  
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));  
-        return $earthRadius * $c; 
+    {
+        $earthRadius = 6371000; // in meters    
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
     }
     /**
      * Historique des présences pour les employés.
@@ -525,7 +542,7 @@ class PresenceController extends Controller
 
         // Stats détaillées via service
         $userStats = $this->adminPresenceService->getUserDetailedStats($user->id, $period, $dateFrom, $dateTo);
-         if ($dateFrom || $dateTo) {
+        if ($dateFrom || $dateTo) {
             $startDate = $dateFrom ? \Carbon\Carbon::parse($dateFrom) : now()->startOfMonth();
             $endDate = $dateTo ? \Carbon\Carbon::parse($dateTo) : now()->endOfMonth();
         } else {

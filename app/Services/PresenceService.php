@@ -17,9 +17,9 @@ use Illuminate\Validation\ValidationException;
 
 class PresenceService
 {
-    public function registerCheckIn(Stage $stage, User $user, array $payload): AttendanceEvent
+    public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
-        return $this->registerEvent($stage, $user, $payload, 'check_in');
+        return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
@@ -30,9 +30,9 @@ class PresenceService
     /**
      * Register employee check-in (no stage required).
      */
-    public function registerEmployeeCheckIn(User $user, array $payload): AttendanceEvent
+    public function registerEmployeeCheckIn(User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
-        return $this->registerEmployeeEvent($user, $payload, 'check_in');
+        return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }
 
     /**
@@ -43,10 +43,11 @@ class PresenceService
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 
-    protected function registerEmployeeEvent(User $user, array $payload, string $eventType): AttendanceEvent
+    protected function registerEmployeeEvent(User $user, array $payload, string $eventType, ?string $observation_message = null): AttendanceEvent
     {
-        return DB::transaction(function () use ($user, $payload, $eventType) {
+        return DB::transaction(function () use ($user, $payload, $eventType, $observation_message) {
             $hasCoordinates = isset($payload['latitude'], $payload['longitude']) && $payload['latitude'] !== null && $payload['longitude'] !== null;
+            $isLate = $payload['is_late'] ?? false;
 
             $domaine = $user->domaine;
             if (!$domaine) {
@@ -91,6 +92,7 @@ class PresenceService
                     'browser' => $payload['browser'] ?? null,
                     'app_version' => $payload['app_version'] ?? null,
                     'device_role' => $device?->is_primary ? 'primary' : 'secondary',
+                    'is_late_arrival' => $isLate,
                 ],
             ]);
 
@@ -101,8 +103,18 @@ class PresenceService
                 ]);
             }
 
+            // ✅ OBSERVATION RETARD : Créer anomalie si retard d'arrivée
+            if ($isLate && $eventType === 'check_in' && $observation_message) {
+                $this->recordAnomaly($event, 'retard_arrivee', 'moyen', [
+                    'message_observation' => $observation_message,
+                    'minutes_retard' => $this->computeLateMinutes(null, now()),
+                    'domaine' => $domaine->nom,
+                    'type_utilisateur' => 'employe',
+                ]);
+            }
+
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-            $this->syncEmployeeAttendanceDay($user, $event);
+            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
 
             return $event;
         });
@@ -225,14 +237,14 @@ class PresenceService
         ];
     }
 
-    protected function syncEmployeeAttendanceDay(User $user, AttendanceEvent $event): void
+    protected function syncEmployeeAttendanceDay(User $user, AttendanceEvent $event, bool $isLate = false): void
     {
         $day = AttendanceDay::firstOrNew([
             'user_id' => $user->id,
             'attendance_date' => today()->toDateString(),
         ]);
 
-        // Safeguard explicite pour employés (même avec $attributes model)
+        // Safeguard explicite pour employés
         $day->etudiant_id = null;
         $day->stage_id = null;
 
@@ -242,7 +254,9 @@ class PresenceService
             $day->late_minutes = $this->computeLateMinutes(null, $event->occurred_at);
             $day->arrival_status = $this->computeArrivalStatus($event->occurred_at);
             $day->day_status = $day->arrival_status === 'late' ? 'late' : 'present';
-            $day->validation_status = 'auto_approved';
+
+            // ✅ Si retard → nécessite réexamen
+            $day->validation_status = $isLate ? 'a_reexaminer' : 'auto_approuve';
         }
 
         if ($event->event_type === 'check_out' && in_array($event->status, ['approved', 'flagged'])) {
@@ -258,9 +272,9 @@ class PresenceService
     }
 
     // Existing student methods (kept intact)
-    protected function registerEvent(Stage $stage, User $user, array $payload, string $eventType): AttendanceEvent
+    protected function registerEvent(Stage $stage, User $user, array $payload, string $eventType, ?string $observation_message = null): AttendanceEvent
     {
-        return DB::transaction(function () use ($stage, $user, $payload, $eventType) {
+        return DB::transaction(function () use ($stage, $user, $payload, $eventType, $observation_message) {
             $etudiant = $this->resolveEtudiant($user, $stage);
             $this->ensureStageOwnership($stage, $etudiant);
 
@@ -276,6 +290,7 @@ class PresenceService
                 )
                 : null;
 
+            $isLate = $payload['is_late'] ?? false;
             $decision = $this->evaluateEvent($stage, $eventType, $payload, $geofence, $distance);
 
             $event = AttendanceEvent::create([
@@ -302,6 +317,7 @@ class PresenceService
                     'browser' => $payload['browser'] ?? null,
                     'app_version' => $payload['app_version'] ?? null,
                     'device_role' => $device?->is_primary ? 'primary' : 'secondary',
+                    'is_late_arrival' => $isLate,
                 ],
             ]);
 
@@ -311,9 +327,19 @@ class PresenceService
                 ]);
             }
 
+            // ✅ OBSERVATION RETARD : Créer anomalie si retard d'arrivée (étudiant)
+            if ($isLate && $eventType === 'check_in' && $observation_message) {
+                $this->recordAnomaly($event, 'retard_arrivee', 'moyen', [
+                    'message_observation' => $observation_message,
+                    'minutes_retard' => $this->computeLateMinutes($stage, now()),
+                    'type_utilisateur' => 'etudiant',
+                    'stage_theme' => $stage->theme,
+                ]);
+            }
+
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
 
-            $this->syncAttendanceDay($stage, $etudiant, $event);
+            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
 
             return $event;
         });
@@ -484,7 +510,7 @@ class PresenceService
         ];
     }
 
-    protected function syncAttendanceDay(Stage $stage, Etudiant $etudiant, AttendanceEvent $event): void
+    protected function syncAttendanceDay(Stage $stage, Etudiant $etudiant, AttendanceEvent $event, bool $isLate = false): void
     {
         $day = AttendanceDay::firstOrNew([
             'etudiant_id' => $etudiant->id,
@@ -507,7 +533,9 @@ class PresenceService
                 'ontime' => 'present',
                 default => 'present',
             };
-            $day->validation_status = 'auto_approved';
+
+            // ✅ Si retard → nécessite réexamen
+            $day->validation_status = $isLate ? 'a_reexaminer' : 'auto_approuve';
         }
 
         if ($event->event_type === 'check_out' && in_array($event->status, ['approved', 'flagged'])) {
@@ -520,7 +548,7 @@ class PresenceService
 
             if ($day->early_departure_minutes > 0) {
                 $day->day_status = 'incomplete';
-                $day->validation_status = 'needs_review';
+                $day->validation_status = 'a_reexaminer';
             }
         }
 

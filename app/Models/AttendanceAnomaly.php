@@ -70,4 +70,25 @@ class AttendanceAnomaly extends Model
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
+
+    /**
+     * Scope : Retards d'arrivée ouverts (pour admin)
+     */
+    public function scopeRetardsOuverts($query)
+    {
+        return $query->where('anomaly_type', 'retard_arrivee')
+            ->where('status', 'open')
+            ->with(['attendanceEvent.user', 'reviewer'])
+            ->orderBy('detected_at', 'desc');
+    }
+
+    /**
+     * Scope : Toutes observations retard (archivées incluses)
+     */
+    public function scopeToutesObservationsRetard($query)
+    {
+        return $query->where('anomaly_type', 'retard_arrivee')
+            ->with(['attendanceEvent.user', 'reviewer'])
+            ->orderBy('detected_at', 'desc');
+    }
 }
