@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AttendanceAnomaly;
 
 class AttendanceDay extends Model
 {
@@ -93,6 +94,24 @@ class AttendanceDay extends Model
     public function dailyReports()
     {
         return $this->hasMany(DailyReport::class);
+    }
+
+    /**
+     * Relation avec l'anomalie de retard (une seule par jour, la plus récente)
+     */
+    public function lateAnomaly()
+    {
+        return $this->hasOne(AttendanceAnomaly::class)
+            ->where('anomaly_type', 'retard_arrivee')
+            ->orderByDesc('detected_at');
+    }
+
+    /**
+     * Accesseur pour obtenir le message d'observation du retard (s'il existe)
+     */
+    public function getLateObservationAttribute(): ?string
+    {
+        return $this->lateAnomaly?->payload['message_observation'] ?? null;
     }
 
     /**

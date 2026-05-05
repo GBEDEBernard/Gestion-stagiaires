@@ -359,7 +359,8 @@ class PresenceController extends Controller
 
             // Validation observation obligatoire si retard
             $request->validate([
-            'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',            ]);
+                'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',
+            ]);
 
             $data = $pending;
             $data['device_uuid'] = $pending['device_uuid'];
@@ -486,7 +487,7 @@ class PresenceController extends Controller
         }
 
         $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-            ->with(['stage.site', 'anomalies', 'dailyReports']);
+            ->with(['stage.site', 'anomalies', 'dailyReports', 'lateAnomaly']); // ajout de 'lateAnomaly'
 
         $attendanceDays = $attendanceDaysQuery->get();
 
@@ -576,7 +577,7 @@ class PresenceController extends Controller
         ];
 
         $attendanceDaysQuery = $this->adminPresenceService->listAttendanceDays($filters, 100)
-            ->with(['anomalies']);
+            ->with(['anomalies', 'lateAnomaly']);
 
         $attendanceDays = $attendanceDaysQuery->get();
 
