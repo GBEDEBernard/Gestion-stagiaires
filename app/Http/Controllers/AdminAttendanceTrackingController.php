@@ -133,12 +133,15 @@ class AdminAttendanceTrackingController extends Controller
             'student_present' => $studentPresent,
             'employee_total' => $employeeTotal,
             'employee_present' => $employeePresent,
+            'student_rate' => $studentTotal > 0 ? round(($studentPresent / $studentTotal) * 100) : 0,
+            'employee_rate' => $employeeTotal > 0 ? round(($employeePresent / $employeeTotal) * 100) : 0,
         ];
 
         return [
             'attendanceStudents' => $studentDays,
             'attendanceEmployees' => $employeeDays,
             'summary' => $summary,
+            'global_rate' => $summary['student_rate'] + $summary['employee_rate'] / 2, // Moyenne générale
             'displayDate' => $date->translatedFormat('d F Y'),
         ];
     }
