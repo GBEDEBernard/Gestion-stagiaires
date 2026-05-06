@@ -61,9 +61,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return 'dashboard';
         }
 
-        // 👨‍🎓 Étudiants + fonctionnaires + superviseurs → pointage
+        // 👨‍🎓 Étudiants + employés + superviseurs → pointage
         if (
             $this->hasRole('etudiant') ||
+            $this->hasRole('employe') ||
             $this->hasRole('fonctionnaire') ||
             $this->hasRole('superviseur')
         ) {
@@ -164,5 +165,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function attestationAudits()
     {
         return $this->hasMany(AttestationAudit::class);
+    }
+
+    public function permissionRequests()
+    {
+        return $this->hasMany(\App\Models\PermissionRequest::class);
     }
 }

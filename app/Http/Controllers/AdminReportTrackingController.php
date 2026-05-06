@@ -56,4 +56,37 @@ class AdminReportTrackingController extends Controller
             'summary'
         ));
     }
+
+    public function show(Request $request, $id)
+    {
+        $report = DailyReport::with(['etudiant.user', 'user', 'stage', 'reviews.reviewer'])
+            ->findOrFail($id);
+
+        $authorName = $report->etudiant?->user?->name ?? $report->user?->name ?? 'N/A';
+
+        return response()->json([
+            'report' => [
+                'id'                    => $report->id,
+                'summary'               => $report->summary,
+                'blockers'              => $report->blockers,
+                'next_steps'            => $report->next_steps,
+                'hours_declared'        => $report->hours_declared,
+                'status'                => $report->status,
+                'author_name'           => $authorName,
+                'stage_theme'           => $report->stage?->theme,
+                'report_date_formatted' => $report->report_date->format('l j F Y'),
+                'created_at_formatted'  => $report->created_at->diffForHumans(),
+                'updated_at_formatted'  => $report->updated_at->diffForHumans(),
+            ],
+            'reviews' => $report->reviews->map(function ($review) {
+                return [
+                    'id'            => $review->id,
+                    'comment'       => $review->comment,
+                    'reviewer_name' => $review->reviewer->name,
+                    'created_at'    => $review->created_at->diffForHumans(),
+                    'action'        => $review->action,
+                ];
+            }),
+        ]);
+    }
 }

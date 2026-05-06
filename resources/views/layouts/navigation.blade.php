@@ -145,12 +145,33 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <span>Mon Stage</span>
                     </a>
 
+                    {{-- Demandes de permission --}}
+                    <a href="{{ route('permissions.index') }}"
+                        class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200
+                {{ request()->routeIs('permissions.*') 
+                    ? 'bg-violet-500/20 text-violet-100' 
+                    : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
+
+                        <div class="p-2 rounded-xl bg-violet-500/10">
+                            <svg class="w-5 h-5 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <span>Permissions</span>
+                        @php
+                            $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count();
+                        @endphp
+                        @if($pendingCount > 0)
+                        <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
+                        @endif
+                    </a>
+
                 </div>
             </div>
-
             @endrole
 
-            @unless(auth()->user()->hasRole('etudiant'))
+            @unlessrole('etudiant')
             <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
 
                 @if(auth()->user()->hasRole('superviseur') || auth()->user()->hasRole('admin'))
@@ -240,6 +261,25 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             </a>
                             @endcan
 
+                            {{-- Demandes de permission Admin --}}
+                            @role('admin|superviseur')
+                            <a href="{{ route('admin.permissions.index') }}"
+                                class="group flex items-center gap-3 pl-3 pr-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 relative overflow-hidden
+                                    {{ request()->routeIs('admin.permissions.*') ? 'bg-violet-600/20 text-violet-200' : 'text-slate-300 hover:bg-violet-600/20 hover:text-violet-200 hover:translate-x-1' }}">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-lg transition-colors
+                                    {{ request()->routeIs('admin.permissions.*') ? 'bg-violet-500/20 text-violet-400' : 'bg-violet-500/10 text-violet-400 group-hover:bg-violet-500/20' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                </div>
+                                <span>Permissions</span>
+                                @php $adminPending = \App\Models\PermissionRequest::where('status','pending')->count(); @endphp
+                                @if($adminPending > 0)
+                                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200 animate-pulse">{{ $adminPending }}</span>
+                                @endif
+                            </a>
+                            @endrole
 
                         </div>
                     </div>
@@ -396,6 +436,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endrole
 
                 <!-- Gestion Personnel avec Sous-menu -->
+                @if(!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe'))
                 @canany(['domaines.view', 'users.view', 'sites.view', 'tasks.view'])
                 <div class="mb-3" x-data="{ open: false }">
                     <button @click="open = !open"
@@ -492,7 +533,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                 class="text-slate-500 group-hover:text-indigo-400 transition-colors"
                                 viewBox="0 0 16 16">
-                                <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+                                <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z" />
                             </svg>
                             <div class="flex flex-col">
                                 <span>Domaines</span>
@@ -516,6 +557,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </div>
                 </div>
                 @endcanany
+                @endif
                 <!-- Étudiants -->
                 @can('etudiants.view')
                 @unlessrole('etudiant')

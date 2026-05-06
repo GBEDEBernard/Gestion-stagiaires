@@ -37,14 +37,18 @@
                         <span class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-xl text-lg font-semibold">
                             {{ $domaine->users_count }}
                         </span>
+                        @unlessrole(['etudiant', 'employe'])
                         <a href="{{ route('employes.by_domaine', $domaine) }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 block">Voir la liste →</a>
+                        @endunlessrole
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Stages</label>
                         <span class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-xl text-lg font-semibold">
                             {{ $domaine->stages_count }}
                         </span>
+                        @unlessrole(['etudiant', 'employe'])
                         <a href="{{ route('stages.index') }}?domaine_id={{ $domaine->id }}" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline mt-1 block">Voir les stages →</a>
+                        @endunlessrole
                     </div>
                 </div>
             </div>

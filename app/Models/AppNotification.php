@@ -42,6 +42,24 @@ class AppNotification extends Model
         return $query->where('user_id', $userId);
     }
 
+    // Scope pour cacher les notifications admin aux utilisateurs non-admin
+    public function scopeVisibleForUser($query, $user)
+    {
+        $query->where('user_id', $user->id);
+
+        if (!$user->hasAnyRole(['admin', 'superviseur'])) {
+            $query->whereNotIn('type', [
+                'nouveau_etudiant',
+                'stage_fin_semaine',
+                'stage_termine',
+                'presence_anomalies',
+                'rapports_en_attente',
+            ]);
+        }
+
+        return $query;
+    }
+
     // Marquer comme lu
     public function markAsRead()
     {

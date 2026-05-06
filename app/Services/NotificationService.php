@@ -14,42 +14,37 @@ class NotificationService
      */
     public function generateNotifications()
     {
-        $userId = Auth::id();
+        $currentUserId = Auth::id();
         $user = Auth::user();
 
-        if (!$userId || !$user) {
+        if (!$currentUserId || !$user) {
             return;
         }
 
-        // UNIQUEMENT pour admin/superviseur (pas etudiants)
-        if ($user->hasRole('etudiant')) {
+        // UNIQUEMENT pour admin/superviseur (pas étudiants, pas employés)
+        if (!$user->hasAnyRole(['admin', 'superviseur'])) {
             return;
         }
 
-                // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours)
-            $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
-                ->orderBy('created_at', 'desc')
-                ->get();
+        // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours) - Destiné aux admins
+        $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-            foreach ($nouveauxEtudiants as $etudiant) {
-                // Récupérer l'ID utilisateur associé
-                $userId = $etudiant->user_id ?? $etudiant->user?->id;
-                if (!$userId) {
-                    continue; // sécurité : pas d'utilisateur lié
-                }
-                $this->createNotificationIfNotExists(
-                    'etudiant_' . $etudiant->id,
-                    $userId, // destinataire admin
-                    'nouveau_etudiant',
-                    '👤 Nouvel étudiant',
-                    $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
-                    'users',
-                    'blue',
-                    route('admin.users.show', $userId), // ← corrigé
-                    $etudiant->id,
-                    \App\Models\Etudiant::class
-                );
-            }
+        foreach ($nouveauxEtudiants as $etudiant) {
+            $this->createNotificationIfNotExists(
+                'etudiant_' . $etudiant->id,
+                $currentUserId, // Destinataire: l'admin connecté
+                'nouveau_etudiant',
+                '👤 Nouvel étudiant',
+                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                'users',
+                'blue',
+                route('admin.users.show', $etudiant->user_id ?? 0),
+                $etudiant->id,
+                \App\Models\Etudiant::class
+            );
+        }
         // 2STAGES TERMINANT CETTE SEMAINE
         $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
@@ -60,7 +55,7 @@ class NotificationService
             $joursRestants = now()->diffInDays($stage->date_fin, false);
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
-                $userId,
+                $currentUserId,
                 'stage_fin_semaine',
                 'Stage bientôt terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
@@ -81,7 +76,7 @@ class NotificationService
         foreach ($stagesTermines as $stage) {
             $this->createNotificationIfNotExists(
                 'stage_termine_' . $stage->id,
-                $userId,
+                $currentUserId,
                 'stage_termine',
                 'Stage terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
@@ -101,7 +96,7 @@ class NotificationService
         if ($anomalies > 0) {
             $this->createNotificationIfNotExists(
                 'presence_anomalies_' . now()->format('Y-m-d'),
-                $userId,
+                $currentUserId,
                 'presence_anomalies',
                 '🚨 ' . $anomalies . ' anomalie(s) présence',
                 'À vérifier immédiatement dans Admin > Présence > Anomalies',
@@ -121,7 +116,7 @@ class NotificationService
         if ($rapportsAttente > 0) {
             $this->createNotificationIfNotExists(
                 'rapports_attente_' . now()->format('Y-m-d'),
-                $userId,
+                $currentUserId,
                 'rapports_en_attente',
                 '📋 ' . $rapportsAttente . ' rapport(s) à valider',
                 'Nouveaux rapports journaliers soumis aujourd\'hui',
@@ -146,7 +141,7 @@ class NotificationService
         if ($sansBadge > 0) {
             $this->createNotificationIfNotExists(
                 'badges_manquants_' . now()->format('Y-m-d'),
-                $userId,
+                $currentUserId,
                 'badges_manquants',
                 '🏷️ ' . $sansBadge . ' badge(s) à attribuer',
                 'Étudiants avec stages terminés sans badge récent',
@@ -164,23 +159,23 @@ class NotificationService
     /**
      * Creer une notification si elle n'existe pas deja.
      */
-    private function createNotificationIfNotExists($uniqueId, $userId, $type, $title, $message, $icon, $color, $url, $referenceId = null, $referenceType = null, $time = null)
+    private function createNotificationIfNotExists($uniqueId, $currentUserId, $type, $title, $message, $icon, $color, $url, $referenceId = null, $referenceType = null, $time = null)
     {
         // jb -> La base impose un unique_id global. On le scope donc
         // explicitement par utilisateur pour eviter qu'une meme alerte
         // "metier" explose quand plusieurs comptes doivent la recevoir.
-        $scopedUniqueId = $this->buildScopedUniqueId($uniqueId, $userId);
+        $scopedUniqueId = $this->buildScopedUniqueId($uniqueId, $currentUserId);
 
         AppNotification::updateOrCreate(
             ['unique_id' => $scopedUniqueId],
             [
-                'user_id'        => $userId,
+                'user_id'        => $currentUserId,
                 'type'           => $type,
                 'title'          => $title,
                 'message'        => $message,
                 'icon'           => $icon,
                 'color'          => $color,
-                'url'            => $url,   // ← l'URL sera corrigée à chaque regénération
+                'url'            => $url,   // ← l'URL sera corrigée à chaque régénération
                 'reference_id'   => $referenceId,
                 'reference_type' => $referenceType,
                 'updated_at'     => now(),
@@ -210,8 +205,8 @@ class NotificationService
      */
     public function markAllAsRead()
     {
-        AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->update(['read_at' => now()]);
     }
 
@@ -220,8 +215,8 @@ class NotificationService
      */
     public function getUnreadNotifications()
     {
-        return AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        return AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -231,8 +226,8 @@ class NotificationService
      */
     public function getUnreadCount()
     {
-        return AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        return AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->count();
     }
 }

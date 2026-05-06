@@ -10,12 +10,12 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $notifications = AppNotification::where('user_id', Auth::id())
+        $notifications = AppNotification::visibleForUser(Auth::user())
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        $unreadCount = AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        $unreadCount = AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->count();
 
         return view('notifications.index', compact('notifications', 'unreadCount'));
@@ -23,8 +23,8 @@ class NotificationController extends Controller
 
     public function markAsRead($id)
     {
-        $notification = AppNotification::where('id', $id)
-            ->where('user_id', Auth::id())
+        $notification = AppNotification::visibleForUser(Auth::user())
+            ->where('id', $id)
             ->firstOrFail();
 
         $notification->markAsRead();
@@ -35,8 +35,8 @@ class NotificationController extends Controller
 
     public function markAllAsRead()
     {
-        AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->update(['read_at' => now()]);
 
         return redirect()->back();
@@ -44,8 +44,8 @@ class NotificationController extends Controller
 
     public function getUnreadJson()
     {
-        $notifications = AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        $notifications = AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->orderBy('created_at', 'desc')
             ->limit(20)
             ->get()
@@ -62,7 +62,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'notifications' => $notifications,
-            'count' => AppNotification::where('user_id', Auth::id())->whereNull('read_at')->count(),
+            'count' => AppNotification::visibleForUser(Auth::user())->unread()->count(),
         ]);
     }
 }
