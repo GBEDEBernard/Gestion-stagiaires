@@ -82,4 +82,16 @@ class AttendanceEvent extends Model
     {
         return $this->hasOne(AttendanceDay::class, 'check_out_event_id');
     }
+
+    /**
+     * Relation pratique vers la AttendanceDay liée (check-in ou check-out).
+     *
+     * NOTE: pour l’instant on relie via le check-in (champ check_in_event_id).
+     * Cela suffit pour les anomalies de retard d’arrivée (retard_arrivee).
+     */
+    public function attendanceDay()
+    {
+        // Pour l'affichage de l'observation retard d'arrivée, on rattache via le check-in.
+        return $this->belongsTo(AttendanceDay::class, 'check_in_event_id', 'check_in_event_id');
+    }
 }
