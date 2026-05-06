@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JourController;
@@ -15,6 +16,20 @@ use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
 use App\Http\Controllers\CorbeilleController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PresenceController;
+use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\StudentStageController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AdminPresenceController;
+use App\Http\Controllers\AdminAttendanceTrackingController;
+use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\SuperviseurDashboardController;
+use App\Http\Controllers\DomaineController;
+use App\Http\Controllers\PermissionRequestController;
+use App\Http\Controllers\AdminPermissionRequestController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +42,7 @@ Route::get('/', fn() => redirect()->route('login'));
 require __DIR__ . '/auth.php';
 
 // Routes protégées
+// Routes protégées (mdp change non requis)
 Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
 
     // ---------------- Dashboard ----------------
@@ -55,9 +71,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [EtudiantController::class, 'index'])->name('etudiants.index')->middleware('permission:etudiants.view');
         Route::get('create', [EtudiantController::class, 'create'])->name('etudiants.create')->middleware('permission:etudiants.create');
         Route::post('/', [EtudiantController::class, 'store'])->name('etudiants.store')->middleware('permission:etudiants.create');
+        Route::post('sync-accounts', [EtudiantController::class, 'syncAccounts'])->name('etudiants.syncAccounts')->middleware('permission:etudiants.edit');
         Route::get('{etudiant}/edit', [EtudiantController::class, 'edit'])->name('etudiants.edit')->middleware('permission:etudiants.edit');
         Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
+        Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
 
         // Corbeille
         Route::get('corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
@@ -131,6 +149,49 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
+    // ---------------- Domaines ----------------
+    Route::prefix('admin/domaines')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [DomaineController::class, 'index'])->name('domaines.index')->middleware('permission:domaines.view');
+        Route::get('create', [DomaineController::class, 'create'])->name('domaines.create')->middleware('permission:domaines.create');
+        Route::post('/', [DomaineController::class, 'store'])->name('domaines.store')->middleware('permission:domaines.create');
+        Route::get('{domaine}/edit', [DomaineController::class, 'edit'])->name('domaines.edit')->middleware('permission:domaines.edit');
+        Route::put('{domaine}', [DomaineController::class, 'update'])->name('domaines.update')->middleware('permission:domaines.edit');
+        Route::delete('{domaine}', [DomaineController::class, 'destroy'])->name('domaines.destroy')->middleware('permission:domaines.delete');
+        Route::get('{domaine}', [DomaineController::class, 'show'])->name('domaines.show')->middleware('permission:domaines.view');
+    });
+
+    // ---------------- Employés par domaine ----------------
+    Route::prefix('admin/employes')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('domaine/{domaine}', [UserController::class, 'indexByDomaine'])->name('employes.by_domaine')->middleware('permission:users.view');
+    });
+
+    // ---------------- Sites ----------------
+    Route::prefix('admin/sites')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [SiteController::class, 'index'])->name('sites.index')->middleware('permission:sites.view');
+        Route::get('create', [SiteController::class, 'create'])->name('sites.create')->middleware('permission:sites.create');
+        Route::post('/', [SiteController::class, 'store'])->name('sites.store')->middleware('permission:sites.create');
+        Route::get('{site}/edit', [SiteController::class, 'edit'])->name('sites.edit')->middleware('permission:sites.edit');
+        Route::put('{site}', [SiteController::class, 'update'])->name('sites.update')->middleware('permission:sites.edit');
+        Route::delete('{site}', [SiteController::class, 'destroy'])->name('sites.destroy')->middleware('permission:sites.delete');
+    });
+
+    // ---------------- API: Domaines par Site ----------------
+    // Route AJAX pour récupérer les domaines associés à un site (utilisée dans le formulaire utilisateur)
+    Route::get('/api/sites/{site}/domaines', function (App\Models\Site $site) {
+        $domaines = $site->domaines()->orderBy('nom')->get(['domaines.id', 'domaines.nom']);
+        return response()->json($domaines);
+    })->middleware('auth');
+
+    // ---------------- Taches ----------------
+    Route::prefix('admin/tasks')->group(function () {
+        Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
+        Route::get('create', [TaskController::class, 'create'])->name('tasks.create')->middleware('permission:tasks.create');
+        Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
+        Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');
+        Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
+        Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
+    });
+
     // ---------------- Signataires ----------------
     Route::prefix('admin/signataires')->group(function () {
         Route::get('/', [SignataireController::class, 'index'])->name('signataires.index')->middleware('permission:signataires.view');
@@ -142,38 +203,163 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     });
 
     // ---------------- Users ----------------
-    Route::prefix('admin/users')->group(function () {
+    Route::prefix('admin/users')->middleware('role:admin|superviseur')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('admin.users.index')->middleware('permission:users.view');
         Route::get('create', [UserController::class, 'create'])->name('admin.users.create')->middleware('permission:users.create');
         Route::post('/', [UserController::class, 'store'])->name('admin.users.store')->middleware('permission:users.create');
+
+        // ↓ show AVANT les routes {user} pour éviter que "create" soit capturé
+        Route::get('{user}', [UserController::class, 'show'])->name('admin.users.show')->middleware('permission:users.view');
+
         Route::get('{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
         Route::put('{user}', [UserController::class, 'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
 
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
 
-        // Corbeille - User restore and force delete
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
     });
 
     // ---------------- Roles ----------------
     Route::prefix('admin/roles')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
-        Route::get('create', [\App\Http\Controllers\Admin\RoleController::class, 'create'])->name('admin.roles.create')->middleware('permission:roles.create');
-        Route::post('/', [\App\Http\Controllers\Admin\RoleController::class, 'store'])->name('admin.roles.store')->middleware('permission:roles.create');
-        Route::get('{role}/edit', [\App\Http\Controllers\Admin\RoleController::class, 'edit'])->name('admin.roles.edit')->middleware('permission:roles.edit');
-        Route::put('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'update'])->name('admin.roles.update')->middleware('permission:roles.edit');
-        Route::delete('{role}', [\App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('admin.roles.destroy')->middleware('permission:roles.delete');
+        Route::get('/', [RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
+        Route::get('create', [RoleController::class, 'create'])->name('admin.roles.create')->middleware('permission:roles.create');
+        Route::post('/', [RoleController::class, 'store'])->name('admin.roles.store')->middleware('permission:roles.create');
+        Route::get('{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit')->middleware('permission:roles.edit');
+        Route::put('{role}', [RoleController::class, 'update'])->name('admin.roles.update')->middleware('permission:roles.edit');
+        Route::delete('{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy')->middleware('permission:roles.delete');
     });
 
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
+
+    // ---------------- Espace stagiaire ----------------
+    Route::get('/mon-stage', [StudentStageController::class, 'show'])
+        ->name('student.stage');
+
+    // ---------------- Dashboard Superviseur ----------------
+    Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
+        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])
+            ->name('superviseur.dashboard');
+    });
+
+    // ---------------- Presence ----------------
+    Route::prefix('presence')->group(function () {
+        Route::get('/pointage', [PresenceController::class, 'pointage'])->name('presence.pointage')->middleware('permission:presence.view');
+        Route::get('/historique', [PresenceController::class, 'historique'])->name('presence.historique')->middleware('permission:presence.view');
+        Route::post('/prepare-checkin', [PresenceController::class, 'prepareCheckIn'])->name('presence.prepareCheckin')->middleware('permission:presence.checkin');
+        Route::post('/prepare-checkout', [PresenceController::class, 'prepareCheckOut'])->name('presence.prepareCheckout')->middleware('permission:presence.checkout');
+        Route::get('/validate', [PresenceController::class, 'showValidation'])->name('presence.validate');
+        Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
+        Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
+        Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
+    });
+
+    // ---------------- Rapports journaliers ----------------
+    Route::prefix('reports')->group(function () {
+
+        // accès lecture
+        Route::get('/', [DailyReportController::class, 'index'])
+            ->name('reports.index');
+
+        // détails d'un rapport
+        Route::get('{report}', [DailyReportController::class, 'show'])
+            ->name('reports.show');
+
+        // création (étudiant ou employé autorisé via logique controller)
+        Route::post('/', [DailyReportController::class, 'store'])
+            ->name('reports.store');
+
+        // édition (utilisateur propriétaire uniquement)
+        Route::get('{report}/edit', [DailyReportController::class, 'edit'])
+            ->name('reports.edit');
+
+        // mise à jour (utilisateur propriétaire uniquement)
+        Route::put('{report}', [DailyReportController::class, 'update'])
+            ->name('reports.update');
+    });
+    // ---------------- Supervision Présence Admin ----------------
+    Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
+        Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
+        Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
+        Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
+        Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');
+        Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
+        Route::get('/pointage-suivi', [AdminPresenceController::class, 'pointageSuivi'])->name('admin.presence.pointage-suivi');
+        Route::get('/export-pointages', [AdminPresenceController::class, 'exportPointages'])->name('admin.presence.export-pointages');
+        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
+            ->name('admin.presence.anomalies.resolve')
+            ->middleware('can:reviewAdminAnomalies');
+        Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
+    });
+    //    route pour impression du suivi des pointages (version épurée pour impression)
+    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
+        ->name('admin.presence.print');
+    // ---------------- Suivi des Pointages Admin ----------------
+    Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
+        Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
+        Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
+        Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
+    });
+
+    // ---------------- Suivi des Rapports Admin ----------------
+    Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
+        Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
+        Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show');
+        Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
+    });
 
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+
+        // 🔥 API JSON pour menu mobile dynamique
+        Route::get('/unread-json', function () {
+            $service = app(\App\Services\NotificationService::class);
+            return response()->json([
+                'count' => $service->getUnreadCount(),
+                'notifications' => $service->getUnreadNotifications()->take(5)->map(function ($notif) {
+                    return [
+                        'id' => $notif->id,
+                        'title' => $notif->title,
+                        'message' => $notif->message,
+                        'color' => $notif->color ?? 'blue',
+                        'created_at' => $notif->created_at->diffForHumans(),
+                        'read_at' => $notif->read_at ? true : false,
+                        'url' => $notif->url
+                    ];
+                })
+            ]);
+        })->name('notifications.unread.json');
+
+        Route::post('/mark-read/{id}', function ($id) {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAsRead($id);
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-read.api');
+
+        Route::post('/mark-all-read-api', function () {
+            $service = app(\App\Services\NotificationService::class);
+            $service->markAllAsRead();
+            return response()->json(['success' => true]);
+        })->name('notifications.mark-all.api');
+    });
+
+    // ---------------- Demandes de permission (Etudiant) ----------------
+    Route::prefix('permissions')->middleware('role:etudiant')->group(function () {
+        Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
+        Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
+        Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
+        Route::post('{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
+    });
+
+    // ---------------- Demandes de permission (Admin) ----------------
+    Route::prefix('admin/permissions')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [AdminPermissionRequestController::class, 'index'])->name('admin.permissions.index');
+        Route::get('{permission}', [AdminPermissionRequestController::class, 'show'])->name('admin.permissions.show');
+        Route::post('{permission}/decide', [AdminPermissionRequestController::class, 'decide'])->name('admin.permissions.decide');
     });
 });

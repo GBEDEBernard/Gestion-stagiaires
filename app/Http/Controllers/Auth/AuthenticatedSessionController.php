@@ -21,8 +21,19 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // 👉 Redirige tout le monde vers le dashboard
-        return redirect()->route('dashboard');
+        $user = $request->user();
+
+        // jb -> Ordre volontaire du parcours apres login:
+        // 1. verification email
+        // 2. remplacement du mot de passe temporaire
+        // 3. acces au vrai tableau de bord du role
+        if (!$user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
+
+
+        return redirect()->route($user->homeRouteName());
     }
 
     public function destroy(Request $request): RedirectResponse

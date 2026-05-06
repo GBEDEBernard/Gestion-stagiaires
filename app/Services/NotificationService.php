@@ -10,46 +10,52 @@ use Illuminate\Support\Facades\Auth;
 class NotificationService
 {
     /**
-     * Générer les notifications automatiquement
+     * Generer les notifications automatiquement (ADMIN/SUPERVISEUR uniquement).
      */
     public function generateNotifications()
     {
-        $userId = Auth::id();
+        $currentUserId = Auth::id();
+        $user = Auth::user();
 
-        // 1. Nouveaux étudiants inscrits ces 7 derniers jours
-        $nouveauxEtudiants = Etudiant::where('created_at', '>=', now()->subDays(7))
+        if (!$currentUserId || !$user) {
+            return;
+        }
+
+        // UNIQUEMENT pour admin/superviseur (pas étudiants, pas employés)
+        if (!$user->hasAnyRole(['admin', 'superviseur'])) {
+            return;
+        }
+
+        // 1️⃣ NOUVEAUX ÉTUDIANTS (7 derniers jours) - Destiné aux admins
+        $nouveauxEtudiants = \App\Models\Etudiant::where('created_at', '>=', now()->subDays(7))
             ->orderBy('created_at', 'desc')
             ->get();
 
         foreach ($nouveauxEtudiants as $etudiant) {
             $this->createNotificationIfNotExists(
                 'etudiant_' . $etudiant->id,
-                $userId,
-                'nouveau',
-                'Nouvel étudiant',
-                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit',
-                'user-plus',
+                $currentUserId, // Destinataire: l'admin connecté
+                'nouveau_etudiant',
+                '👤 Nouvel étudiant',
+                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                'users',
                 'blue',
-                route('etudiants.edit', $etudiant->id),
+                route('admin.users.show', $etudiant->user_id ?? 0),
                 $etudiant->id,
-                Etudiant::class,
-                $etudiant->created_at
+                \App\Models\Etudiant::class
             );
         }
-
-        // 2. Stages qui finissent dans moins d'une semaine
-        $stagesFinSemaine = Stage::where('date_fin', '>=', now())
+        // 2STAGES TERMINANT CETTE SEMAINE
+        $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
-            ->where('date_fin', '>=', now())
             ->with('etudiant')
-            ->orderBy('date_fin', 'asc')
             ->get();
 
         foreach ($stagesFinSemaine as $stage) {
             $joursRestants = now()->diffInDays($stage->date_fin, false);
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
-                $userId,
+                $currentUserId,
                 'stage_fin_semaine',
                 'Stage bientôt terminé',
                 $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
@@ -57,100 +63,171 @@ class NotificationService
                 'amber',
                 encrypted_route('stages.show', $stage),
                 $stage->id,
-                Stage::class,
-                $stage->date_fin
+                \App\Models\Stage::class
             );
         }
 
-        // 3. Stages récemment terminés (ces 7 derniers jours)
-        $stagesTermines = Stage::where('date_fin', '<', now())
+        // 3STAGES TERMINÉS (7 derniers jours)
+        $stagesTermines = \App\Models\Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
             ->with('etudiant')
-            ->orderBy('date_fin', 'desc')
             ->get();
 
         foreach ($stagesTermines as $stage) {
             $this->createNotificationIfNotExists(
                 'stage_termine_' . $stage->id,
-                $userId,
+                $currentUserId,
                 'stage_termine',
                 'Stage terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage',
+                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
                 'check-circle',
                 'green',
                 encrypted_route('stages.show', $stage),
                 $stage->id,
-                Stage::class,
-                $stage->date_fin
+                \App\Models\Stage::class
             );
         }
-    }
 
-    /**
-     * Créer une notification si elle n'existe pas déjà
-     */
-    private function createNotificationIfNotExists($uniqueId, $userId, $type, $title, $message, $icon, $color, $url, $referenceId = null, $referenceType = null, $time = null)
-    {
-        $exists = AppNotification::where('unique_id', $uniqueId)
-            ->where('user_id', $userId)
-            ->exists();
+        // 🔥  ADMIN SPÉCIFIQUES : Anomalies Présence (24h)
+        $anomalies = \App\Models\AttendanceAnomaly::where('created_at', '>=', now()->subDay())
+            ->where('status', 'open')
+            ->count();
 
-        if (!$exists) {
-            AppNotification::create([
-                'unique_id' => $uniqueId,
-                'user_id' => $userId,
-                'type' => $type,
-                'title' => $title,
-                'message' => $message,
-                'icon' => $icon,
-                'color' => $color,
-                'url' => $url,
-                'reference_id' => $referenceId,
-                'reference_type' => $referenceType,
-                'created_at' => $time ?? now(),
-            ]);
+        if ($anomalies > 0) {
+            $this->createNotificationIfNotExists(
+                'presence_anomalies_' . now()->format('Y-m-d'),
+                $currentUserId,
+                'presence_anomalies',
+                '🚨 ' . $anomalies . ' anomalie(s) présence',
+                'À vérifier immédiatement dans Admin > Présence > Anomalies',
+                'exclamation-triangle',
+                'red',
+                route('admin.presence.anomalies'),
+                null,
+                null
+            );
         }
+
+        // 🔥 5️⃣ Rapports journaliers en attente (aujourd'hui)
+        $rapportsAttente = \App\Models\DailyReport::whereDate('created_at', now())
+            ->where('reviewed_at', null)
+            ->count();
+
+        if ($rapportsAttente > 0) {
+            $this->createNotificationIfNotExists(
+                'rapports_attente_' . now()->format('Y-m-d'),
+                $currentUserId,
+                'rapports_en_attente',
+                '📋 ' . $rapportsAttente . ' rapport(s) à valider',
+                'Nouveaux rapports journaliers soumis aujourd\'hui',
+                'clipboard-list',
+                'orange',
+                route('admin.reports.index'),
+                null,
+                null
+            );
+        }
+
+        // 🔥 6️Badges à attribuer (étudiants sans badge récent) - DISABLED car pas de relation badges()
+        /*
+        $sansBadge = \App\Models\Etudiant::whereDoesntHave('badges', function ($q) {
+            $q->where('created_at', '>=', now()->subDays(30));
+        })
+            ->whereHas('stages', function ($q) {
+                $q->where('date_fin', '<=', now()->subDays(7));
+            })
+            ->count();
+
+        if ($sansBadge > 0) {
+            $this->createNotificationIfNotExists(
+                'badges_manquants_' . now()->format('Y-m-d'),
+                $currentUserId,
+                'badges_manquants',
+                '🏷️ ' . $sansBadge . ' badge(s) à attribuer',
+                'Étudiants avec stages terminés sans badge récent',
+                'ticket',
+                'purple',
+                route('badges.index'),
+                null,
+                null
+            );
+        }
+        */
+    }
+    // ✅ Fin generateNotifications() - Code propre, 6 alertes admin prêtes !
+
+    /**
+     * Creer une notification si elle n'existe pas deja.
+     */
+    private function createNotificationIfNotExists($uniqueId, $currentUserId, $type, $title, $message, $icon, $color, $url, $referenceId = null, $referenceType = null, $time = null)
+    {
+        // jb -> La base impose un unique_id global. On le scope donc
+        // explicitement par utilisateur pour eviter qu'une meme alerte
+        // "metier" explose quand plusieurs comptes doivent la recevoir.
+        $scopedUniqueId = $this->buildScopedUniqueId($uniqueId, $currentUserId);
+
+        AppNotification::updateOrCreate(
+            ['unique_id' => $scopedUniqueId],
+            [
+                'user_id'        => $currentUserId,
+                'type'           => $type,
+                'title'          => $title,
+                'message'        => $message,
+                'icon'           => $icon,
+                'color'          => $color,
+                'url'            => $url,   // ← l'URL sera corrigée à chaque régénération
+                'reference_id'   => $referenceId,
+                'reference_type' => $referenceType,
+                'updated_at'     => now(),
+            ]
+        );
+    }
+
+    private function buildScopedUniqueId(string $uniqueId, int|string|null $userId): string
+    {
+        return "{$uniqueId}_user_{$userId}";
     }
 
     /**
-     * Marquer une notification comme lue
+     * Marquer une notification comme lue.
      */
     public function markAsRead($notificationId)
     {
         $notification = AppNotification::find($notificationId);
+
         if ($notification && $notification->user_id === Auth::id()) {
             $notification->markAsRead();
         }
     }
 
     /**
-     * Marquer toutes les notifications comme lues
+     * Marquer toutes les notifications comme lues.
      */
     public function markAllAsRead()
     {
-        AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->update(['read_at' => now()]);
     }
 
     /**
-     * Obtenir les notifications non lues
+     * Obtenir les notifications non lues.
      */
     public function getUnreadNotifications()
     {
-        return AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        return AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->orderBy('created_at', 'desc')
             ->get();
     }
 
     /**
-     * Obtenir le nombre de notifications non lues
+     * Obtenir le nombre de notifications non lues.
      */
     public function getUnreadCount()
     {
-        return AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        return AppNotification::visibleForUser(Auth::user())
+            ->unread()
             ->count();
     }
 }

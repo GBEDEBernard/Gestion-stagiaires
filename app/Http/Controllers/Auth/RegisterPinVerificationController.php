@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RolePermissionPresetService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,11 @@ use Illuminate\View\View;
 
 class RegisterPinVerificationController extends Controller
 {
+    public function __construct(
+        protected RolePermissionPresetService $rolePermissionPresetService
+    ) {
+    }
+
     /**
      * Display the verify PIN view after registration.
      */
@@ -70,9 +76,10 @@ class RegisterPinVerificationController extends Controller
         // Mark the user's email as verified
         $user->markEmailAsVerified();
 
-        // Assign "user" role to the new user if they don't have any role
+        // jb -> L'inscription publique rattache par defaut le nouveau compte
+        // au role metier etudiant si aucun role n'existe encore.
         if (!$user->hasAnyRole()) {
-            $user->assignRole('user');
+            $this->rolePermissionPresetService->ensureRoleDefaults($user, ['etudiant']);
         }
 
         return redirect()->route('login')

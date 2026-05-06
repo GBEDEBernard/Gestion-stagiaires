@@ -22,6 +22,9 @@ class PasswordController extends Controller
 
         $request->user()->update([
             'password' => Hash::make($validated['password']),
+            'must_change_password' => false,
+            'temporary_password_created_at' => null,
+            'password_changed_at' => now(),
         ]);
 
         return back()->with('status', 'password-updated');

@@ -66,13 +66,12 @@
                     </x-primary-button>
                 </div>
 
-                <!-- Lien vers inscription -->
-                <div class="text-center mt-4">
+                <!-- <div class="text-center mt-4">
                     <span class="text-sm text-gray-600">Pas encore de compte ? </span>
                     <a href="{{ route('register') }}" class="text-sm text-blue-600 hover:text-blue-800 font-semibold underline">
                         Créer un compte
                     </a>
-                </div>
+                </div> -->
 
                 <!-- Premier utilisateur (affiché uniquement si aucun utilisateur) -->
                 @if(\App\Models\User::count() === 0)

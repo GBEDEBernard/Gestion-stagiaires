@@ -19,6 +19,10 @@
                 @csrf
                 @method('PUT')
 
+                <div class="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
+                    Le compte de connexion lie au stagiaire sera synchronise automatiquement avec cet email.
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label for="nom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom <span class="text-red-500">*</span></label>

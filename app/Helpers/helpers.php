@@ -58,3 +58,23 @@ if (!function_exists('decrypt_route_param')) {
         }
     }
 }
+
+if (!function_exists('formatMinutes')) {
+    /**
+     * Format minutes to hours:minutes
+     * 125 → "2h 5min" | 90 → "1h 30min" | 45 → "45min"
+     */
+    function formatMinutes($minutes)
+    {
+        $minutes = (int) $minutes;
+        if ($minutes <= 0) return '0min';
+
+        $hours = floor($minutes / 60);
+        $mins = $minutes % 60;
+
+        if ($hours == 0) return $mins . 'min';
+        if ($mins == 0) return $hours . 'h';
+
+        return $hours . 'h ' . $mins . 'min';
+    }
+}

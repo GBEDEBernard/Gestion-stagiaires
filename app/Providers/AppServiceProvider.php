@@ -44,8 +44,11 @@ class AppServiceProvider extends ServiceProvider
         // Enregistrer le ViewComposer pour la navigation
         View::composer('layouts.navigation', NavigationComposer::class);
 
-        // Enregistrer le ViewComposer pour les notifications (pour toutes les vues)
-        View::composer('layouts.app', NotificationComposer::class);
+        // Enregistrer le ViewComposer pour les notifications (TOUTES LES VUES ✨)
+        View::composer('*', NotificationComposer::class);
+
+        // ✅ NOUVEAU : Enregistrer AuthServiceProvider pour Gates
+        $this->app->register(\App\Providers\AuthServiceProvider::class);
 
         // Route Model Binding personnalisé pour le décryptage
         // Ce binding s'exécute automatiquement quand une route contient {stage}, {etudiant}, etc.
@@ -95,6 +98,10 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('signataire', function ($value) {
             return $this->resolveEncryptedModel($value, Signataire::class);
         });
+        Route::bind('site', function ($value) {
+            return $this->resolveEncryptedModel($value, \App\Models\Site::class);
+        });
+       
     }
 
     /**
@@ -135,4 +142,5 @@ class AppServiceProvider extends ServiceProvider
         // and are not purely numeric
         return strlen($value) > 20 && !is_numeric($value);
     }
+    
 }

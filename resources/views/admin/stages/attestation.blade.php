@@ -330,7 +330,7 @@
                     <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
                     <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
                     @else
-                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
+                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} la  <b>{{ $stage->service->nom ?? '—' }}</b>, durant la periode du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
                     <p>Durant cette période,{{ $pronom }} {{ $texteTheme }}</p>
                     @endif
 
@@ -340,7 +340,7 @@
                 <div class="signatures">
                     @foreach($signataires as $signataire)
                     <div class="sign director">
-                        <p><b>Fait à Cotonou, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                        <p><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
                         @php
                         $parOrdre = $signataire->pivot->par_ordre ?? false;
                         @endphp

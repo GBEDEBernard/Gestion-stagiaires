@@ -31,6 +31,7 @@ class SignataireController extends Controller
     {
         $validated = $request->validate([
             'nom'   => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
             'poste' => 'required|string|max:255',
             'sigle' => 'required|string|max:10',
             'ordre' => 'nullable|integer|min:1'
@@ -57,6 +58,7 @@ class SignataireController extends Controller
     {
         $validated = $request->validate([
             'nom'   => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
             'poste' => 'required|string|max:255',
             'sigle' => 'required|string|max:10',
             'ordre' => 'nullable|integer|min:1'
