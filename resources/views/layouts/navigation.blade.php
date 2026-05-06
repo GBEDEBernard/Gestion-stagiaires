@@ -25,8 +25,9 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     </button>
 
     <nav
-        class="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900
-        transform transition duration-300 flex flex-col"
+        class="fixed inset-y-0 left-0 z-40 w-72
+        transform transition duration-300 flex flex-col overflow-hidden"
+        style="background:#1e2433"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
         <!-- Bouton fermer -->
