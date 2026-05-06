@@ -103,9 +103,6 @@ class PresenceService
                 ]);
             }
 
-            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
-            $event->refresh();
-
             // ✅ OBSERVATION RETARD : Créer anomalie si retard d'arrivée
             if ($isLate && $eventType === 'check_in' && $observation_message) {
                 $this->recordAnomaly($event, 'retard_arrivee', 'moyen', [
@@ -117,6 +114,7 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
+            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
 
             return $event;
         });
@@ -329,9 +327,6 @@ class PresenceService
                 ]);
             }
 
-            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
-            $event->refresh();
-
             // ✅ OBSERVATION RETARD : Créer anomalie si retard d'arrivée (étudiant)
             if ($isLate && $eventType === 'check_in' && $observation_message) {
                 $this->recordAnomaly($event, 'retard_arrivee', 'moyen', [
@@ -343,6 +338,8 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
+
+            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
 
             return $event;
         });
@@ -425,6 +422,8 @@ class PresenceService
             'is_trusted' => $device->is_trusted,
         ]);
     }
+
+
 
     protected function evaluateEvent(Stage $stage, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
     {
@@ -556,33 +555,21 @@ class PresenceService
         $day->save();
     }
 
+
+
     /**
-     * Enregistre une anomalie de présence.
-     * La méthode détermine automatiquement l'attendance_day_id si non fourni.
+     * Enregistre une anomalie de présence de manière compatible avec les employés et stagiaires.
+     * Pour les employés: stage_id et etudiant_id = null, user_id renseigné.
+     * Pour les stagiaires: stage_id et etudiant_id renseignés.
      */
     protected function recordAnomaly(AttendanceEvent $event, string $type, string $severity, array $payload = []): void
     {
-        // Recherche de l'attendance_day_id associé à l'événement
-        $attendanceDayId = null;
-        if ($event->event_type === 'check_in') {
-            $day = AttendanceDay::where('check_in_event_id', $event->id)->first();
-            $attendanceDayId = $day?->id;
-        } elseif ($event->event_type === 'check_out') {
-            $day = AttendanceDay::where('check_out_event_id', $event->id)->first();
-            $attendanceDayId = $day?->id;
-        }
-
-        // Fallback : si aucune correspondance, on tente via la relation attendue
-        if (!$attendanceDayId && $event->relationLoaded('attendanceDay') && $event->attendanceDay) {
-            $attendanceDayId = $event->attendanceDay->id;
-        }
-
         AttendanceAnomaly::create([
             'attendance_event_id' => $event->id,
-            'attendance_day_id' => $attendanceDayId,
-            'stage_id' => $event->stage_id ?? null,
-            'etudiant_id' => $event->etudiant_id ?? null,
-            'user_id' => $event->user_id,
+            'attendance_day_id' => $event->attendanceDay?->id ?? null,
+            'stage_id' => $event->stage_id ?? null,        // NULL pour employés
+            'etudiant_id' => $event->etudiant_id ?? null,  // NULL pour employés
+            'user_id' => $event->user_id,                  // TOUJOURS renseigné
             'anomaly_type' => $type,
             'severity' => $severity,
             'status' => 'open',
@@ -607,7 +594,10 @@ class PresenceService
     protected function computeLateMinutes(?Stage $stage, $occurredAt): int
     {
         $expected = $occurredAt->copy()->setTime(8, 0);
-        return $occurredAt->greaterThan($expected) ? $expected->diffInMinutes($occurredAt) : 0;
+
+        return $occurredAt->greaterThan($expected)
+            ? $expected->diffInMinutes($occurredAt)
+            : 0;
     }
 
     protected function computeEarlyDepartureMinutes(Stage $stage, $occurredAt): int
@@ -620,27 +610,36 @@ class PresenceService
         $grace = (int) ($stage->allowed_early_departure_minutes ?? 0);
         $effectiveExpected = $expected->copy()->subMinutes($grace);
 
-        return $occurredAt->lessThan($effectiveExpected) ? $occurredAt->diffInMinutes($effectiveExpected) : 0;
+        return $occurredAt->lessThan($effectiveExpected)
+            ? $occurredAt->diffInMinutes($effectiveExpected)
+            : 0;
     }
 
     /**
-     * Calcule le statut d'arrivée: ontime, warning, late
+     * Calcule le statut d'arrivée: ontime (7h00-7h45), warning (7h50-7h59), late (>=8h00)
      */
     protected function computeArrivalStatus($occurredAt): string
     {
         $threshold = $occurredAt->copy()->setTime(8, 0);
-        return $occurredAt->lessThan($threshold) ? 'ontime' : 'late';
+
+        return $occurredAt->lessThan($threshold)
+            ? 'ontime'
+            : 'late';
     }
 
     protected function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
     {
         $earthRadius = 6371000;
+
         $latDelta = deg2rad($latTo - $latFrom);
         $lngDelta = deg2rad($lngTo - $lngFrom);
+
         $a = sin($latDelta / 2) * sin($latDelta / 2)
             + cos(deg2rad($latFrom)) * cos(deg2rad($latTo))
             * sin($lngDelta / 2) * sin($lngDelta / 2);
+
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
         return (int) round($earthRadius * $c);
     }
 

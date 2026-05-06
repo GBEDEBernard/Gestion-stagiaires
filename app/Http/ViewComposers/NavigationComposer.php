@@ -36,11 +36,14 @@ class NavigationComposer
         // Compter les rôles
         $rolesCount = Role::count();
 
-        // Récupérer les domaines pour le menu Employés
-        $domaines = Domaine::with('sites')->get();
+        // Récupérer les domaines et sites uniquement si l'utilisateur a accès (Admin/Superviseur)
+        $domaines = collect();
+        $sites = collect();
 
-        // Récupérer les sites pour le menu (avec leurs domaines)
-        $sites = Site::with('domaines.users')->orderBy('name')->get();
+        if (Auth::check() && Auth::user()->hasAnyRole(['admin', 'superviseur'])) {
+            $domaines = Domaine::with('sites')->get();
+            $sites = Site::with('domaines.users')->orderBy('name')->get();
+        }
 
         // Compter les anomalies ouvertes
         $anomaliesCount = \App\Models\AttendanceAnomaly::where('status', 'open')->count();

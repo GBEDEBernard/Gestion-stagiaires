@@ -222,6 +222,7 @@
             .pres-filter-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+
             .pres-filter-actions {
                 grid-column: span 2;
             }
@@ -231,6 +232,7 @@
             .pres-filter-grid {
                 grid-template-columns: 1fr;
             }
+
             .pres-filter-actions {
                 grid-column: span 1;
             }
@@ -358,10 +360,12 @@
         .kpi-emerald .pres-kpi-accent {
             background: var(--emerald);
         }
+
         .kpi-emerald .pres-kpi-icon {
             background: rgba(16, 185, 129, .12);
             color: var(--emerald);
         }
+
         .kpi-emerald .pres-kpi-badge {
             background: rgba(16, 185, 129, .12);
             color: var(--emerald);
@@ -370,10 +374,12 @@
         .kpi-amber .pres-kpi-accent {
             background: var(--amber);
         }
+
         .kpi-amber .pres-kpi-icon {
             background: rgba(245, 158, 11, .12);
             color: var(--amber);
         }
+
         .kpi-amber .pres-kpi-badge {
             background: rgba(245, 158, 11, .12);
             color: var(--amber);
@@ -382,10 +388,12 @@
         .kpi-blue .pres-kpi-accent {
             background: var(--blue);
         }
+
         .kpi-blue .pres-kpi-icon {
             background: rgba(59, 130, 246, .12);
             color: var(--blue);
         }
+
         .kpi-blue .pres-kpi-badge {
             background: rgba(59, 130, 246, .12);
             color: var(--blue);
@@ -394,10 +402,12 @@
         .kpi-rose .pres-kpi-accent {
             background: var(--rose);
         }
+
         .kpi-rose .pres-kpi-icon {
             background: rgba(244, 63, 94, .12);
             color: var(--rose);
         }
+
         .kpi-rose .pres-kpi-badge {
             background: rgba(244, 63, 94, .12);
             color: var(--rose);
@@ -540,7 +550,6 @@
             border-radius: 999px;
             font-size: .73rem;
             font-weight: 600;
-            white-space: nowrap;
         }
 
         .tag-amber {
@@ -576,6 +585,7 @@
         .mt-6 {
             margin-top: 1.5rem;
         }
+
         .mt-4 {
             margin-top: 1rem;
         }
@@ -584,6 +594,7 @@
         .mobile-cards {
             display: none;
         }
+
         .desktop-table {
             display: block;
         }
@@ -592,6 +603,7 @@
             .mobile-cards {
                 display: block;
             }
+
             .desktop-table {
                 display: none;
             }
@@ -611,18 +623,22 @@
             padding: .4rem 0;
             border-bottom: 1px solid var(--border);
         }
+
         .mobile-card-row:last-child {
             border-bottom: none;
         }
+
         .mobile-label {
             color: var(--muted);
             font-size: .8rem;
         }
+
         .mobile-value {
             font-weight: 600;
             font-size: .85rem;
         }
 
+        /* RESPONSIVE HEADER */
         @media(max-width:1024px) {
             .pres-page {
                 padding: 1rem 1rem 2.5rem;
@@ -634,10 +650,12 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
             .pres-header-actions {
                 width: 100%;
                 justify-content: space-between;
             }
+
             .pres-header-title {
                 font-size: 1.45rem;
             }
@@ -649,9 +667,9 @@
                 <div class="pres-header-badge">Mon espace</div>
                 <h1 class="pres-header-title">
                     @isset($user)
-                        Pointages de {{ $user->name }}
+                    Pointages de {{ $user->name }}
                     @else
-                        Mon historique de présence
+                    Mon historique de présence
                     @endisset
                 </h1>
                 <p class="pres-header-sub">Vue personnelle · Statistiques détaillées</p>
@@ -751,14 +769,15 @@
 
             {{-- CHARTS --}}
             @php
-                $chartData = $userStats['chart_data'] ?? [];
-                $hasChartData = !empty($chartData['labels']);
+            $chartData = $userStats['chart_data'] ?? [];
+            $hasChartData = !empty($chartData['labels']);
             @endphp
 
             @if($hasChartData)
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
                 <div class="pres-card">
+                    {{-- Légende manuelle pour clarté --}}
                     <div class="chart-legend">
                         <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présent</div>
                         <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
@@ -816,47 +835,47 @@
                                 <td style="font-family:var(--mono);">{{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1).'h' : '—' }}</td>
                                 <td>
                                     @if($day->late_minutes > 0)
-                                        <span class="pres-tag tag-amber">{{ $day->late_minutes }} min</span>
+                                    <span class="pres-tag tag-amber">{{ $day->late_minutes }} min</span>
                                     @else
-                                        <span style="color:var(--muted);">—</span>
+                                    <span style="color:var(--muted);">—</span>
                                     @endif
                                 </td>
                                 <td>
                                     @if($day->first_check_in_at)
-                                        @if($day->arrival_status === 'late')
-                                            <span class="pres-tag tag-amber">En retard</span>
-                                        @else
-                                            <span class="pres-tag tag-emerald">À l'heure</span>
-                                        @endif
+                                    @if($day->arrival_status === 'late')
+                                    <span class="pres-tag tag-amber">En retard</span>
                                     @else
-                                        <span class="pres-tag tag-rose">Absent</span>
+                                    <span class="pres-tag tag-emerald">À l'heure</span>
+                                    @endif
+                                    @else
+                                    <span class="pres-tag tag-rose">Absent</span>
                                     @endif
                                 </td>
                                 <td>
                                     @if($day->arrival_status === 'late')
-                                        @php $obs = $day->late_observation; @endphp
-                                        @if($obs)
-                                            <span class="pres-tag tag-amber" style="cursor:help; white-space:normal; display:inline-block; max-width:220px;" title="{{ e($obs) }}">
-                                                {{ Str::limit($obs, 60) }}
-                                            </span>
-                                        @else
-                                            <span class="pres-tag tag-amber">Retard sans observation</span>
-                                        @endif
+                                    @php $obs = $day->late_observation; @endphp
+                                    @if($obs)
+                                    <span class="pres-tag tag-amber" style="cursor:help; white-space:normal; display:inline-block; max-width:220px;" title="{{ e($obs) }}">
+                                        {{ Str::limit($obs, 60) }}
+                                    </span>
                                     @else
-                                        @php $report = $day->dailyReports->first(); @endphp
-                                        @if($report)
-                                            @if($report->status === 'approved')
-                                                <span class="pres-tag tag-emerald">Rapport approuvé</span>
-                                            @elseif($report->status === 'submitted')
-                                                <span class="pres-tag tag-emerald">Rapport soumis</span>
-                                            @elseif($report->status === 'draft')
-                                                <span class="pres-tag tag-amber">Brouillon rapport</span>
-                                            @else
-                                                <span class="pres-tag">{{ ucfirst($report->status) }}</span>
-                                            @endif
-                                        @else
-                                            <span style="color:var(--muted);font-size:.8rem;">—</span>
-                                        @endif
+                                    <span class="pres-tag tag-amber">Retard sans observation</span>
+                                    @endif
+                                    @else
+                                    @php $report = $day->dailyReports->first(); @endphp
+                                    @if($report)
+                                    @if($report->status === 'approved')
+                                    <span class="pres-tag tag-emerald">Rapport approuvé</span>
+                                    @elseif($report->status === 'submitted')
+                                    <span class="pres-tag tag-emerald">Rapport soumis</span>
+                                    @elseif($report->status === 'draft')
+                                    <span class="pres-tag tag-amber">Brouillon rapport</span>
+                                    @else
+                                    <span class="pres-tag">{{ ucfirst($report->status) }}</span>
+                                    @endif
+                                    @else
+                                    <span style="color:var(--muted);font-size:.8rem;">—</span>
+                                    @endif
                                     @endif
                                 </td>
                             </tr>
@@ -898,13 +917,13 @@
                             <span class="mobile-label">Statut</span>
                             <span class="mobile-value">
                                 @if($day->first_check_in_at)
-                                    @if($day->arrival_status === 'late')
-                                        <span class="pres-tag tag-amber">En retard</span>
-                                    @else
-                                        <span class="pres-tag tag-emerald">À l'heure</span>
-                                    @endif
+                                @if($day->arrival_status === 'late')
+                                <span class="pres-tag tag-amber">En retard</span>
                                 @else
-                                    <span class="pres-tag tag-rose">Absent</span>
+                                <span class="pres-tag tag-emerald">À l'heure</span>
+                                @endif
+                                @else
+                                <span class="pres-tag tag-rose">Absent</span>
                                 @endif
                             </span>
                         </div>
@@ -931,39 +950,32 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             Chart.defaults.font.family = "'DM Sans', sans-serif";
-            // La couleur par défaut sera redéfinie dynamiquement, on ne fixe pas Chart.defaults.color ici
+            Chart.defaults.color = '#9ca3af';
 
             /* ── Données injectées depuis PHP ─────────────────────────── */
             @php
-                $chartDataSafe = $userStats['chart_data'] ?? [
-                    'labels' => [],
-                    'present' => [],
-                    'on_time' => [],
-                    'late_days' => [],
-                    'absences' => [],
-                    'late_minutes' => [],
-                    'worked_hours' => [],
-                ];
+            $chartDataSafe = $userStats['chart_data'] ?? [
+                'labels' => [],
+                'present' => [],
+                'on_time' => [],
+                'late_days' => [],
+                'absences' => [],
+                'late_minutes' => [],
+                'worked_hours' => [],
+            ];
             @endphp
 
             const cd = @json($chartDataSafe);
 
-            const labels      = cd.labels       ?? [];
-            const present     = cd.present      ?? [];
-            const onTime      = cd.on_time      ?? [];
-            const lateDays    = cd.late_days    ?? [];
-            const absences    = cd.absences     ?? [];
+            const labels = cd.labels ?? [];
+            const present = cd.present ?? [];
+            const onTime = cd.on_time ?? [];
+            const lateDays = cd.late_days ?? [];
+            const absences = cd.absences ?? [];
             const lateMinutes = cd.late_minutes ?? [];
             const workedHours = cd.worked_hours ?? [];
 
             if (!labels.length) return; // pas de données → pas de graphique
-
-            /* ── Récupération dynamique des couleurs du thème ────────── */
-            const computedStyle = getComputedStyle(document.documentElement);
-            const textColor   = computedStyle.getPropertyValue('--text').trim()   || '#0f172a';
-            const mutedColor  = computedStyle.getPropertyValue('--muted').trim()  || '#475569';
-            const bg2Color    = computedStyle.getPropertyValue('--bg2').trim()    || '#f8fafc';
-            const borderColor = computedStyle.getPropertyValue('--border').trim() || 'rgba(0,0,0,0.08)';
 
             /* ── Helpers ──────────────────────────────────────────────── */
             const mkGradient = (ctx, top, bottom) => {
@@ -974,17 +986,19 @@
             };
 
             const tooltipStyle = {
-                backgroundColor: bg2Color,
-                borderColor: borderColor,
+                backgroundColor: '#1c2333',
+                borderColor: 'rgba(255,255,255,0.1)',
                 borderWidth: 1,
-                titleColor: textColor,
-                bodyColor: mutedColor,
+                titleColor: '#fff',
+                bodyColor: '#d1d5db',
                 padding: 12,
-                cornerRadius: 8,
+                cornerRadius: 10,
             };
 
             /* ══════════════════════════════════════════════════════════
                GRAPHIQUE 1 — Courbes binaires + minutes retard
+               Axe gauche  (yBin)  : 0 / 1 (présent, à l'heure, retard, absent)
+               Axe droit   (yMin)  : minutes de retard (échelle libre)
             ══════════════════════════════════════════════════════════ */
             const ctx1 = document.getElementById('chartPresence');
             if (ctx1) {
@@ -993,18 +1007,20 @@
                     type: 'line',
                     data: {
                         labels,
-                        datasets: [
-                            {
+                        datasets: [{
                                 label: 'Présent',
                                 data: present,
                                 borderColor: '#10b981',
                                 backgroundColor: mkGradient(g1, 'rgba(16,185,129,.22)', 'rgba(16,185,129,.02)'),
-                                fill: true, tension: 0.4, cubicInterpolationMode: 'monotone',
+                                fill: true,
+                                tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2.5,
                                 pointRadius: present.map(v => v ? 5 : 0),
                                 pointHoverRadius: 8,
                                 pointBackgroundColor: '#10b981',
-                                pointBorderColor: '#fff', pointBorderWidth: 2,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yBin',
                             },
                             {
@@ -1012,12 +1028,15 @@
                                 data: onTime,
                                 borderColor: '#3b82f6',
                                 backgroundColor: mkGradient(g1, 'rgba(59,130,246,.18)', 'rgba(59,130,246,.02)'),
-                                fill: true, tension: 0.4, cubicInterpolationMode: 'monotone',
+                                fill: true,
+                                tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
                                 pointRadius: onTime.map(v => v ? 5 : 0),
                                 pointHoverRadius: 7,
                                 pointBackgroundColor: '#3b82f6',
-                                pointBorderColor: '#fff', pointBorderWidth: 2,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yBin',
                             },
                             {
@@ -1025,12 +1044,15 @@
                                 data: lateDays,
                                 borderColor: '#f59e0b',
                                 backgroundColor: mkGradient(g1, 'rgba(245,158,11,.18)', 'rgba(245,158,11,.02)'),
-                                fill: true, tension: 0.4, cubicInterpolationMode: 'monotone',
+                                fill: true,
+                                tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
                                 pointRadius: lateDays.map(v => v ? 5 : 0),
                                 pointHoverRadius: 7,
                                 pointBackgroundColor: '#f59e0b',
-                                pointBorderColor: '#fff', pointBorderWidth: 2,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yBin',
                             },
                             {
@@ -1038,12 +1060,15 @@
                                 data: absences,
                                 borderColor: '#f43f5e',
                                 backgroundColor: mkGradient(g1, 'rgba(244,63,94,.16)', 'rgba(244,63,94,.02)'),
-                                fill: true, tension: 0.4, cubicInterpolationMode: 'monotone',
+                                fill: true,
+                                tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
                                 pointRadius: absences.map(v => v ? 5 : 0),
                                 pointHoverRadius: 7,
                                 pointBackgroundColor: '#f43f5e',
-                                pointBorderColor: '#fff', pointBorderWidth: 2,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yBin',
                             },
                             {
@@ -1051,50 +1076,106 @@
                                 data: lateMinutes,
                                 borderColor: '#f97316',
                                 backgroundColor: 'transparent',
-                                fill: false, tension: 0.35,
+                                fill: false,
+                                tension: 0.35,
                                 borderWidth: 2,
                                 borderDash: [6, 4],
                                 pointRadius: lateMinutes.map(v => v > 0 ? 4 : 0),
                                 pointHoverRadius: 6,
                                 pointBackgroundColor: '#f97316',
-                                pointBorderColor: '#fff', pointBorderWidth: 1,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
                                 yAxisID: 'yMin',
                             },
                         ],
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false,
-                        animation: { duration: 900, easing: 'easeOutQuart' },
-                        interaction: { mode: 'index', intersect: false },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 900,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         plugins: {
-                            legend: { display: false },
-                            tooltip: { ...tooltipStyle, callbacks: {
-                                label(ctx) {
-                                    const v = ctx.parsed.y;
-                                    const lbl = ctx.dataset.label;
-                                    if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
-                                    return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
+                            legend: {
+                                display: false
+                            }, // on utilise la légende HTML custom
+                            tooltip: {
+                                ...tooltipStyle,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        const lbl = ctx.dataset.label;
+                                        if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
+                                        return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
+                                    },
                                 },
-                            } },
+                            },
                         },
                         scales: {
                             x: {
-                                grid: { color: borderColor },
-                                ticks: { color: textColor, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 14 },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.04)'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    maxTicksLimit: 14
+                                },
                             },
                             yBin: {
-                                type: 'linear', position: 'left',
-                                min: -0.1, max: 1.4,
-                                title: { display: true, text: '0 = Non  /  1 = Oui', color: mutedColor, font: { size: 10 } },
-                                ticks: { stepSize: 1, callback: v => v === 0 ? '0' : v === 1 ? '1' : '', color: mutedColor, font: { size: 10 } },
-                                grid: { color: borderColor },
+                                type: 'linear',
+                                position: 'left',
+                                min: -0.1,
+                                max: 1.4,
+                                title: {
+                                    display: true,
+                                    text: '0 = Non  /  1 = Oui',
+                                    color: '#6b7280',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    stepSize: 1,
+                                    callback: v => v === 0 ? '0' : v === 1 ? '1' : '',
+                                    color: '#6b7280',
+                                    font: {
+                                        size: 10
+                                    },
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                },
                             },
                             yMin: {
-                                type: 'linear', position: 'right',
+                                type: 'linear',
+                                position: 'right',
                                 min: 0,
-                                title: { display: true, text: 'Minutes', color: '#f97316', font: { size: 10 } },
-                                ticks: { callback: v => v + ' min', color: mutedColor, font: { size: 10 } },
-                                grid: { drawOnChartArea: false },
+                                title: {
+                                    display: true,
+                                    text: 'Minutes',
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    callback: v => v + ' min',
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
                             },
                         },
                     },
@@ -1103,7 +1184,8 @@
 
             /* ══════════════════════════════════════════════════════════
                GRAPHIQUE 2 — Barres : heures travaillées + retard (min)
-               Version totalement adaptative (couleurs du thème)
+               Axe gauche : heures
+               Axe droit  : minutes de retard
             ══════════════════════════════════════════════════════════ */
             const ctx2 = document.getElementById('chartOverview');
             if (ctx2) {
@@ -1111,11 +1193,10 @@
                     type: 'bar',
                     data: {
                         labels,
-                        datasets: [
-                            {
+                        datasets: [{
                                 label: 'Heures travaillées',
                                 data: workedHours,
-                                backgroundColor: 'rgba(59,130,246,0.8)',
+                                backgroundColor: 'rgba(59,130,246,.75)',
                                 borderColor: '#3b82f6',
                                 borderWidth: 1,
                                 borderRadius: 5,
@@ -1127,7 +1208,7 @@
                             {
                                 label: 'Retard (min)',
                                 data: lateMinutes,
-                                backgroundColor: 'rgba(245,158,11,0.8)',
+                                backgroundColor: 'rgba(245,158,11,.7)',
                                 borderColor: '#f59e0b',
                                 borderWidth: 1,
                                 borderRadius: 5,
@@ -1139,39 +1220,98 @@
                         ],
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false,
-                        animation: { duration: 800, easing: 'easeOutQuart' },
-                        interaction: { mode: 'index', intersect: false },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 800,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         plugins: {
                             legend: {
                                 position: 'top',
-                                labels: { color: textColor, usePointStyle: true, padding: 14, font: { size: 12, weight: '500' } },
-                            },
-                            tooltip: { ...tooltipStyle, callbacks: {
-                                label(ctx) {
-                                    const v = ctx.parsed.y;
-                                    return ctx.dataset.label === 'Heures travaillées' ? `Heures: ${v}h` : `Retard: ${v} min`;
+                                labels: {
+                                    color: '#e5e7eb',
+                                    usePointStyle: true,
+                                    padding: 14,
+                                    font: {
+                                        size: 12
+                                    }
                                 },
-                            } },
+                            },
+                            tooltip: {
+                                ...tooltipStyle,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        return ctx.dataset.label === 'Heures travaillées' ?
+                                            `Heures: ${v}h` :
+                                            `Retard: ${v} min`;
+                                    },
+                                },
+                            },
                         },
                         scales: {
                             x: {
-                                grid: { display: false, drawBorder: true, color: borderColor },
-                                ticks: { color: textColor, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 14 },
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    maxTicksLimit: 14
+                                },
                             },
                             yHours: {
-                                type: 'linear', position: 'left',
+                                type: 'linear',
+                                position: 'left',
                                 min: 0,
-                                title: { display: true, text: 'Heures', color: '#3b82f6', font: { size: 10, weight: 'bold' } },
-                                ticks: { callback: v => v + 'h', color: textColor, font: { size: 9 } },
-                                grid: { color: borderColor, drawBorder: true },
+                                title: {
+                                    display: true,
+                                    text: 'Heures',
+                                    color: '#3b82f6',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    callback: v => v + 'h',
+                                    color: '#3b82f6',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
+                                },
                             },
                             yMin: {
-                                type: 'linear', position: 'right',
+                                type: 'linear',
+                                position: 'right',
                                 min: 0,
-                                title: { display: true, text: 'Retard (min)', color: '#f59e0b', font: { size: 10, weight: 'bold' } },
-                                ticks: { callback: v => v + ' min', color: textColor, font: { size: 9 } },
-                                grid: { drawOnChartArea: false },
+                                title: {
+                                    display: true,
+                                    text: 'Retard (min)',
+                                    color: '#f59e0b',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    callback: v => v + ' min',
+                                    color: '#f59e0b',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
                             },
                         },
                     },

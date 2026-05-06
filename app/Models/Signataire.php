@@ -12,11 +12,17 @@ class Signataire extends Model
  use SoftDeletes; // ✅ active le soft delete
     protected $fillable = [
         'nom',
+        'email',
         'poste',
         'sigle',
         'ordre',
         'peut_par_ordre',
     ];
+
+    public function permissionRecipients()
+    {
+        return $this->hasMany(\App\Models\PermissionRequestRecipient::class);
+    }
 
     public function attestations()
     {

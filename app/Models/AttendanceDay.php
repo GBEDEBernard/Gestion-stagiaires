@@ -101,12 +101,10 @@ class AttendanceDay extends Model
      */
     public function lateAnomaly()
     {
-        return $this->hasOne(AttendanceAnomaly::class, 'attendance_day_id')
-
+        return $this->hasOne(AttendanceAnomaly::class)
             ->where('anomaly_type', 'retard_arrivee')
             ->orderByDesc('detected_at');
     }
-
 
     /**
      * Accesseur pour obtenir le message d'observation du retard (s'il existe)
