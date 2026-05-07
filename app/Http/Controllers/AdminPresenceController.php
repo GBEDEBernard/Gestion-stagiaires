@@ -154,12 +154,12 @@ class AdminPresenceController extends Controller
             return response()->json($anomalies);
         }
 
-        // ✅ Correction : utiliser Blade au lieu d'Inertia
+        // Correction : utiliser Blade au lieu d'Inertia
         return view('admin.presence.anomalies', compact('anomalies'));
     }
 
     /**
-     * ✅ Suivi Pointage - Admin
+     * Suivi Pointage - Admin
      */
     public function pointageSuivi(Request $request)
     {

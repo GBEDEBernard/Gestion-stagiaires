@@ -557,7 +557,7 @@ class PresenceService
 
     /**
      * Évalue la validité du pointage pour un stagiaire.
-     * ✅ NOUVEAU : la distance maximale acceptée est de 100 mètres.
+     * NOUVEAU : la distance maximale acceptée est de 100 mètres.
      */
     protected function evaluateEvent(Stage $stage, string $eventType, array $payload, ?SiteGeofence $geofence, ?int $distance): array
     {
@@ -609,7 +609,7 @@ class PresenceService
             ];
         }
 
-        // ✅ NOUVEAU : vérification de la distance (max 100 m)
+        //NOUVEAU : vérification de la distance (max 100 m)
         if ($distance !== null && $distance > self::MAX_ALLOWED_DISTANCE_METERS) {
             if ($isInternalNetwork && $accuracy > 300) {
                 return [
