@@ -4,16 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\AttendanceAnomaly;
+use Illuminate\Support\Carbon;
 
 class AttendanceDay extends Model
 {
     use HasFactory;
 
-    /**
-     * Defaults pour employés: pas de stage/etudiant nécessaire
-     * Garantit NULL sur firstOrNew(['user_id', 'attendance_date'])
-     */
     protected $attributes = [
         'etudiant_id' => null,
         'stage_id' => null,
@@ -51,121 +47,91 @@ class AttendanceDay extends Model
         'departure_status' => 'string',
     ];
 
-    public function stage()
-    {
-        return $this->belongsTo(Stage::class);
-    }
-
-    public function etudiant()
-    {
-        return $this->belongsTo(Etudiant::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function site()
-    {
-        return $this->belongsTo(Site::class);
-    }
-
-    public function checkInEvent()
-    {
-        return $this->belongsTo(AttendanceEvent::class, 'check_in_event_id');
-    }
-
-    public function checkOutEvent()
-    {
-        return $this->belongsTo(AttendanceEvent::class, 'check_out_event_id');
-    }
-
-    public function validator()
-    {
-        return $this->belongsTo(User::class, 'validated_by');
-    }
-
-    public function anomalies()
-    {
-        return $this->hasMany(AttendanceAnomaly::class);
-    }
-
-    public function dailyReports()
-    {
-        return $this->hasMany(DailyReport::class);
-    }
-
-    /**
-     * Relation avec l'anomalie de retard (une seule par jour, la plus récente)
-     */
-    public function lateAnomaly()
-    {
+    // ========== RELATIONS ==========
+    // Relations pour filtrer les présences par stage/étudiant (pour stagiaires) ou par utilisateur (pour employés)
+    public function stage() { return $this->belongsTo(Stage::class); }
+    // Relation avec étudiant pour filtrer les présences par étudiant (pour stagiaires)
+    public function etudiant() { return $this->belongsTo(Etudiant::class); }
+    // Relation avec utilisateur pour filtrer les présences par utilisateur (pour employés)
+    public function user() { return $this->belongsTo(User::class); }
+    // Relation avec site pour filtrer les présences par site
+    public function site() { return $this->belongsTo(Site::class); }
+    // Relations avec les événements de pointage pour accéder facilement aux détails des check-in/check-out
+    public function checkInEvent() { return $this->belongsTo(AttendanceEvent::class, 'check_in_event_id'); }
+    // Relation pour accéder à l'événement de check-out, utile pour les rapports détaillés et les anomalies liées au départ
+    public function checkOutEvent() { return $this->belongsTo(AttendanceEvent::class, 'check_out_event_id'); }
+    // Relation avec l'utilisateur qui a validé la présence (pour les validations manuelles)
+    public function validator() { return $this->belongsTo(User::class, 'validated_by'); }
+    // Relation avec les anomalies de présence pour accéder facilement aux anomalies détectées sur ce jour de présence
+    public function anomalies() { return $this->hasMany(AttendanceAnomaly::class); }
+    // Relation avec les rapports quotidiens pour accéder aux rapports générés à partir de ce jour de présence
+    public function dailyReports() { return $this->hasMany(DailyReport::class); }
+    // Relation pour accéder à l'anomalie de retard d'arrivée
+    public function lateAnomaly() {
         return $this->hasOne(AttendanceAnomaly::class)
             ->where('anomaly_type', 'retard_arrivee')
             ->orderByDesc('detected_at');
     }
 
-    /**
-     * Accesseur pour obtenir le message d'observation du retard (s'il existe)
-     */
-    public function getLateObservationAttribute(): ?string
-    {
+    public function getLateObservationAttribute(): ?string {
         return $this->lateAnomaly?->payload['message_observation'] ?? null;
     }
 
-    /**
-     * Scopes pour statistiques optimisées.
-     */
+    // ========== SCOPES ==========
 
     /**
-     * Scope pour stats globales (avec période).
+     * Restreint aux jours ouvrés (lundi au vendredi)
      */
-    public function scopeGlobalStats($query, $period = 'today')
+    public function scopeWeekdays($query)
     {
+        return $query->whereRaw('WEEKDAY(attendance_date) BETWEEN 0 AND 4');
+    }
+
+    /**
+     * Scope pour la période (avec dates personnalisées)
+     */
+    public function scopeGlobalStats($query, $period = 'today', ?string $dateFrom = null, ?string $dateTo = null)
+    {
+        if ($dateFrom && $dateTo) {
+            return $query->whereBetween('attendance_date', [Carbon::parse($dateFrom), Carbon::parse($dateTo)]);
+        }
+
         switch ($period) {
             case 'week':
                 return $query->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()]);
             case 'month':
-                return $query->whereMonth('attendance_date', now()->month)
-                    ->whereYear('attendance_date', now()->year);
+                return $query->whereMonth('attendance_date', now()->month)->whereYear('attendance_date', now()->year);
             case 'year':
                 return $query->whereYear('attendance_date', now()->year);
             default:
                 return $query->whereDate('attendance_date', today());
         }
     }
-
-    /**
-     * Scope par groupe (étudiants/employés).
-     */
-    public function scopeEtudiants($query)
-    {
-        return $query->whereNotNull('etudiant_id');
-    }
-
-    public function scopeEmployes($query)
-    {
-        return $query->whereNotNull('user_id')->whereNull('etudiant_id');
-    }
-
-    /**
-     * Scope utilisateur spécifique (détecte étudiant/employé).
-     */
-    public function scopeForUser($query, $userId)
-    {
+// Scopes pour filtrer les présences par type d'utilisateur et par statut d'anomalie
+    public function scopeEtudiants($query) { return $query->whereNotNull('etudiant_id'); }
+    // Scope pour filtrer les présences des employés (user_id non null et etudiant_id null)
+    public function scopeEmployes($query) { return $query->whereNotNull('user_id')->whereNull('etudiant_id'); }
+//    Scope pour filtrer les présences validées
+    public function scopeForUser($query, $userId) {
         return $query->where(function ($q) use ($userId) {
-            $q->where('etudiant_id', $userId)
-                ->orWhere('user_id', $userId);
+            $q->where('etudiant_id', $userId)->orWhere('user_id', $userId);
         });
     }
+    // Scope pour filtrer les présences avec anomalies (anomaly_count > 0)
+    public function scopeWithAnomalies($query) { return $query->where('anomaly_count', '>', 0); }
+    // Scope pour filtrer les présences sans anomalies    public function scopeWithoutAnomalies($query) { return $query->where('anomaly_count', 0); }
+    public function scopeAbsences($query) { return $query->whereNull('first_check_in_at'); }
+//    Scope pour filtrer les présences en retard (late_minutes > 0)
+    public function isLate() { return $this->late_minutes > 0; }
 
     /**
-     * Scope top retards.
+     * Scope TOP LATE – uniquement jours ouvrés
      */
-    public function scopeTopLate($query, $limit = 10, $period = 'today', ?string $dateFrom = null, ?string $dateTo = null)
+    public function scopeTopLate($query, int $limit = 10, string $period = 'today', ?string $dateFrom = null, ?string $dateTo = null)
     {
-        $query->globalStats($period, $dateFrom, $dateTo);
+        $query->globalStats($period, $dateFrom, $dateTo)
+              ->weekdays()
+              ->where('late_minutes', '>', 0);
 
         return $query->selectRaw('
                 COALESCE(etudiant_users.id, direct_users.id) as user_id,
@@ -174,6 +140,7 @@ class AttendanceDay extends Model
                 COUNT(*) as days_count,
                 AVG(late_minutes) as avg_late
             ')
+        
             ->leftJoin('stages', 'attendance_days.stage_id', 'stages.id')
             ->leftJoin('etudiants', 'stages.etudiant_id', 'etudiants.id')
             ->leftJoin('users as etudiant_users', 'etudiants.user_id', 'etudiant_users.id')
@@ -181,21 +148,5 @@ class AttendanceDay extends Model
             ->groupBy('user_id', 'user_name')
             ->orderByDesc('total_late')
             ->limit($limit);
-    }
-
-    /**
-     * Scope absences (sans check-in).
-     */
-    public function scopeAbsences($query)
-    {
-        return $query->whereNull('first_check_in_at');
-    }
-
-    /**
-     * Vérifie si l'arrivée est en retard.
-     */
-    public function isLate()
-    {
-        return $this->late_minutes > 0;
     }
 }
