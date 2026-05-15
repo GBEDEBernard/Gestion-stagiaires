@@ -6,55 +6,42 @@ use Illuminate\View\View;
 use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
-use App\Models\AttendanceDay;
+use App\Models\AttendanceAnomaly;
 use App\Models\Domaine;
 use App\Models\Site;
-
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
-
 
 class NavigationComposer
 {
     public function compose(View $view)
     {
-        // Compter les stages actifs (en cours)
         $stagesCount = Stage::whereDate('date_debut', '<=', now())
             ->whereDate('date_fin', '>=', now())
             ->count();
 
-        // Compter les étudiants
         $etudiantsCount = Etudiant::count();
-
-        // Compter les badges disponibles
         $badgesCount = Badge::count();
-
-        // Compter les utilisateurs
         $usersCount = User::count();
-
-        // Compter les rôles
         $rolesCount = Role::count();
 
-        // Récupérer les domaines et sites uniquement si l'utilisateur a accès (Admin/Superviseur)
         $domaines = collect();
         $sites = collect();
 
         if (Auth::check() && Auth::user()->hasAnyRole(['admin', 'superviseur'])) {
             $domaines = Domaine::with('sites')->get();
-            $sites = Site::with('domaines.users')->orderBy('name')->get();
+            // Charger uniquement les sites, sans la relation 'domaines.users' (obsolète)
+            $sites = Site::orderBy('name')->get();
         }
 
-        // Compter les anomalies ouvertes
-        $anomaliesCount = \App\Models\AttendanceAnomaly::where('status', 'open')->count();
+        $anomaliesCount = AttendanceAnomaly::where('status', 'open')->count();
 
-        // Compter les éléments dans la corbeille (toutes tables confondues)
         $trashCount = Stage::onlyTrashed()->count()
             + Etudiant::onlyTrashed()->count()
             + Badge::onlyTrashed()->count()
             + User::onlyTrashed()->count();
 
-        // Active stage for etudiant (dynamic sidebar)
         $activeStage = null;
         if (Auth::check() && Auth::user()->hasRole('etudiant') && Auth::user()->etudiant) {
             $activeStage = Stage::where('etudiant_id', Auth::user()->etudiant->id)
@@ -64,7 +51,6 @@ class NavigationComposer
                 ->orderByDesc('date_debut')
                 ->first();
 
-            // Today's attendance day if stage active
             if ($activeStage) {
                 $todayAttendance = \App\Models\AttendanceDay::where('stage_id', $activeStage->id)
                     ->whereDate('attendance_date', today())

@@ -1,182 +1,142 @@
 <?php
-
+// app/Http/Controllers/EtudiantController.php
 namespace App\Http\Controllers;
 
 use App\Models\Etudiant;
-use App\Services\EtudiantAccountService;
+use App\Models\Personnel;
+use App\Services\AccountGenerationService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class EtudiantController extends Controller
 {
-    public function __construct(
-        protected EtudiantAccountService $etudiantAccountService
-    ) {
-    }
-
-    public function index()
-    {
-        $etudiants = Etudiant::with('user')->paginate(5);
-
+    public function index() {
+        $etudiants = Etudiant::with('personnel.user')->paginate(10);
         return view('admin.etudiants.index', compact('etudiants'));
     }
 
-    public function create()
-    {
-        // jb -> La creation stagiaire passe desormais par le formulaire
-        // utilisateur unifie, prefiltre sur le role etudiant.
-        return redirect()->route('admin.users.create', ['role' => 'etudiant']);
+    public function create() {
+        return view('admin.etudiants.create');
     }
 
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $data = $request->validate([
-            'nom' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'genre' => 'required|string|max:50',
-            'email' => 'required|email|unique:etudiants,email',
-            'telephone' => 'nullable|string|max:20',
-            'ecole' => 'nullable|string|max:255',
+            'nom'      => 'required|string|max:255',
+            'prenom'   => 'required|string|max:255',
+            'email'    => 'required|email|unique:personnels,email',
+            'telephone'=> 'nullable|string|max:20',
+            'genre'    => 'nullable|string|max:50',
+            'ecole'    => 'required|string|max:255',
+            'niveau'   => 'nullable|string|max:255',
         ]);
 
-        $etudiant = Etudiant::create($data);
+        $etudiant = Etudiant::create([
+            'ecole'  => $data['ecole'],
+            'niveau' => $data['niveau'] ?? null,
+        ]);
 
-        try {
-            $account = $this->etudiantAccountService->ensureLinkedUser($etudiant);
-        } catch (ValidationException $exception) {
-            $etudiant->delete();
-            throw $exception;
-        }
+        Personnel::create([
+            'nom'              => $data['nom'],
+            'prenom'           => $data['prenom'],
+            'email'            => $data['email'],
+            'telephone'        => $data['telephone'],
+            'genre'            => $data['genre'],
+            'personnable_type' => Etudiant::class,
+            'personnable_id'   => $etudiant->id,
+            'created_by'       => auth()->id(),
+        ]);
 
-        $message = "Etudiant cree avec succes. Compte de connexion rattache a {$account['user']->email}.";
-
-        if ($account['temporary_password']) {
-            $message .= " Mot de passe temporaire: {$account['temporary_password']}.";
-        }
-
-        if (!empty($account['verification_email_sent'])) {
-            $message .= ' Un email de verification a ete envoye.';
-        }
-
-        return redirect()->route('etudiants.index')->with('success', $message);
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant créé sans compte. Vous pouvez générer son compte plus tard.');
     }
 
-    public function edit(Etudiant $etudiant)
-    {
-        $etudiant->load('user');
-
-        if ($etudiant->user) {
-            // jb -> Des qu'un compte existe, la modification repasse par
-            // l'ecran unifie pour garder un seul point d'entree admin.
-            return redirect()->to(encrypted_route('admin.users.edit', $etudiant->user));
+    // Génération de compte
+    public function generateAccount(Etudiant $etudiant, AccountGenerationService $service) {
+        $personnel = $etudiant->personnel;
+        if ($personnel->user) {
+            return back()->with('error', 'Un compte existe déjà.');
         }
+        $service->generateForPersonnel($personnel, 'etudiant');
+        return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
+    }
+//   public function syncAccount(Etudiant $etudiant) 
 
+    public function edit(Etudiant $etudiant) {
         return view('admin.etudiants.edit', compact('etudiant'));
     }
 
-    public function update(Request $request, Etudiant $etudiant)
-    {
+    public function update(Request $request, Etudiant $etudiant) {
+        $personnel = $etudiant->personnel;
         $data = $request->validate([
-            'nom' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'genre' => 'required|string|max:50',
-            'email' => 'required|email|unique:etudiants,email,' . $etudiant->id,
-            'telephone' => 'nullable|string|max:20',
-            'ecole' => 'nullable|string|max:255',
+            'nom'      => 'required|string|max:255',
+            'prenom'   => 'required|string|max:255',
+            'email'    => ['required','email', Rule::unique('personnels','email')->ignore($personnel->id)],
+            'telephone'=> 'nullable|string|max:20',
+            'genre'    => 'nullable|string|max:50',
+            'ecole'    => 'required|string|max:255',
+            'niveau'   => 'nullable|string|max:255',
         ]);
 
-        $etudiant->update($data);
-        $account = $this->etudiantAccountService->ensureLinkedUser($etudiant);
+        $personnel->update([
+            'nom'       => $data['nom'],
+            'prenom'    => $data['prenom'],
+            'email'     => $data['email'],
+            'telephone' => $data['telephone'],
+            'genre'     => $data['genre'],
+        ]);
+        $etudiant->update([
+            'ecole'  => $data['ecole'],
+            'niveau' => $data['niveau'],
+        ]);
 
-        $message = "Etudiant mis a jour. Compte lie: {$account['user']->email}.";
-
-        if ($account['temporary_password']) {
-            $message .= " Mot de passe temporaire: {$account['temporary_password']}.";
+        // Si un compte existe déjà, on peut prévenir que l'email n'est pas synchronisé
+        if ($personnel->user && $personnel->user->email !== $personnel->email) {
+            // Option : envoyer une notification
         }
 
-        if (!empty($account['verification_email_sent'])) {
-            $message .= ' Le nouvel email doit etre verifie.';
-        }
-
-        return redirect()->route('etudiants.index')->with('success', $message);
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant mis à jour.');
     }
+    // Synchronisation du compte utilisateur avec les infos du personnel
+     public function syncAccount(Etudiant $etudiant) {
+    $personnel = $etudiant->personnel;
+        if (!$personnel->user) {
+            return back()->with('error', 'Aucun compte utilisateur associé à ce personnel.');
+     }
+    $user = $personnel->user;
+       if ($user->email !== $personnel->email) {
+           $user->update(['email' => $personnel->email]);
+           return back()->with('success', 'Email du compte utilisateur synchronisé avec le personnel.');
+       }
+         return back()->with('info', 'Le compte utilisateur est déjà à jour.');
+     }
 
-    public function destroy(Etudiant $etudiant)
-    {
+public function show(Etudiant $etudiant)
+{
+    $etudiant->load('personnel.user');
+    return view('admin.etudiants.show', compact('etudiant'));
+}
+    public function destroy(Etudiant $etudiant) {
+        $etudiant->personnel()->delete(); // Supprime le personnel (soft delete)
         $etudiant->delete();
-
-        return redirect()->route('etudiants.index')->with('success', 'Etudiant supprime.');
+        return redirect()->route('etudiants.index')->with('success', 'Étudiant supprimé.');
     }
 
-    public function syncAccounts()
-    {
-        $etudiants = Etudiant::with('user')->get();
-        $results = $this->etudiantAccountService->syncMany($etudiants);
-        $generatedAccounts = collect($results)
-            ->filter(fn ($result) => !empty($result['temporary_password']))
-            ->map(function ($result) {
-                return [
-                    'etudiant' => $result['etudiant_name'],
-                    'email' => $result['user']->email,
-                    'password' => $result['temporary_password'],
-                    'verification_email_sent' => !empty($result['verification_email_sent']),
-                ];
-            })
-            ->values()
-            ->all();
-
-        $message = count($generatedAccounts) > 0
-            ? count($generatedAccounts) . ' compte(s) stagiaire cree(s) automatiquement.'
-            : 'Tous les comptes stagiaires existants ont ete synchronises.';
-
-        return redirect()
-            ->route('etudiants.index')
-            ->with('success', $message)
-            ->with('generated_accounts', $generatedAccounts);
+    // Corbeille (soft delete)
+    public function trash() {
+        $etudiants = Etudiant::onlyTrashed()->with('personnel')->paginate(10);
+        return view('admin.etudiants.trash', compact('etudiants'));
     }
 
-    public function syncAccount(Etudiant $etudiant)
-    {
-        $result = $this->etudiantAccountService->ensureLinkedUser($etudiant);
-        $generatedAccounts = [];
-        $message = "Compte stagiaire synchronise pour {$etudiant->prenom} {$etudiant->nom}.";
-
-        if (!empty($result['temporary_password'])) {
-            $generatedAccounts[] = [
-                'etudiant' => "{$etudiant->prenom} {$etudiant->nom}",
-                'email' => $result['user']->email,
-                'password' => $result['temporary_password'],
-                'verification_email_sent' => !empty($result['verification_email_sent']),
-            ];
-            $message = "Compte stagiaire cree pour {$etudiant->prenom} {$etudiant->nom}.";
-        }
-
-        return redirect()
-            ->route('etudiants.index')
-            ->with('success', $message)
-            ->with('generated_accounts', $generatedAccounts);
-    }
-
-    public function trash()
-    {
-        $etudiants = Etudiant::onlyTrashed()->paginate(5);
-
-        return view('admin.etudiants.corbeille', compact('etudiants'));
-    }
-
-    public function restore($id)
-    {
+    public function restore($id) {
         $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
         $etudiant->restore();
-
-        return redirect()->route('etudiants.index')->with('success', 'Etudiant restaure avec succes.');
+        $etudiant->personnel()->restore();
+        return redirect()->route('etudiants.trash')->with('success', 'Étudiant restauré.');
     }
 
-    public function forceDelete($id)
-    {
+    public function forceDelete($id) {
         $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+        $etudiant->personnel()->forceDelete();
         $etudiant->forceDelete();
-
-        return redirect()->route('etudiants.trash')->with('success', 'Etudiant supprime definitivement.');
+        return redirect()->route('etudiants.trash')->with('success', 'Étudiant définitivement supprimé.');
     }
 }

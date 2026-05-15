@@ -1,9 +1,7 @@
 <?php
-
+// app/Models/User.php
 namespace App\Models;
 
-use App\Notifications\VerifyEmailNotification;
-use App\Notifications\ResetPasswordNotification;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,38 +9,21 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    // jb -> Le compte utilisateur porte a la fois l'identite, les roles
-    // et l'etat d'onboarding (verification email + mot de passe temporaire).
-    use MustVerifyEmailTrait;
-    use HasFactory;
-    use Notifiable;
-    use HasRoles;
-    use SoftDeletes;
+    use MustVerifyEmailTrait, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'must_change_password',
-        'temporary_password_created_at',
-        'password_changed_at',
-        'phone',
-        'bio',
-        'avatar',
-        'status',
-        'domaine_id',
+        'personnel_id', 'password', 'must_change_password',
+        'temporary_password_created_at', 'password_changed_at', 'status'
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    protected function casts(): array
-    {
+    protected function casts(): array {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
@@ -52,10 +33,37 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function personnel() {
+        return $this->belongsTo(Personnel::class);
+    }
 
+    // Accesseurs pour compatibilité ascendante
+    public function getNameAttribute() {
+        return $this->personnel?->full_name;
+    }
 
-    public function homeRouteName(): string
-    {
+    public function getEmailAttribute() {
+        return $this->personnel?->email;
+    }
+
+    public function getPhoneAttribute() {
+        return $this->personnel?->telephone;
+    }
+
+    // Ancienne relation (pour code legacy)
+    public function etudiant() {
+        return $this->hasOneThrough(Etudiant::class, Personnel::class, 'id', 'personnel_id', 'personnel_id')
+            ->where('personnable_type', Etudiant::class);
+    }
+
+    public function profil() {
+        return $this->personnel->personnable;
+    }
+
+    /**
+     * Détermine la route d'accueil après connexion en fonction du rôle.
+     */
+    public function homeRouteName(): string {
         // 👑 Admin
         if ($this->hasRole('admin')) {
             return 'dashboard';
@@ -75,100 +83,68 @@ class User extends Authenticatable implements MustVerifyEmail
         return 'dashboard';
     }
 
-    public function sendPasswordResetNotification($token)
-    {
+    public function sendPasswordResetNotification($token) {
         $this->notify(new ResetPasswordNotification($token));
     }
 
-    public function sendEmailVerificationNotification()
-    {
-        // jb -> On force ici la notification de verification du projet
-        // pour garder un texte et un ton coherents lors des renvois.
+    public function sendEmailVerificationNotification() {
         $this->notify(new VerifyEmailNotification());
     }
 
-    public function supervisedStages()
-    {
+    // --- Relations existantes ---
+    public function supervisedStages() {
         return $this->hasMany(Stage::class, 'supervisor_id');
     }
 
-    public function etudiant()
-    {
-        return $this->hasOne(Etudiant::class);
-    }
-
-    public function trustedDevices()
-    {
+    public function trustedDevices() {
         return $this->hasMany(TrustedDevice::class);
     }
 
-    public function domaine()
-    {
-        return $this->belongsTo(Domaine::class);
-    }
-
-    public function attendanceEvents()
-    {
+    public function attendanceEvents() {
         return $this->hasMany(AttendanceEvent::class);
     }
 
-    public function validatedAttendanceDays()
-    {
-        return $this->hasMany(AttendanceDay::class, 'validated_by');
+    public function attendanceAnomalies() {
+        return $this->hasMany(AttendanceAnomaly::class);
     }
 
-    public function reviewedAttendanceAnomalies()
-    {
+    public function reviewedAttendanceAnomalies() {
         return $this->hasMany(AttendanceAnomaly::class, 'reviewed_by');
     }
 
-    public function reviewedDailyReports()
-    {
+    public function reviewedDailyReports() {
         return $this->hasMany(DailyReport::class, 'reviewed_by');
     }
 
-    /**
-     * Attendance days for employees (user_id).
-     */
-    public function attendanceDays()
-    {
+    public function attendanceDays() {
         return $this->hasMany(AttendanceDay::class);
     }
 
-
-
-    public function dailyReportReviews()
-    {
+    public function dailyReportReviews() {
         return $this->hasMany(DailyReportReview::class, 'reviewer_id');
     }
 
-    public function assignedTasks()
-    {
+    public function assignedTasks() {
         return $this->hasMany(Task::class, 'assigned_by');
     }
 
-    public function taskUpdates()
-    {
+    public function taskUpdates() {
         return $this->hasMany(TaskUpdate::class, 'updated_by');
     }
 
-    public function attestationApprovals()
-    {
+    public function attestationApprovals() {
         return $this->hasMany(AttestationApproval::class, 'approver_id');
     }
 
-    public function generatedAttestationVersions()
-    {
+    public function generatedAttestationVersions() {
         return $this->hasMany(AttestationVersion::class, 'generated_by');
     }
 
-    public function attestationAudits()
-    {
+    public function attestationAudits() {
         return $this->hasMany(AttestationAudit::class);
     }
 
-    public function permissionRequests()
-    {
+    public function permissionRequests() {
         return $this->hasMany(\App\Models\PermissionRequest::class);
     }
 }

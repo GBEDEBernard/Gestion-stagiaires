@@ -33,4 +33,8 @@ class Domaine extends Model
     {
         return $this->belongsToMany(Site::class, 'domaine_site');
     }
+    public function employes()
+{
+    return $this->hasMany(Employe::class);
+}
 }

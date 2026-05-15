@@ -28,6 +28,7 @@ use App\Http\Controllers\SuperviseurDashboardController;
 use App\Http\Controllers\DomaineController;
 use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\AdminPermissionRequestController;
+use App\Http\Controllers\EmployeController;
 
 
 
@@ -77,11 +78,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
         Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
 
+        // Génération de compte
+     Route::post('etudiants/{etudiant}/generate-account', [EtudiantController::class, 'generateAccount'])->name('etudiants.generate-account');
+
         // Corbeille
         Route::get('corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
         Route::put('{id}/restore', [EtudiantController::class, 'restore'])->name('etudiants.restore')->middleware('permission:etudiants.restore');
         Route::delete('{id}/force-delete', [EtudiantController::class, 'forceDelete'])->name('etudiants.forceDelete')->middleware('permission:etudiants.force-delete');
-    });
+   
+   Route::get('{etudiant}', [EtudiantController::class, 'show'])->name('etudiants.show')->middleware('permission:etudiants.view');
+        });
 
     // ---------------- Stages ----------------
     Route::prefix('admin/stages')->group(function () {
@@ -279,6 +285,25 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{report}', [DailyReportController::class, 'update'])
             ->name('reports.update');
     });
+// Employes
+Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {
+    Route::get('/', [EmployeController::class, 'index'])->name('employes.index');
+    Route::get('create', [EmployeController::class, 'create'])->name('employes.create');
+    Route::post('/', [EmployeController::class, 'store'])->name('employes.store');
+    Route::post('{employe}/generate-account', [EmployeController::class, 'generateAccount'])->name('employes.generate-account');
+    Route::get('{employe}/edit', [EmployeController::class, 'edit'])->name('employes.edit');
+    Route::put('{employe}', [EmployeController::class, 'update'])->name('employes.update');
+    Route::delete('{employe}', [EmployeController::class, 'destroy'])->name('employes.destroy');
+
+    // Afficher les détails d'un employé
+    Route::get('{employe}', [EmployeController::class, 'show'])->name('employes.show')->middleware('permission:employes.view');
+
+    // Corbeille
+    Route::get('corbeille', [EmployeController::class, 'trash'])->name('employes.trash');
+    Route::put('{id}/restore', [EmployeController::class, 'restore'])->name('employes.restore');
+    Route::delete('{id}/force-delete', [EmployeController::class, 'forceDelete'])->name('employes.force-delete');
+});
+   
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
