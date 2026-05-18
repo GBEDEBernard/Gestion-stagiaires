@@ -63,8 +63,8 @@
                         </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-medium">
-                                {{ $domaine->users_count ?? $domaine->users->count() }} employé(s)
-                            </span>
+                             {{ $domaine->employes_count ?? $domaine->employes->count() }}      
+                      </span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">

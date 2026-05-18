@@ -60,7 +60,7 @@ public function edit($id)
 {
     $domaine = Domaine::findOrFail($id);
     $sites = Site::orderBy('name')->get();
-    $domaine->load('sites', 'users');
+    $domaine->load('sites', 'employes'); // Charger les employés pour l'affichage du count
     return view('admin.domaines.edit', compact('domaine', 'sites'));
 }
 

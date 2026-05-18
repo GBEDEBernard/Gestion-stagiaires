@@ -25,7 +25,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3">
                 <p class="text-xs text-gray-500 dark:text-gray-400">Employés</p>
                 <p class="text-xl font-bold text-gray-900 dark:text-white mt-0.5">
-                    {{ $domaine->users_count ?? $domaine->users->count() }}
+                    {{ $domaine->employes_count ?? $domaine->employes->count() }}
                 </p>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3">
