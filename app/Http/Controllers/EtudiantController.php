@@ -27,12 +27,10 @@ class EtudiantController extends Controller
             'telephone'=> 'nullable|string|max:20',
             'genre'    => 'nullable|string|max:50',
             'ecole'    => 'required|string|max:255',
-            'niveau'   => 'nullable|string|max:255',
         ]);
 
         $etudiant = Etudiant::create([
             'ecole'  => $data['ecole'],
-            'niveau' => $data['niveau'] ?? null,
         ]);
 
         Personnel::create([
@@ -73,7 +71,6 @@ class EtudiantController extends Controller
             'telephone'=> 'nullable|string|max:20',
             'genre'    => 'nullable|string|max:50',
             'ecole'    => 'required|string|max:255',
-            'niveau'   => 'nullable|string|max:255',
         ]);
 
         $personnel->update([
@@ -85,7 +82,6 @@ class EtudiantController extends Controller
         ]);
         $etudiant->update([
             'ecole'  => $data['ecole'],
-            'niveau' => $data['niveau'],
         ]);
 
         // Si un compte existe déjà, on peut prévenir que l'email n'est pas synchronisé
