@@ -13,6 +13,7 @@ use App\Models\Stage;
 use App\Models\TypeStage;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -72,11 +73,11 @@ class StageController extends Controller
         }
 
         $supervisors = User::role(['admin', 'superviseur'])
-        ->join('personnels', 'personnels.id', '=', 'users.personnel_id')
-        ->orderBy('personnels.nom')
-        ->orderBy('personnels.prenom')
-        ->select('users.*')
-        ->get();
+            ->join('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->select('users.*')
+            ->get();
 
         $jours = Jour::all();
 
@@ -87,6 +88,16 @@ class StageController extends Controller
         $showModal = $showModalFromSession || request()->boolean('show_modal');
 
         $preselectedEtudiantId = session()->pull('preselected_etudiant_id', null) ?? request()->query('etudiant_id');
+
+        // Diagnostic log pour vérifier la présence des flags (utile en debug local)
+        Log::debug('StageController.create modal flags', [
+            'session_show_modal' => $showModalFromSession,
+            'request_show_modal' => request()->query('show_modal'),
+            'computed_showModal' => $showModal,
+            'session_preselected' => session()->get('preselected_etudiant_id'),
+            'preselectedEtudiantId' => $preselectedEtudiantId,
+            'query_etudiant_id' => request()->query('etudiant_id'),
+        ]);
 
         return view('admin.stages.create', compact(
             'etudiants',
@@ -108,7 +119,7 @@ class StageController extends Controller
             'typestage_id' => 'nullable|exists:typestages,id',
             'service_id'   => 'nullable|exists:services,id',
             'site_id'      => 'nullable|exists:sites,id',
-            'supervisor_id'=> 'nullable|exists:users,id',
+            'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
             'theme'        => 'nullable|string|max:255',
             'date_debut'   => 'required|date',
@@ -120,7 +131,12 @@ class StageController extends Controller
         if ($request->filled('site_id')) {
             $site = Site::find($request->site_id);
             if ($site && !Str::startsWith($site->code, 'TFG') && !Str::contains($site->name, 'TFG')) {
-                return back()->withErrors(['site_id' => 'Les stagiaires doivent être rattachés à un site TFG.'])->withInput();
+                return back()
+                    ->withErrors(['site_id' => 'Les stagiaires doivent être rattachés à un site TFG.'])
+                    ->withInput()
+                    ->with('open_stage_modal', true)
+                    ->with('new_etudiant_id', $request->etudiant_id)
+                    ->with('new_etudiant_nom', optional(Etudiant::find($request->etudiant_id))->personnel?->full_name);
             }
         }
 
@@ -140,9 +156,14 @@ class StageController extends Controller
             })->exists();
 
         if ($conflictEtudiant) {
-            return back()->withErrors([
-                'etudiant_id' => "Cet etudiant a deja un stage qui chevauche cette periode.",
-            ])->withInput();
+            return back()
+                ->withErrors([
+                    'etudiant_id' => "Cet etudiant a deja un stage qui chevauche cette periode.",
+                ])
+                ->withInput()
+                ->with('open_stage_modal', true)
+                ->with('new_etudiant_id', $request->etudiant_id)
+                ->with('new_etudiant_nom', optional($etudiant->personnel)->full_name);
         }
 
         if ($badge) {
@@ -254,12 +275,12 @@ class StageController extends Controller
         if ($sites->isEmpty()) {
             $sites = Site::where('is_active', true)->orderBy('name')->get();
         }
-$supervisors = User::role(['admin', 'superviseur'])
-    ->join('personnels', 'users.personnel_id', '=', 'personnels.id')
-    ->orderBy('personnels.nom')
-    ->orderBy('personnels.prenom')
-    ->select('users.*')
-    ->get();
+        $supervisors = User::role(['admin', 'superviseur'])
+            ->join('personnels', 'users.personnel_id', '=', 'personnels.id')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->select('users.*')
+            ->get();
 
         $badges = Badge::all();
         $jours = Jour::all();
@@ -285,7 +306,7 @@ $supervisors = User::role(['admin', 'superviseur'])
             'typestage_id' => 'nullable|exists:typestages,id',
             'service_id'   => 'nullable|exists:services,id',
             'site_id'      => 'nullable|exists:sites,id',
-            'supervisor_id'=> 'nullable|exists:users,id',
+            'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
             'theme'        => 'nullable|string|max:255',
             'date_debut'   => 'required|date',

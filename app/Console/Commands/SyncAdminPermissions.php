@@ -23,7 +23,12 @@ class SyncAdminPermissions extends Command
             return 1;
         }
 
-        $adminUsers = User::role('admin')->get();
+        $adminUsers = User::role('admin')
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->select('users.*')
+            ->get();
         $count = $adminUsers->count();
 
         if ($count === 0) {

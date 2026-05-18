@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Badge;
 use App\Models\Domaine;
 use App\Models\Employe;
 use App\Models\Etudiant;
 use App\Models\Personnel;
+use App\Models\Service;
 use App\Models\Site;
+use App\Models\TypeStage;
+use App\Models\User;
+use App\Models\Jour;
 use App\Services\AccountGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,7 +32,46 @@ class PersonnelController extends Controller
             $domainesParSite[$site->id] = $site->domaines->pluck('nom', 'id')->all();
         }
 
-        return view('admin.personnels.create', compact('sites', 'domainesParSite'));
+        $now = now();
+        $typestages = TypeStage::all();
+        $services = Service::all();
+        $badges = Badge::whereDoesntHave('stages', function ($query) use ($now) {
+            $query->where('date_debut', '<=', $now)
+                ->where('date_fin', '>=', $now);
+        })->get();
+
+        $stageSites = Site::where('is_active', true)
+            ->where(function ($query) {
+                $query->where('code', 'like', 'TFG%')
+                    ->orWhere('name', 'like', '%TFG%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        if ($stageSites->isEmpty()) {
+            $stageSites = Site::where('is_active', true)->orderBy('name')->get();
+        }
+
+        $supervisors = User::role(['admin', 'superviseur'])
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->with('personnel')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->select('users.*')
+            ->get();
+
+        $jours = Jour::all();
+
+        return view('admin.personnels.create', compact(
+            'sites',
+            'domainesParSite',
+            'typestages',
+            'services',
+            'badges',
+            'stageSites',
+            'supervisors',
+            'jours'
+        ));
     }
 
     public function store(Request $request)
@@ -86,12 +130,12 @@ class PersonnelController extends Controller
             'created_by'       => auth()->id(),
         ]);
 
-        // Si c'est un étudiant, rediriger vers la création de stage avec modal
         if ($data['type'] === 'etudiant') {
-            return redirect()->route('stages.create')
-                ->with('success', 'Personnel étudiant créé avec succès. Créez maintenant son premier stage.')
-                ->with('show_modal', true)
-                ->with('preselected_etudiant_id', $personnable->id);
+            return redirect()->route('personnels.create')
+                ->with('open_stage_modal', true)
+                ->with('new_etudiant_id', $personnable->id)
+                ->with('new_etudiant_nom', trim($data['prenom'] . ' ' . $data['nom']))
+                ->with('success', 'Étudiant créé. Complétez maintenant son stage.');
         }
 
         return redirect()->route('personnels.index')->with('success', 'Personnel créé avec succès.');

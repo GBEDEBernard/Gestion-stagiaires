@@ -2,8 +2,8 @@
     <div class="max-w-4xl mx-auto">
 
         {{-- Modal de création rapide (après création d’un étudiant) --}}
-        @if($showModal ?? false)
-        <div id="stageModal" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+        <div id="stageModal" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
+            style="display: {{ ($showModal ?? false) ? 'flex' : 'none' }};">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Créer un stage pour l'étudiant</h2>
@@ -139,7 +139,7 @@
                 </form>
             </div>
         </div>
-        @endif
+        {{-- modal toujours rendu; affichage contrôlé par style et JS pour tolérer pertes de session/host --}}
 
         {{-- Formulaire principal --}}
         <div class="mb-8">
@@ -306,52 +306,94 @@
     <script>
         function closeModal() {
             const modal = document.getElementById('stageModal');
-            if (modal) modal.remove();
+            if (modal) {
+                modal.style.display = 'none';
+                const url = new URL(window.location.href);
+                url.searchParams.delete('show_modal');
+                url.searchParams.delete('show');
+                url.searchParams.delete('showModal');
+                url.searchParams.delete('etudiant_id');
+                url.searchParams.delete('preselected_etudiant_id');
+                window.history.replaceState({}, '', url.toString());
+            }
+        }
+
+        function openModal(etudiantId = null) {
+            const modal = document.getElementById('stageModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            if (etudiantId) {
+                const sel = document.getElementById('etudiant_id_modal');
+                if (sel) {
+                    sel.value = etudiantId;
+                    sel.dispatchEvent(new Event('change'));
+                }
+            }
         }
 
         function handleEtudiantChange(selectElement) {
-            let etudiantId = selectElement.value;
-            if (etudiantId) {
-                fetch(`/admin/etudiants/${etudiantId}/services`)
-                    .then(res => res.json())
-                    .then(data => {
-                        let serviceSelects = [
-                            document.getElementById('service_id'),
-                            document.getElementById('service_id_modal')
-                        ];
-                        serviceSelects.forEach(serviceSelect => {
-                            if (serviceSelect) {
-                                serviceSelect.innerHTML = '<option value="">Sélectionner un service</option>';
-                                data.forEach(service => {
-                                    let opt = document.createElement('option');
-                                    opt.value = service.id;
-                                    opt.text = service.nom;
-                                    serviceSelect.appendChild(opt);
-                                });
-                            }
-                        });
-                    })
-                    .catch(err => console.error('Erreur:', err));
+            const etudiantId = selectElement.value;
+            if (!etudiantId) {
+                return;
             }
+
+            fetch(`/admin/etudiants/${etudiantId}/services`)
+                .then(res => res.json())
+                .then(data => {
+                    const serviceSelects = [
+                        document.getElementById('service_id'),
+                        document.getElementById('service_id_modal')
+                    ];
+                    serviceSelects.forEach(serviceSelect => {
+                        if (!serviceSelect) return;
+                        serviceSelect.innerHTML = '<option value="">Sélectionner un service</option>';
+                        data.forEach(service => {
+                            const opt = document.createElement('option');
+                            opt.value = service.id;
+                            opt.text = service.nom;
+                            serviceSelect.appendChild(opt);
+                        });
+                    });
+                })
+                .catch(err => console.error('Erreur lors du chargement des services :', err));
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            let etudiantSelect      = document.getElementById('etudiant_id');
-            let etudiantSelectModal = document.getElementById('etudiant_id_modal');
+        document.addEventListener('DOMContentLoaded', function() {
+            const etudiantSelect = document.getElementById('etudiant_id');
+            const etudiantSelectModal = document.getElementById('etudiant_id_modal');
 
             if (etudiantSelect) {
-                etudiantSelect.addEventListener('change', function () { handleEtudiantChange(this); });
+                etudiantSelect.addEventListener('change', function() {
+                    handleEtudiantChange(this);
+                });
             }
 
             if (etudiantSelectModal) {
-                etudiantSelectModal.addEventListener('change', function () { handleEtudiantChange(this); });
-                if (etudiantSelectModal.value) handleEtudiantChange(etudiantSelectModal);
+                etudiantSelectModal.addEventListener('change', function() {
+                    handleEtudiantChange(this);
+                });
+                if (etudiantSelectModal.value) {
+                    handleEtudiantChange(etudiantSelectModal);
+                }
+            }
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const show = params.get('show_modal') || params.get('show') || params.get('showModal');
+                const etuId = params.get('etudiant_id') || params.get('preselected_etudiant_id');
+                if (show && ['1', 'true', 'yes'].includes(String(show).toLowerCase())) {
+                    openModal(etuId);
+                }
+            } catch (e) {
+                console.debug('Erreur de lecture des query params pour le modal :', e);
             }
         });
 
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', function(e) {
             const modal = document.getElementById('stageModal');
-            if (modal && e.target === modal) closeModal();
+            if (modal && e.target === modal) {
+                closeModal();
+            }
         });
     </script>
 </x-app-layout>

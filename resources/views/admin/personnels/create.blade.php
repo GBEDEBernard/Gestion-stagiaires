@@ -159,6 +159,133 @@
         </div>
     </div>
 
+    {{-- Modal Stage (après création étudiant) --}}
+    @if(session('open_stage_modal'))
+    <div id="stageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {{-- Header --}}
+            <div class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Créer le stage</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Pour <span class="font-semibold text-blue-600">{{ session('new_etudiant_nom') }}</span></p>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('stageModal').remove()"
+                    class="p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Formulaire --}}
+            <form action="{{ route('stages.store') }}" method="POST" class="px-6 py-6 space-y-5">
+                @csrf
+                <input type="hidden" name="etudiant_id" value="{{ session('new_etudiant_id') }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type de stage</label>
+                        <select name="typestage_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">— Sélectionner —</option>
+                            @foreach($typestages as $type)
+                            <option value="{{ $type->id }}">{{ $type->libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Badge</label>
+                        <select name="badge_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">— Sélectionner —</option>
+                            @foreach($badges as $badge)
+                            <option value="{{ $badge->id }}">{{ $badge->badge }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Service</label>
+                        <select name="service_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">— Sélectionner —</option>
+                            @foreach($services as $service)
+                            <option value="{{ $service->id }}">{{ $service->nom }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Site de présence</label>
+                        <select name="site_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="">— Sélectionner —</option>
+                            @foreach($stageSites as $site)
+                            <option value="{{ $site->id }}">{{ $site->name }}{{ $site->city ? ' — ' . $site->city : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Superviseur</label>
+                    <select name="supervisor_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <option value="">— Sélectionner —</option>
+                        @foreach($supervisors as $supervisor)
+                        <option value="{{ $supervisor->id }}">{{ $supervisor->personnel->nom ?? $supervisor->name ?? '' }} {{ $supervisor->personnel->prenom ?? '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thème du stage</label>
+                    <input type="text" name="theme"
+                        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        placeholder="Ex: Développement web, Marketing digital...">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date de début <span class="text-red-500">*</span></label>
+                        <input type="date" name="date_debut" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Date de fin <span class="text-red-500">*</span></label>
+                        <input type="date" name="date_fin" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jours de présence <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($jours as $jour)
+                        <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/30">
+                            <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}" class="w-4 h-4 text-blue-600 rounded accent-blue-600">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-5 mt-2">
+                    <button type="button" onclick="document.getElementById('stageModal').remove()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                        Ignorer pour l'instant
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 transition shadow-lg shadow-blue-600/25">
+                        Créer le stage
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
     <script>
         const domainesParSite = @json($domainesParSite);
         const defaultSiteId = @json(old('site_id', ''));
@@ -203,7 +330,7 @@
                 const option = document.createElement('option');
                 option.value = id;
                 option.textContent = nom;
-                if (id === defaultDomaineId) {
+                if (id == defaultDomaineId) {
                     option.selected = true;
                 }
                 domaineSelect.appendChild(option);
@@ -211,7 +338,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('select[name="site_id"]').addEventListener('change', updateDomaineOptions);
+            const siteSelect = document.querySelector('select[name="site_id"]');
+            if (siteSelect) {
+                siteSelect.addEventListener('change', updateDomaineOptions);
+            }
             toggleTypeFields();
             updateDomaineOptions();
         });
