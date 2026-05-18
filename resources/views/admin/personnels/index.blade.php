@@ -22,6 +22,49 @@
         <div class="mb-4 p-4 bg-red-100 text-red-800 rounded-xl">{{ session('error') }}</div>
         @endif
 
+        <form method="GET" action="{{ route('personnels.index') }}" class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div class="grid gap-4 lg:grid-cols-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Recherche</label>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                    <select name="type" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="all" {{ request('type') === 'all' ? ' selected' : '' }}>Tous</option>
+                        <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Étudiant</option>
+                        <option value="employe" {{ request('type') === 'employe' ? ' selected' : '' }}>Employé</option>
+                        <option value="inconnu" {{ request('type') === 'inconnu' ? ' selected' : '' }}>Inconnu</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Statut de compte</label>
+                    <select name="account" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="all" {{ request('account') === 'all' ? ' selected' : '' }}>Tous</option>
+                        <option value="with" {{ request('account') === 'with' ? ' selected' : '' }}>Avec compte</option>
+                        <option value="without" {{ request('account') === 'without' ? ' selected' : '' }}>Sans compte</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">École</label>
+                    <select name="school" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="">Toutes</option>
+                        @foreach($schools as $school)
+                        <option value="{{ $school }}" {{ request('school') === $school ? ' selected' : '' }}>{{ $school }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Filtrer les personnels affichés</div>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition">Appliquer</button>
+                    <a href="{{ route('personnels.index') }}" class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">Réinitialiser</a>
+                </div>
+            </div>
+        </form>
+
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
@@ -44,7 +87,11 @@
                                 <div class="text-gray-500 text-sm">{{ $personnel->adresse ?? '-' }}</div>
                             </td>
                             <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold {{ $personnel->type_label === 'Employé' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700' }}">
+                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold 
+                                    @if($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700
+                                    @elseif($personnel->type_label === 'Étudiant') bg-blue-100 text-blue-700
+                                    @else bg-gray-100 text-gray-700
+                                    @endif">
                                     {{ $personnel->type_label }}
                                 </span>
                             </td>
@@ -54,14 +101,14 @@
                             </td>
                             <td class="px-6 py-4 text-sm">
                                 @if($personnel->personnable)
-                                @if($personnel->personnable_type === App\Models\Etudiant::class)
-                                <div><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
-                                @elseif($personnel->personnable_type === App\Models\Employe::class)
-                                <div><span class="font-medium">Poste :</span> {{ $personnel->personnable->poste ?? '-' }}</div>
-                                <div class="text-gray-500">Matricule : {{ $personnel->personnable->matricule ?? '-' }}</div>
-                                @endif
+                                    @if($personnel->personnable_type === App\Models\Etudiant::class)
+                                        <div><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
+                                    @elseif($personnel->personnable_type === App\Models\Employe::class)
+                                        <div><span class="font-medium">Poste :</span> {{ $personnel->personnable->poste ?? '-' }}</div>
+                                        <div class="text-gray-500">Matricule : {{ $personnel->personnable->matricule ?? '-' }}</div>
+                                    @endif
                                 @else
-                                <div class="text-gray-500">Aucun détail</div>
+                                    <div class="text-gray-500">Aucun détail</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right space-x-2">
@@ -135,14 +182,12 @@
             document.getElementById('passwordModal').classList.add('hidden');
         }
 
-        // Close modal when pressing Escape
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closePasswordModal();
             }
         });
 
-        // Close modal when clicking outside
         document.getElementById('passwordModal')?.addEventListener('click', function(event) {
             if (event.target === this) {
                 closePasswordModal();

@@ -6,6 +6,7 @@ use App\Models\AttendanceAnomaly;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Etudiant;
+use App\Models\Employe;
 use App\Models\Stage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -96,7 +97,7 @@ class AdminPresenceService
             ->leftJoin('users', 'etudiants.user_id', '=', 'users.id')
             ->leftJoin('attendance_anomalies as a', function ($join) {
                 $join->on('a.attendance_day_id', '=', 'attendance_days.id')
-                     ->where('a.status', '!=', 'resolved');
+                    ->where('a.status', '!=', 'resolved');
             })
             ->whereBetween('attendance_date', [$start, $end])
             ->whereRaw('WEEKDAY(attendance_date) BETWEEN 0 AND 4');
@@ -104,7 +105,7 @@ class AdminPresenceService
         if ($userId) {
             $stats->where(function ($q) use ($userId) {
                 $q->where('etudiants.user_id', $userId)
-                  ->orWhere('attendance_days.validated_by', $userId);
+                    ->orWhere('attendance_days.validated_by', $userId);
             });
         }
 
@@ -160,10 +161,22 @@ class AdminPresenceService
             $endDate   = $dateTo   ? Carbon::parse($dateTo)   : now()->endOfMonth();
         } else {
             switch ($period) {
-                case 'week':  $startDate = now()->startOfWeek();  $endDate = now()->endOfWeek();  break;
-                case 'month': $startDate = now()->startOfMonth(); $endDate = now()->endOfMonth(); break;
-                case 'year':  $startDate = now()->startOfYear();  $endDate = now()->endOfYear();  break;
-                default:      $startDate = today();               $endDate = today();             break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = today();
+                    $endDate = today();
+                    break;
             }
         }
 
@@ -189,7 +202,11 @@ class AdminPresenceService
             ->keyBy('date');
 
         // Nombre d'employés actifs attendus
-        $expectedEmployeesCount = User::whereNotNull('domaine_id')->where('status', 'actif')->count();
+        $expectedEmployeesCount = User::whereHas('personnel', function ($query) {
+            $query->where('personnable_type', Employe::class);
+        })
+            ->where('status', 'actif')
+            ->count();
 
         $allDates      = [];
         $presentData   = [];
@@ -303,9 +320,18 @@ class AdminPresenceService
             $endDate   = $dateTo   ? Carbon::parse($dateTo)   : now()->endOfMonth();
         } else {
             switch ($period) {
-                case 'week':  $startDate = now()->startOfWeek();  $endDate = now()->endOfWeek();  break;
-                case 'year':  $startDate = now()->startOfYear();  $endDate = now()->endOfYear();  break;
-                default:      $startDate = now()->startOfMonth(); $endDate = now()->endOfMonth(); break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
             }
         }
 
@@ -336,11 +362,13 @@ class AdminPresenceService
 
         $etudiantsChart = $this->generateChartData(
             AttendanceDay::whereNotNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
-            $startDate, $endDate
+            $startDate,
+            $endDate
         );
         $employesChart = $this->generateChartData(
             AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
-            $startDate, $endDate
+            $startDate,
+            $endDate
         );
 
         return [
@@ -352,7 +380,7 @@ class AdminPresenceService
                 'worked_hours'    => round(($etudiantsStats->worked_minutes ?? 0) / 60, 1),
                 'late_minutes'    => $etudiantsStats->late_minutes ?? 0,
                 'taux_presence'   => ($etudiantsStats->total ?? 0) > 0 ? round(($etudiantsStats->present / $etudiantsStats->total) * 100, 1) : 0,
-                'avg_worked_hours'=> ($etudiantsStats->present ?? 0) > 0 ? round(($etudiantsStats->worked_minutes ?? 0) / 60 / ($etudiantsStats->present ?? 1), 1) : 0,
+                'avg_worked_hours' => ($etudiantsStats->present ?? 0) > 0 ? round(($etudiantsStats->worked_minutes ?? 0) / 60 / ($etudiantsStats->present ?? 1), 1) : 0,
                 'chart_data'      => $etudiantsChart,
             ],
             'employes' => [
@@ -363,7 +391,7 @@ class AdminPresenceService
                 'worked_hours'    => round(($employesStats->worked_minutes ?? 0) / 60, 1),
                 'late_minutes'    => $employesStats->late_minutes ?? 0,
                 'taux_presence'   => ($employesStats->total ?? 0) > 0 ? round(($employesStats->present / $employesStats->total) * 100, 1) : 0,
-                'avg_worked_hours'=> ($employesStats->present ?? 0) > 0 ? round(($employesStats->worked_minutes ?? 0) / 60 / ($employesStats->present ?? 1), 1) : 0,
+                'avg_worked_hours' => ($employesStats->present ?? 0) > 0 ? round(($employesStats->worked_minutes ?? 0) / 60 / ($employesStats->present ?? 1), 1) : 0,
                 'chart_data'      => $employesChart,
             ],
         ];
@@ -393,7 +421,8 @@ class AdminPresenceService
         $currentDate = $startDate->copy()->startOfDay();
         while ($currentDate <= $endDate) {
             // ✅ Ignorer week-ends, avant activation, jours futurs
-            if ($currentDate->isWeekend()
+            if (
+                $currentDate->isWeekend()
                 || $currentDate->lt($systemStart)
                 || $currentDate->gt($today)
             ) {
@@ -444,10 +473,22 @@ class AdminPresenceService
             $endDate   = Carbon::parse($dateTo)->endOfDay();
         } else {
             switch ($period) {
-                case 'today': $startDate = today()->startOfDay(); $endDate = today()->endOfDay(); break;
-                case 'week':  $startDate = now()->startOfWeek()->startOfDay(); $endDate = now()->endOfWeek()->endOfDay(); break;
-                case 'year':  $startDate = now()->startOfYear()->startOfDay(); $endDate = now()->endOfYear()->endOfDay(); break;
-                default:      $startDate = now()->startOfMonth()->startOfDay(); $endDate = now()->endOfMonth()->endOfDay(); break;
+                case 'today':
+                    $startDate = today()->startOfDay();
+                    $endDate = today()->endOfDay();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek()->startOfDay();
+                    $endDate = now()->endOfWeek()->endOfDay();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear()->startOfDay();
+                    $endDate = now()->endOfYear()->endOfDay();
+                    break;
+                default:
+                    $startDate = now()->startOfMonth()->startOfDay();
+                    $endDate = now()->endOfMonth()->endOfDay();
+                    break;
             }
         }
 
@@ -526,7 +567,10 @@ class AdminPresenceService
 
         $checkDate = $startDate->copy()->startOfDay();
         while ($checkDate->lte($endDate->copy()->startOfDay())) {
-            if ($checkDate->isWeekend()) { $checkDate->addDay(); continue; }
+            if ($checkDate->isWeekend()) {
+                $checkDate->addDay();
+                continue;
+            }
 
             $isActive = $checkDate->gte($activationDate);
             $isFuture = $checkDate->gt($today);
@@ -593,9 +637,18 @@ class AdminPresenceService
             $endDate   = $dateTo   ? Carbon::parse($dateTo)->endOfDay()     : now()->endOfMonth();
         } else {
             switch ($period) {
-                case 'week': $startDate = now()->startOfWeek()->startOfDay(); $endDate = now()->endOfWeek()->endOfDay(); break;
-                case 'year': $startDate = now()->startOfYear()->startOfDay(); $endDate = now()->endOfYear()->endOfDay(); break;
-                default:     $startDate = now()->startOfMonth()->startOfDay(); $endDate = now()->endOfMonth()->endOfDay(); break;
+                case 'week':
+                    $startDate = now()->startOfWeek()->startOfDay();
+                    $endDate = now()->endOfWeek()->endOfDay();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear()->startOfDay();
+                    $endDate = now()->endOfYear()->endOfDay();
+                    break;
+                default:
+                    $startDate = now()->startOfMonth()->startOfDay();
+                    $endDate = now()->endOfMonth()->endOfDay();
+                    break;
             }
         }
 
@@ -608,8 +661,15 @@ class AdminPresenceService
         $today = today()->endOfDay();
 
         $absentCountByUserName = [];
-        $employeeIds           = User::whereNotNull('domaine_id')->where('status', 'actif')->pluck('id')->values()->all();
-        $employeeNameById      = User::whereIn('id', $employeeIds)->pluck('name', 'id')->toArray();
+        $employeeIds = User::whereHas('personnel', function ($query) {
+            $query->where('personnable_type', Employe::class);
+        })
+            ->where('status', 'actif')
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
         $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
 
         $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])

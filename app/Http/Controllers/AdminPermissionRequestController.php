@@ -35,7 +35,11 @@ class AdminPermissionRequestController extends Controller
 
         $requests = $query->paginate(15)->withQueryString();
         $types    = PermissionType::active()->get();
-        $users    = User::whereHas('permissionRequests')->orderBy('name')->get();
+        $users    = User::with('personnel')
+            ->whereHas('permissionRequests')
+            ->get()
+            ->sortBy('name')
+            ->values();
 
         $stats = [
             'total'    => PermissionRequest::count(),
