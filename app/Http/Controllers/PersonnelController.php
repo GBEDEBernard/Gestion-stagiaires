@@ -86,6 +86,14 @@ class PersonnelController extends Controller
             'created_by'       => auth()->id(),
         ]);
 
+        // Si c'est un étudiant, rediriger vers la création de stage avec modal
+        if ($data['type'] === 'etudiant') {
+            return redirect()->route('stages.create')
+                ->with('success', 'Personnel étudiant créé avec succès. Créez maintenant son premier stage.')
+                ->with('show_modal', true)
+                ->with('preselected_etudiant_id', $personnable->id);
+        }
+
         return redirect()->route('personnels.index')->with('success', 'Personnel créé avec succès.');
     }
 

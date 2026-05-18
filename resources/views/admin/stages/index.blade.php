@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Stages</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">Pilote les stages, leur lieu de presence et le responsable de suivi.</p>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Pilote les stages, leur lieu de présence et le responsable de suivi.</p>
             </div>
             <div class="flex gap-3">
                 <a href="{{ route('stages.trash') }}"
@@ -23,6 +23,7 @@
             </div>
         </div>
 
+        {{-- Filtres --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
             <form method="GET" action="{{ route('stages.index') }}" class="flex flex-wrap items-end gap-4">
                 <div class="flex-1 min-w-[200px]">
@@ -31,8 +32,8 @@
                         class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
                         <option value="">Tous les statuts</option>
                         <option value="En cours" {{ request('statut') == 'En cours' ? 'selected' : '' }}>En cours</option>
-                        <option value="Termine" {{ in_array(request('statut'), ['Termine', 'TerminÃ©'], true) ? 'selected' : '' }}>Termine</option>
-                        <option value="A venir" {{ in_array(request('statut'), ['A venir', 'Ã€ venir'], true) ? 'selected' : '' }}>A venir</option>
+                        <option value="Termine" {{ in_array(request('statut'), ['Termine', 'Terminé'], true) ? 'selected' : '' }}>Terminé</option>
+                        <option value="A venir" {{ in_array(request('statut'), ['A venir', 'À venir'], true) ? 'selected' : '' }}>À venir</option>
                     </select>
                 </div>
                 <div class="flex-1 min-w-[220px]">
@@ -57,6 +58,7 @@
         </div>
     </div>
 
+    {{-- Tableau --}}
     <div class="bg-white ml-4 dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
@@ -66,7 +68,7 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Organisation</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Suivi</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Periode</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Période</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jours</th>
                         <th class="px-6 py-4 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -81,10 +83,10 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        {{ substr($stage->etudiant->prenom ?? 'S', 0, 1) }}{{ substr($stage->etudiant->nom ?? 'S', 0, 1) }}
+                                        {{ substr($stage->etudiant->personnel->prenom ?? 'S', 0, 1) }}{{ substr($stage->etudiant->personnel->nom ?? 'S', 0, 1) }}
                                     </div>
                                     <div>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $stage->etudiant->nom ?? '-' }} {{ $stage->etudiant->prenom ?? '' }}</p>
+                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $stage->etudiant->personnel->nom ?? '-' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</p>
                                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $stage->etudiant->ecole ?? '-' }}</p>
                                     </div>
                                 </div>
@@ -96,20 +98,20 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm space-y-1">
-                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->service->nom ?? 'Service non defini' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->site->name ?? 'Site non defini' }}</p>
+                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->service->nom ?? 'Service non défini' }}</p>
+                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->site->name ?? 'Site non défini' }}</p>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm space-y-1">
-                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->theme ?? 'Theme non defini' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->supervisor->name ?? 'Sans superviseur' }}</p>
+                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->theme ?? 'Thème non défini' }}</p>
+                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? 'Sans superviseur' }}</p>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm">
                                     <p class="text-gray-900 dark:text-gray-100">{{ $stage->date_debut?->format('d/m/Y') ?: '-' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">-> {{ $stage->date_fin?->format('d/m/Y') ?: '-' }}</p>
+                                    <p class="text-gray-500 dark:text-gray-400">→ {{ $stage->date_fin?->format('d/m/Y') ?: '-' }}</p>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -127,14 +129,14 @@
                                         <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                                         En cours
                                     </span>
-                                @elseif(in_array($status, ['A venir', 'Ã€ venir'], true))
+                                @elseif(in_array($status, ['A venir', 'À venir'], true))
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
                                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                                        A venir
+                                        À venir
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium">
-                                        Termine
+                                        Terminé
                                     </span>
                                 @endif
                             </td>
@@ -175,8 +177,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                         </svg>
                                     </div>
-                                    <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Aucun stage trouve</p>
-                                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Commence par creer un nouveau stage.</p>
+                                    <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Aucun stage trouvé</p>
+                                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Commence par créer un nouveau stage.</p>
                                 </div>
                             </td>
                         </tr>
