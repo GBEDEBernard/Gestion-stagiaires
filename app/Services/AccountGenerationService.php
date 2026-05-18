@@ -10,13 +10,13 @@ use Illuminate\Support\Str;
 
 class AccountGenerationService
 {
-    public function generateForPersonnel(Personnel $personnel, string $roleName): User
+    public function generateForPersonnel(Personnel $personnel, string $roleName, ?string $customPassword = null): User
     {
         if ($personnel->user) {
             throw new \Exception('Un compte existe déjà pour ce personnel.');
         }
 
-        $tempPassword = Str::random(10); // ou mieux : Str::random(8) . rand(100,999)
+        $tempPassword = $customPassword ?? Str::random(10); // Use custom password if provided
         $user = User::create([
             'personnel_id' => $personnel->id,
             'password' => Hash::make($tempPassword),

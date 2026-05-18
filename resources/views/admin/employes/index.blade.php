@@ -36,10 +36,7 @@
                                     @if($p->user)
                                         <span class="text-green-600 text-sm font-medium">✓ Actif</span>
                                     @else
-                                        <form action="{{ route('employes.generate-account', $emp) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="text-blue-600 text-sm hover:underline">Générer compte</button>
-                                        </form>
+                                        <button type="button" class="text-blue-600 text-sm hover:underline" onclick="openPasswordModal({{ $emp->id }}, '{{ route('employes.generate-account', $emp) }}')">Générer compte</button>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2">
@@ -60,4 +57,51 @@
             <div class="p-5 border-t">{{ $employes->links() }}</div>
         </div>
     </div>
+
+    <!-- Modal for Custom Password -->
+    <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Entrez un mot de passe temporaire pour cet employé. Si laissé vide, un mot de passe aléatoire sera généré.</p>
+            
+            <form id="passwordForm" method="POST" action="">
+                @csrf
+                <div class="mb-6">
+                    <label for="customPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe temporaire (optionnel)</label>
+                    <input type="password" id="customPassword" name="custom_password" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
+                    <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openPasswordModal(empId, actionUrl) {
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('passwordForm').action = actionUrl;
+            document.getElementById('customPassword').value = '';
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        // Close modal when pressing Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePasswordModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('passwordModal')?.addEventListener('click', function(event) {
+            if (event.target === this) {
+                closePasswordModal();
+            }
+        });
+    </script>
 </x-app-layout>

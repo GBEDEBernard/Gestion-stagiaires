@@ -50,12 +50,13 @@ class EtudiantController extends Controller
     }
 
     // Génération de compte
-    public function generateAccount(Etudiant $etudiant, AccountGenerationService $service) {
+    public function generateAccount(Request $request, Etudiant $etudiant, AccountGenerationService $service) {
         $personnel = $etudiant->personnel;
         if ($personnel->user) {
             return back()->with('error', 'Un compte existe déjà.');
         }
-        $service->generateForPersonnel($personnel, 'etudiant');
+        $customPassword = $request->input('custom_password');
+        $service->generateForPersonnel($personnel, 'etudiant', $customPassword);
         return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
     }
 //   public function syncAccount(Etudiant $etudiant) 

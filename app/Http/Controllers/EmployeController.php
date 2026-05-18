@@ -65,12 +65,13 @@ class EmployeController extends Controller
     return view('admin.employes.show', compact('employe'));
 }
 
-    public function generateAccount(Employe $employe, AccountGenerationService $service) {
+    public function generateAccount(Request $request, Employe $employe, AccountGenerationService $service) {
         $personnel = $employe->personnel;
         if ($personnel->user) {
             return back()->with('error', 'Un compte existe déjà.');
         }
-        $service->generateForPersonnel($personnel, 'employe');
+        $customPassword = $request->input('custom_password');
+        $service->generateForPersonnel($personnel, 'employe', $customPassword);
         return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
     }
 

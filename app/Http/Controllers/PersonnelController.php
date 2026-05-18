@@ -224,14 +224,15 @@ class PersonnelController extends Controller
         return redirect()->route('personnels.index')->with('success', 'Personnel supprimé.');
     }
 
-    public function generateAccount(Personnel $personnel, AccountGenerationService $service)
+    public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
     {
         if ($personnel->user) {
             return back()->with('error', 'Un compte existe déjà.');
         }
 
+        $customPassword = $request->input('custom_password');
         $role = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
-        $service->generateForPersonnel($personnel, $role);
+        $service->generateForPersonnel($personnel, $role, $customPassword);
 
         return back()->with('success', "Compte généré pour {$personnel->full_name}.");
     }
