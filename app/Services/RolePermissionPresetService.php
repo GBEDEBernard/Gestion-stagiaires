@@ -63,6 +63,10 @@ class RolePermissionPresetService
                 'attendance_anomalies.view',
                 'attendance_anomalies.review',
                 'presence_stats.view',
+                'personnels.view',
+                'personnels.create',
+                'personnels.edit',
+                'personnels.delete',
 
             ],
             'etudiant' => [

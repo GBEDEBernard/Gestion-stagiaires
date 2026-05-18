@@ -7,15 +7,23 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\User;
 use App\Models\Etudiant;
-use App\Models\Employe; 
+use App\Models\Employe;
 
 class Personnel extends Model
 {
-     use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'nom', 'prenom', 'email', 'telephone', 'genre',
-        'date_naissance', 'adresse', 'personnable_type', 'personnable_id', 'created_by'
+        'nom',
+        'prenom',
+        'email',
+        'telephone',
+        'genre',
+        'date_naissance',
+        'adresse',
+        'personnable_type',
+        'personnable_id',
+        'created_by'
     ];
 
     public function user()
@@ -46,5 +54,14 @@ class Personnel extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getTypeLabelAttribute()
+    {
+        return match ($this->personnable_type) {
+            Etudiant::class => 'Étudiant',
+            Employe::class => 'Employé',
+            default => 'Inconnu',
+        };
     }
 }

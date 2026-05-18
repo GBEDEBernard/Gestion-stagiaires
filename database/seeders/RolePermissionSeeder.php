@@ -35,6 +35,7 @@ class RolePermissionSeeder extends Seeder
             'presence_stats',
             'presence.admin',
             'employes', // ← ajouté
+            'personnels', // ← ajouté
         ];
 
         $actions = [
