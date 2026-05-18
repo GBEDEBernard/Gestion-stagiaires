@@ -108,7 +108,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
-            
+
             <form id="passwordForm" method="POST" action="">
                 @csrf
                 <div class="mb-6">

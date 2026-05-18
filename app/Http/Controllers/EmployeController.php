@@ -12,18 +12,21 @@ use Illuminate\Validation\Rule;
 
 class EmployeController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $employes = Employe::with('personnel.user', 'domaine', 'site')->latest('id')->paginate(10);
         return view('admin.employes.index', compact('employes'));
     }
 
-    public function create() {
+    public function create()
+    {
         $domaines = Domaine::all();
         $sites = Site::all();
         return view('admin.employes.create', compact('domaines', 'sites'));
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $data = $request->validate([
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
@@ -60,12 +63,13 @@ class EmployeController extends Controller
     }
     // public function syncAccount(Employe $employe)
     public function show(Employe $employe)
-{
-    $employe->load('personnel.user', 'domaine', 'site');
-    return view('admin.employes.show', compact('employe'));
-}
+    {
+        $employe->load('personnel.user', 'domaine', 'site');
+        return view('admin.employes.show', compact('employe'));
+    }
 
-    public function generateAccount(Request $request, Employe $employe, AccountGenerationService $service) {
+    public function generateAccount(Request $request, Employe $employe, AccountGenerationService $service)
+    {
         $personnel = $employe->personnel;
         if ($personnel->user) {
             return back()->with('error', 'Un compte existe déjà.');
@@ -75,25 +79,27 @@ class EmployeController extends Controller
         return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
     }
 
-    public function edit(Employe $employe) {
+    public function edit(Employe $employe)
+    {
         $domaines = Domaine::all();
         $sites = Site::all();
         return view('admin.employes.edit', compact('employe', 'domaines', 'sites'));
     }
 
-    public function update(Request $request, Employe $employe) {
+    public function update(Request $request, Employe $employe)
+    {
         $personnel = $employe->personnel;
         $data = $request->validate([
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
-            'email'          => ['required','email', Rule::unique('personnels','email')->ignore($personnel->id)],
+            'email'          => ['required', 'email', Rule::unique('personnels', 'email')->ignore($personnel->id)],
             'telephone'      => 'nullable|string|max:20',
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
             'domaine_id'     => 'required|exists:domaines,id',
             'site_id'        => 'required|exists:sites,id',
             'poste'          => 'nullable|string|max:255',
-            'matricule'      => ['required','string', Rule::unique('employes','matricule')->ignore($employe->id)],
+            'matricule'      => ['required', 'string', Rule::unique('employes', 'matricule')->ignore($employe->id)],
         ]);
 
         $personnel->update([
@@ -115,34 +121,38 @@ class EmployeController extends Controller
         return redirect()->route('employes.index')->with('success', 'Employé mis à jour.');
     }
 
-    public function destroy(Employe $employe) {
+    public function destroy(Employe $employe)
+    {
         $employe->personnel()->delete();
         $employe->delete();
         return redirect()->route('employes.index')->with('success', 'Employé supprimé.');
     }
 
     // Corbeille (soft delete)
-    public function trash() {
+    public function trash()
+    {
         $employes = Employe::onlyTrashed()->with('personnel')->paginate(10);
         return view('admin.employes.trash', compact('employes'));
     }
 
-    public function restore($id) {
+    public function restore($id)
+    {
         $employe = Employe::onlyTrashed()->findOrFail($id);
         $employe->restore();
         $employe->personnel()->restore();
         return redirect()->route('employes.trash')->with('success', 'Employé restauré.');
     }
 
-    public function forceDelete($id) {
+    public function forceDelete($id)
+    {
         $employe = Employe::onlyTrashed()->findOrFail($id);
         $employe->personnel()->forceDelete();
         $employe->forceDelete();
         return redirect()->route('employes.trash')->with('success', 'Employé définitivement supprimé.');
     }
     public function refresh()
-{
-    \Artisan::call('cache:clear');
-    return redirect()->route('employes.index')->with('success', 'Cache vidé');
-}
+    {
+        \Artisan::call('cache:clear');
+        return redirect()->route('employes.index')->with('success', 'Cache vidé');
+    }
 }
