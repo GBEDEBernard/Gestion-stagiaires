@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 class EmployeController extends Controller
 {
     public function index() {
-        $employes = Employe::with('personnel.user', 'domaine', 'site')->paginate(10);
+        $employes = Employe::with('personnel.user', 'domaine', 'site')->latest('id')->paginate(10);
         return view('admin.employes.index', compact('employes'));
     }
 
@@ -139,4 +139,9 @@ class EmployeController extends Controller
         $employe->forceDelete();
         return redirect()->route('employes.trash')->with('success', 'Employé définitivement supprimé.');
     }
+    public function refresh()
+{
+    \Artisan::call('cache:clear');
+    return redirect()->route('employes.index')->with('success', 'Cache vidé');
+}
 }

@@ -32,8 +32,12 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @forelse($etudiants as $etudiant)
-                            @php $personnel = $etudiant->personnel; @endphp
+                       @forelse($etudiants as $etudiant)
+                        @php $personnel = $etudiant->personnel; @endphp
+                        @if(!$personnel)
+                            <tr><td colspan="6" class="text-red-500">Erreur : personnel introuvable pour étudiant #{{ $etudiant->id }}</td></tr>
+                            @continue
+                        @endif
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                                 <td class="px-6 py-4 text-sm text-gray-500">#{{ $etudiant->id }}</td>
                                 <td class="px-6 py-4">

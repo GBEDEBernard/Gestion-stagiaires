@@ -11,7 +11,9 @@ use Illuminate\Validation\Rule;
 class EtudiantController extends Controller
 {
     public function index() {
-        $etudiants = Etudiant::with('personnel.user')->paginate(10);
+        $etudiants = Etudiant::with('personnel.user')
+        ->latest('id')         // optionnel : les plus récents d'abord
+        ->paginate(10);
         return view('admin.etudiants.index', compact('etudiants'));
     }
 
@@ -135,4 +137,10 @@ public function show(Etudiant $etudiant)
         $etudiant->forceDelete();
         return redirect()->route('etudiants.trash')->with('success', 'Étudiant définitivement supprimé.');
     }
+
+    public function refresh()
+{
+    \Artisan::call('cache:clear');
+    return redirect()->route('etudiants.index')->with('success', 'Cache vidé');
+}
 }
