@@ -15,12 +15,49 @@ use App\Models\Employe;
 class UserController extends Controller
 {
     public function __construct(protected RolePermissionPresetService $roleService) {}
+// la methode pour la page des utilisateurs avec ces filter
+public function index(Request $request)
+{
+    $query = User::with('personnel');
 
-    public function index()
-    {
-        $users = User::with('personnel')->paginate(10);
-        return view('admin.users.index', compact('users'));
+    // Recherche sur nom, prénom, email du personnel
+    if ($search = $request->get('search')) {
+        $query->whereHas('personnel', function ($q) use ($search) {
+            $q->where('nom', 'like', "%{$search}%")
+              ->orWhere('prenom', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
     }
+
+    if ($status = $request->get('status')) {
+        $query->where('status', $status);
+    }
+
+    if ($verified = $request->get('verified')) {
+        if ($verified === 'verified') {
+            $query->whereNotNull('email_verified_at');
+        } elseif ($verified === 'not_verified') {
+            $query->whereNull('email_verified_at');
+        }
+    }
+
+    if ($passStatus = $request->get('password_status')) {
+        if ($passStatus === 'temporary') {
+            $query->where('must_change_password', true);
+        } elseif ($passStatus === 'permanent') {
+            $query->where('must_change_password', false);
+        }
+    }
+
+    if ($role = $request->get('role')) {
+        $query->whereHas('roles', fn($q) => $q->where('name', $role));
+    }
+
+    $users = $query->paginate(10)->withQueryString();
+    $roles = \Spatie\Permission\Models\Role::pluck('name', 'name');
+
+    return view('admin.users.index', compact('users', 'roles'));
+}
 
     public function create(Request $request)
     {
@@ -162,4 +199,23 @@ class UserController extends Controller
             ->paginate(10);
         return view('admin.employes.by_domaine', compact('domaine', 'employes'));
     }
+
+       /**
+         * Activer / Désactiver un utilisateur.
+         */
+        public function toggleStatus(User $user)
+        {
+            if ($user->id === auth()->id()) {
+                return back()->with('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+            }
+
+            $newStatus = $user->status === 'actif' ? 'inactif' : 'actif';
+            $user->update(['status' => $newStatus]);
+
+            $message = $newStatus === 'actif'
+                ? "Le compte de {$user->name} a été réactivé."
+                : "Le compte de {$user->name} a été désactivé. L'utilisateur ne pourra plus se connecter.";
+
+            return back()->with('success', $message);
+        }
 }

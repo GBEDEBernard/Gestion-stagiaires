@@ -226,7 +226,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
-    });
+ 
+        Route::patch('/admin/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+    ->name('admin.users.toggle-status');
+        });
 
     // ---------------- Roles ----------------
     Route::prefix('admin/roles')->group(function () {

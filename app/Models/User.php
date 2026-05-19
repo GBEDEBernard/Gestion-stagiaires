@@ -30,6 +30,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'must_change_password' => 'boolean',
             'temporary_password_created_at' => 'datetime',
             'password_changed_at' => 'datetime',
+            'avatar',
+             'bio' ,
         ];
     }
 
