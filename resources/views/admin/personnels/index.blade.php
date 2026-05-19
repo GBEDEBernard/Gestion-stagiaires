@@ -118,7 +118,7 @@
                                         </button>
                                     @else
                                         <span class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
-                                            Compte actif
+                                            Compte déjà générer 
                                         </span>
                                     @endif
                                     <a href="{{ route('personnels.show', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
