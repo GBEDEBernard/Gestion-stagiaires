@@ -90,7 +90,6 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rôle</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Utilisateurs</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Permissions</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Créé le</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -142,7 +141,7 @@
                                 {{ $role->users_count ?? 0 }} utilisateur(s)
                             </span>
                         </td>
-                        <td class="px-6 py-4">
+                        <!-- <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1 max-w-xs">
                                 @forelse($role->permissions->take(4) as $permission)
                                 <span class="inline-flex items-center px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded text-xs" title="{{ $permission->name }}">
@@ -157,7 +156,7 @@
                                 </span>
                                 @endif
                             </div>
-                        </td>
+                        </td> -->
                         <td class="px-6 py-4">
                             <p class="text-sm text-gray-900 dark:text-gray-100">{{ $role->created_at->format('d/m/Y') }}</p>
                         </td>
