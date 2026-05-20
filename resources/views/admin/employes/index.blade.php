@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="mb-8 ml-4">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 dark:text-white">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Employés</h1>
                 <p class="text-gray-500 dark:text-gray-400 mt-1">Gestion des employés et génération de leurs comptes</p>
@@ -52,8 +52,8 @@
                             </td>
                             <td class="px-6 py-4 text-right space-x-2">
                                 <a href="{{ route('employes.show', $emp) }}" class="p-2 bg-gray-100 rounded-lg">👁️</a>
-                                <a href="{{ route('employes.edit', $emp) }}" class="p-2 bg-yellow-100 rounded-lg">✏️</a>
-                                <form action="{{ route('employes.destroy', $emp) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer ?')">
+                                <a href="{{ route('employes.edit', $emp) }}" class="p-2 bg-yellow-100 rounded-lg" title="Modifier" data-confirm-edit>✏️</a>
+                                <form action="{{ route('employes.destroy', $emp) }}" method="POST" class="inline" data-confirm-delete>
                                     @csrf @method('DELETE')
                                     <button type="submit" class="p-2 bg-red-100 rounded-lg">🗑️</button>
                                 </form>

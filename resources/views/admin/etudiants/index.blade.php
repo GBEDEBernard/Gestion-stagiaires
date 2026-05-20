@@ -24,9 +24,9 @@
 
         <!-- Messages flash -->
         @if(session('success'))
-            <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-xl border border-green-200 dark:border-green-800">
-                {{ session('success') }}
-            </div>
+        <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-xl border border-green-200 dark:border-green-800">
+            {{ session('success') }}
+        </div>
         @endif
 
         <!-- Filtres -->
@@ -73,64 +73,64 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($etudiants as $etudiant)
-                            @php $personnel = $etudiant->personnel; @endphp
-                            @if(!$personnel)
-                                <tr>
-                                    <td colspan="6" class="px-6 py-4 text-red-500 dark:text-red-400">Erreur : personnel introuvable pour étudiant #{{ $etudiant->id }}</td>
-                                </tr>
-                                @continue
-                            @endif
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900 dark:text-white">{{ $personnel->prenom }} {{ $personnel->nom }}</div>
-                                    @if($personnel->genre)
-                                        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ $personnel->genre }}</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-sm">
-                                    <div class="text-gray-900 dark:text-white">{{ $personnel->email }}</div>
-                                    <div class="text-gray-500 dark:text-gray-400">{{ $personnel->telephone ?? '-' }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{{ $etudiant->ecole ?? '-' }}</td>
-                                <td class="px-6 py-4">
-                                    @if($personnel->user)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-                                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                            Compte actif
-                                        </span>
-                                    @else
-                                        <button type="button" class="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline" onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}')">
-                                            Générer le compte
-                                        </button>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                    <a href="{{ route('etudiants.show', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
-                                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('etudiants.edit', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier">
+                        @php $personnel = $etudiant->personnel; @endphp
+                        @if(!$personnel)
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-red-500 dark:text-red-400">Erreur : personnel introuvable pour étudiant #{{ $etudiant->id }}</td>
+                        </tr>
+                        @continue
+                        @endif
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900 dark:text-white">{{ $personnel->prenom }} {{ $personnel->nom }}</div>
+                                @if($personnel->genre)
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ $personnel->genre }}</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="text-gray-900 dark:text-white">{{ $personnel->email }}</div>
+                                <div class="text-gray-500 dark:text-gray-400">{{ $personnel->telephone ?? '-' }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{{ $etudiant->ecole ?? '-' }}</td>
+                            <td class="px-6 py-4">
+                                @if($personnel->user)
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                    Compte actif
+                                </span>
+                                @else
+                                <button type="button" class="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline" onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}')">
+                                    Générer le compte
+                                </button>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                                <a href="{{ route('etudiants.show', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
+                                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </a>
+                                <a href="{{ route('etudiants.edit', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier" data-confirm-edit>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </a>
+                                <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline" data-confirm-delete>
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="inline-flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/50 transition" title="Supprimer">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                    </a>
-                                    <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer définitivement cet étudiant ?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="inline-flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/50 transition" title="Supprimer">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun étudiant trouvé.</td>
-                            </tr>
+                        <tr>
+                            <td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun étudiant trouvé.</td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>
