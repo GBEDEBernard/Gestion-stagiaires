@@ -14,8 +14,7 @@ class AccountProvisionedNotification extends Notification implements ShouldQueue
 
     public function __construct(
         protected string $resetUrl
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

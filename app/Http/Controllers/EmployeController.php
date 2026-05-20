@@ -152,7 +152,9 @@ class EmployeController extends Controller
 
     public function forceDelete($id)
     {
-        $employe = Employe::onlyTrashed()->with(['personnel' => function ($q) { $q->withTrashed()->with('user'); }])->findOrFail($id);
+        $employe = Employe::onlyTrashed()->with(['personnel' => function ($q) {
+            $q->withTrashed()->with('user');
+        }])->findOrFail($id);
 
         $personnel = $employe->personnel;
         if ($personnel) {

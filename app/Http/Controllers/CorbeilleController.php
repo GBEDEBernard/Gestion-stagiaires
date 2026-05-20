@@ -57,7 +57,9 @@ class CorbeilleController extends Controller
     }
     public function forceDeleteEtudiant($id)
     {
-        $etudiant = Etudiant::withTrashed()->with(['personnel' => function ($q) { $q->withTrashed()->with('user'); }])->findOrFail($id);
+        $etudiant = Etudiant::withTrashed()->with(['personnel' => function ($q) {
+            $q->withTrashed()->with('user');
+        }])->findOrFail($id);
 
         $personnel = $etudiant->personnel;
         if ($personnel) {
