@@ -90,9 +90,9 @@
     </div>
 
     {{-- Mobile modal (profil / notifs / thème) --}}
-    <div x-data="mobilePanel()" @open-mobile-panel.window="open = true; tab = $event.detail?.tab ?? 'notifs'">
-        <div x-show="open" x-transition.opacity @click="open = false" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] lg:hidden"></div>
-        <div x-show="open" x-transition.duration.300ms class="fixed bottom-0 left-0 right-0 z-[9999] lg:hidden bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col">
+    <div x-data="mobilePanel()" @open-mobile-panel.window="isOpen = true; tab = $event.detail?.tab ?? 'notifs'">
+        <div x-show="isOpen" x-transition.opacity @click="isOpen = false" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] lg:hidden"></div>
+        <div x-show="isOpen" x-transition.duration.300ms class="fixed bottom-0 left-0 right-0 z-[9999] lg:hidden bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col">
             <div class="flex justify-center pt-3 pb-1">
                 <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
             </div>
@@ -110,7 +110,7 @@
                         <p class="text-xs text-gray-400">{{ Auth::user()->email }}</p>
                     </div>
                 </div>
-                <button @click="open = false" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                <button @click="isOpen = false" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -299,7 +299,7 @@
     <script>
         function mobilePanel() {
             return {
-                open: false,
+                isOpen: false,
                 tab: 'notifs',
                 isDark: document.documentElement.classList.contains('dark'),
                 notifications: [],
@@ -361,28 +361,37 @@
             }
         })();
 
-        document.addEventListener('submit', function(e) {
-            if (e.target.matches('[data-confirm-delete]')) {
-                e.preventDefault();
-                Swal.fire({
-                    title: 'Êtes-vous sûr ?',
-                    text: 'Cette action est irréversible !',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Oui, supprimer !',
-                    cancelButtonText: 'Annuler'
-                }).then(r => {
-                    if (r.isConfirmed) e.target.submit();
-                });
-            }
-        });
-
         document.addEventListener('click', function(e) {
+            // === HANDLE DELETE CONFIRMATION ===
+            const deleteForm = e.target.closest('form[data-confirm-delete]');
+            if (deleteForm) {
+                const submitBtn = e.target.closest('button[type="submit"]');
+                if (submitBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    Swal.fire({
+                        title: 'Êtes-vous sûr ?',
+                        text: 'Cette action est irréversible !',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Oui, supprimer !',
+                        cancelButtonText: 'Annuler'
+                    }).then(r => {
+                        if (r.isConfirmed) {
+                            deleteForm.submit();
+                        }
+                    });
+                    return;
+                }
+            }
+
+            // === HANDLE EDIT CONFIRMATION ===
             const editTarget = e.target.closest('[data-confirm-edit]');
             if (editTarget) {
                 e.preventDefault();
+                e.stopPropagation();
                 Swal.fire({
                     title: 'Confirmer la modification',
                     text: 'Voulez-vous vraiment modifier cet élément ?',
