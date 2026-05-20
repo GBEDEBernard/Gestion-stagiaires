@@ -12,16 +12,17 @@ use App\Models\Service;
 
 class CorbeilleController extends Controller
 {
-    public function index()
-    {
-        $stagesTrash = Stage::onlyTrashed()->get();
-        $etudiantsTrash = Etudiant::onlyTrashed()->get();
-        $badgesTrash = Badge::onlyTrashed()->get();
-        $servicesTrash = Service::onlyTrashed()->get();
-        $usersTrash = User::onlyTrashed()->get();
+    
+public function index()
+{
+    $stagesTrash = Stage::onlyTrashed()->with('etudiant.personnel')->get();
+    $etudiantsTrash = Etudiant::onlyTrashed()->with('personnel')->get();
+    $badgesTrash = Badge::onlyTrashed()->get();
+    $servicesTrash = Service::onlyTrashed()->get();
+    $usersTrash = User::onlyTrashed()->with('personnel')->get();
 
-        return view('admin.corbeille.index', compact('stagesTrash', 'etudiantsTrash', 'badgesTrash', 'servicesTrash', 'usersTrash'));
-    }
+    return view('admin.corbeille.index', compact('stagesTrash', 'etudiantsTrash', 'badgesTrash', 'servicesTrash', 'usersTrash'));
+}
 
     // Stages
     public function restoreStage($id) { Stage::withTrashed()->findOrFail($id)->restore(); return back()->with('success','Stage restauré ✅'); }

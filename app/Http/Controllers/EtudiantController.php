@@ -136,9 +136,14 @@ class EtudiantController extends Controller
 
     public function restore($id)
     {
-        $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
+        $etudiant = Etudiant::onlyTrashed()->with('personnel')->findOrFail($id);
         $etudiant->restore();
-        $etudiant->personnel()->restore();
+
+        $personnel = $etudiant->personnel;
+        if ($personnel && method_exists($personnel, 'restore')) {
+            $personnel->restore();
+        }
+
         return redirect()->route('etudiants.trash')->with('success', 'Étudiant restauré.');
     }
 

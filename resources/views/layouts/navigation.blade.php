@@ -159,12 +159,17 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                                 <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                                 <span>Permissions</span>
-                                @php $adminPending = \App\Models\PermissionRequest::where('status','pending')->count(); @endphp
-                                @if($adminPending > 0)
-                                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200 animate-pulse">{{ $adminPending }}</span>
-                                @endif
+                               
                             </a>
                             @endrole
+                            
+                          @role('admin|superviseur')
+                            <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                                <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                                <span>Statistiques Globales</span>                                
+                            </a>
+                            @endrole
+                            
                         @else
                             {{-- Employé simple --}}
                             <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
