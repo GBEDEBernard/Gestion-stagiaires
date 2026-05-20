@@ -131,15 +131,22 @@ class EmployeController extends Controller
     // Corbeille (soft delete)
     public function trash()
     {
-        $employes = Employe::onlyTrashed()->with('personnel')->paginate(10);
+        $employes = Employe::onlyTrashed()->with(['personnel' => function ($query) {
+            $query->withTrashed();
+        }])->paginate(10);
         return view('admin.employes.trash', compact('employes'));
     }
 
     public function restore($id)
     {
-        $employe = Employe::onlyTrashed()->findOrFail($id);
+        $employe = Employe::onlyTrashed()->with(['personnel' => function ($query) {
+            $query->withTrashed();
+        }])->findOrFail($id);
         $employe->restore();
-        $employe->personnel()->restore();
+        $personnel = $employe->personnel;
+        if ($personnel && method_exists($personnel, 'restore')) {
+            $personnel->restore();
+        }
         return redirect()->route('employes.trash')->with('success', 'Employé restauré.');
     }
 

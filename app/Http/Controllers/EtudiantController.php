@@ -130,13 +130,17 @@ class EtudiantController extends Controller
     // Corbeille (soft delete)
     public function trash()
     {
-        $etudiants = Etudiant::onlyTrashed()->with('personnel')->paginate(10);
+        $etudiants = Etudiant::onlyTrashed()->with(['personnel' => function ($query) {
+            $query->withTrashed();
+        }])->paginate(10);
         return view('admin.etudiants.trash', compact('etudiants'));
     }
 
     public function restore($id)
     {
-        $etudiant = Etudiant::onlyTrashed()->with('personnel')->findOrFail($id);
+        $etudiant = Etudiant::onlyTrashed()->with(['personnel' => function ($query) {
+            $query->withTrashed();
+        }])->findOrFail($id);
         $etudiant->restore();
 
         $personnel = $etudiant->personnel;
