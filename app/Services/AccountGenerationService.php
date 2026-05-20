@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 
 class AccountGenerationService
 {
@@ -26,7 +28,28 @@ class AccountGenerationService
         ]);
 
         $user->assignRole($roleName);
-        $user->notify(new AccountProvisionedNotification($tempPassword));
+
+        // Générer un token de réinitialisation et construire l'URL de réinitialisation
+        $token = Password::broker()->createToken($user);
+        $resetUrl = url(route('password.reset', ['token' => $token], false)) . '?email=' . urlencode($personnel->email);
+
+        // Notifier l'utilisateur avec un lien professionnel pour configurer son mot de passe
+        $user->notify(new AccountProvisionedNotification($resetUrl));
+
+        // Audit simple : enregistrer qui a généré le compte dans les logs
+        try {
+            $actorId = auth()->id() ?? null;
+            Log::info('account.generated', [
+                'personnel_id' => $personnel->id,
+                'user_id' => $user->id,
+                'role' => $roleName,
+                'generated_by' => $actorId,
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+        } catch (\Throwable $e) {
+            // ne pas faire échouer la création de compte pour un échec de logging
+            Log::error('Failed to log account generation: ' . $e->getMessage());
+        }
 
         return $user;
     }

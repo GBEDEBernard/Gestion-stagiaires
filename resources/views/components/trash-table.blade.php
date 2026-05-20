@@ -194,7 +194,7 @@ return $value;
                                 <form method="POST"
                                     action="{{ route($forceDeleteRoute, $item->id) }}"
                                     class="inline"
-                                    onsubmit="return confirm('Supprimer définitivement cet élément ? Cette action est irréversible.')">
+                                    data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"

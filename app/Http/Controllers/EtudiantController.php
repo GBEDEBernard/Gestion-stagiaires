@@ -153,9 +153,19 @@ class EtudiantController extends Controller
 
     public function forceDelete($id)
     {
-        $etudiant = Etudiant::onlyTrashed()->findOrFail($id);
-        $etudiant->personnel()->forceDelete();
+        $etudiant = Etudiant::onlyTrashed()->with(['personnel' => function ($q) { $q->withTrashed()->with('user'); }])->findOrFail($id);
+
+        $personnel = $etudiant->personnel;
+        if ($personnel) {
+            // Supprimer d'abord l'utilisateur lié (s'il existe)
+            if ($personnel->user) {
+                $personnel->user()->forceDelete();
+            }
+            $personnel->forceDelete();
+        }
+
         $etudiant->forceDelete();
+
         return redirect()->route('etudiants.trash')->with('success', 'Étudiant définitivement supprimé.');
     }
 
