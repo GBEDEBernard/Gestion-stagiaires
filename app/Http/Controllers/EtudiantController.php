@@ -158,6 +158,11 @@ class EtudiantController extends Controller
         }])->findOrFail($id);
 
         $personnel = $etudiant->personnel;
+        // Pour éviter la violation de contrainte FK (etudiants.personnel_id -> personnels.id)
+        // on supprime d'abord la fiche enfant `etudiant`, puis l'utilisateur lié (si présent)
+        // et enfin la fiche `personnel`.
+        $etudiant->forceDelete();
+
         if ($personnel) {
             // Supprimer d'abord l'utilisateur lié (s'il existe)
             if ($personnel->user) {
@@ -165,8 +170,6 @@ class EtudiantController extends Controller
             }
             $personnel->forceDelete();
         }
-
-        $etudiant->forceDelete();
 
         return redirect()->route('etudiants.trash')->with('success', 'Étudiant définitivement supprimé.');
     }

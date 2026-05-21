@@ -61,6 +61,9 @@ class CorbeilleController extends Controller
             $q->withTrashed()->with('user');
         }])->findOrFail($id);
 
+        // Supprimer d'abord la fiche etudiant (enfant), puis l'utilisateur et enfin le personnel
+        $etudiant->forceDelete();
+
         $personnel = $etudiant->personnel;
         if ($personnel) {
             if ($personnel->user) {
@@ -68,8 +71,6 @@ class CorbeilleController extends Controller
             }
             $personnel->forceDelete();
         }
-
-        $etudiant->forceDelete();
 
         return back()->with('success', 'Étudiant supprimé définitivement 🗑️');
     }

@@ -303,11 +303,7 @@
                 tab: 'notifs',
                 isDark: document.documentElement.classList.contains('dark'),
                 notifications: [],
-                notifCount: {
-                    {
-                        $notificationCount ?? 0
-                    }
-                },
+                notifCount: @json($notificationCount ?? 0),
                 loadingNotifs: false,
 
                 async fetchNotifs() {

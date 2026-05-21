@@ -156,6 +156,9 @@ class EmployeController extends Controller
             $q->withTrashed()->with('user');
         }])->findOrFail($id);
 
+        // Supprimer d'abord la fiche employé (enfant), puis l'utilisateur et enfin le personnel.
+        $employe->forceDelete();
+
         $personnel = $employe->personnel;
         if ($personnel) {
             if ($personnel->user) {
@@ -163,8 +166,6 @@ class EmployeController extends Controller
             }
             $personnel->forceDelete();
         }
-
-        $employe->forceDelete();
 
         return redirect()->route('employes.trash')->with('success', 'Employé définitivement supprimé.');
     }
