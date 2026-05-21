@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -22,41 +19,40 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $personnel = $user->personnel;
 
-        // Update basic fields
-        $user->fill($request->validated());
+        // Mise à jour des informations du personnel
+        if ($personnel) {
+            $personnel->nom = $request->input('nom');
+            $personnel->prenom = $request->input('prenom');
+            $personnel->email = $request->input('email');
+            $personnel->telephone = $request->input('phone');
+            $personnel->save();
 
-        // Handle email verification
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+            if ($personnel->wasChanged('email')) {
+                $user->email_verified_at = null;
+            }
         }
 
-        // Handle avatar upload
+        // Gestion de l'avatar (la colonne existe maintenant dans users)
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
             if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
                 Storage::disk('public')->delete($user->avatar);
             }
-
-            // Store new avatar
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
         }
 
+        // Mise à jour de la bio (colonne ajoutée)
+        $user->bio = $request->input('bio');
         $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -65,13 +61,11 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // Delete avatar if exists
         if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
             Storage::disk('public')->delete($user->avatar);
         }
 
         Auth::logout();
-
         $user->delete();
 
         $request->session()->invalidate();

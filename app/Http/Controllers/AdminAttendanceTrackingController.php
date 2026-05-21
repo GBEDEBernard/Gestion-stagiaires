@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\Etudiant;
+use App\Models\Employe;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,7 +30,9 @@ class AdminAttendanceTrackingController extends Controller
             default => $this->getDailyData($filterDate),
         };
 
-        $students = Etudiant::with('user')->get()->map(function ($etudiant) {
+        $students = Etudiant::with('user')->get()->filter(function ($etudiant) {
+            return $etudiant->user !== null;
+        })->map(function ($etudiant) {
             return [
                 'id' => $etudiant->user->id,
                 'name' => $etudiant->user->name . ' (Étudiant)',
@@ -37,14 +40,17 @@ class AdminAttendanceTrackingController extends Controller
             ];
         });
 
-        $employees = User::whereNotNull('domaine_id')
+        $employees = User::with('personnel.personnable')
+            ->whereHas('personnel', function ($query) {
+                $query->where('personnable_type', Employe::class);
+            })
             ->where('status', 'actif')
             ->where('id', '!=', Auth::id())
             ->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'name' => $user->name . ' (Employé - ' . ($user->domaine->nom ?? 'N/A') . ')',
+                    'name' => $user->name . ' (Employé - ' . (optional(optional($user->personnel)->personnable)->domaine->nom ?? 'N/A') . ')',
                     'type' => 'employee'
                 ];
             });
@@ -113,7 +119,9 @@ class AdminAttendanceTrackingController extends Controller
         $studentPresent = $studentPresentIds->count();
 
         // Employés (utilisateurs sans étudiant)
-        $employeeUsersIds = User::whereNotNull('domaine_id')
+        $employeeUsersIds = User::whereHas('personnel', function ($query) {
+            $query->where('personnable_type', Employe::class);
+        })
             ->where('status', 'actif')
             ->where('id', '!=', Auth::id())
             ->pluck('id');

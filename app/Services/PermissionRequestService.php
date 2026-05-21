@@ -50,8 +50,13 @@ class PermissionRequestService
                 }
             }
 
-            // Notify admins in-app
-            $admins = User::role('admin')->get();
+            // Notify admins in-app — join `personnels` so we can order by name columns
+            $admins = User::role('admin')
+                ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+                ->orderBy('personnels.nom')
+                ->orderBy('personnels.prenom')
+                ->select('users.*')
+                ->get();
             foreach ($admins as $admin) {
                 $this->notifyInApp($admin, [
                     'type'    => 'permission_request',

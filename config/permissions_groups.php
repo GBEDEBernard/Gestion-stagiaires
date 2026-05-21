@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'dashboard'            => 'Tableau de bord',
+    'presence'             => 'Présences & pointages',
+    'presence_stats'       => 'Statistiques de présence',
+    'qr_code'              => 'QR Codes',
+    'etudiants'            => 'Étudiants',
+    'employes'             => 'Employés',
+    'personnels'           => 'Personnel',
+    'stages'               => 'Stages',
+    'type_stages'          => 'Types de stage',
+    'badges'               => 'Badges',
+    'services'             => 'Services',
+    'domaines'             => 'Domaines',
+    'signataires'          => 'Signataires',
+    'users'                => 'Utilisateurs',
+    'roles'                => 'Rôles',
+    'attestation'          => 'Attestations',
+    'corbeille'            => 'Corbeille',
+    'sites'                => 'Sites',
+    'tasks'                => 'Tâches',
+    'daily_reports'        => 'Rapports journaliers',
+    'attendance_anomalies' => 'Anomalies de présence',
+    'jour_stage'           => 'Jours de stage',
+];

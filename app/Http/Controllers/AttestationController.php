@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Stage;
 use App\Models\Signataire;
 use App\Models\Attestation;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Mpdf\Mpdf;
@@ -17,8 +16,13 @@ class AttestationController extends Controller
      */
     public function show(Stage $stage)
     {
-        // Charger relations
-        $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
+        // Charger les relations nécessaires
+        $stage->load([
+            'etudiant.personnel',   // important pour accéder aux nom/prénom/genre/email/tel/adresse
+            'service',
+            'typestage',
+            'attestation.signataires'
+        ]);
 
         // Attestation existante ou création
         $attestation = $stage->attestation;
@@ -34,7 +38,6 @@ class AttestationController extends Controller
         }
 
         // Récupérer uniquement les signataires sélectionnés pour cette attestation
-        // Tri par ordre si défini
         $signataires = $attestation->signataires()
             ->orderBy('pivot_ordre', 'asc')
             ->get();
@@ -103,10 +106,14 @@ class AttestationController extends Controller
     /**
      * Génère le PDF pour impression ou téléchargement
      */
-
     public function generatePDF(Stage $stage, $type = 'download')
     {
-        $stage->load('etudiant', 'service', 'typestage', 'attestation.signataires');
+        $stage->load([
+            'etudiant.personnel',
+            'service',
+            'typestage',
+            'attestation.signataires'
+        ]);
 
         $attestation = $stage->attestation ?? $stage->attestation()->create([
             'typestage_id' => $stage->typestage?->id,
@@ -117,6 +124,7 @@ class AttestationController extends Controller
         $reference = $attestation->reference;
         $signataires = $attestation->signataires()->orderBy('pivot_ordre')->get();
 
+        // Assurer que chaque signataire a un attribut pivot par défaut
         foreach ($signataires as $signataire) {
             if (!$signataire->pivot) {
                 $signataire->setRelation('pivot', (object)[
@@ -126,19 +134,19 @@ class AttestationController extends Controller
             }
         }
 
-        // Génération HTML
+        // Génération HTML – la vue doit aussi être corrigée (cf. ci-dessous)
         $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
 
         // Création du PDF avec mPDF
         $mpdf = new Mpdf(['format' => 'A4']);
         $mpdf->WriteHTML($html);
 
+        $fileName = 'attestation_' . ($stage->etudiant->personnel->nom ?? 'stagiaire') . '.pdf';
+
         if ($type === 'print') {
-            // Affiche directement dans le navigateur pour impression
-            return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::INLINE);
+            return $mpdf->Output($fileName, \Mpdf\Output\Destination::INLINE);
         }
 
-        // Pour téléchargement
-        return $mpdf->Output('attestation_' . $stage->etudiant->nom . '.pdf', \Mpdf\Output\Destination::DOWNLOAD);
+        return $mpdf->Output($fileName, \Mpdf\Output\Destination::DOWNLOAD);
     }
 }

@@ -15,7 +15,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                     <a href="{{ route('stages.index') }}" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Stages</a>
                     <span class="mx-2">/</span>
-                    <span class="text-gray-700 dark:text-gray-200 font-medium">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</span>
+                    <span class="text-gray-700 dark:text-gray-200 font-medium">{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</span>
                 </p>
             </div>
         </div>
@@ -136,7 +136,7 @@
                 <div class="relative h-32 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600">
                     <div class="absolute -bottom-12 left-6">
                         <div class="h-24 w-24 rounded-2xl overflow-hidden ring-4 ring-white dark:ring-gray-800 shadow-xl bg-white flex items-center justify-center">
-                            @if($stage->etudiant->genre === 'Masculin')
+                            @if(($stage->etudiant->personnel->genre ?? '') === 'Masculin')
                             <svg class="h-14 w-14 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                             </svg>
@@ -152,12 +152,12 @@
                 <div class="pt-16 pb-6 px-6">
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</h2>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</h2>
                             <p class="text-gray-500 dark:text-gray-400 mt-1">{{ $stage->etudiant->ecole ?? 'École non renseignée' }}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
-                                    {{ $stage->etudiant->genre === 'Masculin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' }}">
-                                    {{ $stage->etudiant->genre ?? 'Non spécifié' }}
+                                    {{ ($stage->etudiant->personnel->genre ?? '') === 'Masculin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' }}">
+                                    {{ $stage->etudiant->personnel->genre ?? 'Non spécifié' }}
                                 </span>
                                 <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold
                                     @if($statutEnCours === 'En cours') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
@@ -168,13 +168,13 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="mailto:{{ $stage->etudiant->email }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Email">
+                            <a href="mailto:{{ $stage->etudiant->personnel->email ?? '' }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Email">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                             </a>
-                            @if($stage->etudiant->telephone)
-                            <a href="tel:{{ $stage->etudiant->telephone }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Téléphone">
+                            @if($stage->etudiant->personnel->telephone)
+                            <a href="tel:{{ $stage->etudiant->personnel->telephone }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Téléphone">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
@@ -192,13 +192,13 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Site de presence</p>
-                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->site->name ?? 'Site non defini' }}</p>
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Site de présence</p>
+                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->site->name ?? 'Site non défini' }}</p>
                                 </div>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->site->address ?? 'Adresse non renseignee' }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->site->address ?? 'Adresse non renseignée' }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ $stage->site?->city ?? 'Ville non renseignee' }}{{ $stage->site?->country ? ' - ' . $stage->site->country : '' }}
+                                {{ $stage->site?->city ?? 'Ville non renseignée' }}{{ $stage->site?->country ? ' - ' . $stage->site->country : '' }}
                             </p>
                         </div>
 
@@ -211,10 +211,12 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">Superviseur</p>
-                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->supervisor->name ?? 'Sans superviseur' }}</p>
+                                    <p class="text-base font-semibold text-gray-900 dark:text-white">
+                                        {{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? '' }}
+                                    </p>
                                 </div>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->supervisor->email ?? 'Aucun contact associe' }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->supervisor->email ?? 'Aucun contact associé' }}</p>
                             @if($stage->supervisor)
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $stage->supervisor->getRoleNames()->implode(', ') ?: 'Utilisateur' }}</p>
                             @endif
@@ -473,7 +475,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200 truncate">{{ $stage->etudiant->email }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200 truncate">{{ $stage->etudiant->personnel->email ?? 'Non renseigné' }}</p>
                         </div>
                     </div>
 
@@ -485,11 +487,11 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Téléphone</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->telephone ?? 'Non défini' }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->personnel->telephone ?? 'Non défini' }}</p>
                         </div>
                     </div>
 
-                    @if($stage->etudiant->adresse)
+                    @if($stage->etudiant->personnel->adresse)
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
                             <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,7 +501,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Adresse</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->adresse }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->personnel->adresse }}</p>
                         </div>
                     </div>
                     @endif

@@ -154,12 +154,12 @@ class AdminPresenceController extends Controller
             return response()->json($anomalies);
         }
 
-        // ✅ Correction : utiliser Blade au lieu d'Inertia
+        // Correction : utiliser Blade au lieu d'Inertia
         return view('admin.presence.anomalies', compact('anomalies'));
     }
 
     /**
-     * ✅ Suivi Pointage - Admin
+     * Suivi Pointage - Admin
      */
     public function pointageSuivi(Request $request)
     {
@@ -219,7 +219,11 @@ class AdminPresenceController extends Controller
         $periodDays = Carbon::parse($dateFrom)->diffInDays(Carbon::parse($dateTo)) + 1;
 
         // Listes filtres
-        $users = User::whereHas('attendanceDays')->orderBy('name')->limit(50)->get(['id', 'name']);
+        $users = User::with('personnel')
+            ->whereHas('attendanceDays')
+            ->get()
+            ->sortBy('name')
+            ->take(50);
         $sites = Site::where('is_active', true)->orderBy('name')->get();
         $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
 

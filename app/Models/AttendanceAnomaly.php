@@ -34,22 +34,22 @@ class AttendanceAnomaly extends Model
         'reviewed_at' => 'datetime',
         'payload' => 'array',
     ];
-
+//   protected $dates = ['detected_at', 'reviewed_at'];
     public function attendanceEvent()
     {
         return $this->belongsTo(AttendanceEvent::class);
     }
-
+// relation avec attendance_day pour faciliter les requêtes basées sur la date de présence
     public function attendanceDay()
     {
         return $this->belongsTo(AttendanceDay::class);
     }
-
+// relation avec stage pour filtrer les anomalies par stage (pour stagiaires)
     public function stage()
     {
         return $this->belongsTo(Stage::class);
     }
-
+// relation avec étudiant pour filtrer les anomalies par étudiant (pour stagiaires)
     public function etudiant()
     {
         return $this->belongsTo(Etudiant::class);

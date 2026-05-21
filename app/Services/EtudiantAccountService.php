@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Etudiant;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -12,8 +13,7 @@ class EtudiantAccountService
 {
     public function __construct(
         protected RolePermissionPresetService $rolePermissionPresetService
-    ) {
-    }
+    ) {}
 
     public function syncMany(iterable $etudiants): array
     {
@@ -104,7 +104,7 @@ class EtudiantAccountService
         $newUser = User::create([
             'name' => $this->buildDisplayName($etudiant),
             'email' => $etudiant->email,
-            'password' => $temporaryPassword,
+            'password' => Hash::make($temporaryPassword),
             'status' => 'actif',
             'email_verified_at' => null,
             'must_change_password' => true,

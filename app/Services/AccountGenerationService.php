@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Personnel;
+use App\Models\User;
+use App\Notifications\AccountProvisionedNotification;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
+
+class AccountGenerationService
+{
+    public function generateForPersonnel(Personnel $personnel, string $roleName, ?string $customPassword = null): User
+    {
+        if ($personnel->user) {
+            throw new \Exception('Un compte existe déjà pour ce personnel.');
+        }
+
+        $tempPassword = $customPassword ?? Str::random(10); // Use custom password if provided
+        $user = User::create([
+            'personnel_id' => $personnel->id,
+            'password' => Hash::make($tempPassword),
+            'must_change_password' => true,
+            'temporary_password_created_at' => now(),
+            'status' => 'actif',
+        ]);
+
+        $user->assignRole($roleName);
+
+        // Générer un token de réinitialisation et construire l'URL de réinitialisation
+        $token = Password::broker()->createToken($user);
+        $resetUrl = url(route('password.reset', ['token' => $token], false)) . '?email=' . urlencode($personnel->email);
+
+        // Notifier l'utilisateur avec un lien professionnel pour configurer son mot de passe
+        $user->notify(new AccountProvisionedNotification($resetUrl));
+
+        // Audit simple : enregistrer qui a généré le compte dans les logs
+        try {
+            $actorId = auth()->id() ?? null;
+            Log::info('account.generated', [
+                'personnel_id' => $personnel->id,
+                'user_id' => $user->id,
+                'role' => $roleName,
+                'generated_by' => $actorId,
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+        } catch (\Throwable $e) {
+            // ne pas faire échouer la création de compte pour un échec de logging
+            Log::error('Failed to log account generation: ' . $e->getMessage());
+        }
+
+        return $user;
+    }
+}

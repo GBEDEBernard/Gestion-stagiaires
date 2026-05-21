@@ -1,9 +1,7 @@
 <?php
-
+// app/Models/User.php
 namespace App\Models;
 
-use App\Notifications\VerifyEmailNotification;
-use App\Notifications\ResetPasswordNotification;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,49 +9,70 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    // jb -> Le compte utilisateur porte a la fois l'identite, les roles
-    // et l'etat d'onboarding (verification email + mot de passe temporaire).
-    use MustVerifyEmailTrait;
-    use HasFactory;
-    use Notifiable;
-    use HasRoles;
-    use SoftDeletes;
+    use MustVerifyEmailTrait, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
     protected $fillable = [
+        'personnel_id',
         'name',
         'email',
         'password',
         'must_change_password',
         'temporary_password_created_at',
         'password_changed_at',
-        'phone',
-        'bio',
-        'avatar',
-        'status',
-        'domaine_id',
+        'status'
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'must_change_password' => 'boolean',
+        'temporary_password_created_at' => 'datetime',
+        'password_changed_at' => 'datetime',
     ];
 
-    protected function casts(): array
+    public function personnel()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'must_change_password' => 'boolean',
-            'temporary_password_created_at' => 'datetime',
-            'password_changed_at' => 'datetime',
-        ];
+        return $this->belongsTo(Personnel::class);
     }
 
+    // Accesseurs pour compatibilité ascendante
+    public function getNameAttribute($value)
+    {
+        return $this->personnel?->full_name ?? $value;
+    }
 
+    public function getEmailAttribute($value)
+    {
+        return $this->personnel?->email ?? $value;
+    }
 
+    public function getPhoneAttribute()
+    {
+        return $this->personnel?->telephone;
+    }
+
+    // Ancienne relation (pour code legacy)
+    public function etudiant()
+    {
+        return $this->hasOneThrough(Etudiant::class, Personnel::class, 'id', 'personnel_id', 'personnel_id')
+            ->where('personnable_type', Etudiant::class);
+    }
+
+    public function profil()
+    {
+        return $this->personnel->personnable;
+    }
+
+    /**
+     * Détermine la route d'accueil après connexion en fonction du rôle.
+     */
     public function homeRouteName(): string
     {
         // 👑 Admin
@@ -82,19 +101,13 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification()
     {
-        // jb -> On force ici la notification de verification du projet
-        // pour garder un texte et un ton coherents lors des renvois.
         $this->notify(new VerifyEmailNotification());
     }
 
+    // --- Relations existantes ---
     public function supervisedStages()
     {
         return $this->hasMany(Stage::class, 'supervisor_id');
-    }
-
-    public function etudiant()
-    {
-        return $this->hasOne(Etudiant::class);
     }
 
     public function trustedDevices()
@@ -102,19 +115,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TrustedDevice::class);
     }
 
-    public function domaine()
-    {
-        return $this->belongsTo(Domaine::class);
-    }
-
     public function attendanceEvents()
     {
         return $this->hasMany(AttendanceEvent::class);
     }
 
-    public function validatedAttendanceDays()
+    public function attendanceAnomalies()
     {
-        return $this->hasMany(AttendanceDay::class, 'validated_by');
+        return $this->hasMany(AttendanceAnomaly::class);
     }
 
     public function reviewedAttendanceAnomalies()
@@ -127,15 +135,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(DailyReport::class, 'reviewed_by');
     }
 
-    /**
-     * Attendance days for employees (user_id).
-     */
     public function attendanceDays()
     {
         return $this->hasMany(AttendanceDay::class);
     }
-
-
 
     public function dailyReportReviews()
     {

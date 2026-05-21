@@ -12,7 +12,12 @@ class DomaineSiteSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::role('admin')->first() ?? User::first();
+        $admin = User::role('admin')
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->select('users.*')
+            ->first() ?? User::first();
 
         $tfg = Domaine::updateOrCreate(
             ['nom' => 'TFG'],

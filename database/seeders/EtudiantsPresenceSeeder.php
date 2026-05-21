@@ -97,7 +97,12 @@ class EtudiantsPresenceSeeder extends Seeder
                 'typestage_id' => TypeStage::inRandomOrder()->first()->id,
                 'service_id' => Service::inRandomOrder()->first()->id,
                 'site_id' => $tfgSite->id,
-                'supervisor_id' => User::role('superviseur')->first()?->id ?? 1,
+                'supervisor_id' => User::role('superviseur')
+                    ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+                    ->orderBy('personnels.nom')
+                    ->orderBy('personnels.prenom')
+                    ->select('users.*')
+                    ->first()?->id ?? 1,
                 'date_debut' => now()->subWeek()->format('Y-m-d'),
                 'date_fin' => now()->addMonth()->format('Y-m-d'),
                 'expected_check_in_time' => '08:30:00',
