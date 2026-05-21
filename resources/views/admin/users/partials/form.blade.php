@@ -1,15 +1,18 @@
 @php
-$linkedEtudiant = $user?->etudiant;
-$selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
-$selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
-$shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
-$showDomaineSection = in_array('employe', $selectedRoleNames, true);
-$isCreate = !$user;
-$rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+    // Sécurisation : variable $rolePermissionMap peut ne pas être définie
+    $rolePermissionMap = $rolePermissionMap ?? [];
+    
+    $linkedEtudiant = $user?->etudiant;
+    $selectedRoleNames = collect($selectedRoles ?? [])->values()->all();
+    $selectedPermissionNames = collect($selectedPermissions ?? [])->values()->all();
+    $shouldShowEtudiantBlock = in_array('etudiant', $selectedRoleNames, true) || $linkedEtudiant;
+    $showDomaineSection = in_array('employe', $selectedRoleNames, true);
+    $isCreate = !$user;
+    $rolePermissionMapJson = json_encode($rolePermissionMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 
-// Pré-remplissage des champs nom/prénom
-$nomValue = old('nom', $linkedEtudiant?->nom ?? ($user ? explode(' ', $user->name, 2)[1] ?? '' : ''));
-$prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $user->name, 2)[0] ?? '' : ''));
+    // Pré-remplissage des champs nom/prénom
+    $nomValue = old('nom', $linkedEtudiant?->nom ?? ($user ? explode(' ', $user->name, 2)[1] ?? '' : ''));
+    $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $user->name, 2)[0] ?? '' : ''));
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -21,7 +24,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
         data-role-permission-map="{{ $rolePermissionMapJson }}">
         @csrf
         @isset($formMethod)
-        @method($formMethod)
+            @method($formMethod)
         @endisset
 
         <input type="hidden" name="permissions_overridden" value="{{ old('permissions_overridden', 0) }}" data-permissions-overridden>
@@ -33,20 +36,20 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
         </div>
 
         @if($user)
-        <div class="grid gap-3 md:grid-cols-2">
-            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                <p class="font-semibold text-gray-800 dark:text-gray-100">Vérification email</p>
-                <p class="mt-1 text-gray-600 dark:text-gray-400">
-                    {{ $user->hasVerifiedEmail() ? 'Email déjà vérifié.' : 'Email encore en attente de vérification.' }}
-                </p>
+            <div class="grid gap-3 md:grid-cols-2">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                    <p class="font-semibold text-gray-800 dark:text-gray-100">Vérification email</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">
+                        {{ $user->hasVerifiedEmail() ? 'Email déjà vérifié.' : 'Email encore en attente de vérification.' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
+                    <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
+                    <p class="mt-1 text-gray-600 dark:text-gray-400">
+                        {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel déjà défini.' }}
+                    </p>
+                </div>
             </div>
-            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm">
-                <p class="font-semibold text-gray-800 dark:text-gray-100">Mot de passe</p>
-                <p class="mt-1 text-gray-600 dark:text-gray-400">
-                    {{ $user->must_change_password ? 'Mot de passe temporaire encore actif.' : 'Mot de passe personnel déjà défini.' }}
-                </p>
-            </div>
-        </div>
         @endif
 
         {{-- SECTION COMPTE UTILISATEUR --}}
@@ -67,7 +70,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: Dupont">
                     @error('nom')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
                 <div>
@@ -80,7 +83,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: Jean">
                     @error('prenom')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -98,7 +101,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         placeholder="exemple@email.com">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cet email sera celui utilisé par l'utilisateur pour se connecter.</p>
                     @error('email')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -115,7 +118,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Définis le mot de passe initial">
                     @error('password')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -144,13 +147,13 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                 <select id="user_type" name="user_type" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white" required>
                     <option value="">Choisir le type...</option>
                     @foreach($roles as $role)
-                    <option value="{{ $role->name }}" {{ old('user_type', $selectedRoleNames[0] ?? '') == $role->name ? 'selected' : '' }}>
-                        {{ ucfirst(str_replace('_', ' ', $role->name)) }}
-                    </option>
+                        <option value="{{ $role->name }}" {{ old('user_type', $selectedRoleNames[0] ?? '') == $role->name ? 'selected' : '' }}>
+                            {{ ucfirst(str_replace('_', ' ', $role->name)) }}
+                        </option>
                     @endforeach
                 </select>
                 @error('user_type')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
 
                 <input type="hidden" name="roles[]" value="" id="hidden_role" data-role-input>
@@ -159,36 +162,36 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
             <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
                 <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Les permissions sont chargées automatiquement selon le rôle.
                     @if($isCreate)
-                    Elles seront appliquées à la création du compte et peuvent être modifiées ensuite en édition de l'utilisateur ou du rôle.
+                        Elles seront appliquées à la création du compte et peuvent être modifiées ensuite en édition de l'utilisateur ou du rôle.
                     @else
-                    Vous pouvez les ajuster librement pour ce compte.
+                        Vous pouvez les ajuster librement pour ce compte.
                     @endif
                 </p>
 
                 @unless($isCreate)
-                <div class="grid gap-4 lg:grid-cols-2">
-                    @foreach($permissionGroups as $group => $groupPermissions)
-                    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                        <p class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{{ ucfirst($group) }}</p>
-                        <div class="space-y-2">
-                            @foreach($groupPermissions as $permission)
-                            <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
-                                <input
-                                    type="checkbox"
-                                    name="permissions[]"
-                                    value="{{ $permission->name }}"
-                                    class="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-emerald-500 permission-checkbox"
-                                    {{ in_array($permission->name, $selectedPermissionNames) ? 'checked' : '' }}>
-                                <span class="leading-tight">{{ $permission->name }}</span>
-                            </label>
-                            @endforeach
-                        </div>
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        @foreach($permissionGroups as $group => $groupPermissions)
+                            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white mb-3">{{ ucfirst($group) }}</p>
+                                <div class="space-y-2">
+                                    @foreach($groupPermissions as $permission)
+                                        <label class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                                            <input
+                                                type="checkbox"
+                                                name="permissions[]"
+                                                value="{{ $permission->name }}"
+                                                class="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-emerald-500 permission-checkbox"
+                                                {{ in_array($permission->name, $selectedPermissionNames) ? 'checked' : '' }}>
+                                            <span class="leading-tight">{{ $permission->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
-                    @endforeach
-                </div>
-                @error('permissions')
-                <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
-                @enderror
+                    @error('permissions')
+                        <p class="mt-3 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
                 @endunless
             </div>
         </section>
@@ -210,14 +213,14 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         required>
                         <option value="">Sélectionner un site...</option>
                         @foreach($sites ?? [] as $site)
-                        <option value="{{ $site->id }}" {{ old('site_id') == $site->id ? 'selected' : '' }}>
-                            {{ $site->name }}
-                        </option>
+                            <option value="{{ $site->id }}" {{ old('site_id') == $site->id ? 'selected' : '' }}>
+                                {{ $site->name }}
+                            </option>
                         @endforeach
                     </select>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Le site détermine les domaines disponibles.</p>
                     @error('site_id')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -233,7 +236,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                     </select>
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Les employés doivent être assignés à un domaine pour pouvoir pointer.</p>
                     @error('domaine_id')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -260,7 +263,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         <option value="Féminin" {{ old('etudiant_genre', $linkedEtudiant?->genre) === 'Féminin' ? 'selected' : '' }}>Féminin</option>
                     </select>
                     @error('etudiant_genre')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -274,7 +277,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: +229 01 00 00 00 00">
                     @error('etudiant_telephone')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -288,7 +291,7 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition text-gray-900 dark:text-white placeholder-gray-400"
                         placeholder="Ex: Université d'Abomey-Calavi">
                     @error('etudiant_ecole')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
@@ -397,7 +400,6 @@ $prenomValue = old('prenom', $linkedEtudiant?->prenom ?? ($user ? explode(' ', $
                 const siteId = this.value;
 
                 if (!siteId) {
-                    // Réinitialiser le select des domaines
                     domaineSelect.innerHTML = '<option value="">Sélectionner un site d\'abord...</option>';
                     domaineSelect.disabled = true;
                     return;
