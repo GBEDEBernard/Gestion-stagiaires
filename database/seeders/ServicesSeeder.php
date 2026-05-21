@@ -2,39 +2,31 @@
 
 namespace Database\Seeders;
 
+use App\Models\Service;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ServicesSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = Carbon::now();
-
         $services = [
             'Stage en maintenance informatique',
-            'Stage en développement web',
-            'Formation en cybersécurité',
-            'Atelier réseaux et télécommunications',
-            'Visite de chantiers BTP et énergie',
+            'Stage en developpement web',
+            'Formation en cybersecurite',
+            'Atelier reseaux et telecommunications',
+            'Visite de chantiers BTP et energie',
             'Formation en import-export et commerce',
-            'Développement de solutions logicielles',
-            'Installation et maintenance de réseaux',
+            'Developpement de solutions logicielles',
+            'Installation et maintenance de reseaux',
             'Gestion de projets BTP',
-            'Solutions énergétiques et électricité',
+            'Solutions energetiques et electricite',
             'Formation continue et consulting',
-            'Fourniture de matériels et équipements',
-            'Services d’import-export',
+            'Fourniture de materiels et equipements',
+            'Services d import-export',
         ];
 
         foreach ($services as $nom) {
-         DB::table('services')->insert([
-        'nom' => $nom,
-        'created_at' => $now,
-        'updated_at' => $now,
-    ]);
-}
-
+            Service::updateOrCreate(['nom' => $nom]);
+        }
     }
 }

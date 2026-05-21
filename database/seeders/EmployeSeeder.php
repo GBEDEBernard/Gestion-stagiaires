@@ -20,15 +20,15 @@ class EmployeSeeder extends Seeder
         $employees = [
             [
                 'nom' => 'TFG',
-                'prenom' => 'Employé',
+                'prenom' => 'Employe',
                 'email' => 'employe.tfg@tfg.local',
                 'domaine_id' => $tfg?->id,
-                'site_id' => 1, // à ajuster selon votre site par défaut
+                'site_id' => 1,
                 'matricule' => 'EMP-TFG-001',
             ],
             [
                 'nom' => 'EPAC',
-                'prenom' => 'Employé',
+                'prenom' => 'Employe',
                 'email' => 'employe.epac@epac.local',
                 'domaine_id' => $epac?->id,
                 'site_id' => 1,
@@ -41,35 +41,38 @@ class EmployeSeeder extends Seeder
                 continue;
             }
 
-            // Créer l'employé
-            $employe = Employe::create([
-                'domaine_id' => $data['domaine_id'],
-                'site_id' => $data['site_id'],
-                'matricule' => $data['matricule'],
-                'poste' => null,
-            ]);
+            $employe = Employe::updateOrCreate(
+                ['matricule' => $data['matricule']],
+                [
+                    'domaine_id' => $data['domaine_id'],
+                    'site_id' => $data['site_id'],
+                    'poste' => null,
+                ]
+            );
 
-            // Créer le personnel lié
-            $personnel = Personnel::create([
-                'nom' => $data['nom'],
-                'prenom' => $data['prenom'],
-                'email' => $data['email'],
-                'telephone' => null,
-                'genre' => null,
-                'personnable_type' => Employe::class,
-                'personnable_id' => $employe->id,
-                'created_by' => null,
-            ]);
+            $personnel = Personnel::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'nom' => $data['nom'],
+                    'prenom' => $data['prenom'],
+                    'telephone' => null,
+                    'genre' => null,
+                    'personnable_type' => Employe::class,
+                    'personnable_id' => $employe->id,
+                    'created_by' => null,
+                ]
+            );
 
-            // Créer le compte utilisateur lié
-            $user = User::create([
-                'personnel_id' => $personnel->id,
-                'password' => Hash::make('Password123!'),
-                'status' => 'actif',
-                'must_change_password' => true,
-                'temporary_password_created_at' => now(),
-                'email_verified_at' => now(),
-            ]);
+            $user = User::updateOrCreate(
+                ['personnel_id' => $personnel->id],
+                [
+                    'password' => Hash::make('Password123!'),
+                    'status' => 'actif',
+                    'must_change_password' => true,
+                    'temporary_password_created_at' => now(),
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $presetService->ensureRoleDefaults($user, ['employe']);
         }

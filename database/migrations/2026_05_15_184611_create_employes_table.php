@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employes', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // The complete employes table is created by the earlier
+        // 2026_05_15_181952_create_employes_table migration.
     }
 
     /**
@@ -22,6 +20,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employes');
+        // No-op: this migration intentionally does not own the table.
     }
 };

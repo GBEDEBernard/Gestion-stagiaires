@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Etudiant;
+use App\Models\Personnel;
 use App\Models\User;
 use App\Services\RolePermissionPresetService;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
@@ -39,22 +41,62 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            $user = User::updateOrCreate(
+            [$prenom, $nom] = $this->splitName($userData['name']);
+
+            $personnel = Personnel::updateOrCreate(
                 ['email' => $userData['email']],
                 [
-                    'name' => $userData['name'],
-                    'password' => $userData['password'],
-                    'status' => $userData['status'],
-                    'email_verified_at' => Carbon::now(), // <-- ajoute ça
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'telephone' => null,
+                    'genre' => null,
+                    'date_naissance' => null,
+                    'adresse' => null,
+                    'created_by' => null,
                 ]
             );
 
-            // Assigner le rôle via Spatie
+            if ($userData['role'] === 'etudiant') {
+                $etudiant = Etudiant::updateOrCreate(
+                    ['personnel_id' => $personnel->id],
+                    ['ecole' => 'Compte test']
+                );
+
+                $personnel->update([
+                    'personnable_type' => Etudiant::class,
+                    'personnable_id' => $etudiant->id,
+                ]);
+            } else {
+                $personnel->update([
+                    'personnable_type' => null,
+                    'personnable_id' => null,
+                ]);
+            }
+
+            $user = User::updateOrCreate(
+                ['personnel_id' => $personnel->id],
+                [
+                    'password' => $userData['password'],
+                    'status' => $userData['status'],
+                    'email_verified_at' => Carbon::now(),
+                ]
+            );
+
             $presetService->assignRolesAndPermissions(
                 $user,
                 [$userData['role']],
                 $presetService->permissionsForRoles([$userData['role']])
             );
         }
+    }
+
+    private function splitName(string $name): array
+    {
+        $parts = preg_split('/\s+/', trim($name), 2);
+
+        return [
+            $parts[0] ?? '',
+            $parts[1] ?? $parts[0] ?? '',
+        ];
     }
 }
