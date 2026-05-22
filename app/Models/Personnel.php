@@ -1,13 +1,10 @@
 <?php
-
+// app/Models/Personnel.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
-use App\Models\Etudiant;
-use App\Models\Employe;
 
 class Personnel extends Model
 {
@@ -23,32 +20,41 @@ class Personnel extends Model
         'adresse',
         'personnable_type',
         'personnable_id',
-        'created_by'
+        'created_by',
     ];
 
+    // =========================================================================
+    // RELATIONS
+    // =========================================================================
+
+    /** Compte utilisateur lié à ce personnel. */
     public function user()
     {
         return $this->hasOne(User::class);
     }
 
+    /** Relation polymorphique (Etudiant ou Employe). */
     public function personnable()
     {
         return $this->morphTo();
     }
 
-    public function isEtudiant()
+    /**
+     * Raccourci direct vers la fiche Etudiant.
+     * Utilisé notamment dans UserController@store lors de la création d'un étudiant
+     * pour récupérer $personnel->etudiant->id sans passer par personnable.
+     */
+    public function etudiant()
     {
-        return $this->personnable_type === Etudiant::class;
+        return $this->hasOne(Etudiant::class);
     }
 
-    public function isEmploye()
+    /**
+     * Raccourci direct vers la fiche Employe.
+     */
+    public function employe()
     {
-        return $this->personnable_type === Employe::class;
-    }
-
-    public function getFullNameAttribute()
-    {
-        return trim($this->prenom . ' ' . $this->nom);
+        return $this->hasOne(Employe::class);
     }
 
     public function createdBy()
@@ -56,12 +62,35 @@ class Personnel extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function getTypeLabelAttribute()
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+
+    public function isEtudiant(): bool
+    {
+        return $this->personnable_type === Etudiant::class;
+    }
+
+    public function isEmploye(): bool
+    {
+        return $this->personnable_type === Employe::class;
+    }
+
+    // =========================================================================
+    // ACCESSEURS
+    // =========================================================================
+
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->prenom . ' ' . $this->nom);
+    }
+
+    public function getTypeLabelAttribute(): string
     {
         return match ($this->personnable_type) {
             Etudiant::class => 'Étudiant',
-            Employe::class => 'Employé',
-            default => 'Inconnu',
+            Employe::class  => 'Employé',
+            default         => 'Inconnu',
         };
     }
 }

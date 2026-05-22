@@ -18,70 +18,70 @@ use Illuminate\Validation\Rule;
 
 class PersonnelController extends Controller
 {
-  public function index(Request $request)
-{
-    $search = $request->get('search');
-    $type = $request->get('type');
-    $account = $request->get('account');
-    $school = $request->get('school');
+    public function index(Request $request)
+    {
+        $search = $request->get('search');
+        $type = $request->get('type');
+        $account = $request->get('account');
+        $school = $request->get('school');
 
-    $query = Personnel::with('personnable', 'user');
+        $query = Personnel::with('personnable', 'user');
 
-    // Recherche textuelle
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            $q->where('prenom', 'like', "%{$search}%")
-                ->orWhere('nom', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('telephone', 'like', "%{$search}%");
-        });
-    }
-
-    // Filtre par type
-    if ($type && $type !== 'all') {
-        if ($type === 'etudiant') {
-            $query->where('personnable_type', Etudiant::class);
-        } elseif ($type === 'employe') {
-            $query->where('personnable_type', Employe::class);
-        } elseif ($type === 'inconnu') {
-            $query->whereNull('personnable_type');
-        }
-    }
-
-    // Filtre par école (uniquement pour les étudiants)
-    if ($school) {
-        // Si l'utilisateur a explicitement choisi un type autre qu'étudiant -> aucun résultat
-        if ($type && $type !== 'all' && $type !== 'etudiant') {
-            $query->whereRaw('0 = 1');
-        } else {
-            // Forcer le type étudiant si aucun type ou type = all
-            if (!$type || $type === 'all') {
-                $query->where('personnable_type', Etudiant::class);
-            }
-            // Utilisation de whereExists pour éviter la sous-requête sur employes
-            $query->whereExists(function ($subquery) use ($school) {
-                $subquery->select('id')
-                    ->from('etudiants')
-                    ->whereColumn('etudiants.id', 'personnels.personnable_id')
-                    ->where('etudiants.ecole', $school);
+        // Recherche textuelle
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('prenom', 'like', "%{$search}%")
+                    ->orWhere('nom', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('telephone', 'like', "%{$search}%");
             });
         }
+
+        // Filtre par type
+        if ($type && $type !== 'all') {
+            if ($type === 'etudiant') {
+                $query->where('personnable_type', Etudiant::class);
+            } elseif ($type === 'employe') {
+                $query->where('personnable_type', Employe::class);
+            } elseif ($type === 'inconnu') {
+                $query->whereNull('personnable_type');
+            }
+        }
+
+        // Filtre par école (uniquement pour les étudiants)
+        if ($school) {
+            // Si l'utilisateur a explicitement choisi un type autre qu'étudiant -> aucun résultat
+            if ($type && $type !== 'all' && $type !== 'etudiant') {
+                $query->whereRaw('0 = 1');
+            } else {
+                // Forcer le type étudiant si aucun type ou type = all
+                if (!$type || $type === 'all') {
+                    $query->where('personnable_type', Etudiant::class);
+                }
+                // Utilisation de whereExists pour éviter la sous-requête sur employes
+                $query->whereExists(function ($subquery) use ($school) {
+                    $subquery->select('id')
+                        ->from('etudiants')
+                        ->whereColumn('etudiants.id', 'personnels.personnable_id')
+                        ->where('etudiants.ecole', $school);
+                });
+            }
+        }
+
+        // Filtre par statut de compte
+        if ($account === 'with') {
+            $query->whereHas('user');
+        } elseif ($account === 'without') {
+            $query->whereDoesntHave('user');
+        }
+
+        $personnels = $query->paginate(10)->withQueryString();
+
+        // Liste des écoles distinctes (uniquement pour l'affichage du select)
+        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->values();
+
+        return view('admin.personnels.index', compact('personnels', 'schools'));
     }
-
-    // Filtre par statut de compte
-    if ($account === 'with') {
-        $query->whereHas('user');
-    } elseif ($account === 'without') {
-        $query->whereDoesntHave('user');
-    }
-
-    $personnels = $query->paginate(10)->withQueryString();
-
-    // Liste des écoles distinctes (uniquement pour l'affichage du select)
-    $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->values();
-
-    return view('admin.personnels.index', compact('personnels', 'schools'));
-}
 
     public function create()
     {
@@ -138,7 +138,7 @@ class PersonnelController extends Controller
         $baseRules = [
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
-            'email'          => 'required|email|unique:personnels,email',
+            'email'          => 'required|email|unique:personnels,email,NULL,id,deleted_at,NULL',
             'telephone'      => 'nullable|string|max:20',
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
@@ -228,7 +228,7 @@ class PersonnelController extends Controller
         $baseRules = [
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
-            'email'          => ['required', 'email', Rule::unique('personnels', 'email')->ignore($personnel->id)],
+            'email'          => ['required', 'email', Rule::unique('personnels', 'email')->whereNull('deleted_at')->ignore($personnel->id)],
             'telephone'      => 'nullable|string|max:20',
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
@@ -301,5 +301,4 @@ class PersonnelController extends Controller
 
         return back()->with('success', "Compte généré pour {$personnel->full_name}.");
     }
-
 }

@@ -27,14 +27,15 @@ class AccountGenerationService
             'status' => 'actif',
         ]);
 
+
         $user->assignRole($roleName);
 
-        // Générer un token de réinitialisation et construire l'URL de réinitialisation
+        // Générer un token de réinitialisation
         $token = Password::broker()->createToken($user);
-        $resetUrl = url(route('password.reset', ['token' => $token], false)) . '?email=' . urlencode($personnel->email);
 
-        // Notifier l'utilisateur avec un lien professionnel pour configurer son mot de passe
-        $user->notify(new AccountProvisionedNotification($resetUrl));
+        // Notifier l'utilisateur avec le token (et l'email) pour construire une URL standard
+        $user->notify(new AccountProvisionedNotification($token, $personnel->email));
+
 
         // Audit simple : enregistrer qui a généré le compte dans les logs
         try {
