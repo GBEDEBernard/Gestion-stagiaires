@@ -8,7 +8,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     <button
         x-show="!sidebarOpen"
         @click="sidebarOpen = true"
-        class="lg:hidden fixed top-4 left-2 z-[60] bg-slate-900 p-1 text-white rounded"
+        class="lg:hidden fixed top-4 left-2 z-[60] bg-slate-900 p-1 text-white rounded flex mr-2"
         x-transition>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z" />

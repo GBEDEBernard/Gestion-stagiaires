@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $labelService = app(\App\Services\PermissionLabelService::class);
+    @endphp
+
     <div class="max-w-4xl mx-auto">
         <div class="mb-8">
             <div class="flex items-center gap-4 mb-2">
@@ -7,9 +11,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nouveau Rôle</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Créer un Rôle</h1>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 ml-14">Créez un nouveau rôle et attribuez-lui des permissions</p>
+            <p class="text-gray-500 dark:text-gray-400 ml-14">Créez un nouveau rôle et définissez ses permissions</p>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -18,9 +22,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Nom du rôle <span class="text-red-500">*</span>
-                        </label>
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom du rôle <span class="text-red-500">*</span></label>
                         <input type="text" name="name" id="name" value="{{ old('name') }}" required
                             class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
                         @error('name') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
@@ -49,7 +51,7 @@
                                     class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 select-all-checkbox"
                                     data-group="{{ $entity }}">
                                 <label for="select-all-{{ $entity }}" class="text-sm font-semibold text-gray-900 dark:text-white uppercase cursor-pointer">
-                                    @permissionGroupLabel($entity)
+                                    {{ $labelService->getGroupLabel($entity) }}
                                 </label>
                             </div>
                             <div class="space-y-2 pl-6">
@@ -57,11 +59,10 @@
                                 <div class="flex items-start gap-2">
                                     <input type="checkbox" name="permissions[]" id="permission-{{ $permission->id }}"
                                         value="{{ $permission->name }}"
-                                        {{ in_array($permission->name, old('permissions', [])) ? 'checked' : '' }}
                                         class="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 permission-checkbox"
                                         data-group="{{ $entity }}">
                                     <label for="permission-{{ $permission->id }}" class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-                                        @permissionLabel($permission->name)
+                                        {{ $labelService->getLabel($permission->name) }}
                                     </label>
                                 </div>
                                 @endforeach
@@ -79,7 +80,7 @@
                     <a href="{{ route('admin.roles.index') }}" class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium">Annuler</a>
                     <button type="submit" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition font-medium shadow-lg shadow-indigo-600/20 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                        Enregistrer
+                        Créer le rôle
                     </button>
                 </div>
             </form>
@@ -87,7 +88,7 @@
     </div>
 
     <script>
-        // Sélection par groupe
+        // Mêmes scripts que dans edit
         document.querySelectorAll('.select-all-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const group = this.dataset.group;
@@ -96,7 +97,6 @@
             });
         });
 
-        // Mise à jour de la checkbox "tout sélectionner" quand une permission change
         document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const group = this.dataset.group;
@@ -108,6 +108,17 @@
                     selectAllCheckbox.checked = allChecked;
                     selectAllCheckbox.indeterminate = someChecked && !allChecked;
                 }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.select-all-checkbox').forEach(checkbox => {
+                const group = checkbox.dataset.group;
+                const groupCheckboxes = document.querySelectorAll(`.permission-checkbox[data-group="${group}"]`);
+                const allChecked = Array.from(groupCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(groupCheckboxes).some(cb => cb.checked);
+                checkbox.checked = allChecked;
+                checkbox.indeterminate = someChecked && !allChecked;
             });
         });
 
