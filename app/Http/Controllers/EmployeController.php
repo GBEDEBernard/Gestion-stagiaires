@@ -12,11 +12,50 @@ use Illuminate\Validation\Rule;
 
 class EmployeController extends Controller
 {
-    public function index()
-    {
-        $employes = Employe::with('personnel.user', 'domaine', 'site')->latest('id')->paginate(10);
-        return view('admin.employes.index', compact('employes'));
+   // app/Http/Controllers/EmployeController.php
+
+public function index(Request $request)
+{
+    $query = Employe::with('personnel.user', 'domaine', 'site');
+
+    // Recherche textuelle
+    if ($search = $request->get('search')) {
+        $query->where(function ($q) use ($search) {
+            $q->where('matricule', 'like', "%{$search}%")
+              ->orWhereHas('personnel', function ($q2) use ($search) {
+                  $q2->where('nom', 'like', "%{$search}%")
+                     ->orWhere('prenom', 'like', "%{$search}%")
+                     ->orWhere('email', 'like', "%{$search}%");
+              });
+        });
     }
+
+    // Filtre par domaine
+    if ($domaineId = $request->get('domaine_id')) {
+        $query->where('domaine_id', $domaineId);
+    }
+
+    // Filtre par site
+    if ($siteId = $request->get('site_id')) {
+        $query->where('site_id', $siteId);
+    }
+
+    // Filtre par statut du compte
+    $accountStatus = $request->get('account_status');
+    if ($accountStatus === 'with') {
+        $query->whereHas('personnel.user');
+    } elseif ($accountStatus === 'without') {
+        $query->whereDoesntHave('personnel.user');
+    }
+
+    $employes = $query->latest('id')->paginate(10)->withQueryString();
+
+    // Pour les listes déroulantes des filtres
+    $domaines = Domaine::orderBy('nom')->get();
+    $sites = Site::orderBy('name')->get();
+
+    return view('admin.employes.index', compact('employes', 'domaines', 'sites'));
+}
 
     public function create()
     {

@@ -26,6 +26,50 @@
         </div>
     </div>
 
+{{-- Filtres --}}
+<form method="GET" action="{{ route('employes.index') }}" class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+    <div class="grid gap-4 lg:grid-cols-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Recherche</label>
+            <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, prénom, email, matricule..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Domaine</label>
+            <select name="domaine_id" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                <option value="">Tous les domaines</option>
+                @foreach($domaines as $domaine)
+                <option value="{{ $domaine->id }}" {{ request('domaine_id') == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Site</label>
+            <select name="site_id" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                <option value="">Tous les sites</option>
+                @foreach($sites as $site)
+                <option value="{{ $site->id }}" {{ request('site_id') == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Statut du compte</label>
+            <select name="account_status" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                <option value="all" {{ request('account_status') === 'all' ? 'selected' : '' }}>Tous</option>
+                <option value="with" {{ request('account_status') === 'with' ? 'selected' : '' }}>Avec compte</option>
+                <option value="without" {{ request('account_status') === 'without' ? 'selected' : '' }}>Sans compte</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-sm text-gray-500 dark:text-gray-400">Filtrer les employés affichés</div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition">Appliquer</button>
+            <a href="{{ route('employes.index') }}" class="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Réinitialiser</a>
+        </div>
+    </div>
+</form>
+
     {{-- ── Flash ── --}}
     @if(session('success'))
     <div class="mb-5 flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-sm">
