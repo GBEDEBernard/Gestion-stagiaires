@@ -121,12 +121,18 @@ class EmployeController extends Controller
         return redirect()->route('employes.index')->with('success', 'Employé mis à jour.');
     }
 
-    public function destroy(Employe $employe)
+      public function destroy(Employe $employe)
     {
-        $employe->personnel()->delete();
-        $employe->delete();
-        return redirect()->route('employes.index')->with('success', 'Employé supprimé.');
+        // 🔥 On supprime le personnel parent (cela déclenche la suppression en cascade du user et de l'employé)
+        if ($employe->personnel) {
+            $employe->personnel->delete();
+        } else {
+            $employe->delete(); // fallback si la relation est absente
+        }
+        return redirect()->route('employes.index')
+            ->with('success', 'Employé déplacé dans la corbeille.');
     }
+   
 
     // Corbeille (soft delete)
     public function trash()

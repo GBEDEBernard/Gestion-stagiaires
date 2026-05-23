@@ -21,6 +21,9 @@ class AccountGenerationService
         $tempPassword = $customPassword ?? Str::random(10); // Use custom password if provided
         $user = User::create([
             'personnel_id' => $personnel->id,
+            'name'         => $personnel->full_name,       // nom complet
+            'email'        => $personnel->email,          // email unique
+            'domaine_id'   => $personnel->employe ? $personnel->employe->domaine_id : null, // Associer domaine si c'est un employé
             'password' => Hash::make($tempPassword),
             'must_change_password' => true,
             'temporary_password_created_at' => now(),
