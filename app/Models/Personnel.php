@@ -33,33 +33,53 @@ class Personnel extends Model
         return $this->hasOne(User::class);
     }
 
-    /** Relation polymorphique (Etudiant ou Employe). */
+    /**
+     * Relation polymorphique principale.
+     * Retourne l'Etudiant ou l'Employe selon personnable_type.
+     */
     public function personnable()
     {
         return $this->morphTo();
     }
 
-    /**
-     * Raccourci direct vers la fiche Etudiant.
-     * Utilisé notamment dans UserController@store lors de la création d'un étudiant
-     * pour récupérer $personnel->etudiant->id sans passer par personnable.
-     */
-    public function etudiant()
-    {
-        return $this->hasOne(Etudiant::class);
-    }
-
-    /**
-     * Raccourci direct vers la fiche Employe.
-     */
-    public function employe()
-    {
-        return $this->hasOne(Employe::class);
-    }
-
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    // =========================================================================
+    // ACCESSEURS POLYMORPHIQUES (raccourcis)
+    // =========================================================================
+
+    /**
+     * Raccourci lecture vers la fiche Etudiant.
+     * Usage : $personnel->etudiant
+     * Utilisé dans UserController@store pour $personnel->etudiant->id
+     */
+    public function getEtudiantAttribute(): ?Etudiant
+    {
+        if ($this->personnable_type === Etudiant::class) {
+            // On s'assure que la relation est chargée
+            return $this->personnable instanceof Etudiant
+                ? $this->personnable
+                : $this->personnable()->first();
+        }
+        return null;
+    }
+
+    /**
+     * Raccourci lecture vers la fiche Employe.
+     * Usage : $personnel->employe
+     * Utilisé dans AccountGenerationService pour $personnel->employe->domaine_id
+     */
+    public function getEmployeAttribute(): ?Employe
+    {
+        if ($this->personnable_type === Employe::class) {
+            return $this->personnable instanceof Employe
+                ? $this->personnable
+                : $this->personnable()->first();
+        }
+        return null;
     }
 
     // =========================================================================
@@ -77,7 +97,7 @@ class Personnel extends Model
     }
 
     // =========================================================================
-    // ACCESSEURS
+    // AUTRES ACCESSEURS
     // =========================================================================
 
     public function getFullNameAttribute(): string

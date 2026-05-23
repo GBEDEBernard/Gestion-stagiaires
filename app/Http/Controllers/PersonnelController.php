@@ -20,14 +20,14 @@ class PersonnelController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->get('search');
-        $type = $request->get('type');
+        $search  = $request->get('search');
+        $type    = $request->get('type');
         $account = $request->get('account');
-        $school = $request->get('school');
+        $school  = $request->get('school');
 
         $query = Personnel::with('personnable', 'user');
 
-        // Recherche textuelle
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('prenom', 'like', "%{$search}%")
@@ -37,7 +37,7 @@ class PersonnelController extends Controller
             });
         }
 
-        // Filtre par type
+
         if ($type && $type !== 'all') {
             if ($type === 'etudiant') {
                 $query->where('personnable_type', Etudiant::class);
@@ -48,17 +48,17 @@ class PersonnelController extends Controller
             }
         }
 
-        // Filtre par école (uniquement pour les étudiants)
+ 
         if ($school) {
-            // Si l'utilisateur a explicitement choisi un type autre qu'étudiant -> aucun résultat
-            if ($type && $type !== 'all' && $type !== 'etudiant') {
+ 
+        if ($type && $type !== 'all' && $type !== 'etudiant') {
                 $query->whereRaw('0 = 1');
             } else {
-                // Forcer le type étudiant si aucun type ou type = all
-                if (!$type || $type === 'all') {
+
+            if (!$type || $type === 'all') {
                     $query->where('personnable_type', Etudiant::class);
                 }
-                // Utilisation de whereExists pour éviter la sous-requête sur employes
+
                 $query->whereExists(function ($subquery) use ($school) {
                     $subquery->select('id')
                         ->from('etudiants')
@@ -68,7 +68,7 @@ class PersonnelController extends Controller
             }
         }
 
-        // Filtre par statut de compte
+ 
         if ($account === 'with') {
             $query->whereHas('user');
         } elseif ($account === 'without') {
@@ -76,9 +76,7 @@ class PersonnelController extends Controller
         }
 
         $personnels = $query->paginate(10)->withQueryString();
-
-        // Liste des écoles distinctes (uniquement pour l'affichage du select)
-        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->values();
+        $schools    = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->values();
 
         return view('admin.personnels.index', compact('personnels', 'schools'));
     }
@@ -91,10 +89,10 @@ class PersonnelController extends Controller
             $domainesParSite[$site->id] = $site->domaines->pluck('nom', 'id')->all();
         }
 
-        $now = now();
+        $now       = now();
         $typestages = TypeStage::all();
-        $services = Service::all();
-        $badges = Badge::whereDoesntHave('stages', function ($query) use ($now) {
+        $services  = Service::all();
+        $badges    = Badge::whereDoesntHave('stages', function ($query) use ($now) {
             $query->where('date_debut', '<=', $now)
                 ->where('date_fin', '>=', $now);
         })->get();
@@ -133,12 +131,12 @@ class PersonnelController extends Controller
         ));
     }
 
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $baseRules = [
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
-            'email'          => 'required|email|unique:personnels,email', // corrigé (suppression du whereNull)
+            'email'          => 'required|email|unique:personnels,email',
             'telephone'      => 'nullable|string|max:20',
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
@@ -161,38 +159,41 @@ class PersonnelController extends Controller
 
         $data = array_merge($data, $request->validate($typeRules));
 
+        // ─── ÉTAPE 1 : créer le Personnel d'abord ───────────────────────────
+        // On crée le personnel sans personnable_type/id pour l'instant,
+        // car on a besoin de son id pour renseigner personnel_id sur la fiche métier.
+        $personnel = Personnel::create([
+            'nom'            => $data['nom'],
+            'prenom'         => $data['prenom'],
+            'email'          => $data['email'],
+            'telephone'      => $data['telephone'],
+            'genre'          => $data['genre'],
+            'date_naissance' => $data['date_naissance'],
+            'adresse'        => $data['adresse'],
+            'created_by'     => auth()->id(),
+        ]);
+
+        // ─── ÉTAPE 2 : créer la fiche métier avec personnel_id ──────────────
         if ($data['type'] === 'etudiant') {
-            $personnable = Etudiant::create(['ecole' => $data['ecole']]);
+            $personnable = Etudiant::create([
+                'personnel_id' => $personnel->id, // ← FK directe
+                'ecole'        => $data['ecole'],
+            ]);
         } else {
             $personnable = Employe::create([
-                'domaine_id' => $data['domaine_id'],
-                'site_id'    => $data['site_id'],
-                'poste'      => $data['poste'],
-                'matricule'  => $data['matricule'],
+                'personnel_id' => $personnel->id, // ← FK directe (corrigé)
+                'domaine_id'   => $data['domaine_id'],
+                'site_id'      => $data['site_id'],
+                'poste'        => $data['poste'],
+                'matricule'    => $data['matricule'],
             ]);
         }
 
-        $personnel = Personnel::create([
-            'nom'              => $data['nom'],
-            'prenom'           => $data['prenom'],
-            'email'            => $data['email'],
-            'telephone'        => $data['telephone'],
-            'genre'            => $data['genre'],
-            'date_naissance'   => $data['date_naissance'],
-            'adresse'          => $data['adresse'],
+        // ─── ÉTAPE 3 : mettre à jour le polymorphisme sur personnels ─────────
+        $personnel->update([
             'personnable_type' => get_class($personnable),
             'personnable_id'   => $personnable->id,
-            'created_by'       => auth()->id(),
         ]);
-
-        // Remplir la colonne personnel_id sur la table associée (pour les deux types)
-        if ($data['type'] === 'etudiant') {
-            $personnable->personnel_id = $personnel->id;
-            $personnable->save();
-        } elseif ($data['type'] === 'employe' && method_exists($personnable, 'personnel_id')) {
-            $personnable->personnel_id = $personnel->id;
-            $personnable->save();
-        }
 
         if ($data['type'] === 'etudiant') {
             return redirect()->route('personnels.create')
@@ -230,7 +231,10 @@ class PersonnelController extends Controller
                 'domaine_id' => 'required|exists:domaines,id',
                 'site_id'    => 'required|exists:sites,id',
                 'poste'      => 'nullable|string|max:255',
-                'matricule'  => ['required', 'string', 'max:255', Rule::unique('employes', 'matricule')->ignore($personnel->personnable_id)],
+                'matricule'  => [
+                    'required', 'string', 'max:255',
+                    Rule::unique('employes', 'matricule')->ignore($personnel->personnable_id),
+                ],
             ];
         }
 
@@ -270,54 +274,48 @@ class PersonnelController extends Controller
     {
         $personnel->load('personnable');
         $domaines = Domaine::all();
-        $sites = Site::all();
-        $type = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
+        $sites    = Site::all();
+        $type     = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
         return view('admin.personnels.edit', compact('personnel', 'domaines', 'sites', 'type'));
     }
 
-   
 
-
-        // Corbeille (soft delete) 
     public function trash()
-    {        $personnels = Personnel::onlyTrashed()->with(['personnable' => function ($query) {
+    {
+        $personnels = Personnel::onlyTrashed()->with(['personnable' => function ($query) {
             $query->withTrashed();
         }])->paginate(10);
         return view('admin.personnels.trash', compact('personnels'));
     }
 
-     /**
-     * Soft delete : supprime également le user et le personnable.
-     */
+
     public function destroy(Personnel $personnel)
     {
-        // 1. Supprimer le compte utilisateur (soft delete)
-        if ($personnel->user) {
+ 
+    if ($personnel->user) {
             $personnel->user->delete();
         }
-        // 2. Supprimer la fiche métier (Etudiant ou Employe)
+
         if ($personnel->personnable) {
             $personnel->personnable->delete();
         }
-        // 3. Supprimer le personnel lui-même
+
         $personnel->delete();
 
         return redirect()->route('personnels.index')
             ->with('success', 'Personnel déplacé dans la corbeille.');
     }
 
-    /**
-     * Restaurer un personnel depuis la corbeille (rétablit user et personnable).
-     */
+ 
     public function restore($id)
     {
         $personnel = Personnel::onlyTrashed()->findOrFail($id);
 
-        // Restaurer la fiche métier
+
         if ($personnel->personnable && $personnel->personnable->trashed()) {
             $personnel->personnable->restore();
         }
-        // Restaurer l'utilisateur
+  
         if ($personnel->user && $personnel->user->trashed()) {
             $personnel->user->restore();
         }
@@ -327,18 +325,16 @@ class PersonnelController extends Controller
             ->with('success', 'Personnel restauré.');
     }
 
-    /**
-     * Suppression définitive (plus jamais récupérable).
-     */
+  
     public function forceDelete($id)
     {
         $personnel = Personnel::onlyTrashed()->findOrFail($id);
 
-        // Supprimer définitivement l'utilisateur
+
         if ($personnel->user) {
             $personnel->user->forceDelete();
         }
-        // Supprimer définitivement la fiche métier
+
         if ($personnel->personnable) {
             $personnel->personnable->forceDelete();
         }
@@ -346,11 +342,11 @@ class PersonnelController extends Controller
 
         return redirect()->route('corbeille.index')
             ->with('success', 'Personnel définitivement supprimé.');
-    }
+ 
+            }
 
    
-
-    public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
+            public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
     {
         if ($personnel->user) {
             return back()->with('error', 'Un compte existe déjà.');

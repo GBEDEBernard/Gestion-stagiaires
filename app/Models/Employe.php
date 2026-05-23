@@ -11,27 +11,36 @@ class Employe extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'personnel_id',   // <-- indispensable maintenant
         'domaine_id',
         'site_id',
         'poste',
         'matricule',
+        // NE PAS mettre personnel_id ici : la relation passe par le polymorphisme
+        // sur la table personnels (personnable_type / personnable_id)
     ];
 
+    /**
+     * Relation inverse du polymorphisme :
+     * personnels.personnable_type = 'App\Models\Employe'
+     * personnels.personnable_id  = employes.id
+     */
     public function personnel()
     {
         return $this->morphOne(Personnel::class, 'personnable');
     }
 
+    /**
+     * Accès direct à l'utilisateur via le personnel (polymorphisme).
+     */
     public function user()
     {
         return $this->hasOneThrough(
             User::class,
             Personnel::class,
-            'personnable_id',
-            'personnel_id',
-            'id',
-            'id'
+            'personnable_id', // FK sur personnels (pointe vers employes.id)
+            'personnel_id',   // FK sur users (pointe vers personnels.id)
+            'id',             // local key sur employes
+            'id'              // local key sur personnels
         )->where('personnels.personnable_type', self::class);
     }
 
