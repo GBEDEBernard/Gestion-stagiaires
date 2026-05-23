@@ -27,6 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password_changed_at',
         'status',
         'email_verified_at',
+        'domaine_id',   // ← Ajouter cette ligne
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -42,7 +43,12 @@ class User extends Authenticatable implements MustVerifyEmail
     // =========================================================================
     // RELATIONS
     // =========================================================================
-
+    // Note : la relation vers Domaine est redondante avec celle d'Employe, mais elle facilite les requêtes directes sur User sans devoir faire un join vers Employe.
+    public function domaine()
+    {
+        return $this->belongsTo(Domaine::class);
+    }
+    // Note : la relation vers Personnel est indispensable pour accéder aux données personnelles (nom, email, etc.) et pour la logique métier qui lie un compte utilisateur à une fiche personnel.
     public function personnel()
     {
         return $this->belongsTo(Personnel::class);

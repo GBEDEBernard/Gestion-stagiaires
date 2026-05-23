@@ -19,6 +19,9 @@ use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Log;
 use App\Models\Personnel;
+use Illuminate\Support\Str;
+
+
 
 class UserController extends Controller
 {
@@ -105,50 +108,67 @@ class UserController extends Controller
       /**
      * Enregistrer un nouvel utilisateur.
      */
+   /**
+     * Enregistrer un nouvel utilisateur.
+     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nom' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
-            'email' => 'required|email|unique:personnels,email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+        $rules = [
+            'nom'       => 'required|string|max:255',
+            'prenom'    => 'required|string|max:255',
+            'email'     => 'required|email|unique:personnels,email|unique:users,email',
+            'password'  => 'required|min:8|confirmed',
             'user_type' => 'required|string|exists:roles,name',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name',
-            'etudiant_genre' => 'nullable|string|max:50',
+            'roles'     => 'array',
+            'roles.*'   => 'exists:roles,name',
+            // Champs optionnels pour étudiant
+            'etudiant_genre'     => 'nullable|string|max:50',
             'etudiant_telephone' => 'nullable|string|max:20',
-            'etudiant_ecole' => 'nullable|string|max:255',
+            'etudiant_ecole'     => 'nullable|string|max:255',
+            // Domaine (commun)
             'domaine_id' => 'nullable|exists:domaines,id',
-        ]);
+        ];
+
+        // Si le rôle "employe" est sélectionné, exiger site, domaine obligatoire et matricule
+        $selectedRoles = $request->input('roles', [$request->input('user_type')]);
+        if (in_array('employe', $selectedRoles)) {
+            $rules['site_id']   = 'required|exists:sites,id';
+            $rules['domaine_id'] = 'required|exists:domaines,id';
+            $rules['matricule'] = 'nullable|string|max:255|unique:employes,matricule';
+            $rules['poste']     = 'nullable|string|max:255';
+        }
+
+        $validated = $request->validate($rules);
 
         $user = DB::transaction(function () use ($validated) {
-            // Créer le personnel
+            // 1. Créer le personnel
             $personnel = Personnel::create([
-                'nom' => $validated['nom'],
-                'prenom' => $validated['prenom'],
-                'email' => $validated['email'],
-                'telephone' => $validated['etudiant_telephone'] ?? null,
-                'genre' => $validated['etudiant_genre'] ?? null,
+                'nom'        => $validated['nom'],
+                'prenom'     => $validated['prenom'],
+                'email'      => $validated['email'],
+                'telephone'  => $validated['etudiant_telephone'] ?? $validated['telephone'] ?? null,
+                'genre'      => $validated['etudiant_genre'] ?? $validated['genre'] ?? null,
                 'created_by' => auth()->id(),
             ]);
 
-            // Créer l'utilisateur lié au personnel
+            // 2. Créer l'utilisateur
             $user = User::create([
-                'name' => trim($validated['prenom'] . ' ' . $validated['nom']),
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'status' => 'actif',
-                'must_change_password' => true,
+                'name'                          => trim($validated['prenom'] . ' ' . $validated['nom']),
+                'email'                         => $validated['email'],
+                'password'                      => Hash::make($validated['password']),
+                'status'                        => 'actif',
+                'must_change_password'          => true,
                 'temporary_password_created_at' => now(),
-                'personnel_id' => $personnel->id,
-                'domaine_id' => $validated['domaine_id'] ?? null,
+                'personnel_id'                  => $personnel->id,
+                'domaine_id'                    => $validated['domaine_id'] ?? null,
             ]);
 
-            // Assigner les rôles (soit depuis les rôles sélectionnés, soit depuis le type d'utilisateur)
-            $user->syncRoles($validated['roles'] ?? [$validated['user_type']]);
+            $roles = $validated['roles'] ?? [$validated['user_type']];
+            $user->syncRoles($roles);
 
-            // Si étudiant, créer la fiche étudiant et lier au personnel
-            if (in_array('etudiant', $validated['roles'] ?? [$validated['user_type']])) {
+            // 3. Créer la fiche métier
+            // Étudiant
+            if (in_array('etudiant', $roles)) {
                 Etudiant::updateOrCreate(
                     ['personnel_id' => $personnel->id],
                     [
@@ -156,32 +176,50 @@ class UserController extends Controller
                         'email' => $validated['email'],
                     ]
                 );
-                // Mettre à jour le personnel pour lier l'étudiant (compatibilité avec code legacy)
                 $personnel->update([
                     'personnable_type' => Etudiant::class,
-                    'personnable_id' => $personnel->etudiant->id,
+                    'personnable_id'   => $personnel->etudiant->id,
                 ]);
             }
 
-            // Générer le token de réinitialisation et envoyer la notification d'activation de compte
+            // Employé
+            if (in_array('employe', $roles)) {
+                $matricule = $validated['matricule'] ?? 'EMP-' . strtoupper(Str::random(8));
+                $employe = Employe::create([
+                    'personnel_id' => $personnel->id,
+                    'domaine_id'   => $validated['domaine_id'],
+                    'site_id'      => $validated['site_id'],
+                    'matricule'    => $matricule,
+                    'poste'        => $validated['poste'] ?? 'Employé',
+                ]);
+                $personnel->update([
+                    'personnable_type' => Employe::class,
+                    'personnable_id'   => $employe->id,
+                ]);
+                // Si l'utilisateur n'a pas encore de domaine_id, on le reporte
+                if (!$user->domaine_id) {
+                    $user->update(['domaine_id' => $validated['domaine_id']]);
+                }
+            }
+
+            // Envoi notification d'activation
             $token = Password::broker()->createToken($user);
             $user->notify(new \App\Notifications\AccountProvisionedNotification($token));
 
             return $user;
         });
-//       Générer un token de réinitialisation et construire l'URL de réinitialisation --- IGNORE ---
+
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'Utilisateur créé avec succès.')
             ->with('generated_account', [
-                'name' => $user->name,
-                'email' => $user->email,
-                'password' => $validated['password'],
-                'type' => $validated['user_type'],
+                'name'               => $user->name,
+                'email'              => $user->email,
+                'password'           => $validated['password'],
+                'type'               => $validated['user_type'],
                 'account_email_sent' => true,
             ]);
     }
-
     /**
      * Formulaire d'édition.
      */
