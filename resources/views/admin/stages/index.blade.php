@@ -23,37 +23,61 @@
             </div>
         </div>
 
-        {{-- Filtres --}}
+        {{-- Remplacer la section des filtres --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <form method="GET" action="{{ route('stages.index') }}" class="flex flex-wrap items-end gap-4">
-                <div class="flex-1 min-w-[200px]">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
-                    <select name="statut"
-                        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                        <option value="">Tous les statuts</option>
-                        <option value="En cours" {{ request('statut') == 'En cours' ? 'selected' : '' }}>En cours</option>
-                        <option value="Termine" {{ in_array(request('statut'), ['Termine', 'Terminé'], true) ? 'selected' : '' }}>Terminé</option>
-                        <option value="A venir" {{ in_array(request('statut'), ['A venir', 'À venir'], true) ? 'selected' : '' }}>À venir</option>
-                    </select>
+            <form method="GET" action="{{ route('stages.index') }}" class="space-y-4">
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="flex-1 min-w-[180px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Statut</label>
+                        <select name="statut"
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white">
+                            <option value="">Tous les statuts</option>
+                            <option value="En cours" {{ request('statut') == 'En cours' ? 'selected' : '' }}>En cours</option>
+                            <option value="Termine" {{ in_array(request('statut'), ['Termine', 'Terminé'], true) ? 'selected' : '' }}>Terminé</option>
+                            <option value="A venir" {{ in_array(request('statut'), ['A venir', 'À venir'], true) ? 'selected' : '' }}>À venir</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de stage</label>
+                        <select name="typestage"
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white">
+                            <option value="">Tous les types</option>
+                            @foreach($typestages as $type)
+                                <option value="{{ $type->id }}" {{ request('typestage') == $type->id ? 'selected' : '' }}>
+                                    {{ $type->libelle }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom étudiant</label>
+                        <input type="text" name="nom" value="{{ request('nom') }}" 
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white"
+                            placeholder="Rechercher par nom...">
+                    </div>
+                    
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">École</label>
+                        <input type="text" name="ecole" value="{{ request('ecole') }}"
+                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white"
+                            placeholder="Rechercher par école...">
+                    </div>
+                    
+                    <button type="submit" class="px-5 py-2.5 bg-gray-900 dark:bg-gray-700 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-gray-600 transition font-medium flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filtrer
+                    </button>
+                    
+                    @if(request()->anyFilled(['statut', 'typestage', 'nom', 'ecole']))
+                        <a href="{{ route('stages.index') }}" class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 transition font-medium">
+                            Réinitialiser
+                        </a>
+                    @endif
                 </div>
-                <div class="flex-1 min-w-[220px]">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de stage</label>
-                    <select name="typestage"
-                        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                        <option value="">Tous les types</option>
-                        @foreach($typestages as $type)
-                            <option value="{{ $type->id }}" {{ request('typestage') == $type->id ? 'selected' : '' }}>
-                                {{ $type->libelle }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <button type="submit" class="px-5 py-2.5 bg-gray-900 dark:bg-gray-700 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-gray-600 transition font-medium flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                    Filtrer
-                </button>
             </form>
         </div>
     </div>
