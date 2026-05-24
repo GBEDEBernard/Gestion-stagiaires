@@ -32,8 +32,7 @@
     </div>
 
     <div class="space-y-5 overflow-x-hidden">
-
-        {{-- ── NOTIFICATIONS ────────────────────────────────────── --}}
+        {{-- ─ NOTIFICATIONS ─ --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">

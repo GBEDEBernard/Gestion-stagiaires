@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/Admin/UserController.php
+
 
 namespace App\Http\Controllers\Admin;
 
@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Etudiant;
 use App\Models\Employe;
 use App\Models\Domaine;
+use App\Models\Personnel;
+use App\Models\Site;
 use App\Services\RolePermissionPresetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,8 +19,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Log;
-use App\Models\Personnel;
+
 use Illuminate\Support\Str;
 
 
@@ -32,29 +33,33 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with('personnel');
+        $query = User::with('personnel', 'roles');
 
         if ($search = $request->get('search')) {
             $query->whereHas('personnel', function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%")
                   ->orWhere('prenom', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
-            });
+            })->orWhere('email', 'like', "%{$search}%");
         }
+
         if ($status = $request->get('status')) {
             $query->where('status', $status);
         }
+
         if ($verified = $request->get('verified')) {
             $verified === 'verified' ? $query->whereNotNull('email_verified_at') : $query->whereNull('email_verified_at');
         }
+
         if ($passStatus = $request->get('password_status')) {
             $passStatus === 'temporary' ? $query->where('must_change_password', true) : $query->where('must_change_password', false);
         }
+
         if ($role = $request->get('role')) {
             $query->whereHas('roles', fn($q) => $q->where('name', $role));
         }
 
-        $users = $query->paginate(10)->withQueryString();
+        $users = $query->latest()->paginate(10)->withQueryString();
         $roles = Role::pluck('name', 'name');
 
         return view('admin.users.index', compact('users', 'roles'));
@@ -65,7 +70,10 @@ class UserController extends Controller
      */
     public function create(Request $request)
     {
-        $selectedRoles = (array) $request->query('role');
+        // Si admin reste sur index, on pré-sélectionne le rôle admin
+        $defaultRole = $request->query('default_role', 'admin');
+        
+        $selectedRoles = (array) $request->query('role', [$defaultRole]);
         $roles = $this->roleService->orderedRoles();
         $rolePermissionMap = $this->roleService->rolePermissionMap();
 
@@ -77,7 +85,7 @@ class UserController extends Controller
         }
         $selectedPermissions = array_unique($selectedPermissions);
 
-        // Groupes de permissions pour l'affichage
+ 
         $allPermissions = Permission::orderBy('name')->get();
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
 
@@ -88,7 +96,7 @@ class UserController extends Controller
         ]);
 
         $domaines = Domaine::select('id', 'nom')->get();
-        $sites = \App\Models\Site::select('id', 'name')->get();
+        $sites = Site::select('id', 'name')->get();
 
         $formData = [
             'user' => null,
@@ -105,10 +113,7 @@ class UserController extends Controller
         return view('admin.users.create', compact('formData'));
     }
 
-      /**
-     * Enregistrer un nouvel utilisateur.
-     */
-   /**
+    /**
      * Enregistrer un nouvel utilisateur.
      */
     public function store(Request $request)
@@ -121,16 +126,17 @@ class UserController extends Controller
             'user_type' => 'required|string|exists:roles,name',
             'roles'     => 'array',
             'roles.*'   => 'exists:roles,name',
-            // Champs optionnels pour étudiant
+  
             'etudiant_genre'     => 'nullable|string|max:50',
             'etudiant_telephone' => 'nullable|string|max:20',
             'etudiant_ecole'     => 'nullable|string|max:255',
-            // Domaine (commun)
+   
             'domaine_id' => 'nullable|exists:domaines,id',
         ];
 
-        // Si le rôle "employe" est sélectionné, exiger site, domaine obligatoire et matricule
+
         $selectedRoles = $request->input('roles', [$request->input('user_type')]);
+        
         if (in_array('employe', $selectedRoles)) {
             $rules['site_id']   = 'required|exists:sites,id';
             $rules['domaine_id'] = 'required|exists:domaines,id';
@@ -140,8 +146,7 @@ class UserController extends Controller
 
         $validated = $request->validate($rules);
 
-        $user = DB::transaction(function () use ($validated) {
-            // 1. Créer le personnel
+        $user = DB::transaction(function () use ($validated, $selectedRoles) {
             $personnel = Personnel::create([
                 'nom'        => $validated['nom'],
                 'prenom'     => $validated['prenom'],
@@ -151,7 +156,7 @@ class UserController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            // 2. Créer l'utilisateur
+
             $user = User::create([
                 'name'                          => trim($validated['prenom'] . ' ' . $validated['nom']),
                 'email'                         => $validated['email'],
@@ -163,27 +168,21 @@ class UserController extends Controller
                 'domaine_id'                    => $validated['domaine_id'] ?? null,
             ]);
 
-            $roles = $validated['roles'] ?? [$validated['user_type']];
-            $user->syncRoles($roles);
+            $user->syncRoles($selectedRoles);
 
-            // 3. Créer la fiche métier
-            // Étudiant
-            if (in_array('etudiant', $roles)) {
-                Etudiant::updateOrCreate(
-                    ['personnel_id' => $personnel->id],
-                    [
-                        'ecole' => $validated['etudiant_ecole'] ?? null,
-                        'email' => $validated['email'],
-                    ]
-                );
+            // Création fiche étudiant
+            if (in_array('etudiant', $selectedRoles)) {
+                $etudiant = Etudiant::create([
+                    'ecole' => $validated['etudiant_ecole'] ?? null,
+                ]);
                 $personnel->update([
                     'personnable_type' => Etudiant::class,
-                    'personnable_id'   => $personnel->etudiant->id,
+                    'personnable_id'   => $etudiant->id,
                 ]);
             }
 
-            // Employé
-            if (in_array('employe', $roles)) {
+            // Création fiche employé
+            if (in_array('employe', $selectedRoles)) {
                 $matricule = $validated['matricule'] ?? 'EMP-' . strtoupper(Str::random(8));
                 $employe = Employe::create([
                     'personnel_id' => $personnel->id,
@@ -195,16 +194,13 @@ class UserController extends Controller
                 $personnel->update([
                     'personnable_type' => Employe::class,
                     'personnable_id'   => $employe->id,
-                ]);
-                // Si l'utilisateur n'a pas encore de domaine_id, on le reporte
-                if (!$user->domaine_id) {
-                    $user->update(['domaine_id' => $validated['domaine_id']]);
-                }
+ 
+                    ]);
             }
 
-            // Envoi notification d'activation
+            // Envoi notification
             $token = Password::broker()->createToken($user);
-            $user->notify(new \App\Notifications\AccountProvisionedNotification($token));
+            $user->notify(new AccountProvisionedNotification($token));
 
             return $user;
         });
@@ -220,12 +216,14 @@ class UserController extends Controller
                 'account_email_sent' => true,
             ]);
     }
+
     /**
-     * Formulaire d'édition.
+     * Formulaire d'édition - AMÉLIORÉ.
      */
-     public function edit(User $user)
+    public function edit(User $user)
     {
         $user->load('personnel', 'roles', 'permissions');
+        
         $roles = $this->roleService->orderedRoles();
         $rolePermissionMap = $this->roleService->rolePermissionMap();
 
@@ -236,7 +234,22 @@ class UserController extends Controller
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
 
         $domaines = Domaine::select('id', 'nom')->get();
-        $sites = \App\Models\Site::select('id', 'name')->get();
+        $sites = Site::select('id', 'name')->get();
+
+        // Récupération des infos spécifiques selon le type
+        $etudiantEcole = '';
+        $employeSiteId = null;
+        $employePoste = '';
+        $employeMatricule = '';
+        
+        $profil = $user->profil();
+        if ($profil instanceof Etudiant) {
+            $etudiantEcole = $profil->ecole ?? '';
+        } elseif ($profil instanceof Employe) {
+            $employeSiteId = $profil->site_id;
+            $employePoste = $profil->poste;
+            $employeMatricule = $profil->matricule;
+        }
 
         $formData = [
             'user' => $user,
@@ -249,69 +262,124 @@ class UserController extends Controller
             'sites' => $sites,
             'nomValue' => $user->personnel?->nom ?? '',
             'prenomValue' => $user->personnel?->prenom ?? '',
-            'etudiantEcole' => $user->personnel?->etudiant?->ecole ?? '',
-            'etudiantGenre' => $user->personnel?->genre ?? '',
-            'etudiantTelephone' => $user->personnel?->telephone ?? '',
+            'emailValue' => $user->personnel?->email ?? $user->email,
+            'telephoneValue' => $user->personnel?->telephone ?? '',
+            'genreValue' => $user->personnel?->genre ?? '',
+            'etudiantEcole' => $etudiantEcole,
+            'employeSiteId' => $employeSiteId,
+            'employePoste' => $employePoste,
+            'employeMatricule' => $employeMatricule,
+            'domaineIdValue' => $user->domaine_id ?? ($profil instanceof Employe ? $profil->domaine_id : null),
         ];
 
         return view('admin.users.edit', compact('formData'));
     }
-   /**
-     * Mettre à jour un utilisateur.
+
+    /**
+     * Mettre à jour un utilisateur - AMÉLIORÉ.
      */
-    public function update(Request $request, User $user)
-    {
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(['actif', 'inactif'])],
-            'password' => 'nullable|min:8|confirmed',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name',
-            'nom' => 'sometimes|string|max:255',
-            'prenom' => 'sometimes|string|max:255',
-            'etudiant_ecole' => 'nullable|string|max:255',
-            'domaine_id' => 'nullable|exists:domaines,id',
+  /**
+ * Mettre à jour un utilisateur - CORRIGÉ
+ */
+public function update(Request $request, User $user)
+{
+    $validated = $request->validate([
+        'status' => ['required', Rule::in(['actif', 'inactif'])],
+        'password' => 'nullable|min:8|confirmed',
+        'roles' => 'array',
+        'roles.*' => 'exists:roles,name',
+        'user_type' => 'nullable|string|exists:roles,name', // Ajouté
+        'nom' => 'required|string|max:255',
+        'prenom' => 'required|string|max:255',
+        'email' => ['required', 'email', Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0)],
+        'telephone' => 'nullable|string|max:20',
+        'genre' => 'nullable|string|max:50',
+        'etudiant_ecole' => 'nullable|string|max:255',
+        'domaine_id' => 'nullable|exists:domaines,id',
+        'employe_site_id' => 'nullable|exists:sites,id',
+        'employe_poste' => 'nullable|string|max:255',
+    ]);
+
+    DB::transaction(function () use ($validated, $user, $request) {
+        // 1. Mise à jour du personnel
+        if ($user->personnel) {
+            $emailChanged = $user->personnel->email !== $validated['email'];
+            
+            $user->personnel->update([
+                'nom' => $validated['nom'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'telephone' => $validated['telephone'] ?? null,
+                'genre' => $validated['genre'] ?? null,
+            ]);
+            
+            if ($emailChanged) {
+                $user->update(['email_verified_at' => null]);
+            }
+        }
+
+        // 2. Mise à jour du nom affiché
+        $user->update([
+            'name' => trim($validated['prenom'] . ' ' . $validated['nom']),
+            'status' => $validated['status'],
+            'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
         ]);
 
-        $user = DB::transaction(function () use ($validated, $user) {
-            // Mettre à jour le personnel si nécessaire
-            if ($user->personnel && (isset($validated['nom']) || isset($validated['prenom']))) {
-                $user->personnel->update([
-                    'nom' => $validated['nom'] ?? $user->personnel->nom,
-                    'prenom' => $validated['prenom'] ?? $user->personnel->prenom,
-                ]);
-                // Mettre à jour le nom affiché
-                $user->name = trim(($validated['prenom'] ?? $user->personnel->prenom) . ' ' . ($validated['nom'] ?? $user->personnel->nom));
-            }
-
-            if ($request->filled('password')) {
-                $user->update([
-                    'password' => Hash::make($validated['password']),
-                    'must_change_password' => true,
-                    'temporary_password_created_at' => now(),
-                    'password_changed_at' => null,
-                ]);
-            }
-
+        // 3. Gestion du mot de passe
+        if ($request->filled('password')) {
             $user->update([
-                'status' => $validated['status'],
-                'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
-                'name' => $user->name,
+                'password' => Hash::make($validated['password']),
+                'must_change_password' => true,
+                'temporary_password_created_at' => now(),
+                'password_changed_at' => null,
             ]);
+        }
 
-            if (isset($validated['roles'])) {
-                $user->syncRoles($validated['roles']);
-            }
+        // 4. Mise à jour des rôles - CORRECTION ICI
+        $allRoles = [];
+        
+        // Ajouter le rôle principal (user_type)
+        if ($request->filled('user_type')) {
+            $allRoles[] = $request->user_type;
+        }
+        
+        // Ajouter les rôles additionnels
+        if (isset($validated['roles']) && is_array($validated['roles'])) {
+            $allRoles = array_merge($allRoles, $validated['roles']);
+        }
+        
+        // Supprimer les doublons
+        $allRoles = array_unique($allRoles);
+        
+        // Synchroniser les rôles
+        if (!empty($allRoles)) {
+            $user->syncRoles($allRoles);
+        }
 
-            // Mise à jour de la fiche étudiant si existante
-            if ($user->personnel && $user->personnel->etudiant && isset($validated['etudiant_ecole'])) {
-                $user->personnel->etudiant->update(['ecole' => $validated['etudiant_ecole']]);
-            }
+        // 5. Mise à jour de la fiche métier
+        $profil = $user->profil();
+        
+        if ($profil instanceof Etudiant) {
+            $profil->update([
+                'ecole' => $validated['etudiant_ecole'] ?? null,
+            ]);
+        } elseif ($profil instanceof Employe) {
+            $profil->update([
+                'site_id' => $validated['employe_site_id'] ?? $profil->site_id,
+                'poste' => $validated['employe_poste'] ?? $profil->poste,
+                'domaine_id' => $validated['domaine_id'] ?? $profil->domaine_id,
+            ]);
+        }
+    });
 
-            return $user;
-        });
-
-        return redirect()->route('admin.users.index')->with('success', 'Compte utilisateur mis à jour.');
+    $message = 'Compte utilisateur mis à jour.';
+    if ($request->filled('password')) {
+        $message .= ' Un nouveau mot de passe temporaire a été défini.';
     }
+
+    return redirect()->route('admin.users.index')->with('success', $message);
+}
+
     /**
      * Supprimer un utilisateur.
      */
@@ -320,13 +388,30 @@ class UserController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
         }
+        
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Utilisateur supprimé.');
     }
 
     /**
-     * Afficher le profil (redirection).
+     * Activer / désactiver un utilisateur.
      */
+    public function toggleStatus(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Vous ne pouvez pas modifier votre propre statut.');
+        }
+        
+        $newStatus = $user->status === 'actif' ? 'inactif' : 'actif';
+        $user->update(['status' => $newStatus]);
+        
+        $message = $newStatus === 'actif'
+            ? "Le compte de {$user->name} a été réactivé."
+            : "Le compte de {$user->name} a été désactivé.";
+            
+        return back()->with('success', $message);
+    }
+
     public function show(User $user)
     {
         $profil = $user->profil();
@@ -336,32 +421,6 @@ class UserController extends Controller
             return redirect()->route('employes.show', $profil);
         }
         return redirect()->route('admin.users.index');
-    }
-
-    /**
-     * Liste des employés par domaine.
-     */
-    public function indexByDomaine(Domaine $domaine)
-    {
-        $employes = Employe::where('domaine_id', $domaine->id)
-            ->with('personnel.user')
-            ->paginate(10);
-        return view('admin.employes.by_domaine', compact('domaine', 'employes'));
-    }
-
-    /**
-     * Activer / désactiver un utilisateur.
-     */
-    public function toggleStatus(User $user)
-    {
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+  
         }
-        $newStatus = $user->status === 'actif' ? 'inactif' : 'actif';
-        $user->update(['status' => $newStatus]);
-        $message = $newStatus === 'actif'
-            ? "Le compte de {$user->name} a été réactivé."
-            : "Le compte de {$user->name} a été désactivé.";
-        return back()->with('success', $message);
-    }
 }

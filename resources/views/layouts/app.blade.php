@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'gestion des personnels') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -229,9 +229,81 @@
                 <div class="px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center h-14 sm:h-16 gap-3">
                         <div class="lg:hidden w-5 mr-8 flex-shrink-0"></div>
-                        <h2 class="flex-1 text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate capitalize">
-                            {{ Route::currentRouteName() ? str_replace(['admin.','.','_'], ' ', Route::currentRouteName()) : 'Tableau de bord' }}
-                        </h2>
+                       <h2 class="flex-1 text-sm xs:text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                        @php
+                            $routeName = Route::currentRouteName();
+                            $title = 'Tableau de bord';
+                            
+                            if ($routeName) {
+                                // Nettoyer le nom de la route
+                                $cleaned = str_replace(['admin.', 'web.', 'app.'], '', $routeName);
+                                
+                                // Traductions spécifiques
+                                $translations = [
+                                    'stages' => 'Stages',
+                                    'badges' => 'Badges',
+                                    'users' => 'Utilisateurs',
+                                    'roles' => 'Rôles',
+                                    'etudiants' => 'Étudiants',
+                                    'employes' => 'Employés',
+                                    'personnels' => 'Personnels',
+                                    'services' => 'Services',
+                                    'sites' => 'Sites',
+                                    'domaines' => 'Domaines',
+                                    'presence' => 'Présence',
+                                    'attestation' => 'Attestations',
+                                    'rapports' => 'Rapports',
+                                    'notifications' => 'Notifications',
+                                    'profile' => 'Profil',
+                                    'dashboard' => 'Tableau de bord',
+                                    'corbeille' => 'Corbeille',
+                                    'trash' => 'Corbeille',
+                                    'create' => 'Création',
+                                    'edit' => 'Modification',
+                                    'show' => 'Détails',
+                                    'index' => 'Liste',
+                                    'generate' => 'Génération',
+                                    'download' => 'Téléchargement',
+                                    'print' => 'Impression',
+                                    'approve' => 'Approbation',
+                                    'review' => 'Révision',
+                                    'audit' => 'Audit',
+                                    'checkin' => 'Pointage entrée',
+                                    'checkout' => 'Pointage sortie',
+                                    'statistics' => 'Statistiques',
+                                    'settings' => 'Paramètres',
+                                    'maintenance' => 'Maintenance',
+                                ];
+                                
+                                // Remplacer les parties de la route
+                                $parts = explode('.', $cleaned);
+                                $translatedParts = [];
+                                
+                                foreach ($parts as $part) {
+                                    if (isset($translations[$part])) {
+                                        $translatedParts[] = $translations[$part];
+                                    } elseif ($part === 'index' && count($parts) > 1) {
+                                        // Ignorer 'index' car c'est implicite
+                                        continue;
+                                    } else {
+                                        $translatedParts[] = ucfirst(str_replace('_', ' ', $part));
+                                    }
+                                }
+                                
+                                $title = implode(' - ', array_filter($translatedParts));
+                                
+                                // Cas spéciaux
+                                if (str_contains($routeName, '.index') && count($translatedParts) === 1) {
+                                    $title = $translatedParts[0];
+                                }
+                                
+                                if (empty($title)) {
+                                    $title = 'Tableau de bord';
+                                }
+                            }
+                        @endphp
+                        {{ $title }}
+                    </h2>
 
                         {{-- Actions desktop --}}
                         <div class="hidden lg:flex items-center gap-2" x-data="{ isDark: document.documentElement.classList.contains('dark'), toggleTheme() { this.isDark = !this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('theme', this.isDark ? 'dark' : 'light'); } }">

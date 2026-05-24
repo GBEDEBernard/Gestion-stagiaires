@@ -132,4 +132,62 @@ class NewPasswordController extends Controller
             ]);
         }
     }
+
+      /**
+     * Gère la définition du premier mot de passe (après création du compte)
+     */
+    public function firstUpdate(Request $request): RedirectResponse
+    {
+        try {
+            $request->validate([
+                'token'    => 'required',
+                'email'    => 'required|email',
+                'password' => 'required|confirmed|min:8',
+            ]);
+
+            $personnel = Personnel::where('email', $request->email)->first();
+
+            if (!$personnel) {
+                return back()->withErrors(['email' => 'Aucun utilisateur trouvé avec cet email.']);
+            }
+
+            $user = User::where('personnel_id', $personnel->id)->first();
+
+            if (!$user) {
+                return back()->withErrors(['email' => 'Aucun compte utilisateur associé.']);
+            }
+
+            // Vérifier le token
+            if (!Password::tokenExists($user, $request->token)) {
+                return back()->withErrors(['email' => 'Le lien a expiré ou est invalide.']);
+            }
+
+            DB::transaction(function () use ($user, $request) {
+                $user->forceFill([
+                    'password'                      => Hash::make($request->password),
+                    'remember_token'                => Str::random(60),
+                    'must_change_password'          => false,
+                    'temporary_password_created_at' => null,
+                    'password_changed_at'           => now(),
+                    'email_verified_at'             => now(),
+                ])->save();
+
+                DB::table('password_reset_tokens')
+                    ->where('email', $request->email)
+                    ->delete();
+
+                event(new PasswordReset($user));
+            });
+
+            return redirect()->route('login')->with('success', 'Votre mot de passe a été défini avec succès. Vous pouvez maintenant vous connecter.');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la définition du mot de passe', [
+                'email' => $request->email ?? 'non fourni',
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['email' => 'Une erreur est survenue.']);
+        }
+    }
 }
