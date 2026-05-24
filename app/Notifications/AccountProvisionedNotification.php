@@ -26,9 +26,10 @@ class AccountProvisionedNotification extends Notification
 
     public function toMail($notifiable)
     {
+        // Ne pas passer l'email dans l'URL pour éviter les incohérences
+        // Laravel récupère automatiquement l'email depuis la session ou l'utilisateur
         $url = url(route('password.reset', [
             'token' => $this->token,
-            'email' => $this->email ?? $notifiable->getEmailForPasswordReset(),
         ], false));
 
         return (new MailMessage)

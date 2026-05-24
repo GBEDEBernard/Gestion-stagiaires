@@ -295,6 +295,15 @@ class PersonnelController extends Controller
     if ($personnel->user) {
             $personnel->user->delete();
         }
+          // Supprimer la fiche employé si elle existe (même si personnable est null)
+    if ($personnel->employe) {
+        $personnel->employe->delete();
+    }
+
+         // Supprimer la fiche étudiant si elle existe (même si personnable est null)
+     if ($personnel->etudiant) {
+        $personnel->etudiant->delete();
+     }
 
         if ($personnel->personnable) {
             $personnel->personnable->delete();

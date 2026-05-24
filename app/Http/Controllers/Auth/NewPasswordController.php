@@ -48,7 +48,10 @@ class NewPasswordController extends Controller
                 ]);
             }
 
-            // 2. Trouver l'utilisateur lié au personnel
+            // 2. 🔥 Force l'email à celui du personnel pour éviter toute incohérence
+            $request->merge(['email' => $personnel->email]);
+
+            // 3. Trouver l'utilisateur lié au personnel
             $user = User::where('personnel_id', $personnel->id)->first();
 
             if (! $user) {
@@ -64,7 +67,7 @@ class NewPasswordController extends Controller
                 'email'        => $request->email,
             ]);
 
-            // 3. Vérifier que le token existe bien en base
+            // 4. Vérifier que le token existe bien en base
             $tokenRecord = DB::table('password_reset_tokens')
                 ->where('email', $request->email)
                 ->first();
@@ -76,7 +79,7 @@ class NewPasswordController extends Controller
                 ]);
             }
 
-            // 4. Vérifier que le token correspond bien à cet utilisateur
+            // 5. Vérifier que le token correspond bien à cet utilisateur
             if (! Password::tokenExists($user, $request->token)) {
                 Log::error('Token de reset invalide', [
                     'email'   => $request->email,
@@ -87,7 +90,7 @@ class NewPasswordController extends Controller
                 ]);
             }
 
-            // 5. Réinitialiser le mot de passe et marquer l'email comme vérifié
+            // 6. Réinitialiser le mot de passe et marquer l'email comme vérifié
             DB::transaction(function () use ($user, $request) {
                 $user->forceFill([
                     'password'                      => Hash::make($request->password),
@@ -95,9 +98,7 @@ class NewPasswordController extends Controller
                     'must_change_password'          => false,
                     'temporary_password_created_at' => null,
                     'password_changed_at'           => now(),
-                    // ← CORRECTION PRINCIPALE : on marque l'email comme vérifié
-                    // pour ne pas bloquer l'utilisateur sur la page verify-email
-                    // après sa première connexion.
+ 
                     'email_verified_at'             => now(),
                 ])->save();
 
