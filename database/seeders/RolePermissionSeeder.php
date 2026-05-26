@@ -34,18 +34,20 @@ class RolePermissionSeeder extends Seeder
             'attendance_anomalies',
             'presence_stats',
             'presence.admin',
-            'employes', // ← ajouté
-            'personnels', // ← ajouté
+            'employes',
+            'personnels',
+            // Ajout des permissions pour les demandes
+            'permissions',
         ];
 
         $actions = [
             'view', 'create', 'edit', 'delete', 'restore', 'force-delete',
-            'download', 'print', 'checkin', 'checkout', 'submit', 'review', 'approve', 'audit'
+            'download', 'print', 'checkin', 'checkout', 'submit', 'review', 'approve', 'audit', 'cancel'
         ];
 
         foreach ($entities as $entity) {
             foreach ($actions as $action) {
-                // Filtres spécifiques (inchangés)
+                // Filtres spécifiques
                 if (in_array($entity, ['dashboard', 'qr_code']) && !in_array($action, ['view'])) continue;
                 if ($entity === 'attestation' && !in_array($action, ['view', 'create', 'download', 'print', 'approve'])) continue;
                 if ($entity === 'corbeille' && !in_array($action, ['view'])) continue;
@@ -55,6 +57,8 @@ class RolePermissionSeeder extends Seeder
                 if ($entity === 'tasks' && !in_array($action, ['view', 'create', 'edit', 'delete', 'review'])) continue;
                 if ($entity === 'attendance_anomalies' && !in_array($action, ['view', 'review', 'audit'])) continue;
                 if ($entity === 'presence_stats' && !in_array($action, ['view'])) continue;
+                // Permissions : on garde view, create, cancel pour les utilisateurs, review/approve pour superviseurs
+                if ($entity === 'permissions' && !in_array($action, ['view', 'create', 'cancel', 'review', 'approve'])) continue;
 
                 Permission::firstOrCreate(['name' => "$entity.$action"]);
             }
@@ -73,9 +77,14 @@ class RolePermissionSeeder extends Seeder
         $employeRole->syncPermissions($presetService->permissionsForRoles(['employe']));
         $etudiantRole->syncPermissions($presetService->permissionsForRoles(['etudiant']));
 
-        // ✅ Ajout explicite de la permission 'employes.view' aux rôles concernés
+        // Permissions supplémentaires pour les employés et superviseurs
         $adminRole->givePermissionTo('employes.view');
         $supervisorRole->givePermissionTo('employes.view');
+
+        // Permissions explicites pour les demandes de permission
+        $employeRole->givePermissionTo(['permissions.view', 'permissions.create', 'permissions.cancel']);
+        $etudiantRole->givePermissionTo(['permissions.view', 'permissions.create', 'permissions.cancel']);
+        $supervisorRole->givePermissionTo(['permissions.view', 'permissions.review', 'permissions.approve']);
 
         $user = User::find(1);
         if ($user) {
@@ -84,7 +93,6 @@ class RolePermissionSeeder extends Seeder
                 ['admin'],
                 $presetService->permissionsForRoles(['admin'])
             );
-            // S'assurer que l'utilisateur admin a aussi la permission
             $user->givePermissionTo('employes.view');
         }
 

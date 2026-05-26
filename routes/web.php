@@ -394,13 +394,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         })->name('notifications.mark-all.api');
     });
 
-    // ---------------- Demandes de permission (Etudiant) ----------------
-    Route::prefix('permissions')->middleware('role:etudiant|employe')->group(function () {
-        Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
-        Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
-        Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
-        Route::post('{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
-    });
+   // ---------------- Demandes de permission (Etudiant & Employé) ----------------
+Route::prefix('permissions')->middleware('permission:permissions.view')->group(function () {
+    Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
+    Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
+    Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
+    Route::post('{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
+});
 
     // ---------------- Demandes de permission (Admin) ----------------
     Route::prefix('admin/permissions')->middleware('role:admin|superviseur')->group(function () {

@@ -30,11 +30,10 @@ class RolePermissionPresetService
     {
         $allPermissions = Permission::query()->pluck('name')->all();
 
+  
         return [
-            // jb -> Le role admin sert ici de preset maximal:
-            // il precharge toutes les permissions, mais l'admin pourra
-            // ensuite retirer celles qu'il ne veut pas garder sur un compte.
-            'admin' => $allPermissions,
+ 
+        'admin' => $allPermissions,
             'employe' => [
                 'dashboard.view',
                 'presence.view',
@@ -43,6 +42,10 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.create',
+                'permissions.cancel',
             ],
             'superviseur' => [
                 'dashboard.view',
@@ -67,7 +70,10 @@ class RolePermissionPresetService
                 'personnels.create',
                 'personnels.edit',
                 'personnels.delete',
-
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.review',
+                'permissions.approve',
             ],
             'etudiant' => [
                 'presence.view',
@@ -77,6 +83,11 @@ class RolePermissionPresetService
                 'daily_reports.create',
                 'daily_reports.submit',
                 'tasks.view',
+                'stages.view',
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.create',
+                'permissions.cancel',
             ],
         ];
     }
@@ -122,9 +133,6 @@ class RolePermissionPresetService
         $existingRoles = $user->roles()->pluck('name')->all();
         $user->syncRoles($this->normalizeRoleNames(array_merge($existingRoles, $normalizedRoles)));
 
-        // jb -> On ne force les presets qu'au moment ou le compte n'a pas
-        // encore de permissions directes; ainsi les ajustements manuels
-        // faits plus tard par l'admin restent intacts.
         if ($user->permissions()->count() === 0) {
             $user->syncPermissions($this->permissionsForRoles($user->roles()->pluck('name')->all()));
         }
