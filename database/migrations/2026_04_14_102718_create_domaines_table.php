@@ -19,6 +19,20 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('domaine_id')
+                ->references('id')
+                ->on('domaines')
+                ->nullOnDelete();
+        });
+
+        Schema::table('stages', function (Blueprint $table) {
+            $table->foreign('domaine_id')
+                ->references('id')
+                ->on('domaines')
+                ->nullOnDelete();
+        });
     }
 
     /**
@@ -26,6 +40,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('stages', function (Blueprint $table) {
+            $table->dropForeign(['domaine_id']);
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['domaine_id']);
+        });
+
         Schema::dropIfExists('domaines');
     }
 };

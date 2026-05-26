@@ -24,10 +24,32 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('personnel_id')
+                ->references('id')
+                ->on('personnels')
+                ->cascadeOnDelete();
+        });
+
+        Schema::table('etudiants', function (Blueprint $table) {
+            $table->foreign('personnel_id')
+                ->references('id')
+                ->on('personnels')
+                ->cascadeOnDelete();
+        });
     }
 
     public function down()
     {
+        Schema::table('etudiants', function (Blueprint $table) {
+            $table->dropForeign(['personnel_id']);
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['personnel_id']);
+        });
+
         Schema::dropIfExists('personnels');
     }
 };

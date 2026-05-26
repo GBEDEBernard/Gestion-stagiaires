@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\RolePermissionPresetService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class EmployeSeeder extends Seeder
 {
@@ -63,15 +64,25 @@ class EmployeSeeder extends Seeder
                 ]
             );
 
+            $userAttributes = [
+                'password' => Hash::make('Password123!'),
+                'status' => 'actif',
+                'must_change_password' => true,
+                'temporary_password_created_at' => now(),
+                'email_verified_at' => now(),
+            ];
+
+            if (Schema::hasColumn('users', 'name')) {
+                $userAttributes['name'] = "{$data['prenom']} {$data['nom']}";
+            }
+
+            if (Schema::hasColumn('users', 'email')) {
+                $userAttributes['email'] = $data['email'];
+            }
+
             $user = User::updateOrCreate(
                 ['personnel_id' => $personnel->id],
-                [
-                    'password' => Hash::make('Password123!'),
-                    'status' => 'actif',
-                    'must_change_password' => true,
-                    'temporary_password_created_at' => now(),
-                    'email_verified_at' => now(),
-                ]
+                $userAttributes
             );
 
             $presetService->ensureRoleDefaults($user, ['employe']);

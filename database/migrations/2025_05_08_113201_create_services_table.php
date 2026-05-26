@@ -11,6 +11,7 @@ return new class extends Migration {
         $table->id();
         $table->string('nom')->unique();
         $table->timestamps();
+        $table->softDeletes();
         });
         }
 

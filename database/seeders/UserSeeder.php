@@ -9,6 +9,7 @@ use App\Services\RolePermissionPresetService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
@@ -73,13 +74,23 @@ class UserSeeder extends Seeder
                 ]);
             }
 
+            $userAttributes = [
+                'password' => $userData['password'],
+                'status' => $userData['status'],
+                'email_verified_at' => Carbon::now(),
+            ];
+
+            if (Schema::hasColumn('users', 'name')) {
+                $userAttributes['name'] = $userData['name'];
+            }
+
+            if (Schema::hasColumn('users', 'email')) {
+                $userAttributes['email'] = $userData['email'];
+            }
+
             $user = User::updateOrCreate(
                 ['personnel_id' => $personnel->id],
-                [
-                    'password' => $userData['password'],
-                    'status' => $userData['status'],
-                    'email_verified_at' => Carbon::now(),
-                ]
+                $userAttributes
             );
 
             $presetService->assignRolesAndPermissions(
