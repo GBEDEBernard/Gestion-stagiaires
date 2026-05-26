@@ -1,35 +1,54 @@
 <?php
-
+// app/Models/Employe.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Personnel;
 
 class Employe extends Model
 {
-    //
-     use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['domaine_id', 'site_id', 'poste', 'matricule'];
+    protected $fillable = [
+        'domaine_id',
+        'site_id',
+        'poste',
+        'matricule',
+        // NE PAS mettre personnel_id ici : la relation passe par le polymorphisme
+        // sur la table personnels (personnable_type / personnable_id)
+    ];
 
-    // Relation polymorphique avec Personnel
+    /**
+     * Relation inverse du polymorphisme :
+     * personnels.personnable_type = 'App\Models\Employe'
+     * personnels.personnable_id  = employes.id
+     */
     public function personnel()
     {
         return $this->morphOne(Personnel::class, 'personnable');
     }
-// Accès direct à l'utilisateur via le personnel
+
+    /**
+     * Accès direct à l'utilisateur via le personnel (polymorphisme).
+     */
     public function user()
     {
-        return $this->personnel->user();
+        return $this->hasOneThrough(
+            User::class,
+            Personnel::class,
+            'personnable_id', // FK sur personnels (pointe vers employes.id)
+            'personnel_id',   // FK sur users (pointe vers personnels.id)
+            'id',             // local key sur employes
+            'id'              // local key sur personnels
+        )->where('personnels.personnable_type', self::class);
     }
-// Relations avec les stages et autres entités liées à l'employé
+
     public function domaine()
     {
         return $this->belongsTo(Domaine::class);
     }
-// Relation avec le site de travail
+
     public function site()
     {
         return $this->belongsTo(Site::class);

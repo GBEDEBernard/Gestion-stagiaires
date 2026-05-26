@@ -27,7 +27,7 @@
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                         <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Total</p>
                         <p class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">
-                            {{ $stagesTrash->count() + $etudiantsTrash->count() + $badgesTrash->count() + $servicesTrash->count() + $usersTrash->count() }}
+                            {{ $stagesTrash->count() + $etudiantsTrash->count() + $personnelsTrash->count() + $badgesTrash->count() + $servicesTrash->count() }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 dark:border-teal-900 dark:bg-teal-950">
@@ -36,7 +36,7 @@
                     </div>
                     <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950">
                         <p class="text-xs font-medium uppercase tracking-wider text-amber-500 dark:text-amber-400">Personnel</p>
-                        <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">{{ $usersTrash->count() }}</p>
+                        <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">{{ $personnelsTrash->count() }}</p>
                     </div>
                     <div class="rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 dark:border-violet-900 dark:bg-violet-950">
                         <p class="text-xs font-medium uppercase tracking-wider text-violet-500 dark:text-violet-400">Stages</p>
@@ -66,16 +66,16 @@
             icon='<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0121 13c0 5.523-4.477 10-9 10S3 18.523 3 13a12.083 12.083 0 012.84-7.578L12 14z"/></svg>'
         />
 
-        {{-- ── Personnel ── --}}
+        {{-- ── Personnel (corrigé : utilise $personnelsTrash et les bonnes routes) ── --}}
         <x-trash-table
-            :items="$usersTrash"
+            :items="$personnelsTrash"
             title="Personnel supprimé"
             :columns="['Nom', 'Email', 'Supprimé le', 'Actions']"
-            :restoreRoute="'users.restore'"
+            :restoreRoute="'personnels.restore'"
             :restoreMethod="'PUT'"
-            :forceDeleteRoute="'users.forceDelete'"
-            :fields="['name', 'email']"
-            color="red"
+            :forceDeleteRoute="'personnels.force-delete'"
+            :fields="['full_name', 'email']"
+            color="amber"
             icon='<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'
         />
 

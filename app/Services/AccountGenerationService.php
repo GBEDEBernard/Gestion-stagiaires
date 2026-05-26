@@ -1,5 +1,5 @@
 <?php
-
+// app/Services/AccountGenerationService.php
 namespace App\Services;
 
 use App\Models\Personnel;
@@ -18,36 +18,44 @@ class AccountGenerationService
             throw new \Exception('Un compte existe déjà pour ce personnel.');
         }
 
-        $tempPassword = $customPassword ?? Str::random(10); // Use custom password if provided
+        // S'assurer que la relation personnable est chargée pour pouvoir
+        // récupérer domaine_id si c'est un employé.
+        $personnel->loadMissing('personnable');
+
+        // Récupérer le domaine_id depuis la fiche Employe si elle existe
+        $domaineId = null;
+        if ($personnel->isEmploye() && $personnel->employe) {
+            $domaineId = $personnel->employe->domaine_id;
+        }
+
+        $tempPassword = $customPassword ?? Str::random(10);
+
         $user = User::create([
-            'personnel_id' => $personnel->id,
-            'password' => Hash::make($tempPassword),
-            'must_change_password' => true,
+            'personnel_id'                  => $personnel->id,
+            'email'                         => $personnel->email,
+            'domaine_id'                    => $domaineId,
+            'password'                      => Hash::make($tempPassword),
+            'must_change_password'          => true,
             'temporary_password_created_at' => now(),
-            'status' => 'actif',
+            'status'                        => 'actif',
         ]);
 
         $user->assignRole($roleName);
 
-        // Générer un token de réinitialisation et construire l'URL de réinitialisation
+        // Générer le token de réinitialisation et notifier l'utilisateur
         $token = Password::broker()->createToken($user);
-        $resetUrl = url(route('password.reset', ['token' => $token], false)) . '?email=' . urlencode($personnel->email);
+        $user->notify(new AccountProvisionedNotification($token, $personnel->email));
 
-        // Notifier l'utilisateur avec un lien professionnel pour configurer son mot de passe
-        $user->notify(new AccountProvisionedNotification($resetUrl));
-
-        // Audit simple : enregistrer qui a généré le compte dans les logs
+        // Journalisation
         try {
-            $actorId = auth()->id() ?? null;
             Log::info('account.generated', [
                 'personnel_id' => $personnel->id,
-                'user_id' => $user->id,
-                'role' => $roleName,
-                'generated_by' => $actorId,
-                'timestamp' => now()->toDateTimeString(),
+                'user_id'      => $user->id,
+                'role'         => $roleName,
+                'generated_by' => auth()->id(),
+                'timestamp'    => now()->toDateTimeString(),
             ]);
         } catch (\Throwable $e) {
-            // ne pas faire échouer la création de compte pour un échec de logging
             Log::error('Failed to log account generation: ' . $e->getMessage());
         }
 

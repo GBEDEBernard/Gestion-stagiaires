@@ -1,4 +1,8 @@
 <x-app-layout>
+    @php
+        $labelService = app(\App\Services\PermissionLabelService::class);
+    @endphp
+
     <div class="max-w-4xl mx-auto">
         <div class="mb-8">
             <div class="flex items-center gap-4 mb-2">
@@ -47,7 +51,7 @@
                                     class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 select-all-checkbox"
                                     data-group="{{ $entity }}">
                                 <label for="select-all-{{ $entity }}" class="text-sm font-semibold text-gray-900 dark:text-white uppercase cursor-pointer">
-                                    @permissionGroupLabel($entity)
+                                    {{ $labelService->getGroupLabel($entity) }}
                                 </label>
                             </div>
                             <div class="space-y-2 pl-6">
@@ -59,7 +63,7 @@
                                         class="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 permission-checkbox"
                                         data-group="{{ $entity }}">
                                     <label for="permission-{{ $permission->id }}" class="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-                                        @permissionLabel($permission->name)
+                                        {{ $labelService->getLabel($permission->name) }}
                                     </label>
                                 </div>
                                 @endforeach
@@ -85,7 +89,6 @@
     </div>
 
     <script>
-        // (même script que dans create, y compris l'initialisation)
         document.querySelectorAll('.select-all-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const group = this.dataset.group;

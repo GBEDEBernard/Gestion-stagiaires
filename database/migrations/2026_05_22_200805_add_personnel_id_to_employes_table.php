@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('employes', function (Blueprint $table) {
+            // Ajouter la colonne personnel_id si elle n'existe pas déjà
+            if (!Schema::hasColumn('employes', 'personnel_id')) {
+                $table->foreignId('personnel_id')
+                      ->nullable()
+                      ->after('id')
+                      ->constrained('personnels')
+                      ->nullOnDelete();
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('employes', function (Blueprint $table) {
+            if (Schema::hasColumn('employes', 'personnel_id')) {
+                $table->dropForeign(['personnel_id']);
+                $table->dropColumn('personnel_id');
+            }
+        });
+    }
+};
