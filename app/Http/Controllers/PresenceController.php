@@ -6,6 +6,7 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Services\AdminPresenceService;
 use App\Services\PresenceService;
+use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +15,8 @@ class PresenceController extends Controller
 {
     public function __construct(
         private PresenceService $presenceService,
-        private AdminPresenceService $adminPresenceService
+        private AdminPresenceService $adminPresenceService,
+        private UserProfileLinkService $profileLinkService
     ) {}
 
     /**
@@ -23,9 +25,9 @@ class PresenceController extends Controller
     public function pointage(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
 
@@ -70,11 +72,13 @@ class PresenceController extends Controller
     public function prepareCheckIn(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
+            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',
                 'latitude' => 'required|numeric',
@@ -180,10 +184,12 @@ class PresenceController extends Controller
     public function prepareCheckOut(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
+            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',
                 'latitude' => 'required|numeric',
@@ -293,7 +299,7 @@ class PresenceController extends Controller
 
         if ($pending['user_type'] === 'etudiant') {
             // Logique pour stagiaire
-            $etudiant = $user->etudiant;
+            $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
             $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
 
             $previewData = [
@@ -372,7 +378,8 @@ class PresenceController extends Controller
 
             if ($pending['user_type'] === 'etudiant') {
                 // Logique pour stagiaire
-                $stage = $user->etudiant->stages()->findOrFail($pending['stage_id']);
+                $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+                $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
 
                 if ($pending['type'] === 'check_in') {
                     $event = $this->presenceService->registerCheckIn($stage, $user, $data, $data['observation_message'] ?? null);
@@ -432,7 +439,8 @@ class PresenceController extends Controller
     public function historique(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+        abort_if($user->hasRole('etudiant') && !$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
         $period = $request->get('period', 'month');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -491,7 +499,7 @@ class PresenceController extends Controller
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
         } else {
             return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));

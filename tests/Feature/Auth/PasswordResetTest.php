@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Models\Personnel;
+use App\Notifications\SendPasswordResetPin;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 test('reset password link screen can be rendered', function () {
     $response = $this->get('/forgot-password');
@@ -10,51 +13,91 @@ test('reset password link screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('reset password link can be requested', function () {
+test('reset password PIN can be requested', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    $personnel = Personnel::create([
+        'nom' => 'User',
+        'prenom' => 'Test',
+        'email' => 'test@example.com',
+    ]);
+    $user = User::factory()->create([
+        'personnel_id' => $personnel->id,
+        'email' => 'test@example.com',
+    ]);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $response = $this->post('/forgot-password', ['email' => 'test@example.com']);
 
-    Notification::assertSentTo($user, ResetPassword::class);
+    $response->assertRedirect(route('password.verify-pin-show', ['email' => 'test@example.com']));
+    Notification::assertSentTo($user, SendPasswordResetPin::class);
 });
 
-test('reset password screen can be rendered', function () {
-    Notification::fake();
+test('verify PIN screen can be rendered', function () {
+    $response = $this->get('/verify-pin?email=test@example.com');
 
-    $user = User::factory()->create();
-
-    $this->post('/forgot-password', ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-        $response = $this->get('/reset-password/'.$notification->token);
-
-        $response->assertStatus(200);
-
-        return true;
-    });
+    $response->assertStatus(200);
 });
 
-test('password can be reset with valid token', function () {
-    Notification::fake();
+test('PIN can be verified', function () {
+    $personnel = Personnel::create([
+        'nom' => 'User',
+        'prenom' => 'Test',
+        'email' => 'test@example.com',
+    ]);
+    $user = User::factory()->create([
+        'personnel_id' => $personnel->id,
+        'email' => 'test@example.com',
+    ]);
 
-    $user = User::factory()->create();
+    DB::table('password_reset_pins')->insert([
+        'email' => 'test@example.com',
+        'pin' => '123456',
+        'expires_at' => now()->addMinutes(15),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    $response = $this->post('/verify-pin', [
+        'email' => 'test@example.com',
+        'pin' => '123456',
+    ]);
 
-    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-        $response = $this->post('/reset-password', [
-            'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+    $response->assertRedirect(route('password.reset-form', [
+        'email' => 'test@example.com',
+        'pin' => '123456',
+    ]));
+});
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('login'));
+test('password can be reset with valid PIN', function () {
+    $personnel = Personnel::create([
+        'nom' => 'User',
+        'prenom' => 'Test',
+        'email' => 'test@example.com',
+    ]);
+    $user = User::factory()->create([
+        'personnel_id' => $personnel->id,
+        'email' => 'test@example.com',
+        'password' => Hash::make('old-password'),
+    ]);
 
-        return true;
-    });
+    DB::table('password_reset_pins')->insert([
+        'email' => 'test@example.com',
+        'pin' => '123456',
+        'expires_at' => now()->addMinutes(15),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->post('/reset-password-with-pin', [
+        'email' => 'test@example.com',
+        'pin' => '123456',
+        'password' => 'NewPassword123!',
+        'password_confirmation' => 'NewPassword123!',
+    ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('login'));
+
+    $this->assertTrue(Hash::check('NewPassword123!', $user->refresh()->password));
 });

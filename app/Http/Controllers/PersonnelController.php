@@ -355,15 +355,25 @@ class PersonnelController extends Controller
             }
 
    
-            public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
+    public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
     {
         if ($personnel->user) {
-            return back()->with('error', 'Un compte existe déjà.');
+            $service->resendProvisioningEmail($personnel);
+
+            if (!$service->lastProvisioningEmailSent()) {
+                return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+            }
+
+            return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
         }
 
         $customPassword = $request->input('custom_password');
         $role = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
         $service->generateForPersonnel($personnel, $role, $customPassword);
+
+        if (!$service->lastProvisioningEmailSent()) {
+            return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+        }
 
         return back()->with('success', "Compte généré pour {$personnel->full_name}.");
     }

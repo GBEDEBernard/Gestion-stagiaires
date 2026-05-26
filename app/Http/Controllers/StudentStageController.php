@@ -4,19 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Services\DailyReportService;
+use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
 
 class StudentStageController extends Controller
 {
     public function __construct(
-        protected DailyReportService $dailyReportService
+        protected DailyReportService $dailyReportService,
+        protected UserProfileLinkService $profileLinkService
     ) {
     }
 
     public function show(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
 

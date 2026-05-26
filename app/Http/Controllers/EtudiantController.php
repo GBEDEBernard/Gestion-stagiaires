@@ -56,11 +56,28 @@ class EtudiantController extends Controller
     public function generateAccount(Request $request, Etudiant $etudiant, AccountGenerationService $service)
     {
         $personnel = $etudiant->personnel;
-        if ($personnel->user) {
-            return back()->with('error', 'Un compte existe déjà.');
+
+        if (!$personnel) {
+            return back()->with('error', 'Aucun personnel associé à cet étudiant.');
         }
+
+        if ($personnel->user) {
+            $service->resendProvisioningEmail($personnel);
+
+            if (!$service->lastProvisioningEmailSent()) {
+                return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+            }
+
+            return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
+        }
+
         $customPassword = $request->input('custom_password');
         $service->generateForPersonnel($personnel, 'etudiant', $customPassword);
+
+        if (!$service->lastProvisioningEmailSent()) {
+            return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+        }
+
         return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
     }
     //   public function syncAccount(Etudiant $etudiant) 

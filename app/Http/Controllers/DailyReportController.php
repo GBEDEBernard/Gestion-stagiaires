@@ -6,12 +6,14 @@ use App\Http\Requests\DailyReport\StoreDailyReportRequest;
 use App\Models\AttendanceDay;
 use App\Models\DailyReport;
 use App\Services\DailyReportService;
+use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
 
 class DailyReportController extends Controller
 {
     public function __construct(
-        protected DailyReportService $dailyReportService
+        protected DailyReportService $dailyReportService,
+        protected UserProfileLinkService $profileLinkService
     ) {}
 
     /**
@@ -22,7 +24,7 @@ class DailyReportController extends Controller
         $user = $request->user();
         $period = $request->get('period', 'daily');
 
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isEmployee = $user->hasRole('employe');
 
         if (!$etudiant && !$isEmployee && !$user->hasRole('admin')) {
@@ -91,11 +93,12 @@ class DailyReportController extends Controller
     public function edit(DailyReport $report)
     {
         $user = auth()->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         // Vérifier les permissions
         if (
             $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($user->etudiant)->id
+            $report->etudiant_id !== optional($etudiant)->id
         ) {
             abort(403);
         }
@@ -110,11 +113,12 @@ class DailyReportController extends Controller
     public function show(Request $request, DailyReport $report)
     {
         $user = $request->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         // Vérifier que l'utilisateur peut voir ce rapport
         if (
             $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($user->etudiant)->id &&
+            $report->etudiant_id !== optional($etudiant)->id &&
             !$user->hasRole('admin') &&
             !$user->hasRole('superviseur')
         ) {
@@ -161,10 +165,11 @@ class DailyReportController extends Controller
     public function update(Request $request, DailyReport $report)
     {
         $user = $request->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         if (
             $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($user->etudiant)->id
+            $report->etudiant_id !== optional($etudiant)->id
         ) {
             abort(403);
         }

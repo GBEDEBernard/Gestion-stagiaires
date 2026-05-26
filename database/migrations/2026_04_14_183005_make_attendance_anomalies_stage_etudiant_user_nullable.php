@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -15,6 +16,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite' || Schema::hasColumn('attendance_anomalies', 'user_id')) {
+            return;
+        }
+
         Schema::table('attendance_anomalies', function (Blueprint $table) {
             // Supprimer contraintes FK existantes (NOT NULL)
             $table->dropForeign(['stage_id']);
@@ -48,6 +53,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite' || !Schema::hasColumn('attendance_anomalies', 'user_id')) {
+            return;
+        }
+
         Schema::table('attendance_anomalies', function (Blueprint $table) {
             $table->dropForeign(['stage_id']);
             $table->dropForeign(['etudiant_id']);

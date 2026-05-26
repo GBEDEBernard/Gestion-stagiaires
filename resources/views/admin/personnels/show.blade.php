@@ -173,6 +173,16 @@
                                 Générer un compte
                             </button>
                         </form>
+                    @else
+                        <form action="{{ route('personnels.generate-account', $personnel) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                </svg>
+                                Renvoyer l'email d'activation
+                            </button>
+                        </form>
                     @endif
                     <form action="{{ route('personnels.destroy', $personnel) }}" method="POST" onsubmit="return confirm('Supprimer ce personnel ?');" class="inline">
                         @csrf

@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Ngrok et les proxys HTTPS envoient X-Forwarded-Proto=https.
+        // Sans cette confiance, Laravel croit être en HTTP et génère des
+        // formulaires HTTP, ce qui déclenche l'alerte navigateur.
+        $middleware->trustProxies(at: '*');
+
         // Enregistrer les middlewares Spatie
         $middleware->alias([
             'role' => RoleMiddleware::class,

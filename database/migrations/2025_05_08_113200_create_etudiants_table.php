@@ -9,9 +9,9 @@ public function up(): void
 {
 Schema::create('etudiants', function (Blueprint $table) {
 $table->id();
-$table->string('nom');
-$table->string('prenom');
-$table->string('email')->unique();
+$table->string('nom')->nullable();
+$table->string('prenom')->nullable();
+$table->string('email')->nullable()->unique();
 $table->string('telephone')->nullable();
 $table->string('ecole')->nullable();
 $table->timestamps();

@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite' || Schema::hasColumn('daily_reports', 'user_id')) {
+            return;
+        }
+
         // Using raw SQL to drop the foreign key first
         Schema::table('daily_reports', function (Blueprint $table) {
             // Get the foreign key name and drop it
@@ -36,6 +40,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite' || !Schema::hasColumn('daily_reports', 'user_id')) {
+            return;
+        }
+
         Schema::table('daily_reports', function (Blueprint $table) {
             DB::statement('ALTER TABLE `daily_reports` DROP FOREIGN KEY `daily_reports_stage_id_foreign`');
             DB::statement('ALTER TABLE `daily_reports` DROP INDEX `daily_reports_stage_id_report_date_unique`');

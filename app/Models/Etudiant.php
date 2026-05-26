@@ -13,7 +13,7 @@ class Etudiant extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['ecole', 'niveau']; // plus de champs personnels
+    protected $fillable = ['personnel_id', 'ecole', 'niveau']; // plus de champs personnels
 
     // Relation polymorphique avec Personnel
     public function personnel()
@@ -63,5 +63,35 @@ class Etudiant extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function getNomAttribute(): ?string
+    {
+        return $this->personnel?->nom;
+    }
+
+    public function getPrenomAttribute(): ?string
+    {
+        return $this->personnel?->prenom;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->personnel?->email;
+    }
+
+    public function getTelephoneAttribute(): ?string
+    {
+        return $this->personnel?->telephone;
+    }
+
+    public function getGenreAttribute(): ?string
+    {
+        return $this->personnel?->genre;
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
     }
 }

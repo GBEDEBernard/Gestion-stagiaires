@@ -26,16 +26,15 @@ class AccountProvisionedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        // Ne pas passer l'email dans l'URL pour éviter les incohérences
-        // Laravel récupère automatiquement l'email depuis la session ou l'utilisateur
         $url = url(route('password.reset', [
             'token' => $this->token,
+            'email' => $this->email ?? $notifiable->getEmailForPasswordReset(),
         ], false));
 
         return (new MailMessage)
             ->subject('Activation de votre compte - Gestion Stagiaires')
             ->greeting('Bonjour ' . $notifiable->name . ' !')
-            ->line('Un compte a été créé pour vous sur la plateforme.')
+            ->line('Un compte est disponible pour vous sur la plateforme.')
             ->line('Votre email de connexion est : ' . $notifiable->email)
             ->line('Pour définir votre mot de passe, cliquez sur le bouton ci-dessous :')
             ->action('Configurer mon mot de passe', $url)

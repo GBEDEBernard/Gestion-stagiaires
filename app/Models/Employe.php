@@ -11,12 +11,11 @@ class Employe extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'personnel_id',
         'domaine_id',
         'site_id',
         'poste',
         'matricule',
-        // NE PAS mettre personnel_id ici : la relation passe par le polymorphisme
-        // sur la table personnels (personnable_type / personnable_id)
     ];
 
     /**

@@ -99,6 +99,10 @@ return new class extends Migration
         }
 
         // 3. Supprimer les contraintes de clé étrangère avant de supprimer les colonnes
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             // Supprimer la contrainte sur domaine_id
             $table->dropForeign(['domaine_id']);

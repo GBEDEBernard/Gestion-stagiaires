@@ -12,9 +12,13 @@ use Illuminate\Validation\ValidationException;
 
 class DailyReportService
 {
+    public function __construct(
+        private UserProfileLinkService $profileLinkService
+    ) {}
+
     public function resolveActiveStageForUser(User $user): ?Stage
     {
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user);
 
         if (!$etudiant) return null;
 
@@ -33,7 +37,7 @@ class DailyReportService
                 ? 'submitted'
                 : 'draft';
 
-            $etudiant = $user->etudiant;
+            $etudiant = $this->profileLinkService->ensureStudentProfile($user);
             $stage = $this->resolveActiveStageForUser($user);
 
             if (!$stage && !$user->hasRole('employe')) {

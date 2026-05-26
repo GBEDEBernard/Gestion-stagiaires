@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Etudiant;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceDay extends Model
 {
@@ -114,6 +115,10 @@ class AttendanceDay extends Model
      */
     public function scopeWeekdays($query)
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return $query->whereRaw("CAST(strftime('%w', attendance_date) AS INTEGER) BETWEEN 1 AND 5");
+        }
+
         return $query->whereRaw('WEEKDAY(attendance_date) BETWEEN 0 AND 4');
     }
 

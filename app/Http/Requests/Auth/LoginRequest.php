@@ -31,17 +31,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // 1. Trouver le personnel via son email
-        $personnel = Personnel::where('email', $this->email)->first();
+        $email = Str::lower((string) $this->input('email'));
 
-        if (!$personnel || !$personnel->user) {
+        // 1. Trouver le compte via Personnel (source principale) ou via users.email
+        // pour rester compatible avec les comptes existants.
+        $personnel = Personnel::where('email', $email)->first();
+        $user = $personnel?->user ?: User::where('email', $email)->first();
+
+        if (!$user) {
             RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
-
-        $user = $personnel->user;
 
         // 2. Vérifier le mot de passe
         if (!Hash::check($this->password, $user->password)) {
@@ -52,7 +54,7 @@ class LoginRequest extends FormRequest
         }
 
         // 3. Vérifier le statut
-        if ($user->status !== 'actif') {
+        if ($user->status && $user->status !== 'actif') {
             RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
                 'email' => 'Votre compte est désactivé.',

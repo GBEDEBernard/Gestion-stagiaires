@@ -158,9 +158,20 @@ class EmployeController extends Controller
             return back()->with('error', 'Aucun personnel associé à cet employé.');
         }
         if ($personnel->user) {
-            return back()->with('error', 'Un compte existe déjà.');
+            $service->resendProvisioningEmail($personnel);
+
+            if (!$service->lastProvisioningEmailSent()) {
+                return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+            }
+
+            return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
         }
         $service->generateForPersonnel($personnel, 'employe', $request->input('custom_password'));
+
+        if (!$service->lastProvisioningEmailSent()) {
+            return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+        }
+
         return back()->with('success', "Compte généré pour {$personnel->full_name}. Un email a été envoyé.");
     }
 

@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class AccountGenerationService
 {
+    private bool $lastProvisioningEmailSent = false;
+
     public function generateForPersonnel(Personnel $personnel, string $roleName, ?string $customPassword = null): User
     {
         if ($personnel->user) {
@@ -28,9 +32,9 @@ class AccountGenerationService
             $domaineId = $personnel->employe->domaine_id;
         }
 
-        $tempPassword = $customPassword ?? Str::random(10);
+        $tempPassword = $this->normalizePassword($customPassword) ?? Str::random(10);
 
-        $user = User::create([
+        $userData = [
             'personnel_id'                  => $personnel->id,
             'email'                         => $personnel->email,
             'domaine_id'                    => $domaineId,
@@ -38,13 +42,17 @@ class AccountGenerationService
             'must_change_password'          => true,
             'temporary_password_created_at' => now(),
             'status'                        => 'actif',
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'name')) {
+            $userData['name'] = $personnel->full_name;
+        }
+
+        $user = User::create($userData);
 
         $user->assignRole($roleName);
 
-        // Générer le token de réinitialisation et notifier l'utilisateur
-        $token = Password::broker()->createToken($user);
-        $user->notify(new AccountProvisionedNotification($token, $personnel->email));
+        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel);
 
         // Journalisation
         try {
@@ -60,5 +68,81 @@ class AccountGenerationService
         }
 
         return $user;
+    }
+
+    public function lastProvisioningEmailSent(): bool
+    {
+        return $this->lastProvisioningEmailSent;
+    }
+
+    public function resendProvisioningEmail(Personnel $personnel): User
+    {
+        $user = $personnel->user;
+
+        if (!$user) {
+            throw new \Exception('Aucun compte utilisateur n\'est lié à ce personnel.');
+        }
+
+        $this->syncAccountIdentity($user, $personnel);
+        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel);
+
+        try {
+            Log::info('account.provisioning_email_resent', [
+                'personnel_id' => $personnel->id,
+                'user_id'      => $user->id,
+                'resent_by'    => auth()->id(),
+                'timestamp'    => now()->toDateTimeString(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to log account provisioning email resend: ' . $e->getMessage());
+        }
+
+        return $user->fresh();
+    }
+
+    private function sendProvisioningEmail(User $user, Personnel $personnel): bool
+    {
+        try {
+            $token = Password::broker()->createToken($user);
+
+            $user->notify(new AccountProvisionedNotification($token, $personnel->email));
+
+            return true;
+        } catch (Throwable $e) {
+            Log::error('account.provisioning_email_failed', [
+                'personnel_id' => $personnel->id,
+                'user_id' => $user->id,
+                'email' => $personnel->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function syncAccountIdentity(User $user, Personnel $personnel): void
+    {
+        $userData = [
+            'personnel_id' => $personnel->id,
+            'email'        => $personnel->email,
+            'status'       => 'actif',
+        ];
+
+        if ($personnel->isEmploye() && $personnel->employe) {
+            $userData['domaine_id'] = $personnel->employe->domaine_id;
+        }
+
+        if (Schema::hasColumn('users', 'name')) {
+            $userData['name'] = $personnel->full_name;
+        }
+
+        $user->forceFill($userData)->save();
+    }
+
+    private function normalizePassword(?string $password): ?string
+    {
+        $password = is_string($password) ? trim($password) : $password;
+
+        return $password === '' ? null : $password;
     }
 }

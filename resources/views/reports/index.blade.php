@@ -12,10 +12,9 @@
             </div>
 
             <!-- Quick Add Button -->
-            @if(!$isEmployee && !isset($editReport))
+            @if(!isset($editReport))
             <button
                 @click="open = true"
-                x-cloak
                 class="relative inline-flex items-center gap-3 px-5 py-3 text-sm font-medium bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200 shadow-sm hover:shadow-md">
                 <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -26,7 +25,7 @@
         </div>
 
         <!-- FORM CREATE / EDIT -->
-        <div x-show="open || (isset($editReport) || (old('summary') && !session('success')))" x-cloak>
+        <div x-show="open || @js(isset($editReport) || (old('summary') && !session('success')))" x-cloak>
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
                 @click.away="open = false">
                 <div class="relative w-full max-w-md">

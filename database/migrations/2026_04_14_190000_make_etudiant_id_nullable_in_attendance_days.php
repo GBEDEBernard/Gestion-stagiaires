@@ -6,12 +6,17 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('attendance_days', function (Blueprint $table) {
             // 1. Supprimer contraintes bloquantes
             $table->dropForeign(['etudiant_id']);
@@ -35,6 +40,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('attendance_days', function (Blueprint $table) {
             // Restaurer contrainte originale
             $table->dropForeign(['etudiant_id']);

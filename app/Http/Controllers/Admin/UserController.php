@@ -19,6 +19,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
 
 use Illuminate\Support\Str;
 
@@ -157,8 +158,7 @@ class UserController extends Controller
             ]);
 
 
-            $user = User::create([
-                'name'                          => trim($validated['prenom'] . ' ' . $validated['nom']),
+            $userData = [
                 'email'                         => $validated['email'],
                 'password'                      => Hash::make($validated['password']),
                 'status'                        => 'actif',
@@ -166,14 +166,21 @@ class UserController extends Controller
                 'temporary_password_created_at' => now(),
                 'personnel_id'                  => $personnel->id,
                 'domaine_id'                    => $validated['domaine_id'] ?? null,
-            ]);
+            ];
+
+            if (Schema::hasColumn('users', 'name')) {
+                $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);
+            }
+
+            $user = User::create($userData);
 
             $user->syncRoles($selectedRoles);
 
             // Création fiche étudiant
             if (in_array('etudiant', $selectedRoles)) {
                 $etudiant = Etudiant::create([
-                    'ecole' => $validated['etudiant_ecole'] ?? null,
+                    'personnel_id' => $personnel->id,
+                    'ecole'        => $validated['etudiant_ecole'] ?? null,
                 ]);
                 $personnel->update([
                     'personnable_type' => Etudiant::class,
@@ -291,7 +298,12 @@ public function update(Request $request, User $user)
         'user_type' => 'nullable|string|exists:roles,name', // Ajouté
         'nom' => 'required|string|max:255',
         'prenom' => 'required|string|max:255',
-        'email' => ['required', 'email', Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0)],
+        'email' => [
+            'required',
+            'email',
+            Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0),
+            Rule::unique('users', 'email')->ignore($user->id),
+        ],
         'telephone' => 'nullable|string|max:20',
         'genre' => 'nullable|string|max:50',
         'etudiant_ecole' => 'nullable|string|max:255',
@@ -314,16 +326,25 @@ public function update(Request $request, User $user)
             ]);
             
             if ($emailChanged) {
-                $user->update(['email_verified_at' => null]);
+                $user->update([
+                    'email' => $validated['email'],
+                    'email_verified_at' => null,
+                ]);
             }
         }
 
         // 2. Mise à jour du nom affiché
-        $user->update([
-            'name' => trim($validated['prenom'] . ' ' . $validated['nom']),
+        $userData = [
+            'email' => $validated['email'],
             'status' => $validated['status'],
             'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
-        ]);
+        ];
+
+        if (Schema::hasColumn('users', 'name')) {
+            $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);
+        }
+
+        $user->update($userData);
 
         // 3. Gestion du mot de passe
         if ($request->filled('password')) {

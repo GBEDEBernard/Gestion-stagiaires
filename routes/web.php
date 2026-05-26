@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
+        Route::match(['put', 'patch'], '/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
@@ -395,7 +395,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     });
 
     // ---------------- Demandes de permission (Etudiant) ----------------
-    Route::prefix('permissions')->middleware('role:etudiant')->group(function () {
+    Route::prefix('permissions')->middleware('role:etudiant|employe')->group(function () {
         Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
         Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
         Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');

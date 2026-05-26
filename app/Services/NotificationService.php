@@ -48,17 +48,24 @@ class NotificationService
         // 2STAGES TERMINANT CETTE SEMAINE
         $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
-            ->with('etudiant')
+            ->whereHas('etudiant')
+            ->with('etudiant.personnel')
             ->get();
 
         foreach ($stagesFinSemaine as $stage) {
+            $etudiantName = $this->stageEtudiantName($stage);
+
+            if (!$etudiantName) {
+                continue;
+            }
+
             $joursRestants = now()->diffInDays($stage->date_fin, false);
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
                 $currentUserId,
                 'stage_fin_semaine',
                 'Stage bientôt terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
+                $etudiantName . ' - Fin dans ' . $joursRestants . ' jour(s)',
                 'clock',
                 'amber',
                 encrypted_route('stages.show', $stage),
@@ -70,16 +77,23 @@ class NotificationService
         // 3STAGES TERMINÉS (7 derniers jours)
         $stagesTermines = \App\Models\Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
-            ->with('etudiant')
+            ->whereHas('etudiant')
+            ->with('etudiant.personnel')
             ->get();
 
         foreach ($stagesTermines as $stage) {
+            $etudiantName = $this->stageEtudiantName($stage);
+
+            if (!$etudiantName) {
+                continue;
+            }
+
             $this->createNotificationIfNotExists(
                 'stage_termine_' . $stage->id,
                 $currentUserId,
                 'stage_termine',
                 'Stage terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
+                $etudiantName . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
                 'check-circle',
                 'green',
                 encrypted_route('stages.show', $stage),
@@ -186,6 +200,19 @@ class NotificationService
     private function buildScopedUniqueId(string $uniqueId, int|string|null $userId): string
     {
         return "{$uniqueId}_user_{$userId}";
+    }
+
+    private function stageEtudiantName(Stage $stage): ?string
+    {
+        $etudiant = $stage->etudiant;
+
+        if (!$etudiant) {
+            return null;
+        }
+
+        $name = trim(($etudiant->prenom ?? '') . ' ' . ($etudiant->nom ?? ''));
+
+        return $name !== '' ? $name : 'Etudiant #' . $etudiant->id;
     }
 
     /**

@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if (config('app.env') === 'production') {
+        if (config('app.env') === 'production' || $this->requestIsForwardedHttps()) {
             URL::forceScheme('https');
         }
 
@@ -141,6 +141,16 @@ class AppServiceProvider extends ServiceProvider
         // Encrypted strings are typically long, contain '=' at the end (base64 padding)
         // and are not purely numeric
         return strlen($value) > 20 && !is_numeric($value);
+    }
+
+    private function requestIsForwardedHttps(): bool
+    {
+        if ($this->app->runningInConsole()) {
+            return false;
+        }
+
+        return request()->isSecure()
+            || request()->headers->get('x-forwarded-proto') === 'https';
     }
     
 }

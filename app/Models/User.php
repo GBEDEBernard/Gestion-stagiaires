@@ -18,6 +18,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use MustVerifyEmailTrait, HasFactory, Notifiable, HasRoles, SoftDeletes, CanResetPassword;
 
     protected $fillable = [
+        'name',
         'personnel_id',
         'email',
         'password',
@@ -219,12 +220,15 @@ class User extends Authenticatable implements MustVerifyEmail
             return 'dashboard';
         }
 
-        if (
-            $this->hasRole('etudiant') ||
-            $this->hasRole('employe') ||
-            $this->hasRole('fonctionnaire') ||
-            $this->hasRole('superviseur')
-        ) {
+        if ($this->hasRole('superviseur')) {
+            return 'dashboard';
+        }
+
+        if ($this->hasRole('etudiant')) {
+            return 'student.stage';
+        }
+
+        if ($this->hasRole('employe') || $this->hasRole('fonctionnaire')) {
             return 'presence.pointage';
         }
 

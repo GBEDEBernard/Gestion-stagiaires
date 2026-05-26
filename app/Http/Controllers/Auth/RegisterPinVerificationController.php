@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Etudiant;
+use App\Models\Personnel;
 use App\Models\User;
 use App\Services\RolePermissionPresetService;
 use Illuminate\Http\RedirectResponse;
@@ -82,6 +84,10 @@ class RegisterPinVerificationController extends Controller
             $this->rolePermissionPresetService->ensureRoleDefaults($user, ['etudiant']);
         }
 
+        if ($user->hasRole('etudiant')) {
+            $this->ensureStudentProfile($user);
+        }
+
         return redirect()->route('login')
             ->with('status', 'Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.');
     }
@@ -128,5 +134,42 @@ class RegisterPinVerificationController extends Controller
         $user->notify(new \App\Notifications\SendEmailVerificationPin($pin));
 
         return back()->with('status', 'Un nouveau code PIN a été envoyé à votre adresse email.');
+    }
+    private function ensureStudentProfile(User $user): void
+    {
+        if ($user->etudiant) {
+            return;
+        }
+
+        $personnel = $user->personnel;
+
+        if (!$personnel) {
+            $localPart = str($user->getRawOriginal('email'))->before('@')->replace(['.', '_', '-'], ' ')->title();
+            $parts = explode(' ', (string) $localPart, 2);
+
+            $personnel = Personnel::create([
+                'prenom' => $parts[0] ?? '',
+                'nom' => $parts[1] ?? $parts[0] ?? '',
+                'email' => $user->getRawOriginal('email'),
+            ]);
+
+            $user->update(['personnel_id' => $personnel->id]);
+        }
+
+        if ($personnel->personnable_type === Etudiant::class && $personnel->personnable_id) {
+            Etudiant::where('id', $personnel->personnable_id)
+                ->update(['personnel_id' => $personnel->id]);
+
+            return;
+        }
+
+        $etudiant = Etudiant::create([
+            'personnel_id' => $personnel->id,
+        ]);
+
+        $personnel->update([
+            'personnable_type' => Etudiant::class,
+            'personnable_id' => $etudiant->id,
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Personnel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,16 +26,30 @@ class ProfileController extends Controller
         $personnel = $user->personnel;
 
         // Mise à jour des informations du personnel
-        if ($personnel) {
-            $personnel->nom = $request->input('nom');
-            $personnel->prenom = $request->input('prenom');
-            $personnel->email = $request->input('email');
-            $personnel->telephone = $request->input('phone');
-            $personnel->save();
+        if (!$personnel) {
+            $personnel = new Personnel();
+        }
 
-            if ($personnel->wasChanged('email')) {
-                $user->email_verified_at = null;
-            }
+        $personnel->fill([
+            'nom' => $request->input('nom'),
+            'prenom' => $request->input('prenom'),
+            'email' => $request->input('email'),
+            'telephone' => $request->input('phone'),
+        ]);
+        $personnel->save();
+
+        if (!$user->personnel_id) {
+            $user->personnel_id = $personnel->id;
+        }
+
+        $emailChanged = $personnel->wasChanged('email');
+
+        if ($user->getRawOriginal('email') !== $personnel->email) {
+            $user->email = $personnel->email;
+        }
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
         }
 
         // Gestion de l'avatar (la colonne existe maintenant dans users)

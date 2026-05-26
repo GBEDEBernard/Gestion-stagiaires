@@ -80,36 +80,57 @@ class AdminPresenceService
         $start = Carbon::create($year, $month, 1);
         $end   = $start->copy()->endOfMonth();
 
-        $stats = DB::table('attendance_days')
-            ->selectRaw('
-                COALESCE(etudiants.user_id, attendance_days.validated_by) as user_id,
-                users.name as user_name,
-                etudiants.nom as etudiant_nom,
-                SUM(worked_minutes) as total_minutes,
-                AVG(worked_minutes) as avg_daily_minutes,
-                COUNT(*) as days_present,
-                SUM(late_minutes) as total_late_minutes,
-                SUM(early_departure_minutes) as total_early_minutes,
-                COUNT(a.id) as total_anomalies
-            ')
-            ->leftJoin('stages', 'attendance_days.stage_id', '=', 'stages.id')
-            ->leftJoin('etudiants', 'stages.etudiant_id', '=', 'etudiants.id')
-            ->leftJoin('users', 'etudiants.user_id', '=', 'users.id')
-            ->leftJoin('attendance_anomalies as a', function ($join) {
-                $join->on('a.attendance_day_id', '=', 'attendance_days.id')
-                    ->where('a.status', '!=', 'resolved');
-            })
-            ->whereBetween('attendance_date', [$start, $end])
-            ->whereRaw('WEEKDAY(attendance_date) BETWEEN 0 AND 4');
+        $query = AttendanceDay::with([
+            'etudiant.personnel',
+            'etudiant.user',
+            'stage.etudiant.personnel',
+            'stage.etudiant.user',
+            'user.personnel',
+            'anomalies',
+        ])->whereBetween('attendance_date', [$start, $end]);
+
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $query->whereRaw("CAST(strftime('%w', attendance_date) AS INTEGER) BETWEEN 1 AND 5");
+        } else {
+            $query->whereRaw('WEEKDAY(attendance_date) BETWEEN 0 AND 4');
+        }
 
         if ($userId) {
-            $stats->where(function ($q) use ($userId) {
-                $q->where('etudiants.user_id', $userId)
-                    ->orWhere('attendance_days.validated_by', $userId);
+            $query->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere('validated_by', $userId)
+                    ->orWhereHas('etudiant.user', fn($userQuery) => $userQuery->where('users.id', $userId))
+                    ->orWhereHas('stage.etudiant.user', fn($userQuery) => $userQuery->where('users.id', $userId));
             });
         }
 
-        return $stats->groupBy('user_id', 'user_name', 'etudiant_nom')->get()->toArray();
+        return $query->get()
+            ->groupBy(function (AttendanceDay $day) {
+                $etudiant = $day->etudiant ?: $day->stage?->etudiant;
+                $user = $day->user ?: $etudiant?->user;
+
+                return $user?->id ?: 'etudiant-' . ($etudiant?->id ?? $day->id);
+            })
+            ->map(function (Collection $days) {
+                $first = $days->first();
+                $etudiant = $first->etudiant ?: $first->stage?->etudiant;
+                $user = $first->user ?: $etudiant?->user;
+                $displayName = $etudiant?->full_name ?: $user?->name ?: 'Utilisateur';
+
+                return (object) [
+                    'user_id' => $user?->id,
+                    'user_name' => $displayName,
+                    'etudiant_nom' => $etudiant?->nom,
+                    'total_minutes' => $days->sum(fn(AttendanceDay $day) => (int) ($day->worked_minutes ?? 0)),
+                    'avg_daily_minutes' => $days->avg(fn(AttendanceDay $day) => (int) ($day->worked_minutes ?? 0)),
+                    'days_present' => $days->count(),
+                    'total_late_minutes' => $days->sum(fn(AttendanceDay $day) => (int) ($day->late_minutes ?? 0)),
+                    'total_early_minutes' => $days->sum(fn(AttendanceDay $day) => (int) ($day->early_departure_minutes ?? 0)),
+                    'total_anomalies' => $days->sum(fn(AttendanceDay $day) => $day->anomalies->where('status', '!=', 'resolved')->count()),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     // ══════════════════════════════════════════════════════════════════════════

@@ -1,11 +1,19 @@
 <x-app-layout>
+    @php
+        $personnel = $user->personnel;
+        $displayName = trim(($personnel?->nom ?? '') . ' ' . ($personnel?->prenom ?? ''));
+        $displayName = $displayName !== '' ? $displayName : ($user->getRawOriginal('email') ?? $user->email ?? 'Utilisateur');
+        $displayEmail = $personnel?->email ?? $user->getRawOriginal('email') ?? $user->email ?? 'Email manquant';
+        $initials = strtoupper(substr($personnel?->prenom ?? $displayName, 0, 1) . substr($personnel?->nom ?? '', 0, 1));
+    @endphp
+
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-white leading-tight">
                 {{ __('Mon Profil') }}
             </h2>
             <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                {{ Auth::user()->personnel->nom }} {{ Auth::user()->personnel->prenom }}
+                {{ $displayName }}
             </span>
         </div>
     </x-slot>
@@ -21,10 +29,10 @@
                         @if(Auth::user()->avatar)
                             <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
                         @else
-                            <div class="w-24 h-24 rounded-full bg-blue-300 flex items-center justify-center border-4 border-white shadow-lg">
-                                {{-- Utiliser les initiales depuis le personnel --}}
+                                    <div class="w-24 h-24 rounded-full bg-blue-300 flex items-center justify-center border-4 border-white shadow-lg">
+                                <!-- Utiliser les initiales depuis le personnel -->
                                 <span class="text-4xl font-bold text-blue-800">
-                                    {{ strtoupper(substr(Auth::user()->personnel->prenom ?? '', 0, 1)) }}{{ strtoupper(substr(Auth::user()->personnel->nom ?? '', 0, 1)) }}
+                                    {{ $initials }}
                                 </span>
                             </div>
                         @endif
@@ -33,8 +41,8 @@
                         </label>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold">{{ Auth::user()->personnel->nom }} {{ Auth::user()->personnel->prenom }}</h1>
-                        <p class="text-blue-100">{{ Auth::user()->personnel->email ?? 'Email manquant' }}</p>
+                        <h1 class="text-2xl font-bold">{{ $displayName }}</h1>
+                        <p class="text-blue-100">{{ $displayEmail }}</p>
                         <div class="flex items-center gap-2 mt-2">
                             @if(Auth::user()->email_verified_at)
                             
@@ -75,28 +83,28 @@
                                     <!-- Nom (personnels) -->
                                     <div>
                                         <x-input-label for="nom" :value="__('Nom')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
-                                        <x-text-input id="nom" name="nom" type="text" :value="old('nom', $user->personnel->nom ?? '')" required autofocus class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+                                        <x-text-input id="nom" name="nom" type="text" :value="old('nom', $user->personnel?->nom ?? '')" required autofocus class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
                                         <x-input-error :messages="$errors->get('nom')" class="mt-1 text-sm" />
                                     </div>
 
                                     <!-- Prénom (personnels) -->
                                     <div>
                                         <x-input-label for="prenom" :value="__('Prénom')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
-                                        <x-text-input id="prenom" name="prenom" type="text" :value="old('prenom', $user->personnel->prenom ?? '')" required class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+                                        <x-text-input id="prenom" name="prenom" type="text" :value="old('prenom', $user->personnel?->prenom ?? '')" required class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
                                         <x-input-error :messages="$errors->get('prenom')" class="mt-1 text-sm" />
                                     </div>
 
                                     <!-- Email (personnels) -->
                                     <div>
                                         <x-input-label for="email" :value="__('Adresse email')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
-                                        <x-text-input id="email" name="email" type="email" :value="old('email', $user->personnel->email ?? '')" required autocomplete="username" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+                                        <x-text-input id="email" name="email" type="email" :value="old('email', $user->personnel?->email ?? $user->email)" required autocomplete="username" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
                                         <x-input-error :messages="$errors->get('email')" class="mt-1 text-sm" />
                                     </div>
 
                                     <!-- Téléphone (personnels) -->
                                     <div>
                                         <x-input-label for="phone" :value="__('Téléphone')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
-                                        <x-text-input id="phone" name="phone" type="tel" :value="old('phone', $user->personnel->telephone ?? '')" autocomplete="tel" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" placeholder="+33 6 00 00 00 00" />
+                                        <x-text-input id="phone" name="phone" type="tel" :value="old('phone', $user->personnel?->telephone ?? '')" autocomplete="tel" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" placeholder="+33 6 00 00 00 00" />
                                         <x-input-error :messages="$errors->get('phone')" class="mt-1 text-sm" />
                                     </div>
 

@@ -35,7 +35,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         <div class="flex-shrink-0 border-b border-slate-800/40">
             <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-5 py-5 group hover:bg-slate-800/20 transition">
                 <div class="relative">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG" class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
+                    <img src="{{ secure_asset('images/TFGLOGO.png') }}" alt="Logo TFG" class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
                     <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
                 </div>
                 <div class="flex flex-col leading-tight">
@@ -135,63 +135,63 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </button>
                     <div x-show="openPresence" x-collapse @click.outside="openPresence = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
-                            @can('presence.view')
-                            <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400"></div>
-                                <span>Pointages journalières</span>
-                            </a>
-                            <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-emerald-400"></div>
-                                <span>Historique général</span>
-                            </a>
-                            @endcan
-                            @can('daily_reports.view')
-                            <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:bg-rose-400"></div>
-                                <span>Anomalies de présence</span>
-                            </a>
-                            <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400"></div>
-                                <span>Suivi rapports</span>
-                            </a>
-                            @endcan
-                            @role('admin|superviseur')
-                            <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
-                                <span>Permissions</span>
-                               
-                            </a>
-                            @endrole
-                            
-                          @role('admin|superviseur')
-                            <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
-                                <span>Statistiques Globales</span>                                
-                            </a>
-                            @endrole
-                            
+                        @can('presence.view')
+                        <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400"></div>
+                            <span>Pointages journalières</span>
+                        </a>
+                        <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-emerald-400"></div>
+                            <span>Historique général</span>
+                        </a>
+                        @endcan
+                        @can('daily_reports.view')
+                        <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:bg-rose-400"></div>
+                            <span>Anomalies de présence</span>
+                        </a>
+                        <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400"></div>
+                            <span>Suivi rapports</span>
+                        </a>
+                        @endcan
+                        @role('admin|superviseur')
+                        <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                            <span>Permissions</span>
+
+                        </a>
+                        @endrole
+
+                        @role('admin|superviseur')
+                        <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                            <span>Statistiques Globales</span>
+                        </a>
+                        @endrole
+
                         @else
-                            {{-- Employé simple --}}
-                            <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                <span>Pointage</span>
-                            </a>
-                            <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                <span>Historique</span>
-                            </a>
-                            <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                                <span>Rapport journalier</span>
-                            </a>
-                            <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                                <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
-                                <span>Permissions</span>
-                                @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
-                                @if($pendingCount > 0)
-                                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
-                                @endif
-                            </a>
+                        {{-- Employé simple --}}
+                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span>Pointage</span>
+                        </a>
+                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                            <span>Historique</span>
+                        </a>
+                        <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                            <span>Rapport journalier</span>
+                        </a>
+                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
+                            <span>Permissions</span>
+                            @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
+                            @if($pendingCount > 0)
+                            <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
+                            @endif
+                        </a>
                         @endif
                     </div>
                 </div>
@@ -275,14 +275,14 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </svg>
                     </button>
                     <div x-show="openPersonnes" x-collapse @click.outside="openPersonnes = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
-                          @can('personnels.view')
+                        @can('personnels.view')
                         <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                             <span>Personnel (unifié)</span>
                         </a>
                         @endcan
-                    
-                    @can('etudiants.view')
+
+                        @can('etudiants.view')
                         <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Étudiants</span>
@@ -294,7 +294,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Employés</span>
                         </a>
                         @endrole
-                      
+
                         @can('badges.view')
                         <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
@@ -432,13 +432,16 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-track {
         background: transparent;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb {
         background: rgba(148, 163, 184, 0.3);
         border-radius: 3px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(148, 163, 184, 0.5);
     }

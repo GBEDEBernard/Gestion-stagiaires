@@ -23,6 +23,7 @@ class ProfileUpdateRequest extends FormRequest
                 'email',
                 'max:255',
                 Rule::unique('personnels', 'email')->ignore($personnelId),
+                Rule::unique('users', 'email')->ignore($user->id),
             ],
             'phone' => ['nullable', 'string', 'max:20'],
             'bio' => ['nullable', 'string', 'max:1000'], // à stocker dans users si colonne existe, sinon ignorer
