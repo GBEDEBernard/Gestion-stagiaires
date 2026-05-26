@@ -153,7 +153,7 @@
                                 {{-- Avatars : bloc de largeur fixe pour que les avatars ne "bougent" pas --}}
                                 <div class="flex shrink-0 -space-x-2" style="min-width: {{ min($role->users->count(), 4) * 20 + 8 }}px">
                                     @foreach($role->users->take(4) as $u)
-                                    <div class="w-7 h-7 rounded-full border-2 border-white dark:border-gray-800 bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-semibold shrink-0"
+                                    <div class="w-7 h-7 rounded-full text-black border-2  dark:border-white bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center dark:text-white text-xs font-semibold shrink-0"
                                          title="{{ $u->name }}">
                                         {{ mb_strtoupper(mb_substr($u->name, 0, 1)) }}
                                     </div>
