@@ -27,12 +27,7 @@
                             class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
                         @error('name') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                        <input type="text" name="description" id="description" value="{{ old('description', $role->description) }}"
-                            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
-                        @error('description') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                    </div>
+                   
                 </div>
 
                 <div>
