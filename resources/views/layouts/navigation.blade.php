@@ -242,12 +242,12 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Jours</span>
                         </a>
                         @endcan
-                        @can('stages.view')
+                        <!-- @can('stages.view')
                         <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                             <span>Corbeille</span>
                         </a>
-                        @endcan
+                        @endcan -->
                     </div>
                 </div>
                 @endcanany
@@ -275,7 +275,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @can('personnels.view')
                         <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            <span>Personnel (unifié)</span>
+                            <span>Personnels</span>
                         </a>
                         @endcan
                         @can('etudiants.view')
@@ -332,12 +332,12 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Domaines</span>
                         </a>
                         @endcan
-                        @role('admin')
+                        <!-- @role('admin')
                         <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Tâches</span>
                         </a>
-                        @endrole
+                        @endrole -->
                     </div>
                 </div>
                 @endcanany
