@@ -2,7 +2,7 @@
     <div class="mb-8 ml-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Domaines</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nos différents services du monde industriel</h1>
                 <p class="text-gray-500 dark:text-gray-400 mt-1">
                     Gérez les directions et services par site.
                 </p>
@@ -24,10 +24,11 @@
             <table class="w-full">
                 <thead class="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
-                        <th>N°</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domaine</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">N°</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Services</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sites associés</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employés</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Étudiants</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -67,6 +68,11 @@
                       </span>
                         </td>
                         <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-xs font-medium">
+                             {{ $domaine->etudiants_count ?? $domaine->etudiants->count() }}      
+                      </span>
+                        </td>
+                        <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">
                                 @can('domaines.edit')
                                 <a href="{{ encrypted_route('domaines.edit', $domaine) }}"
@@ -93,7 +99,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">
+                        <td colspan="5" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">
                             <div class="flex flex-col items-center gap-2">
                                 <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>

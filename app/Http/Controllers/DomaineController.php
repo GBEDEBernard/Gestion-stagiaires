@@ -13,7 +13,7 @@ class DomaineController extends Controller
     // Liste des domaines
         public function index()
     {
-        $domaines = Domaine::with('sites')->orderBy('nom')->paginate(10);
+        $domaines = Domaine::with('sites')->withCount(['employes', 'etudiants'])->orderBy('nom')->paginate(10);
         return view('admin.domaines.index', compact('domaines'));
     }
 
