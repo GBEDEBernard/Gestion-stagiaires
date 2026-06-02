@@ -19,47 +19,47 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class StageController extends Controller
 {
-   public function index(Request $request)
-{
-    $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'service', 'site', 'supervisor', 'badge', 'jours']);
+    public function index(Request $request)
+    {
+        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'service', 'site', 'supervisor', 'badge', 'jours']);
 
-    // Filtre par statut
-    if ($request->filled('statut')) {
-        if ($request->statut === 'En cours') {
-            $query->whereDate('date_debut', '<=', now())
-                ->whereDate('date_fin', '>=', now());
-        } elseif (in_array($request->statut, ['Termine', 'Terminé'], true)) {
-            $query->whereDate('date_fin', '<', now());
-        } elseif (in_array($request->statut, ['A venir', 'À venir'], true)) {
-            $query->whereDate('date_debut', '>', now());
+        // Filtre par statut
+        if ($request->filled('statut')) {
+            if ($request->statut === 'En cours') {
+                $query->whereDate('date_debut', '<=', now())
+                    ->whereDate('date_fin', '>=', now());
+            } elseif (in_array($request->statut, ['Termine', 'Terminé'], true)) {
+                $query->whereDate('date_fin', '<', now());
+            } elseif (in_array($request->statut, ['A venir', 'À venir'], true)) {
+                $query->whereDate('date_debut', '>', now());
+            }
         }
-    }
 
-    // Filtre par type de stage
-    if ($request->filled('typestage')) {
-        $query->where('typestage_id', $request->typestage);
-    }
-    
-    // Filtre par nom étudiant
-    if ($request->filled('nom')) {
-        $query->whereHas('etudiant.personnel', function ($q) use ($request) {
-            $q->where('nom', 'like', '%' . $request->nom . '%')
-              ->orWhere('prenom', 'like', '%' . $request->nom . '%');
-        });
-    }
-    
-    // Filtre par école
-    if ($request->filled('ecole')) {
-        $query->whereHas('etudiant', function ($q) use ($request) {
-            $q->where('ecole', 'like', '%' . $request->ecole . '%');
-        });
-    }
+        // Filtre par type de stage
+        if ($request->filled('typestage')) {
+            $query->where('typestage_id', $request->typestage);
+        }
 
-    $stages = $query->paginate(5)->withQueryString();
-    $typestages = TypeStage::all();
+        // Filtre par nom étudiant
+        if ($request->filled('nom')) {
+            $query->whereHas('etudiant.personnel', function ($q) use ($request) {
+                $q->where('nom', 'like', '%' . $request->nom . '%')
+                    ->orWhere('prenom', 'like', '%' . $request->nom . '%');
+            });
+        }
 
-    return view('admin.stages.index', compact('stages', 'typestages'));
-}
+        // Filtre par école
+        if ($request->filled('ecole')) {
+            $query->whereHas('etudiant', function ($q) use ($request) {
+                $q->where('ecole', 'like', '%' . $request->ecole . '%');
+            });
+        }
+
+        $stages = $query->paginate(5)->withQueryString();
+        $typestages = TypeStage::all();
+
+        return view('admin.stages.index', compact('stages', 'typestages'));
+    }
 
     public function create()
     {
@@ -328,7 +328,7 @@ class StageController extends Controller
             'theme'        => 'nullable|string|max:255',
             'date_debut'   => 'required|date',
             'date_fin'     => 'required|date|after_or_equal:date_debut',
-            'jours_id'     => 'nullable|array',
+            'jours_id'     => 'required|array',
             'jours_id.*'   => 'exists:jours,id',
         ]);
 

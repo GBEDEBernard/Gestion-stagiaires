@@ -13,7 +13,7 @@
                         </svg>
                     </button>
                 </div>
-                <form action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-6">
+                <form id="stageFormModal" action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-6">
                     @csrf
                     <div class="space-y-4">
                         <div>
@@ -123,6 +123,10 @@
                                 </label>
                                 @endforeach
                             </div>
+                            @error('jours_id')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                            <p id="joursErrorModal" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                         </div>
                     </div>
 
@@ -159,7 +163,7 @@
         @endif
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <form action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-8">
+            <form id="stageForm" action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-8">
                 @csrf
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -287,6 +291,10 @@
                         </label>
                         @endforeach
                     </div>
+                    @error('jours_id')
+                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                    <p id="joursError" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                 </div>
 
                 <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
@@ -393,6 +401,67 @@
             const modal = document.getElementById('stageModal');
             if (modal && e.target === modal) {
                 closeModal();
+            }
+        });
+    </script>
+
+    <script>
+        function validateJours(form, errorElementId) {
+            const checkboxes = form.querySelectorAll('input[name="jours_id[]"]');
+            let found = false;
+            checkboxes.forEach(cb => {
+                if (cb.checked) found = true;
+            });
+            const errEl = document.getElementById(errorElementId);
+            if (!found) {
+                if (errEl) errEl.style.display = 'block';
+                return false;
+            }
+            if (errEl) errEl.style.display = 'none';
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainForm = document.getElementById('stageForm');
+            if (mainForm) {
+                mainForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursError')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
+
+            const modalForm = document.getElementById('stageFormModal');
+            if (modalForm) {
+                modalForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursErrorModal')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
+
+            const editForm = document.getElementById('stageFormEdit');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursErrorEdit')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
             }
         });
     </script>
