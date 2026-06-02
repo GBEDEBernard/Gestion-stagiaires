@@ -28,40 +28,28 @@
 
                 <div class="grid gap-6 md:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Prénom</label>
-                        <input type="text" name="prenom" value="{{ old('prenom', $personnel->prenom) }}"
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Prénom *</label>
+                        <input type="text" name="prenom" value="{{ old('prenom', $personnel->prenom) }}" required
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                        @error('prenom')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Nom</label>
-                        <input type="text" name="nom" value="{{ old('nom', $personnel->nom) }}"
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Nom *</label>
+                        <input type="text" name="nom" value="{{ old('nom', $personnel->nom) }}" required
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                        @error('nom')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
-                        <input type="email" name="email" value="{{ old('email', $personnel->email) }}"
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Email *</label>
+                        <input type="email" name="email" value="{{ old('email', $personnel->email) }}" required
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                        @error('email')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Téléphone</label>
                         <input type="text" name="telephone" value="{{ old('telephone', $personnel->telephone) }}"
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                        @error('telephone')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Genre</label>
@@ -73,27 +61,18 @@
                             <option value="Femme" {{ old('genre', $personnel->genre) == 'Femme' ? 'selected' : '' }}>Femme</option>
                             <option value="Autre" {{ old('genre', $personnel->genre) == 'Autre' ? 'selected' : '' }}>Autre</option>
                         </select>
-                        @error('genre')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Date de naissance</label>
                         <input type="date" name="date_naissance" value="{{ old('date_naissance', $personnel->date_naissance) }}"
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                        @error('date_naissance')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Adresse</label>
                         <textarea name="adresse" rows="3"
                             class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                          text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">{{ old('adresse', $personnel->adresse) }}</textarea>
-                        @error('adresse')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
                 </div>
 
@@ -107,25 +86,16 @@
                     </p>
                 </div>
 
-                {{-- SECTION ÉTUDIANT --}}
                 <div id="etudiant-fields" class="space-y-6 {{ $type !== 'etudiant' ? 'hidden' : '' }}">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Informations étudiant</h3>
-                    <div class="grid gap-6 md:grid-cols-2">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
-                            <input type="text" name="ecole" 
-                                   value="{{ old('ecole', optional($personnel->etudiant)->ecole) }}"
-                                   class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
-                                          text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" 
-                                   placeholder="Nom de l'école / université" />
-                            @error('ecole')
-                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
+                        <input type="text" name="ecole" value="{{ old('ecole', optional($personnel->personnable)->ecole) }}"
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                                      text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                 </div>
 
-                {{-- SECTION EMPLOYÉ --}}
                 <div id="employe-fields" class="space-y-6 {{ $type !== 'employe' ? 'hidden' : '' }}">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Informations employé</h3>
                     <div class="grid gap-6 md:grid-cols-2">
@@ -136,44 +106,32 @@
                                            text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                                 <option value="">Sélectionner</option>
                                 @foreach($domaines as $domaine)
-                                <option value="{{ $domaine->id }}" {{ old('domaine_id', optional($personnel->employe)->domaine_id) == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
+                                <option value="{{ $domaine->id }}" {{ old('domaine_id', optional($personnel->personnable)->domaine_id) == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
                                 @endforeach
                             </select>
-                            @error('domaine_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Site</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Site *</label>
                             <select name="site_id"
                                 class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                            text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                                 <option value="">Sélectionner</option>
                                 @foreach($sites as $site)
-                                <option value="{{ $site->id }}" {{ old('site_id', optional($personnel->employe)->site_id) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                                <option value="{{ $site->id }}" {{ old('site_id', optional($personnel->personnable)->site_id) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
                                 @endforeach
                             </select>
-                            @error('site_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Poste</label>
-                            <input type="text" name="poste" value="{{ old('poste', optional($personnel->employe)->poste) }}"
+                            <input type="text" name="poste" value="{{ old('poste', optional($personnel->personnable)->poste) }}"
                                 class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                           text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                            @error('poste')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Matricule</label>
-                            <input type="text" name="matricule" value="{{ old('matricule', optional($personnel->employe)->matricule) }}"
+                            <input type="text" name="matricule" value="{{ old('matricule', optional($personnel->personnable)->matricule) }}"
                                 class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                           text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
-                            @error('matricule')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
                     </div>
                 </div>
