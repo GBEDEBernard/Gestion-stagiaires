@@ -69,19 +69,16 @@ class AttestationController extends Controller
         $attestation = Attestation::with(['stage.etudiant.personnel', 'signataires'])->findOrFail($attestationId);
         $signer = User::findOrFail($signerId);
         
-        // Vérifier le token
         $expectedToken = hash_hmac('sha256', $signer->id . $attestation->id, config('app.key'));
         if (!hash_equals($expectedToken, $token)) {
             abort(403, 'Lien de signature invalide ou expiré.');
         }
         
-        // Vérifier que le signataire est bien assigné à cette attestation
         $signataire = $attestation->signataires()->where('user_id', $signer->id)->first();
         if (!$signataire) {
             abort(403, 'Vous n\'êtes pas autorisé à signer cette attestation.');
         }
         
-        // Vérifier si déjà signé
         if ($signataire->pivot->signed_at) {
             return view('attestation.already-signed', compact('attestation', 'signer'));
         }
@@ -102,13 +99,11 @@ class AttestationController extends Controller
         $attestation = Attestation::findOrFail($attestationId);
         $signer = User::findOrFail($signerId);
         
-        // Vérifier le token
         $expectedToken = hash_hmac('sha256', $signer->id . $attestation->id, config('app.key'));
         if (!hash_equals($expectedToken, $token)) {
             return back()->with('error', 'Lien de signature invalide.');
         }
         
-        // Mettre à jour la signature
         $attestation->signataires()->updateExistingPivot($signer->id, [
             'signed_at' => now(),
             'signature_data' => $request->signature_data,
@@ -116,7 +111,6 @@ class AttestationController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
         
-        // Log de l'activité
         \App\Models\Activity::create([
             'user_id' => $signer->id,
             'action' => 'Signature attestation',
@@ -208,22 +202,18 @@ class AttestationController extends Controller
 
         // Envoyer les notifications aux signataires
         foreach ($notifiedUsers as $user) {
-            $emailUsers = $user->email;
-            $emailPersonnel = $user->personnel?->email;
             $emailToSend = $user->getEmailForVerification();
 
             if ($emailToSend) {
                 try {
-                    Mail::to($emailToSend)
-                        ->queue(new AttestationSignerNotificationMail($user, $stage, $attestation));
+                    // Envoi immédiat (sync)
+                    Mail::to($emailToSend)->send(new AttestationSignerNotificationMail($user, $stage, $attestation));
 
                     Log::info('Notification signature envoyée', [
                         'attestation' => $attestation->reference,
                         'stagiaire' => $stage->etudiant->personnel->nom,
                         'signataire_id' => $user->id,
                         'signataire_nom' => $user->personnel?->full_name ?? $user->name,
-                        'email_users' => $emailUsers,
-                        'email_personnel' => $emailPersonnel,
                         'email_to_send' => $emailToSend,
                     ]);
                 } catch (\Exception $e) {
@@ -232,20 +222,15 @@ class AttestationController extends Controller
                         'attestation' => $attestation->reference,
                         'signataire_id' => $user->id,
                         'email_to_send' => $emailToSend,
-                        'email_users' => $emailUsers,
-                        'email_personnel' => $emailPersonnel,
                     ]);
                 }
             } else {
                 Log::warning('Notification signature non envoyée (email vide)', [
                     'attestation' => $attestation->reference,
                     'signataire_id' => $user->id,
-                    'email_users' => $emailUsers,
-                    'email_personnel' => $emailPersonnel,
                 ]);
             }
         }
-
 
         return redirect(encrypted_route('stages.attestation.show', $stage))
             ->with('success', 'Signataires enregistrés et notifications envoyées.');
@@ -272,7 +257,7 @@ class AttestationController extends Controller
         $reference = $attestation->reference;
         $signataires = $attestation->signataires()->orderBy('pivot_ordre')->get();
 
-        // Assurer que chaque signataire a un attribut pivot par défaut
+ 
         foreach ($signataires as $signataire) {
             if (!$signataire->pivot) {
                 $signataire->setRelation('pivot', (object)[
@@ -282,10 +267,10 @@ class AttestationController extends Controller
             }
         }
 
-        // Génération HTML
+
         $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
 
-        // Création du PDF avec mPDF
+
         $mpdf = new Mpdf(['format' => 'A4']);
         $mpdf->WriteHTML($html);
 

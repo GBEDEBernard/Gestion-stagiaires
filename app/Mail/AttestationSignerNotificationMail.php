@@ -47,7 +47,7 @@ class AttestationSignerNotificationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.attestation-signer-notification',
+            view: 'emails.attestation_signer_notification',
         );
     }
 }
