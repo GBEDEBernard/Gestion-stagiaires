@@ -1,132 +1,332 @@
-{{-- resources/views/emails/attestation-signer-notification.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Signature d'attestation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature d'attestation - TFG SARL</title>
+
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+        body{
+            margin:0;
+            padding:0;
+            background:#f4f7fb;
+            font-family:Arial, Helvetica, sans-serif;
+            color:#1e293b;
         }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+        table{
+            border-spacing:0;
+            width:100%;
         }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            text-align: center;
+
+        td{
+            padding:0;
         }
-        .header img {
-            max-width: 80px;
-            margin-bottom: 15px;
+
+        img{
+            border:0;
+            display:block;
         }
-        .header h1 {
-            color: white;
-            margin: 0;
-            font-size: 24px;
+
+        .wrapper{
+            width:100%;
+            table-layout:fixed;
+            background:#f4f7fb;
+            padding:30px 10px;
         }
-        .content {
-            padding: 30px;
+
+        .main{
+            background:#ffffff;
+            margin:0 auto;
+            width:100%;
+            max-width:620px;
+            border-radius:20px;
+            overflow:hidden;
+            box-shadow:0 5px 25px rgba(0,0,0,0.06);
         }
-        .info-box {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 8px;
+
+        .header{
+            background:linear-gradient(135deg,#0f172a,#2563eb);
+            padding:35px 20px;
+            text-align:center;
         }
-        .info-box p {
-            margin: 5px 0;
+
+        .logo{
+            width:90px;
+            height:90px;
+            margin:0 auto 15px;
+            border-radius:50%;
+            background:#fff;
+            padding:10px;
         }
-        .info-box .label {
-            font-weight: bold;
-            color: #667eea;
+
+        .title{
+            color:#ffffff;
+            font-size:28px;
+            font-weight:bold;
+            margin-bottom:10px;
         }
-        .button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            margin: 20px 0;
+
+        .subtitle{
+            color:rgba(255,255,255,0.85);
+            font-size:15px;
         }
-        .button:hover {
-            opacity: 0.9;
+
+        .content{
+            padding:35px 28px;
         }
-        .footer {
-            background: #f8f9fa;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #999;
-            border-top: 1px solid #eee;
+
+        .hello{
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:18px;
+            color:#0f172a;
         }
-        .signature-preview {
-            background: #fff9e6;
-            border: 1px solid #ffe6b3;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            font-style: italic;
+
+        .text{
+            font-size:15px;
+            line-height:1.8;
+            color:#475569;
+            margin-bottom:25px;
         }
+
+        .card{
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:18px;
+            padding:22px;
+            margin-top:20px;
+        }
+
+        .card-title{
+            font-size:17px;
+            font-weight:bold;
+            margin-bottom:20px;
+            color:#0f172a;
+        }
+
+        .info{
+            margin-bottom:14px;
+        }
+
+        .label{
+            font-size:13px;
+            color:#64748b;
+            margin-bottom:5px;
+            font-weight:bold;
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+        }
+
+        .value{
+            font-size:15px;
+            color:#0f172a;
+            line-height:1.6;
+        }
+
+        .signature-box{
+            margin-top:30px;
+            background:#eff6ff;
+            border-left:4px solid #2563eb;
+            border-radius:12px;
+            padding:18px;
+        }
+
+        .signature-box p{
+            margin:0;
+            font-size:14px;
+            line-height:1.7;
+            color:#1e40af;
+        }
+
+        .footer{
+            background:#f8fafc;
+            padding:25px 20px;
+            text-align:center;
+            border-top:1px solid #e2e8f0;
+        }
+
+        .footer-company{
+            font-size:15px;
+            font-weight:bold;
+            color:#0f172a;
+            margin-bottom:10px;
+        }
+
+        .footer-text{
+            font-size:13px;
+            color:#64748b;
+            line-height:1.8;
+        }
+
+        .link-btn{
+            display:inline-block;
+            margin-top:18px;
+            background:#2563eb;
+            color:#ffffff !important;
+            text-decoration:none;
+            padding:14px 28px;
+            border-radius:10px;
+            font-size:15px;
+            font-weight:bold;
+        }
+
+        @media screen and (max-width:600px){
+
+            .content{
+                padding:25px 18px !important;
+            }
+
+            .title{
+                font-size:23px !important;
+            }
+
+            .hello{
+                font-size:20px !important;
+            }
+
+            .card{
+                padding:18px !important;
+            }
+
+            .link-btn{
+                display:block !important;
+                width:100% !important;
+                text-align:center !important;
+                box-sizing:border-box;
+            }
+        }
+
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="{{ asset('images/TFGLOGO.png') }}" alt="TFG SARL Logo" style="background: white; border-radius: 50%; padding: 10px;">
-            <h1>Demande de signature</h1>
-        </div>
 
-        <div class="content">
-            <h2>Bonjour {{ $signer->name }},</h2>
+    <div class="wrapper">
 
-            <p>Une demande de signature pour une attestation de stage vous a été soumise.</p>
+        <div class="main">
 
-            <div class="info-box">
-                <p><span class="label">📌 Stagiaire :</span> {{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</p>
-                <p><span class="label">🎓 École :</span> {{ $stage->etudiant->ecole ?? 'Non renseignée' }}</p>
-                <p><span class="label">📅 Période :</span> {{ $stage->date_debut->format('d/m/Y') }} → {{ $stage->date_fin->format('d/m/Y') }}</p>
-                <p><span class="label">🏢 Domaine :</span> {{ $stage->domaine->nom ?? 'Non défini' }}</p>
-                <p><span class="label">📝 Thème :</span> {{ $stage->theme ?? 'Non défini' }}</p>
+            <!-- HEADER -->
+            <div class="header">
+
+                <img
+                    src="{{ asset('images/logo-tfg.png') }}"
+                    alt="TFG SARL"
+                    class="logo"
+                >
+
+                <div class="title">
+                    Signature d'attestation
+                </div>
+
+                <div class="subtitle">
+                    Technology Forever SARL
+                </div>
+
             </div>
 
-            <div class="signature-preview">
-                <p><strong>📄 Aperçu de l'attestation :</strong></p>
-                <p style="font-size: 13px;">Je soussigné Appolinaire KONNON, Directeur Général de la société Technology Forever SARL (TFG SARL), atteste que <strong>{{ $stage->etudiant->personnel->prenom ?? '' }} {{ $stage->etudiant->personnel->nom ?? '' }}</strong> a effectué un stage d'une durée de <strong>{{ ceil($stage->date_debut->diffInDays($stage->date_fin) / 30) }} mois</strong> dans notre entreprise...</p>
+            <!-- CONTENT -->
+            <div class="content">
+
+                <div class="hello">
+                    Bonjour {{ $signer->name }},
+                </div>
+
+                <div class="text">
+                    Une attestation de stage nécessite votre signature.
+
+                    Veuillez consulter les informations ci-dessous avant de procéder à la signature officielle du document.
+                </div>
+
+                <!-- CARD -->
+                <div class="card">
+
+                    <div class="card-title">
+                        Informations du stagiaire
+                    </div>
+
+                    <div class="info">
+                        <div class="label">Stagiaire</div>
+                        <div class="value">
+                            {{ $stage->etudiant->personnel->nom ?? '' }}
+                            {{ $stage->etudiant->personnel->prenom ?? '' }}
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <div class="label">Établissement</div>
+                        <div class="value">
+                            {{ $stage->etudiant->ecole ?? 'Non renseigné' }}
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <div class="label">Période de stage</div>
+                        <div class="value">
+                            {{ $stage->date_debut->format('d/m/Y') }}
+                            au
+                            {{ $stage->date_fin->format('d/m/Y') }}
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <div class="label"> Domaine</div>
+                        <div class="value">
+                            {{ $stage->domaine->nom ?? 'Non défini' }}
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <div class="label">Thème</div>
+                        <div class="value">
+                            {{ $stage->theme ?? 'Non défini' }}
+                        </div>
+                    </div>
+
+                    @if($stage->typestage)
+
+                    <div class="info">
+                        <div class="label">Type de stage</div>
+                        <div class="value">
+                            {{ $stage->typestage->libelle ?? '' }}
+                        </div>
+                    </div>
+
+                    @endif
+
+                </div>
+
+              
+
             </div>
 
-            <div style="text-align: center;">
-                <a href="{{ $signatureUrl }}" class="button">✍️ Signer l'attestation</a>
+            <!-- FOOTER -->
+            <div class="footer">
+
+                <div class="footer-company">
+                    Technology Forever SARL (TFG SARL)
+                </div>
+
+                <div class="footer-text">
+                    M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
+                    <br>
+                    (+229) 01 65 10 39 59 / 01 69 58 06 03
+                    <br>
+                    contact@tfg.bj
+                    <br><br>
+
+                    Ce lien expire dans 72 heures pour des raisons de sécurité.
+                    <br>
+
+                    © {{ date('Y') }} TFG SARL - Tous droits réservés.
+                </div>
+
             </div>
 
-            <p style="font-size: 14px; color: #666;">
-                Ce lien vous permettra de consulter et de signer électroniquement l'attestation. 
-                Si vous avez des questions, veuillez contacter l'administrateur.
-            </p>
-
-            <p style="font-size: 13px; margin-top: 20px;">
-                Cordialement,<br>
-                <strong>TFG SARL - Direction Générale</strong>
-            </p>
         </div>
 
-        <div class="footer">
-            <p>© {{ date('Y') }} Technology Forever SARL (TFG SARL) - Tous droits réservés.</p>
-            <p>Si vous ne devriez pas recevoir cet email, veuillez l'ignorer.</p>
-        </div>
     </div>
+
 </body>
 </html>
