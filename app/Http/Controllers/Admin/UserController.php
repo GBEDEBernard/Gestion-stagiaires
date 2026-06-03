@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -29,9 +28,6 @@ class UserController extends Controller
 {
     public function __construct(protected RolePermissionPresetService $roleService) {}
 
-    /**
-     * Liste des utilisateurs avec filtres.
-     */
     public function index(Request $request)
     {
         $query = User::with('personnel', 'roles');
@@ -66,12 +62,8 @@ class UserController extends Controller
         return view('admin.users.index', compact('users', 'roles'));
     }
 
-    /**
-     * Formulaire de création.
-     */
     public function create(Request $request)
     {
-        // Si admin reste sur index, on pré-sélectionne le rôle admin
         $defaultRole = $request->query('default_role', 'admin');
 
         $selectedRoles = (array) $request->query('role', [$defaultRole]);
@@ -85,7 +77,6 @@ class UserController extends Controller
             }
         }
         $selectedPermissions = array_unique($selectedPermissions);
-
 
         $allPermissions = Permission::orderBy('name')->get();
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
@@ -114,9 +105,6 @@ class UserController extends Controller
         return view('admin.users.create', compact('formData'));
     }
 
-    /**
-     * Enregistrer un nouvel utilisateur.
-     */
     public function store(Request $request)
     {
         $rules = [
@@ -127,14 +115,11 @@ class UserController extends Controller
             'user_type' => 'required|string|exists:roles,name',
             'roles'     => 'array',
             'roles.*'   => 'exists:roles,name',
-
             'etudiant_genre'     => 'nullable|string|max:50',
             'etudiant_telephone' => 'nullable|string|max:20',
             'etudiant_ecole'     => 'nullable|string|max:255',
-
             'domaine_id' => 'nullable|exists:domaines,id',
         ];
-
 
         $selectedRoles = $request->input('roles', [$request->input('user_type')]);
 
@@ -157,7 +142,6 @@ class UserController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-
             $userData = [
                 'email'                         => $validated['email'],
                 'password'                      => Hash::make($validated['password']),
@@ -173,10 +157,8 @@ class UserController extends Controller
             }
 
             $user = User::create($userData);
-
             $user->syncRoles($selectedRoles);
 
-            // Création fiche étudiant
             if (in_array('etudiant', $selectedRoles)) {
                 $etudiant = Etudiant::create([
                     'personnel_id' => $personnel->id,
@@ -188,7 +170,6 @@ class UserController extends Controller
                 ]);
             }
 
-            // Création fiche employé
             if (in_array('employe', $selectedRoles)) {
                 $matricule = $validated['matricule'] ?? 'EMP-' . strtoupper(Str::random(8));
                 $employe = Employe::create([
@@ -201,11 +182,9 @@ class UserController extends Controller
                 $personnel->update([
                     'personnable_type' => Employe::class,
                     'personnable_id'   => $employe->id,
-
                 ]);
             }
 
-            // Envoi notification
             $token = Password::broker()->createToken($user);
             $user->notify(new AccountProvisionedNotification($token));
 
@@ -224,9 +203,6 @@ class UserController extends Controller
             ]);
     }
 
-    /**
-     * Formulaire d'édition - AMÉLIORÉ.
-     */
     public function edit(User $user)
     {
         $user->load('personnel', 'roles', 'permissions');
@@ -243,7 +219,6 @@ class UserController extends Controller
         $domaines = Domaine::select('id', 'nom')->get();
         $sites = Site::select('id', 'name')->get();
 
-        // Récupération des infos spécifiques selon le type
         $etudiantEcole = '';
         $employeSiteId = null;
         $employePoste = '';
@@ -283,12 +258,6 @@ class UserController extends Controller
         return view('admin.users.edit', compact('formData'));
     }
 
-    /**
-     * Mettre à jour un utilisateur - AMÉLIORÉ.
-     */
-    /**
-     * Mettre à jour un utilisateur - CORRIGÉ
-     */
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
@@ -296,14 +265,13 @@ class UserController extends Controller
             'password' => 'nullable|min:8|confirmed',
             'roles' => 'array',
             'roles.*' => 'exists:roles,name',
-            'user_type' => 'nullable|string|exists:roles,name', // Ajouté
+            'user_type' => 'nullable|string|exists:roles,name',
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
             'email' => [
                 'required',
                 'email',
                 Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0),
-                Rule::unique('users', 'email')->ignore($user->id),
             ],
             'telephone' => 'nullable|string|max:20',
             'genre' => 'nullable|string|max:50',
@@ -315,7 +283,6 @@ class UserController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $user, $request) {
-            // 1. Mise à jour du personnel
             if ($user->personnel) {
                 $emailChanged = $user->personnel->email !== $validated['email'];
 
@@ -335,7 +302,6 @@ class UserController extends Controller
                 }
             }
 
-            // 2. Mise à jour du nom affiché
             $userData = [
                 'email' => $validated['email'],
                 'status' => $validated['status'],
@@ -349,7 +315,6 @@ class UserController extends Controller
 
             $user->update($userData);
 
-            // 3. Gestion du mot de passe
             if ($request->filled('password')) {
                 $user->update([
                     'password' => Hash::make($validated['password']),
@@ -359,28 +324,22 @@ class UserController extends Controller
                 ]);
             }
 
-            // 4. Mise à jour des rôles - CORRECTION ICI
             $allRoles = [];
 
-            // Ajouter le rôle principal (user_type)
             if ($request->filled('user_type')) {
                 $allRoles[] = $request->user_type;
             }
 
-            // Ajouter les rôles additionnels
             if (isset($validated['roles']) && is_array($validated['roles'])) {
                 $allRoles = array_merge($allRoles, $validated['roles']);
             }
 
-            // Supprimer les doublons
             $allRoles = array_unique($allRoles);
 
-            // Synchroniser les rôles
             if (!empty($allRoles)) {
                 $user->syncRoles($allRoles);
             }
 
-            // 5. Mise à jour de la fiche métier
             $profil = $user->profil();
 
             if ($profil instanceof Etudiant) {
@@ -404,9 +363,6 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', $message);
     }
 
-    /**
-     * Supprimer un utilisateur.
-     */
     public function destroy(User $user)
     {
         if ($user->id === auth()->id()) {
@@ -417,9 +373,6 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Utilisateur supprimé.');
     }
 
-    /**
-     * Activer / désactiver un utilisateur.
-     */
     public function toggleStatus(User $user)
     {
         if ($user->id === auth()->id()) {
