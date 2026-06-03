@@ -30,6 +30,11 @@ use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\AdminPermissionRequestController;
 use App\Http\Controllers\EmployeController;
 use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\EtudiantsPresenceController;
+use App\Http\Controllers\SiteGeofenceController;
+use App\Http\Controllers\TacheController;
+use App\Http\Controllers\TacheController as ControllersTacheController;
+use App\Http\Controllers\AttestationSignatureController ;
 
 
 
@@ -409,4 +414,23 @@ Route::prefix('permissions')->middleware('permission:permissions.view')->group(f
         Route::get('{permission}', [AdminPermissionRequestController::class, 'show'])->name('admin.permissions.show');
         Route::post('{permission}/decide', [AdminPermissionRequestController::class, 'decide'])->name('admin.permissions.decide');
     });
+
+  // ---------------- Attestation Routes ----------------
+// Routes pour la gestion des attestations (dans le groupe auth déjà existant)
+
+// Signature d'attestation (accès public avec token)
+Route::prefix('attestation')->group(function () {
+    Route::get('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'showSignature'])
+        ->name('attestation.sign');
+    Route::post('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'processSignature'])
+        ->name('attestation.sign.submit');
 });
+
+// Les routes suivantes doivent être DANS le groupe auth, avant la fermeture
+// stades.attestation.show utilise déjà la méthode showStageAttestation
+// Il faut changer le nom de la route
+Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])
+    ->name('stages.attestation.show')->middleware('permission:attestation.view');
+
+
+    });

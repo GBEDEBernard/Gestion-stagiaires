@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Mail\AttestationSignerNotificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Mpdf\Mpdf;
 
@@ -17,7 +18,7 @@ class AttestationController extends Controller
     /**
      * Affiche l'attestation avec référence incrémentale annuelle
      */
-    public function show(Stage $stage)
+    public function showStageAttestation(Stage $stage)
     {
         $stage->load([
             'etudiant.personnel',
@@ -38,7 +39,7 @@ class AttestationController extends Controller
             $reference = $attestation->reference;
         }
 
-       $eligibleUsers = User::role('admin')
+        $eligibleUsers = User::role('admin')
             ->where('is_signer', true)
             ->permission('signer_attestation')
             ->with(['personnel.personnable'])
@@ -58,6 +59,71 @@ class AttestationController extends Controller
             ->get();
 
         return view('admin.stages.attestation', compact('stage', 'eligibleUsers', 'reference', 'attestation', 'selectedSignataireIds', 'signataires'));
+    }
+
+    /**
+     * Affiche la page de signature pour un signataire
+     */
+    public function showSignature($attestationId, $signerId, $token)
+    {
+        $attestation = Attestation::with(['stage.etudiant.personnel', 'signataires'])->findOrFail($attestationId);
+        $signer = User::findOrFail($signerId);
+        
+        // Vérifier le token
+        $expectedToken = hash_hmac('sha256', $signer->id . $attestation->id, config('app.key'));
+        if (!hash_equals($expectedToken, $token)) {
+            abort(403, 'Lien de signature invalide ou expiré.');
+        }
+        
+        // Vérifier que le signataire est bien assigné à cette attestation
+        $signataire = $attestation->signataires()->where('user_id', $signer->id)->first();
+        if (!$signataire) {
+            abort(403, 'Vous n\'êtes pas autorisé à signer cette attestation.');
+        }
+        
+        // Vérifier si déjà signé
+        if ($signataire->pivot->signed_at) {
+            return view('attestation.already-signed', compact('attestation', 'signer'));
+        }
+        
+        return view('attestation.sign', compact('attestation', 'signer', 'token'));
+    }
+    
+    /**
+     * Traite la signature d'une attestation
+     */
+    public function processSignature(Request $request, $attestationId, $signerId, $token)
+    {
+        $request->validate([
+            'signature_data' => 'required|string',
+            'confirm' => 'required|accepted',
+        ]);
+        
+        $attestation = Attestation::findOrFail($attestationId);
+        $signer = User::findOrFail($signerId);
+        
+        // Vérifier le token
+        $expectedToken = hash_hmac('sha256', $signer->id . $attestation->id, config('app.key'));
+        if (!hash_equals($expectedToken, $token)) {
+            return back()->with('error', 'Lien de signature invalide.');
+        }
+        
+        // Mettre à jour la signature
+        $attestation->signataires()->updateExistingPivot($signer->id, [
+            'signed_at' => now(),
+            'signature_data' => $request->signature_data,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+        
+        // Log de l'activité
+        \App\Models\Activity::create([
+            'user_id' => $signer->id,
+            'action' => 'Signature attestation',
+            'description' => "Signature de l'attestation pour {$attestation->stage->etudiant->personnel->nom}",
+        ]);
+        
+        return redirect()->route('dashboard')->with('success', 'Attestation signée avec succès !');
     }
 
     /**
@@ -130,6 +196,9 @@ class AttestationController extends Controller
             $syncData[$signataire->id] = [
                 'par_ordre' => isset($data['par_ordre']) && $data['par_ordre'],
                 'ordre' => $signataire->peut_par_ordre && isset($data['ordre']) ? intval($data['ordre']) : null,
+                'signed_at' => null,
+                'signature_data' => null,
+                'notified_at' => now(),
             ];
 
             $notifiedUsers[$user->id] = $user;
@@ -137,15 +206,29 @@ class AttestationController extends Controller
 
         $attestation->signataires()->sync($syncData);
 
+        // Envoyer les notifications aux signataires
         foreach ($notifiedUsers as $user) {
             if ($user->getEmailForVerification()) {
-                Mail::to($user->getEmailForVerification())
-                    ->queue(new AttestationSignerNotificationMail($user, $stage, $attestation));
+                try {
+                    Mail::to($user->getEmailForVerification())
+                        ->queue(new AttestationSignerNotificationMail($user, $stage, $attestation));
+                    
+                    Log::info('Notification signature envoyée', [
+                        'signataire' => $user->email,
+                        'attestation' => $attestation->reference,
+                        'stagiaire' => $stage->etudiant->personnel->nom
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Erreur envoi notification signature', [
+                        'error' => $e->getMessage(),
+                        'signataire' => $user->email
+                    ]);
+                }
             }
         }
 
         return redirect(encrypted_route('stages.attestation.show', $stage))
-            ->with('success', 'Signataires enregistrés. Vous pouvez maintenant générer l’attestation.');
+            ->with('success', 'Signataires enregistrés et notifications envoyées.');
     }
 
     /**
@@ -179,7 +262,7 @@ class AttestationController extends Controller
             }
         }
 
-        // Génération HTML – la vue doit aussi être corrigée (cf. ci-dessous)
+        // Génération HTML
         $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
 
         // Création du PDF avec mPDF

@@ -274,4 +274,5 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return (bool) $this->must_change_password;
     }
+    
 }
