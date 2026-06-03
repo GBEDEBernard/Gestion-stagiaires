@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Stage;
 use App\Models\Signataire;
 use App\Models\Attestation;
+use App\Models\User;
+use App\Mail\AttestationSignerNotificationMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Mpdf\Mpdf;
 
@@ -16,15 +19,13 @@ class AttestationController extends Controller
      */
     public function show(Stage $stage)
     {
-        // Charger les relations nécessaires
         $stage->load([
-            'etudiant.personnel',   // important pour accéder aux nom/prénom/genre/email/tel/adresse
+            'etudiant.personnel',
             'service',
             'typestage',
-            'attestation.signataires'
+            'attestation.signataires.user.personnel',
         ]);
 
-        // Attestation existante ou création
         $attestation = $stage->attestation;
         if (!$attestation) {
             $reference = $this->generateReference();
@@ -37,12 +38,23 @@ class AttestationController extends Controller
             $reference = $attestation->reference;
         }
 
-        // Récupérer uniquement les signataires sélectionnés pour cette attestation
+        $eligibleUsers = User::role('admin')
+            ->where('is_signer', true)
+            ->permission('signer_attestation')
+            ->with(['personnel.personnable'])
+            ->orderBy('users.name')
+            ->get();
+
+        $selectedSignataireIds = $attestation->signataires()
+            ->pluck('user_id')
+            ->filter()
+            ->all();
+
         $signataires = $attestation->signataires()
             ->orderBy('pivot_ordre', 'asc')
             ->get();
 
-        return view('admin.stages.attestation', compact('stage', 'signataires', 'reference'));
+        return view('admin.stages.attestation', compact('stage', 'eligibleUsers', 'reference', 'attestation', 'selectedSignataireIds', 'signataires'));
     }
 
     /**
@@ -76,6 +88,7 @@ class AttestationController extends Controller
         $request->validate([
             'signataires.*.ordre' => 'nullable|integer|min:1|max:10',
             'signataires.*.selected' => 'nullable|boolean',
+            'signataires.*.par_ordre' => 'nullable|boolean',
         ]);
 
         $selected = $request->input('signataires', []);
@@ -87,17 +100,46 @@ class AttestationController extends Controller
         ]);
 
         $syncData = [];
-        foreach ($selected as $signataire_id => $data) {
-            $signataire = Signataire::find($signataire_id);
-            if (!$signataire) continue;
+        $notifiedUsers = [];
 
-            $syncData[$signataire_id] = [
-                'par_ordre' => $signataire->peut_par_ordre && isset($data['ordre']),
-                'ordre' => $data['ordre'] ?? null
+        foreach ($selected as $userId => $data) {
+            if (empty($data['selected'])) {
+                continue;
+            }
+
+            $user = User::find($userId);
+            if (!$user || !$user->isSigner() || !$user->hasRole('admin')) {
+                continue;
+            }
+
+            $signataire = Signataire::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nom' => $user->personnel?->full_name ?? $user->name,
+                    'email' => $user->getEmailForVerification(),
+                    'poste' => $user->personnel?->personnable?->poste ?? 'Signataire',
+                    'sigle' => $user->isDG() ? 'DG' : ($user->isDTA() ? 'DTA' : ($user->isDT() ? 'DT' : 'SIG')),
+                    'ordre' => false,
+                    'peut_par_ordre' => !$user->isDG(),
+                ]
+            );
+
+            $syncData[$signataire->id] = [
+                'par_ordre' => isset($data['par_ordre']) && $data['par_ordre'],
+                'ordre' => $signataire->peut_par_ordre && isset($data['ordre']) ? intval($data['ordre']) : null,
             ];
+
+            $notifiedUsers[$user->id] = $user;
         }
 
         $attestation->signataires()->sync($syncData);
+
+        foreach ($notifiedUsers as $user) {
+            if ($user->getEmailForVerification()) {
+                Mail::to($user->getEmailForVerification())
+                    ->queue(new AttestationSignerNotificationMail($user, $stage, $attestation));
+            }
+        }
 
         return redirect(encrypted_route('stages.attestation.show', $stage))
             ->with('success', 'Signataires enregistrés. Vous pouvez maintenant générer l’attestation.');

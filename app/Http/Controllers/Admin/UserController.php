@@ -39,8 +39,8 @@ class UserController extends Controller
         if ($search = $request->get('search')) {
             $query->whereHas('personnel', function ($q) use ($search) {
                 $q->where('nom', 'like', "%{$search}%")
-                  ->orWhere('prenom', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('prenom', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             })->orWhere('email', 'like', "%{$search}%");
         }
 
@@ -73,7 +73,7 @@ class UserController extends Controller
     {
         // Si admin reste sur index, on pré-sélectionne le rôle admin
         $defaultRole = $request->query('default_role', 'admin');
-        
+
         $selectedRoles = (array) $request->query('role', [$defaultRole]);
         $roles = $this->roleService->orderedRoles();
         $rolePermissionMap = $this->roleService->rolePermissionMap();
@@ -86,7 +86,7 @@ class UserController extends Controller
         }
         $selectedPermissions = array_unique($selectedPermissions);
 
- 
+
         $allPermissions = Permission::orderBy('name')->get();
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
 
@@ -127,17 +127,17 @@ class UserController extends Controller
             'user_type' => 'required|string|exists:roles,name',
             'roles'     => 'array',
             'roles.*'   => 'exists:roles,name',
-  
+
             'etudiant_genre'     => 'nullable|string|max:50',
             'etudiant_telephone' => 'nullable|string|max:20',
             'etudiant_ecole'     => 'nullable|string|max:255',
-   
+
             'domaine_id' => 'nullable|exists:domaines,id',
         ];
 
 
         $selectedRoles = $request->input('roles', [$request->input('user_type')]);
-        
+
         if (in_array('employe', $selectedRoles)) {
             $rules['site_id']   = 'required|exists:sites,id';
             $rules['domaine_id'] = 'required|exists:domaines,id';
@@ -201,8 +201,8 @@ class UserController extends Controller
                 $personnel->update([
                     'personnable_type' => Employe::class,
                     'personnable_id'   => $employe->id,
- 
-                    ]);
+
+                ]);
             }
 
             // Envoi notification
@@ -230,7 +230,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $user->load('personnel', 'roles', 'permissions');
-        
+
         $roles = $this->roleService->orderedRoles();
         $rolePermissionMap = $this->roleService->rolePermissionMap();
 
@@ -248,7 +248,7 @@ class UserController extends Controller
         $employeSiteId = null;
         $employePoste = '';
         $employeMatricule = '';
-        
+
         $profil = $user->profil();
         if ($profil instanceof Etudiant) {
             $etudiantEcole = $profil->ecole ?? '';
@@ -277,6 +277,7 @@ class UserController extends Controller
             'employePoste' => $employePoste,
             'employeMatricule' => $employeMatricule,
             'domaineIdValue' => $user->domaine_id ?? ($profil instanceof Employe ? $profil->domaine_id : null),
+            'isSignerValue' => (bool)$user->is_signer,
         ];
 
         return view('admin.users.edit', compact('formData'));
@@ -285,121 +286,123 @@ class UserController extends Controller
     /**
      * Mettre à jour un utilisateur - AMÉLIORÉ.
      */
-  /**
- * Mettre à jour un utilisateur - CORRIGÉ
- */
-public function update(Request $request, User $user)
-{
-    $validated = $request->validate([
-        'status' => ['required', Rule::in(['actif', 'inactif'])],
-        'password' => 'nullable|min:8|confirmed',
-        'roles' => 'array',
-        'roles.*' => 'exists:roles,name',
-        'user_type' => 'nullable|string|exists:roles,name', // Ajouté
-        'nom' => 'required|string|max:255',
-        'prenom' => 'required|string|max:255',
-        'email' => [
-            'required',
-            'email',
-            Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0),
-            Rule::unique('users', 'email')->ignore($user->id),
-        ],
-        'telephone' => 'nullable|string|max:20',
-        'genre' => 'nullable|string|max:50',
-        'etudiant_ecole' => 'nullable|string|max:255',
-        'domaine_id' => 'nullable|exists:domaines,id',
-        'employe_site_id' => 'nullable|exists:sites,id',
-        'employe_poste' => 'nullable|string|max:255',
-    ]);
+    /**
+     * Mettre à jour un utilisateur - CORRIGÉ
+     */
+    public function update(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['actif', 'inactif'])],
+            'password' => 'nullable|min:8|confirmed',
+            'roles' => 'array',
+            'roles.*' => 'exists:roles,name',
+            'user_type' => 'nullable|string|exists:roles,name', // Ajouté
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('personnels', 'email')->ignore($user->personnel_id ?? 0),
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'telephone' => 'nullable|string|max:20',
+            'genre' => 'nullable|string|max:50',
+            'etudiant_ecole' => 'nullable|string|max:255',
+            'domaine_id' => 'nullable|exists:domaines,id',
+            'employe_site_id' => 'nullable|exists:sites,id',
+            'employe_poste' => 'nullable|string|max:255',
+            'is_signer' => 'nullable|boolean',
+        ]);
 
-    DB::transaction(function () use ($validated, $user, $request) {
-        // 1. Mise à jour du personnel
-        if ($user->personnel) {
-            $emailChanged = $user->personnel->email !== $validated['email'];
-            
-            $user->personnel->update([
-                'nom' => $validated['nom'],
-                'prenom' => $validated['prenom'],
-                'email' => $validated['email'],
-                'telephone' => $validated['telephone'] ?? null,
-                'genre' => $validated['genre'] ?? null,
-            ]);
-            
-            if ($emailChanged) {
-                $user->update([
+        DB::transaction(function () use ($validated, $user, $request) {
+            // 1. Mise à jour du personnel
+            if ($user->personnel) {
+                $emailChanged = $user->personnel->email !== $validated['email'];
+
+                $user->personnel->update([
+                    'nom' => $validated['nom'],
+                    'prenom' => $validated['prenom'],
                     'email' => $validated['email'],
-                    'email_verified_at' => null,
+                    'telephone' => $validated['telephone'] ?? null,
+                    'genre' => $validated['genre'] ?? null,
+                ]);
+
+                if ($emailChanged) {
+                    $user->update([
+                        'email' => $validated['email'],
+                        'email_verified_at' => null,
+                    ]);
+                }
+            }
+
+            // 2. Mise à jour du nom affiché
+            $userData = [
+                'email' => $validated['email'],
+                'status' => $validated['status'],
+                'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
+                'is_signer' => isset($validated['is_signer']) ? (bool)$validated['is_signer'] : $user->is_signer,
+            ];
+
+            if (Schema::hasColumn('users', 'name')) {
+                $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);
+            }
+
+            $user->update($userData);
+
+            // 3. Gestion du mot de passe
+            if ($request->filled('password')) {
+                $user->update([
+                    'password' => Hash::make($validated['password']),
+                    'must_change_password' => true,
+                    'temporary_password_created_at' => now(),
+                    'password_changed_at' => null,
                 ]);
             }
-        }
 
-        // 2. Mise à jour du nom affiché
-        $userData = [
-            'email' => $validated['email'],
-            'status' => $validated['status'],
-            'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
-        ];
+            // 4. Mise à jour des rôles - CORRECTION ICI
+            $allRoles = [];
 
-        if (Schema::hasColumn('users', 'name')) {
-            $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);
-        }
+            // Ajouter le rôle principal (user_type)
+            if ($request->filled('user_type')) {
+                $allRoles[] = $request->user_type;
+            }
 
-        $user->update($userData);
+            // Ajouter les rôles additionnels
+            if (isset($validated['roles']) && is_array($validated['roles'])) {
+                $allRoles = array_merge($allRoles, $validated['roles']);
+            }
 
-        // 3. Gestion du mot de passe
+            // Supprimer les doublons
+            $allRoles = array_unique($allRoles);
+
+            // Synchroniser les rôles
+            if (!empty($allRoles)) {
+                $user->syncRoles($allRoles);
+            }
+
+            // 5. Mise à jour de la fiche métier
+            $profil = $user->profil();
+
+            if ($profil instanceof Etudiant) {
+                $profil->update([
+                    'ecole' => $validated['etudiant_ecole'] ?? null,
+                ]);
+            } elseif ($profil instanceof Employe) {
+                $profil->update([
+                    'site_id' => $validated['employe_site_id'] ?? $profil->site_id,
+                    'poste' => $validated['employe_poste'] ?? $profil->poste,
+                    'domaine_id' => $validated['domaine_id'] ?? $profil->domaine_id,
+                ]);
+            }
+        });
+
+        $message = 'Compte utilisateur mis à jour.';
         if ($request->filled('password')) {
-            $user->update([
-                'password' => Hash::make($validated['password']),
-                'must_change_password' => true,
-                'temporary_password_created_at' => now(),
-                'password_changed_at' => null,
-            ]);
+            $message .= ' Un nouveau mot de passe temporaire a été défini.';
         }
 
-        // 4. Mise à jour des rôles - CORRECTION ICI
-        $allRoles = [];
-        
-        // Ajouter le rôle principal (user_type)
-        if ($request->filled('user_type')) {
-            $allRoles[] = $request->user_type;
-        }
-        
-        // Ajouter les rôles additionnels
-        if (isset($validated['roles']) && is_array($validated['roles'])) {
-            $allRoles = array_merge($allRoles, $validated['roles']);
-        }
-        
-        // Supprimer les doublons
-        $allRoles = array_unique($allRoles);
-        
-        // Synchroniser les rôles
-        if (!empty($allRoles)) {
-            $user->syncRoles($allRoles);
-        }
-
-        // 5. Mise à jour de la fiche métier
-        $profil = $user->profil();
-        
-        if ($profil instanceof Etudiant) {
-            $profil->update([
-                'ecole' => $validated['etudiant_ecole'] ?? null,
-            ]);
-        } elseif ($profil instanceof Employe) {
-            $profil->update([
-                'site_id' => $validated['employe_site_id'] ?? $profil->site_id,
-                'poste' => $validated['employe_poste'] ?? $profil->poste,
-                'domaine_id' => $validated['domaine_id'] ?? $profil->domaine_id,
-            ]);
-        }
-    });
-
-    $message = 'Compte utilisateur mis à jour.';
-    if ($request->filled('password')) {
-        $message .= ' Un nouveau mot de passe temporaire a été défini.';
+        return redirect()->route('admin.users.index')->with('success', $message);
     }
-
-    return redirect()->route('admin.users.index')->with('success', $message);
-}
 
     /**
      * Supprimer un utilisateur.
@@ -409,7 +412,7 @@ public function update(Request $request, User $user)
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
         }
-        
+
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Utilisateur supprimé.');
     }
@@ -422,14 +425,14 @@ public function update(Request $request, User $user)
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Vous ne pouvez pas modifier votre propre statut.');
         }
-        
+
         $newStatus = $user->status === 'actif' ? 'inactif' : 'actif';
         $user->update(['status' => $newStatus]);
-        
+
         $message = $newStatus === 'actif'
             ? "Le compte de {$user->name} a été réactivé."
             : "Le compte de {$user->name} a été désactivé.";
-            
+
         return back()->with('success', $message);
     }
 
@@ -442,6 +445,5 @@ public function update(Request $request, User $user)
             return redirect()->route('employes.show', $profil);
         }
         return redirect()->route('admin.users.index');
-  
-        }
+    }
 }

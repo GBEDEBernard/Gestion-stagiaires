@@ -233,8 +233,25 @@ class StageController extends Controller
             : 'A venir';
 
         $signataires = Signataire::orderBy('ordre')->get();
-        $etudiant    = $stage->etudiant;
+        $eligibleUsers = User::role('admin')
+            ->where('is_signer', true)
+            ->permission('signer_attestation')
+            ->with(['personnel.personnable'])
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->select('users.*')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->get();
 
+        $selectedSignataireIds = [];
+        if ($stage->attestation) {
+            $selectedSignataireIds = $stage->attestation->signataires()
+                ->pluck('user_id')
+                ->filter()
+                ->all();
+        }
+
+        $etudiant    = $stage->etudiant;
         $nombreStages = $etudiant->stages()->count();
 
         $stagesTermines = $etudiant->stages()
@@ -269,6 +286,8 @@ class StageController extends Controller
             'stage',
             'statutEnCours',
             'signataires',
+            'eligibleUsers',
+            'selectedSignataireIds',
             'nombreStages',
             'stagesTermines',
             'attestations',

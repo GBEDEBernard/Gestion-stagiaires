@@ -1,12 +1,12 @@
 @php
-    $isEdit = $isEdit ?? false;
-    $userType = $selectedRoles[0] ?? 'admin';
+$isEdit = $isEdit ?? false;
+$userType = $selectedRoles[0] ?? 'admin';
 @endphp
 
 <form action="{{ $formAction }}" method="POST" class="space-y-8">
     @csrf
     @if($isEdit)
-        @method('PUT')
+    @method('PUT')
     @endif
 
     {{-- Section Statut du compte (visible uniquement en édition) --}}
@@ -33,6 +33,15 @@
                 <input type="password" name="password" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl" placeholder="Laisser vide pour conserver l'actuel">
                 <p class="text-xs text-gray-400 mt-1">Remplissez pour définir un nouveau mot de passe temporaire</p>
             </div>
+            @if(in_array('admin', $selectedRoles))
+            <div class="md:col-span-2">
+                <label class="inline-flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                    <input type="checkbox" name="is_signer" value="1" {{ ($isSignerValue ?? false) ? 'checked' : '' }} class="rounded border-blue-300 text-blue-600">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">Peut signer les attestations</span>
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
+            </div>
+            @endif
         </div>
     </div>
     @endif
@@ -110,9 +119,9 @@
                 <select name="domaine_id" required class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl">
                     <option value="">Sélectionner</option>
                     @foreach($domaines as $domaine)
-                        <option value="{{ $domaine->id }}" {{ ($domaineIdValue ?? '') == $domaine->id ? 'selected' : '' }}>
-                            {{ $domaine->nom }}
-                        </option>
+                    <option value="{{ $domaine->id }}" {{ ($domaineIdValue ?? '') == $domaine->id ? 'selected' : '' }}>
+                        {{ $domaine->nom }}
+                    </option>
                     @endforeach
                 </select>
             </div>
@@ -121,9 +130,9 @@
                 <select name="employe_site_id" required class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl">
                     <option value="">Sélectionner</option>
                     @foreach($sites as $site)
-                        <option value="{{ $site->id }}" {{ ($employeSiteId ?? '') == $site->id ? 'selected' : '' }}>
-                            {{ $site->name }}
-                        </option>
+                    <option value="{{ $site->id }}" {{ ($employeSiteId ?? '') == $site->id ? 'selected' : '' }}>
+                        {{ $site->name }}
+                    </option>
                     @endforeach
                 </select>
             </div>
@@ -138,38 +147,38 @@
             </div>
         </div>
     </div>
-    
+
     @endif
-{{-- Section Rôles et permissions --}}
-<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-        <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-        </div>
-        Rôles et permissions
-    </h3>
-    
-    {{-- Sélection du rôle principal --}}
-    <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type d'utilisateur *</label>
-        <select name="user_type" id="user_type" class="w-full md:w-1/2 px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl" required>
-            <option value="">Sélectionner un type</option>
-            @foreach($roles as $role)
+    {{-- Section Rôles et permissions --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            Rôles et permissions
+        </h3>
+
+        {{-- Sélection du rôle principal --}}
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type d'utilisateur *</label>
+            <select name="user_type" id="user_type" class="w-full md:w-1/2 px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl" required>
+                <option value="">Sélectionner un type</option>
+                @foreach($roles as $role)
                 <option value="{{ $role->name }}" {{ in_array($role->name, $selectedRoles) ? 'selected' : '' }}>
                     {{ ucfirst($role->name) }}
                 </option>
-            @endforeach
-        </select>
-        <p class="text-xs text-gray-400 mt-1">Le rôle principal détermine le type de compte et les permissions par défaut</p>
-    </div>
+                @endforeach
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Le rôle principal détermine le type de compte et les permissions par défaut</p>
+        </div>
 
-    {{-- Rôles additionnels --}}
-    <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rôles additionnels</label>
-        <div class="flex flex-wrap gap-3">
-            @foreach($roles as $role)
+        {{-- Rôles additionnels --}}
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rôles additionnels</label>
+            <div class="flex flex-wrap gap-3">
+                @foreach($roles as $role)
                 @if(!in_array($role->name, ['super_admin']))
                 <label class="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-900 border rounded-xl cursor-pointer">
                     <input type="checkbox" name="roles[]" value="{{ $role->name }}"
@@ -178,38 +187,38 @@
                     <span class="text-sm">{{ ucfirst($role->name) }}</span>
                 </label>
                 @endif
-            @endforeach
-        </div>
-        <p class="text-xs text-gray-400 mt-1">Cochez pour attribuer plusieurs rôles à cet utilisateur</p>
-    </div>
-    
-    {{-- Permissions détaillées --}}
-    <div class="mt-4">
-        <div class="flex justify-between items-center mb-3">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions associées</label>
-            <div class="flex gap-2">
-                <button type="button" id="togglePermissions" class="text-xs text-blue-600 hover:text-blue-800">Tout afficher/masquer</button>
-                <button type="button" id="selectAllPermissions" class="text-xs text-green-600 hover:text-green-800">Tout sélectionner</button>
-                <button type="button" id="unselectAllPermissions" class="text-xs text-red-600 hover:text-red-800">Tout désélectionner</button>
+                @endforeach
             </div>
+            <p class="text-xs text-gray-400 mt-1">Cochez pour attribuer plusieurs rôles à cet utilisateur</p>
         </div>
-        <div id="permissionsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
-            @foreach($permissionGroups as $group => $perms)
+
+        {{-- Permissions détaillées --}}
+        <div class="mt-4">
+            <div class="flex justify-between items-center mb-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Permissions associées</label>
+                <div class="flex gap-2">
+                    <button type="button" id="togglePermissions" class="text-xs text-blue-600 hover:text-blue-800">Tout afficher/masquer</button>
+                    <button type="button" id="selectAllPermissions" class="text-xs text-green-600 hover:text-green-800">Tout sélectionner</button>
+                    <button type="button" id="unselectAllPermissions" class="text-xs text-red-600 hover:text-red-800">Tout désélectionner</button>
+                </div>
+            </div>
+            <div id="permissionsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-lg">
+                @foreach($permissionGroups as $group => $perms)
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                     <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2 capitalize">{{ $group }}</h4>
                     @foreach($perms as $perm)
-                        <label class="flex items-center gap-2 text-sm py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-1">
-                            <input type="checkbox" name="permissions[]" value="{{ $perm->name }}"
-                                {{ in_array($perm->name, $selectedPermissions) ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-blue-600 permission-checkbox">
-                            <span class="text-gray-600 dark:text-gray-400">{{ $perm->name }}</span>
-                        </label>
+                    <label class="flex items-center gap-2 text-sm py-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-1">
+                        <input type="checkbox" name="permissions[]" value="{{ $perm->name }}"
+                            {{ in_array($perm->name, $selectedPermissions) ? 'checked' : '' }}
+                            class="rounded border-gray-300 text-blue-600 permission-checkbox">
+                        <span class="text-gray-600 dark:text-gray-400">{{ $perm->name }}</span>
+                    </label>
                     @endforeach
                 </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
     </div>
-</div>
     {{-- Boutons --}}
     <div class="flex items-center justify-end gap-4 pt-4">
         <a href="{{ route('admin.users.index') }}" class="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 transition font-medium">
@@ -222,60 +231,59 @@
 </form>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gestion de l'affichage des permissions
+        const container = document.getElementById('permissionsContainer');
+        const toggleBtn = document.getElementById('togglePermissions');
+        const selectAllBtn = document.getElementById('selectAllPermissions');
+        const unselectAllBtn = document.getElementById('unselectAllPermissions');
+        let permissionsVisible = true;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Gestion de l'affichage des permissions
-    const container = document.getElementById('permissionsContainer');
-    const toggleBtn = document.getElementById('togglePermissions');
-    const selectAllBtn = document.getElementById('selectAllPermissions');
-    const unselectAllBtn = document.getElementById('unselectAllPermissions');
-    let permissionsVisible = true;
-    
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', function() {
-            permissionsVisible = !permissionsVisible;
-            container.style.display = permissionsVisible ? 'grid' : 'none';
-            toggleBtn.textContent = permissionsVisible ? 'Tout masquer' : 'Tout afficher';
-        });
-    }
-    
-    // Sélectionner toutes les permissions
-    if (selectAllBtn) {
-        selectAllBtn.addEventListener('click', function() {
-            document.querySelectorAll('.permission-checkbox').forEach(cb => {
-                cb.checked = true;
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                permissionsVisible = !permissionsVisible;
+                container.style.display = permissionsVisible ? 'grid' : 'none';
+                toggleBtn.textContent = permissionsVisible ? 'Tout masquer' : 'Tout afficher';
             });
-        });
-    }
-    
-    // Désélectionner toutes les permissions
-    if (unselectAllBtn) {
-        unselectAllBtn.addEventListener('click', function() {
-            document.querySelectorAll('.permission-checkbox').forEach(cb => {
-                cb.checked = false;
+        }
+
+        // Sélectionner toutes les permissions
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                document.querySelectorAll('.permission-checkbox').forEach(cb => {
+                    cb.checked = true;
+                });
             });
-        });
-    }
-    
-    // Chargement automatique des permissions selon le rôle sélectionné
-    const userTypeSelect = document.getElementById('user_type');
-    const rolePermissionMap = @json($rolePermissionMap);
-    
-    if (userTypeSelect) {
-        userTypeSelect.addEventListener('change', function() {
-            const selectedRole = this.value;
-            if (selectedRole && rolePermissionMap[selectedRole]) {
-                // Décocher toutes les permissions
+        }
+
+        // Désélectionner toutes les permissions
+        if (unselectAllBtn) {
+            unselectAllBtn.addEventListener('click', function() {
                 document.querySelectorAll('.permission-checkbox').forEach(cb => {
                     cb.checked = false;
                 });
-                // Cocher les permissions du rôle sélectionné
-                rolePermissionMap[selectedRole].forEach(permission => {
-                    const checkbox = document.querySelector(`.permission-checkbox[value="${permission}"]`);
-                    if (checkbox) checkbox.checked = true;
-                });
-            }
-        });
-    }
-});
+            });
+        }
+
+        // Chargement automatique des permissions selon le rôle sélectionné
+        const userTypeSelect = document.getElementById('user_type');
+        const rolePermissionMap = @json($rolePermissionMap);
+
+        if (userTypeSelect) {
+            userTypeSelect.addEventListener('change', function() {
+                const selectedRole = this.value;
+                if (selectedRole && rolePermissionMap[selectedRole]) {
+                    // Décocher toutes les permissions
+                    document.querySelectorAll('.permission-checkbox').forEach(cb => {
+                        cb.checked = false;
+                    });
+                    // Cocher les permissions du rôle sélectionné
+                    rolePermissionMap[selectedRole].forEach(permission => {
+                        const checkbox = document.querySelector(`.permission-checkbox[value="${permission}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            });
+        }
+    });
 </script>

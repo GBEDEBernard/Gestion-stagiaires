@@ -27,7 +27,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password_changed_at',
         'status',
         'email_verified_at',
-        'domaine_id',   // ← Ajouter cette ligne
+        'domaine_id',
+        'is_signer',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -38,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'must_change_password'          => 'boolean',
         'temporary_password_created_at' => 'datetime',
         'password_changed_at'           => 'datetime',
+        'is_signer'                     => 'boolean',
     ];
 
     // =========================================================================
@@ -140,6 +142,36 @@ class User extends Authenticatable implements MustVerifyEmail
     public function permissionRequests()
     {
         return $this->hasMany(\App\Models\PermissionRequest::class);
+    }
+
+    public function isSigner(): bool
+    {
+        return $this->is_signer || $this->hasPermissionTo('signer_attestation');
+    }
+
+    public function isDG(): bool
+    {
+        $poste = strtolower($this->personnel?->personnable?->poste ?? '');
+        return trim($poste) === 'directeur général';
+    }
+
+    public function isDT(): bool
+    {
+        $poste = strtolower($this->personnel?->personnable?->poste ?? '');
+        return stripos($poste, 'directeur technique') !== false && !$this->isDG();
+    }
+
+    public function isDTA(): bool
+    {
+        $poste = strtolower($this->personnel?->personnable?->poste ?? '');
+        return stripos($poste, 'directeur technique adjoint') !== false && !$this->isDG() && !$this->isDT();
+    }
+
+    public function signerRoleLabel(): string
+    {
+        return $this->personnel?->personnable?->poste
+            ?? $this->roles->pluck('name')->implode(', ')
+            ?? 'Signataire';
     }
 
     // =========================================================================

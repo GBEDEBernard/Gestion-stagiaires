@@ -41,8 +41,21 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $actions = [
-            'view', 'create', 'edit', 'delete', 'restore', 'force-delete',
-            'download', 'print', 'checkin', 'checkout', 'submit', 'review', 'approve', 'audit', 'cancel'
+            'view',
+            'create',
+            'edit',
+            'delete',
+            'restore',
+            'force-delete',
+            'download',
+            'print',
+            'checkin',
+            'checkout',
+            'submit',
+            'review',
+            'approve',
+            'audit',
+            'cancel'
         ];
 
         foreach ($entities as $entity) {
@@ -64,6 +77,9 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
+        // Permission spéciale pour les signataires d'attestation
+        Permission::firstOrCreate(['name' => 'signer_attestation']);
+
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $employeRole = Role::firstOrCreate(['name' => 'employe']);
         $supervisorRole = Role::firstOrCreate(['name' => 'superviseur']);
@@ -79,6 +95,7 @@ class RolePermissionSeeder extends Seeder
 
         // Permissions supplémentaires pour les employés et superviseurs
         $adminRole->givePermissionTo('employes.view');
+        $adminRole->givePermissionTo('signer_attestation');
         $supervisorRole->givePermissionTo('employes.view');
 
         // Permissions explicites pour les demandes de permission
@@ -94,6 +111,7 @@ class RolePermissionSeeder extends Seeder
                 $presetService->permissionsForRoles(['admin'])
             );
             $user->givePermissionTo('employes.view');
+            $user->givePermissionTo('signer_attestation');
         }
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

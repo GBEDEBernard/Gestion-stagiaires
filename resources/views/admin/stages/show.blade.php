@@ -67,36 +67,37 @@
 
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Sélectionnez les signataires pour cette attestation :</p>
 
-                @forelse($signataires as $signataire)
+                @forelse($eligibleUsers as $user)
                 <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                     <input type="checkbox"
-                        name="signataires[{{ $signataire->id }}][selected]"
+                        name="signataires[{{ $user->id }}][selected]"
                         value="1"
                         class="signataire-checkbox w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                        id="sign_{{ $signataire->id }}"
-                        data-ordre="ordre_{{ $signataire->id }}"
-                        data-parordre="parordre_{{ $signataire->id }}">
+                        id="sign_{{ $user->id }}"
+                        data-ordre="ordre_{{ $user->id }}"
+                        data-parordre="parordre_{{ $user->id }}"
+                        @if(in_array($user->id, $selectedSignataireIds ?? [])) checked @endif>
 
-                    <label for="sign_{{ $signataire->id }}" class="flex-1 cursor-pointer">
-                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $signataire->nom }}</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $signataire->poste }})</span>
+                    <label for="sign_{{ $user->id }}" class="flex-1 cursor-pointer">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $user->personnel->full_name ?? $user->name }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $user->signerRoleLabel() }})</span>
                     </label>
 
-                    @if(!$signataire->isDG() && $signataire->peut_par_ordre)
+                    @if(!$user->isDG())
                     <div class="flex items-center gap-2">
                         <input type="number"
-                            name="signataires[{{ $signataire->id }}][ordre]"
+                            name="signataires[{{ $user->id }}][ordre]"
                             min="1" max="2"
                             placeholder="Ordre"
                             class="w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
-                            id="ordre_{{ $signataire->id }}"
+                            id="ordre_{{ $user->id }}"
                             disabled>
 
-                        <label for="parordre_{{ $signataire->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                        <label for="parordre_{{ $user->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                             <input type="checkbox"
-                                name="signataires[{{ $signataire->id }}][par_ordre]"
+                                name="signataires[{{ $user->id }}][par_ordre]"
                                 value="1"
-                                id="parordre_{{ $signataire->id }}"
+                                id="parordre_{{ $user->id }}"
                                 class="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
                                 disabled>
                             <span>P.O</span>
