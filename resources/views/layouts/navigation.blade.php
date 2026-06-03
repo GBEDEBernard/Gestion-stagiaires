@@ -358,10 +358,10 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Domaines</span>
                         </a>
                         @endcan
-                        @role('admin')
-                        <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        @role('admin|superviseur')
+                        <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                            <span>Tâches</span>
+                            <span>Suivi des tâches</span>
                         </a>
                         @endrole
                     </div>

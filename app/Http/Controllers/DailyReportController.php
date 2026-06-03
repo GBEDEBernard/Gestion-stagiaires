@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DailyReport\StoreDailyReportRequest;
 use App\Models\AttendanceDay;
 use App\Models\DailyReport;
+use App\Models\Task;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
@@ -35,8 +36,14 @@ class DailyReportController extends Controller
             ? $this->dailyReportService->resolveActiveStageForUser($user)
             : null;
 
+        // Tâches actives du producteur, proposées dans le formulaire de rapport.
+        $activeTasks = Task::where('owner_id', $user->id)
+            ->where('status', '!=', 'completed')
+            ->latest()
+            ->get(['id', 'title', 'last_progress_percent']);
+
         $query = DailyReport::query()->visibleTo($user)
-            ->with(['items', 'reviews'])
+            ->with(['task', 'reviews'])
             ->orderByDesc('report_date');
 
         /* ======================
@@ -58,6 +65,7 @@ class DailyReportController extends Controller
                 'reports',
                 'period',
                 'activeStage',
+                'activeTasks',
                 'isEmployee',
                 'editReport'
             ));
@@ -81,6 +89,7 @@ class DailyReportController extends Controller
             'reports',
             'period',
             'activeStage',
+            'activeTasks',
             'isEmployee',
             'editReport',
             'todayReport'
@@ -103,10 +112,18 @@ class DailyReportController extends Controller
             abort(403);
         }
 
-        $report->load(['items', 'reviews']);
+        $report->load(['task', 'reviews']);
+
+        $activeTasks = Task::where('owner_id', $user->id)
+            ->where(function ($q) use ($report) {
+                $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id);
+            })
+            ->latest()
+            ->get(['id', 'title', 'last_progress_percent']);
 
         return view('reports.edit', [
-            'report' => $report,
+            'report'      => $report,
+            'activeTasks' => $activeTasks,
         ]);
     }
 
@@ -174,13 +191,35 @@ class DailyReportController extends Controller
             abort(403);
         }
 
-        $report->update($request->validate([
+        $data = $request->validate([
             'summary' => 'required|string',
             'blockers' => 'nullable|string',
             'next_steps' => 'nullable|string',
             'hours_declared' => 'nullable|numeric|min:0|max:24',
             'report_date' => 'nullable|date',
-        ]));
+            'task_id' => 'nullable|integer|exists:tasks,id',
+            'task_progress_percent' => 'nullable|integer|min:0|max:100',
+        ]);
+
+        $report->update($data);
+
+        // Si une tâche (du producteur) est rattachée, répercuter la progression.
+        if (!empty($data['task_id'])) {
+            $task = \App\Models\Task::find($data['task_id']);
+            if ($task && $task->owner_id === $user->id && $task->status !== 'completed') {
+                $report->forceFill([
+                    'task_id' => $task->id,
+                    'task_progress_percent' => $data['task_progress_percent'] ?? $task->last_progress_percent,
+                ])->save();
+
+                $this->dailyReportService->syncTaskProgress(
+                    $report->fresh(),
+                    $task,
+                    $user,
+                    $report->status === 'submitted'
+                );
+            }
+        }
 
         return back()->with('success', 'Rapport mis à jour.');
     }

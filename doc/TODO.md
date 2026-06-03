@@ -64,7 +64,7 @@
   commitée — effet voulu).
 
 ### T-003 — EPIC : Rapports journaliers liés aux tâches (progression + chat)
-- **Statut** : 🟡 Plan + **spec UI/UX figée** (`doc/UI-SPEC-T003.md`) — **en attente du GO final**.
+- **Statut** : ✅ **TOUTES LES PHASES IMPLÉMENTÉES (P1→P5)** — en attente de commit + test visuel.
 - **📄 Spec UI/UX détaillée (écran par écran)** : voir **`doc/UI-SPEC-T003.md`** — disposition,
   champs, boutons, composants, états, edge cases, statuts/couleurs, inspirations (Asana/Linear/
   Jira/Geekbot/Motion). À lire avant toute implémentation d'écran.
@@ -116,12 +116,32 @@
     - Nav : item « Mes tâches » (étudiant + employé). Anciennes vues `admin/tasks/*` supprimées.
     - Vérifié : migrations OK, `route:list`, `view:cache` (compile sans erreur), permissions
       par rôle, aucune référence orpheline.
-  - **P3** Rapport ↔ tâche + progression (form sélecteur tâche + curseur ; câblage service ;
-    auto-complétion 100 %).
-  - **P4** Chat par tâche (`task_messages` modèle/contrôleur/UI ; `respond()` ; notifications).
-  - **P5** Suivi admin (suivi mensuel + détail tâche : timeline rapports + courbe Chart.js + réponse).
-- **À réparer en chemin (Phase 0)** : route `admin.reports.respond` cassée ; clarifier les champs
-  legacy `reviewed_by`/`supervisor_comment` vs `reviews`.
+  - **P3** ✅ **FAIT** — Rapport ↔ tâche + progression :
+    - `StoreDailyReportRequest` : `task_id` + `task_progress_percent` (items.* retirés).
+    - `DailyReportService` : `storeForToday` applique la tâche ; `syncTaskProgress()` met à jour
+      `last_progress_percent`/statut, crée `task_update`, insère un jalon (`task_messages`),
+      auto-complète à 100 %, notifie superviseur+admins. `NotificationService::push()` ajouté.
+    - `DailyReportController` : passe `$activeTasks` (index + edit) ; `update()` gère la tâche.
+    - UI : sélecteur de tâche + curseur progression dans le modal de création **et** l'édition.
+    - Testé end-to-end (transaction rollback) : 40% → in_progress + update + jalon ; 100% →
+      completed + completed_at + status_change. ✔
+  - **P4** ✅ **FAIT** — Chat par tâche :
+    - `TaskMessageController@store` (POST `tasks/{task}/messages`) ; `TaskController@review`
+      (POST `tasks/{task}/review` : request_changes / approve) ; notifications ciblées.
+    - `tasks/show` : fil (bulles humaines alignées owner/relecteur + entrées système jalon/
+      status_change), composer de message, boutons de revue (superviseur/admin).
+    - `AdminReportTrackingController@respond` **implémenté** (route réparée) : poste dans le fil
+      de la tâche liée sinon crée une review ; notifie l'auteur.
+  - **P5** ✅ **FAIT** — Suivi admin :
+    - `AdminTaskTrackingController@index` (period jour/semaine/mois + filtres statut/recherche/
+      date, stats : total/en cours/terminées/en retard/avancement moyen).
+    - Route `admin/tasks-tracking` (role:admin|superviseur) ; vue `admin/tasks/tracking`
+      (tableau emerald : producteur, tâche, statut, progression, rapports, messages, échéance).
+    - Nav : entrée admin/superviseur repointée vers « Suivi des tâches ».
+    - Courbe de progression : **sparkline SVG server-side** sur `tasks/show` (Chart.js non
+      bundlé → pas de dépendance JS ajoutée).
+- **Phase 0 (réparée en chemin)** : route `admin.reports.respond` désormais fonctionnelle.
+  Champs legacy `reviewed_by`/`reviewed_at` du rapport réutilisés par `respond()`.
 
 ---
 

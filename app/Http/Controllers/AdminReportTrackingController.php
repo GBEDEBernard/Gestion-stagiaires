@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyReport;
+use App\Models\DailyReportReview;
+use App\Models\TaskMessage;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminReportTrackingController extends Controller
 {
@@ -88,5 +92,63 @@ class AdminReportTrackingController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Répondre à un rapport. Si le rapport est rattaché à une tâche, la réponse
+     * alimente le fil de discussion de la tâche (source unique) ; sinon on crée
+     * une review classique. Notifie l'auteur du rapport.
+     */
+    public function respond(Request $request, NotificationService $notifications)
+    {
+        $data = $request->validate([
+            'report_id' => 'required|integer|exists:daily_reports,id',
+            'comment'   => 'required|string|max:5000',
+        ]);
+
+        $user = $request->user();
+        $report = DailyReport::with(['task', 'etudiant.user'])->findOrFail($data['report_id']);
+
+        if ($report->task) {
+            TaskMessage::create([
+                'task_id'         => $report->task->id,
+                'user_id'         => $user->id,
+                'type'            => 'message',
+                'body'            => $data['comment'],
+                'daily_report_id' => $report->id,
+            ]);
+            $url = encrypted_route('tasks.show', $report->task);
+        } else {
+            DailyReportReview::create([
+                'daily_report_id' => $report->id,
+                'reviewer_id'     => $user->id,
+                'action'          => 'comment',
+                'comment'         => $data['comment'],
+                'reviewed_at'     => now(),
+            ]);
+            $url = route('admin.reports.index');
+        }
+
+        $report->forceFill([
+            'reviewed_by' => $user->id,
+            'reviewed_at' => now(),
+            'status'      => $report->status === 'draft' ? $report->status : 'reviewed',
+        ])->save();
+
+        // Notifier l'auteur (étudiant ou employé).
+        $authorUserId = $report->etudiant?->user?->id ?? $report->user_id;
+        if ($authorUserId && (int) $authorUserId !== (int) $user->id) {
+            $notifications->push(
+                (int) $authorUserId,
+                'report_response',
+                '💬 Réponse à votre rapport',
+                $user->name . ' : ' . Str::limit($data['comment'], 60),
+                $url,
+                'chat',
+                'indigo'
+            );
+        }
+
+        return back()->with('success', 'Réponse envoyée.');
     }
 }

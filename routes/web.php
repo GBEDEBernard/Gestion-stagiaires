@@ -21,9 +21,11 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskMessageController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\AdminTaskTrackingController;
 use App\Http\Controllers\SuperviseurDashboardController;
 use App\Http\Controllers\DomaineController;
 use App\Http\Controllers\PermissionRequestController;
@@ -198,6 +200,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');
         Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
         Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
+
+        // Fil de discussion (producteur + superviseur + admin) — T-003 Phase 4
+        Route::post('{task}/messages', [TaskMessageController::class, 'store'])->name('tasks.messages.store')->middleware('permission:tasks.view');
+        // Actions de revue (superviseur / admin)
+        Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
     });
 
     // ---------------- Signataires ----------------
@@ -348,6 +355,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
         Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
         Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
+    });
+
+    // ---------------- Suivi des Taches Admin/Superviseur ----------------
+    Route::prefix('admin/tasks-tracking')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [AdminTaskTrackingController::class, 'index'])->name('admin.tasks.tracking')->middleware('permission:tasks.view');
     });
 
     // ---------------- Suivi des Rapports Admin ----------------

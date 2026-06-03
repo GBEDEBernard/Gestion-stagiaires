@@ -52,6 +52,25 @@
                 @csrf
                 @method('PUT')
 
+                <!-- Tâche concernée + progression -->
+                @if(($activeTasks ?? collect())->isNotEmpty())
+                <div x-data="{ prog: {{ (int) old('task_progress_percent', $report->task_progress_percent ?? 0) }} }">
+                    <label class="block text-sm font-semibold text-slate-900 mb-3">Tâche concernée</label>
+                    <select name="task_id"
+                        @change="prog = parseInt($event.target.selectedOptions[0].dataset.progress || prog)"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200">
+                        <option value="">— Aucune tâche —</option>
+                        @foreach($activeTasks as $t)
+                        <option value="{{ $t->id }}" data-progress="{{ (int) $t->last_progress_percent }}" {{ old('task_id', $report->task_id) == $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="mt-3">
+                        <label class="block text-sm font-semibold text-slate-900 mb-2">Progression : <span class="font-bold" x-text="prog + '%'"></span></label>
+                        <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="w-full accent-slate-900">
+                    </div>
+                </div>
+                @endif
+
                 <!-- Summary -->
                 <div>
                     <label for="summary" class="block text-sm font-semibold text-slate-900 mb-3">Résumé</label>

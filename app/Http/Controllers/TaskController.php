@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Task;
+use App\Models\TaskMessage;
+use App\Services\NotificationService;
 use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TaskController extends Controller
 {
     public function __construct(
-        protected UserProfileLinkService $profileLink
+        protected UserProfileLinkService $profileLink,
+        protected NotificationService $notifications
     ) {}
 
     /**
@@ -166,6 +170,66 @@ class TaskController extends Controller
         ]);
 
         return redirect()->route('tasks.index')->with('success', 'Tâche supprimée.');
+    }
+
+    /**
+     * Action de revue (superviseur / admin) : demander des corrections ou valider.
+     */
+    public function review(Request $request, Task $task)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasAnyRole(['admin', 'superviseur']), 403);
+        abort_unless(
+            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
+            403
+        );
+
+        $data = $request->validate([
+            'action'  => 'required|in:request_changes,approve',
+            'comment' => 'nullable|string|max:5000',
+        ]);
+
+        if ($data['action'] === 'request_changes') {
+            if (!$task->isCompleted()) {
+                $task->update(['status' => 'changes_requested']);
+            }
+
+            TaskMessage::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'type'    => 'status_change',
+                'body'    => 'Corrections demandées par ' . $user->name
+                    . (!empty($data['comment']) ? ' : ' . $data['comment'] : ''),
+            ]);
+
+            $title = '✏️ Corrections demandées';
+            $message = $user->name . ' demande des corrections sur « ' . Str::limit($task->title, 40) . ' »';
+        } else {
+            TaskMessage::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'type'    => 'message',
+                'body'    => $data['comment'] ?: 'Travail validé. 👍',
+            ]);
+
+            $title = '✅ Travail validé';
+            $message = $user->name . ' a validé « ' . Str::limit($task->title, 40) . ' »';
+        }
+
+        if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+            $this->notifications->push(
+                (int) $task->owner_id,
+                'task_review',
+                $title,
+                $message,
+                encrypted_route('tasks.show', $task),
+                'clipboard-check',
+                $data['action'] === 'request_changes' ? 'amber' : 'green'
+            );
+        }
+
+        return back()->with('success', 'Action enregistrée.');
     }
 
     /* =========================================================================

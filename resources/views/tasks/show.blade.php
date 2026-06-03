@@ -3,6 +3,8 @@
     @php
         $user = auth()->user();
         $isOwner = $task->owner_id === $user->id;
+        $isReviewer = $user->hasAnyRole(['admin', 'superviseur']) && !$isOwner;
+        $canMessage = $isOwner || $isReviewer;
     @endphp
 
     <div class="max-w-6xl mx-auto px-6 py-10">
@@ -47,6 +49,23 @@
                                 </button>
                             </form>
                         </div>
+                        @elseif($isReviewer)
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <form method="POST" action="{{ encrypted_route('tasks.review', $task) }}">
+                                @csrf
+                                <input type="hidden" name="action" value="request_changes">
+                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300 rounded-lg hover:bg-amber-100 transition">
+                                    Demander des corrections
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ encrypted_route('tasks.review', $task) }}">
+                                @csrf
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 transition">
+                                    Valider
+                                </button>
+                            </form>
+                        </div>
                         @endif
                     </div>
 
@@ -87,25 +106,60 @@
                     @endforelse
                 </div>
 
-                <!-- Fil de discussion (scaffold — interactivité en Phase 4) -->
+                <!-- Fil de discussion -->
                 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Discussion</h2>
-                    @forelse($task->messages as $message)
-                    <div class="flex items-start gap-3 py-3">
-                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 flex-shrink-0">
-                            {{ strtoupper(substr($message->user->name ?? '?', 0, 1)) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $message->user->name ?? 'Système' }}</span>
-                                <span class="text-xs text-slate-400">{{ $message->created_at->diffForHumans() }}</span>
+
+                    <div class="space-y-4 mb-5">
+                        @forelse($task->messages as $message)
+                            @if($message->isSystem())
+                            {{-- Entrée système (jalon / changement de statut) --}}
+                            <div class="flex items-center gap-2 text-xs text-slate-400 justify-center">
+                                <span class="h-px flex-1 bg-slate-100 dark:bg-slate-700"></span>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 dark:bg-slate-700/40">
+                                    @if($message->type === 'report_jalon')
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-5-3-5 3V6a2 2 0 012-2z"/></svg>
+                                    @else
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    @endif
+                                    {{ $message->body }}
+                                </span>
+                                <span class="h-px flex-1 bg-slate-100 dark:bg-slate-700"></span>
                             </div>
-                            <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-line">{{ $message->body }}</p>
-                        </div>
+                            @else
+                            {{-- Message humain : aligné à droite si auteur = propriétaire --}}
+                            @php $mine = $message->user_id === $task->owner_id; @endphp
+                            <div class="flex items-start gap-3 {{ $mine ? 'flex-row-reverse' : '' }}">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 {{ $mine ? 'bg-slate-700' : 'bg-indigo-500' }}">
+                                    {{ strtoupper(substr($message->user->name ?? '?', 0, 1)) }}
+                                </div>
+                                <div class="max-w-[80%] {{ $mine ? 'text-right' : '' }}">
+                                    <div class="flex items-center gap-2 {{ $mine ? 'justify-end' : '' }}">
+                                        <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $message->user->name ?? 'Inconnu' }}</span>
+                                        <span class="text-xs text-slate-400">{{ $message->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <div class="mt-1 inline-block px-4 py-2 rounded-2xl text-sm whitespace-pre-line {{ $mine ? 'bg-slate-900 text-white rounded-tr-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-sm' }}">
+                                        {{ $message->body }}
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                        @empty
+                        <p class="text-sm text-slate-400 py-4 text-center">Aucun message pour l'instant. Démarre la discussion ci-dessous.</p>
+                        @endforelse
                     </div>
-                    @empty
-                    <p class="text-sm text-slate-400 py-4 text-center">Aucun message. <span class="text-slate-300">(chat à venir : Phase 4)</span></p>
-                    @endforelse
+
+                    {{-- Composer --}}
+                    @if($canMessage)
+                    <form method="POST" action="{{ encrypted_route('tasks.messages.store', $task) }}" class="flex items-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        @csrf
+                        <textarea name="body" rows="2" required placeholder="Écrire un message…"
+                            class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent resize-none"></textarea>
+                        <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition flex-shrink-0">
+                            Envoyer
+                        </button>
+                    </form>
+                    @endif
                 </div>
             </div>
 
@@ -115,6 +169,33 @@
                 <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 text-center">
                     <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Avancement</p>
                     <p class="text-4xl font-bold {{ $task->last_progress_percent >= 100 ? 'text-emerald-600' : 'text-slate-900 dark:text-white' }}">{{ (int) $task->last_progress_percent }}%</p>
+
+                    @php
+                        // Points de progression chronologiques (à partir des rapports liés).
+                        $points = $task->dailyReports
+                            ->reverse()
+                            ->filter(fn($r) => !is_null($r->task_progress_percent))
+                            ->map(fn($r) => (int) $r->task_progress_percent)
+                            ->values();
+                    @endphp
+
+                    @if($points->count() >= 2)
+                    @php
+                        $w = 200; $h = 44; $n = $points->count();
+                        $coords = $points->map(function ($p, $i) use ($w, $h, $n) {
+                            $x = $n > 1 ? ($i * ($w / ($n - 1))) : 0;
+                            $y = $h - ($p / 100 * $h);
+                            return round($x, 1) . ',' . round($y, 1);
+                        })->implode(' ');
+                    @endphp
+                    <div class="mt-4">
+                        <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-full h-12" preserveAspectRatio="none">
+                            <polyline points="{{ $coords }}" fill="none" stroke="currentColor" stroke-width="2"
+                                class="text-emerald-500" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="text-xs text-slate-400 mt-1">Évolution sur {{ $points->count() }} rapports</p>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Détails -->
