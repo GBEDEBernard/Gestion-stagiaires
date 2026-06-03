@@ -292,7 +292,7 @@
                             </p>
                         </div>
 
-                        {{-- Service --}}
+                        {{-- Domaine --}}
                         <div class="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 rounded-xl p-4 border border-cyan-100 dark:border-cyan-800/30">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="p-1.5 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg">
@@ -300,10 +300,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 </div>
-                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Service</span>
+                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Domaine</span>
                             </div>
-                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->service->nom ?? 'Non défini' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->service->responsable ?? 'Responsable non défini' }}</p>
+                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->domaine->nom ?? 'Non défini' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->domaine->description ?? 'Aucune description' }}</p>
                         </div>
 
                         {{-- Jours de travail --}}
@@ -355,7 +355,7 @@
                                 <div>
                                     <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $stageHist->theme ?? 'Stage' }}</p>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->service->nom ?? 'Service non défini' }}
+                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->domaine->nom ?? 'Domaine non défini' }}
                                     </p>
                                 </div>
                             </div>

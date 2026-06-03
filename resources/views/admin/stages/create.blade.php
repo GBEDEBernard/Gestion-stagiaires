@@ -57,11 +57,11 @@
                             </div>
 
                             <div>
-                                <label for="service_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                                <select name="service_id" id="service_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                <label for="domaine_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                                <select name="domaine_id" id="domaine_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
                                     <option value="">Sélectionner</option>
-                                    @foreach($services as $service)
-                                    <option value="{{ $service->id }}">{{ $service->nom }}</option>
+                                    @foreach($domaines as $domaine)
+                                    <option value="{{ $domaine->id }}">{{ $domaine->nom }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -218,12 +218,12 @@
                         </div>
 
                         <div>
-                            <label for="service_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                            <select name="service_id" id="service_id"
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services</label>
+                            <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un service</option>
-                                @foreach($services as $service)
-                                <option value="{{ $service->id }}" {{ old('service_id') == $service->id ? 'selected' : '' }}>{{ $service->nom }}</option>
+                                <option value="">Sélectionner un domaine de service</option>
+                                @foreach($domaines as $domaine)
+                                <option value="{{ $domaine->id }}" {{ old('domaine_id') == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -345,25 +345,25 @@
                 return;
             }
 
-            fetch(`/admin/etudiants/${etudiantId}/services`)
+            fetch(`/admin/etudiants/${etudiantId}/domaines`)
                 .then(res => res.json())
                 .then(data => {
-                    const serviceSelects = [
-                        document.getElementById('service_id'),
-                        document.getElementById('service_id_modal')
+                    const domaineSelects = [
+                        document.getElementById('domaine_id'),
+                        document.getElementById('domaine_id_modal')
                     ];
-                    serviceSelects.forEach(serviceSelect => {
-                        if (!serviceSelect) return;
-                        serviceSelect.innerHTML = '<option value="">Sélectionner un service</option>';
-                        data.forEach(service => {
+                    domaineSelects.forEach(domaineSelect => {
+                        if (!domaineSelect) return;
+                        domaineSelect.innerHTML = '<option value="">Sélectionner un domaine</option>';
+                        data.forEach(domaine => {
                             const opt = document.createElement('option');
-                            opt.value = service.id;
-                            opt.text = service.nom;
-                            serviceSelect.appendChild(opt);
+                            opt.value = domaine.id;
+                            opt.text = domaine.nom;
+                            domaineSelect.appendChild(opt);
                         });
                     });
                 })
-                .catch(err => console.error('Erreur lors du chargement des services :', err));
+                .catch(err => console.error('Erreur lors du chargement des domaines :', err));
         }
 
         document.addEventListener('DOMContentLoaded', function() {

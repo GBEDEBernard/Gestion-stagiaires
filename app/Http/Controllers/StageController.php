@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Badge;
+use App\Models\Domaine;
 use App\Models\Etudiant;
 use App\Models\Jour;
-use App\Models\Service;
 use App\Models\Signataire;
 use App\Models\Site;
 use App\Models\Stage;
@@ -21,7 +21,7 @@ class StageController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'service', 'site', 'supervisor', 'badge', 'jours']);
+        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'domaine', 'service', 'site', 'supervisor', 'badge', 'jours']);
 
         // Filtre par statut
         if ($request->filled('statut')) {
@@ -76,7 +76,7 @@ class StageController extends Controller
         })->get();
 
         $typestages = TypeStage::all();
-        $services = Service::all();
+        $domaines = Domaine::all();
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
@@ -119,7 +119,7 @@ class StageController extends Controller
         return view('admin.stages.create', compact(
             'etudiants',
             'typestages',
-            'services',
+            'domaines',
             'sites',
             'supervisors',
             'badges',
@@ -134,7 +134,7 @@ class StageController extends Controller
         $request->validate([
             'etudiant_id'  => 'required|exists:etudiants,id',
             'typestage_id' => 'nullable|exists:typestages,id',
-            'service_id'   => 'nullable|exists:services,id',
+            'domaine_id'   => 'nullable|exists:domaines,id',
             'site_id'      => 'nullable|exists:sites,id',
             'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
@@ -204,7 +204,7 @@ class StageController extends Controller
         $stage = Stage::create($request->only([
             'etudiant_id',
             'typestage_id',
-            'service_id',
+            'domaine_id',
             'site_id',
             'supervisor_id',
             'badge_id',
@@ -226,7 +226,7 @@ class StageController extends Controller
 
     public function show(Stage $stage)
     {
-        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'service', 'site', 'supervisor']);
+        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'service', 'site', 'supervisor']);
 
         $statutEnCours = $stage->date_debut && $stage->date_fin
             ? (now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : (now()->gt($stage->date_fin) ? 'Termine' : 'A venir'))
@@ -240,7 +240,7 @@ class StageController extends Controller
         $stagesTermines = $etudiant->stages()
             ->where('id', '!=', $stage->id)
             ->where('date_fin', '<', now())
-            ->with(['typestage', 'service'])
+            ->with(['typestage', 'domaine'])
             ->orderBy('date_fin', 'desc')
             ->get();
 
@@ -280,7 +280,7 @@ class StageController extends Controller
     {
         $etudiants = Etudiant::all();
         $typestages = TypeStage::all();
-        $services = Service::all();
+        $domaines = Domaine::all();
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
@@ -307,7 +307,7 @@ class StageController extends Controller
             'stage',
             'etudiants',
             'typestages',
-            'services',
+            'domaines',
             'sites',
             'supervisors',
             'badges',
@@ -321,7 +321,7 @@ class StageController extends Controller
         $request->validate([
             'etudiant_id'  => 'required|exists:etudiants,id',
             'typestage_id' => 'nullable|exists:typestages,id',
-            'service_id'   => 'nullable|exists:services,id',
+            'domaine_id'   => 'nullable|exists:domaines,id',
             'site_id'      => 'nullable|exists:sites,id',
             'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
@@ -376,7 +376,7 @@ class StageController extends Controller
         $stage->update($request->only([
             'etudiant_id',
             'typestage_id',
-            'service_id',
+            'domaine_id',
             'site_id',
             'supervisor_id',
             'badge_id',
@@ -411,12 +411,12 @@ class StageController extends Controller
         return redirect()->route('stages.index')->with('success', 'Stage supprime.');
     }
 
-    public function servicesDisponibles(Etudiant $etudiant)
+    public function domainesDisponibles(Etudiant $etudiant)
     {
-        $servicesFaits = $etudiant->stages()->pluck('service_id')->toArray();
-        $services = Service::whereNotIn('id', $servicesFaits)->get();
+        $domainesFaits = $etudiant->stages()->pluck('domaine_id')->toArray();
+        $domaines = Domaine::whereNotIn('id', $domainesFaits)->get();
 
-        return response()->json($services);
+        return response()->json($domaines);
     }
 
     public function badge(Stage $stage)

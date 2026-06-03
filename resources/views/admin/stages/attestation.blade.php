@@ -291,7 +291,7 @@
             @endphp
 
             @php
-            $serviceNom = $stage->service->nom ?? '—';
+            $serviceNom = $stage->domaine->nom ?? '—';
             $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
             $firstChar = mb_substr($serviceNom, 0, 1);
 
@@ -322,10 +322,10 @@
 
                 <div class="content">
                     @if($stage->typestage->code === '003')
-                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la période du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
+                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b> a effectué un <b>stage professionnel</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->domaine->nom ?? '—' }}</b>, durant la période du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.</p>
                     <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
                     @else
-                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->service->nom ?? '—' }}</b>, durant la période du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
+                    <p>Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group (TFG) SARL</b>, atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b> a effectué un <b>stage académique</b> de {{ $duréeTexte }} au sein {{ $prepositionService }} <b>{{ $stage->domaine->nom ?? '—' }}</b>, durant la période du <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, pour l'année académique <b>{{ $academicYear }}</b>.</p>
                     <p>Durant cette période, {{ $pronom }} {{ $texteTheme }}</p>
                     @endif
 

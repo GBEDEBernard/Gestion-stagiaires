@@ -127,8 +127,8 @@
                             </dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
-                            <dt>Service</dt>
-                            <dd class="font-medium text-slate-900">{{ $activeStage->service?->nom_service ?: 'Non defini' }}</dd>
+                            <dt>Domaine</dt>
+                            <dd class="font-medium text-slate-900">{{ $activeStage->domaine?->nom ?: 'Non defini' }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <dt>Type</dt>

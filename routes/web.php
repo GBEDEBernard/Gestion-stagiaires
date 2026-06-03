@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
         Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
+        Route::get('{etudiant}/domaines', [StageController::class, 'domainesDisponibles'])->name('etudiants.domaines')->middleware('auth');
 
         // Génération de compte
         Route::post('etudiants/{etudiant}/generate-account', [EtudiantController::class, 'generateAccount'])->name('etudiants.generate-account');

@@ -74,13 +74,13 @@
                         </div>
 
                         <div>
-                            <label for="service_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                            <select name="service_id" id="service_id"
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                            <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Sélectionner un service</option>
-                                @foreach($services as $service)
-                                <option value="{{ $service->id }}" {{ old('service_id', $stage->service_id) == $service->id ? 'selected' : '' }}>
-                                    {{ $service->nom }}
+                                <option value="">Sélectionner un domaine</option>
+                                @foreach($domaines as $domaine)
+                                <option value="{{ $domaine->id }}" {{ old('domaine_id', $stage->domaine_id) == $domaine->id ? 'selected' : '' }}>
+                                    {{ $domaine->nom }}
                                 </option>
                                 @endforeach
                             </select>

@@ -37,45 +37,45 @@
                             <option value="A venir" {{ in_array(request('statut'), ['A venir', 'À venir'], true) ? 'selected' : '' }}>À venir</option>
                         </select>
                     </div>
-                    
+
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de stage</label>
                         <select name="typestage"
                             class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white">
                             <option value="">Tous les types</option>
                             @foreach($typestages as $type)
-                                <option value="{{ $type->id }}" {{ request('typestage') == $type->id ? 'selected' : '' }}>
-                                    {{ $type->libelle }}
-                                </option>
+                            <option value="{{ $type->id }}" {{ request('typestage') == $type->id ? 'selected' : '' }}>
+                                {{ $type->libelle }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom étudiant</label>
-                        <input type="text" name="nom" value="{{ request('nom') }}" 
+                        <input type="text" name="nom" value="{{ request('nom') }}"
                             class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white"
                             placeholder="Rechercher par nom...">
                     </div>
-                    
+
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">École</label>
                         <input type="text" name="ecole" value="{{ request('ecole') }}"
                             class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 transition text-gray-900 dark:text-white"
                             placeholder="Rechercher par école...">
                     </div>
-                    
+
                     <button type="submit" class="px-5 py-2.5 bg-gray-900 dark:bg-gray-700 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-gray-600 transition font-medium flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
                         Filtrer
                     </button>
-                    
+
                     @if(request()->anyFilled(['statut', 'typestage', 'nom', 'ecole']))
-                        <a href="{{ route('stages.index') }}" class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 transition font-medium">
-                            Réinitialiser
-                        </a>
+                    <a href="{{ route('stages.index') }}" class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 transition font-medium">
+                        Réinitialiser
+                    </a>
                     @endif
                 </div>
             </form>
@@ -100,112 +100,112 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($stages as $stage)
-                        @php
-                            $status = $stage->statut;
-                        @endphp
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                                        {{ substr($stage->etudiant->personnel->prenom ?? 'S', 0, 1) }}{{ substr($stage->etudiant->personnel->nom ?? 'S', 0, 1) }}
-                                    </div>
-                                    <div>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $stage->etudiant->personnel->nom ?? '-' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $stage->etudiant->ecole ?? '-' }}</p>
-                                    </div>
+                    @php
+                    $status = $stage->statut;
+                    @endphp
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    {{ substr($stage->etudiant->personnel->prenom ?? 'S', 0, 1) }}{{ substr($stage->etudiant->personnel->nom ?? 'S', 0, 1) }}
                                 </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
-                                    {{ $stage->typestage->libelle ?? '-' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm space-y-1">
-                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->service->nom ?? 'Service non défini' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->site->name ?? 'Site non défini' }}</p>
+                                <div>
+                                    <p class="font-semibold text-gray-900 dark:text-white">{{ $stage->etudiant->personnel->nom ?? '-' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ $stage->etudiant->ecole ?? '-' }}</p>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm space-y-1">
-                                    <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->theme ?? 'Thème non défini' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">{{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? 'Sans superviseur' }}</p>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm">
-                                    <p class="text-gray-900 dark:text-gray-100">{{ $stage->date_debut?->format('d/m/Y') ?: '-' }}</p>
-                                    <p class="text-gray-500 dark:text-gray-400">→ {{ $stage->date_fin?->format('d/m/Y') ?: '-' }}</p>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($stage->jours->count() > 0)
-                                    <span class="text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $stage->jours->pluck('jour')->implode(', ') }}
-                                    </span>
-                                @else
-                                    <span class="text-gray-400">-</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($status === 'En cours')
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
-                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                                        En cours
-                                    </span>
-                                @elseif(in_array($status, ['A venir', 'À venir'], true))
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
-                                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                                        À venir
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium">
-                                        Terminé
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ encrypted_route('stages.show', $stage) }}"
-                                        class="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
+                                {{ $stage->typestage->libelle ?? '-' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm space-y-1">
+                                <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->domaine->nom ?? 'Domaine non défini' }}</p>
+                                <p class="text-gray-500 dark:text-gray-400">{{ $stage->site->name ?? 'Site non défini' }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm space-y-1">
+                                <p class="text-gray-900 dark:text-gray-100 font-medium">{{ $stage->theme ?? 'Thème non défini' }}</p>
+                                <p class="text-gray-500 dark:text-gray-400">{{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? 'Sans superviseur' }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm">
+                                <p class="text-gray-900 dark:text-gray-100">{{ $stage->date_debut?->format('d/m/Y') ?: '-' }}</p>
+                                <p class="text-gray-500 dark:text-gray-400">→ {{ $stage->date_fin?->format('d/m/Y') ?: '-' }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($stage->jours->count() > 0)
+                            <span class="text-sm text-gray-900 dark:text-gray-100">
+                                {{ $stage->jours->pluck('jour')->implode(', ') }}
+                            </span>
+                            @else
+                            <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            @if($status === 'En cours')
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                En cours
+                            </span>
+                            @elseif(in_array($status, ['A venir', 'À venir'], true))
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
+                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                                À venir
+                            </span>
+                            @else
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium">
+                                Terminé
+                            </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{{ encrypted_route('stages.show', $stage) }}"
+                                    class="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </a>
+                                <a href="{{ encrypted_route('stages.edit', $stage) }}"
+                                    class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition" title="Modifier" data-confirm-edit>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </a>
+                                <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" class="inline" data-confirm-delete>
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition" title="Supprimer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                    </a>
-                                    <a href="{{ encrypted_route('stages.edit', $stage) }}"
-                                        class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition" title="Modifier" data-confirm-edit>
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </a>
-                                    <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" class="inline" data-confirm-delete>
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition" title="Supprimer">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-16 text-center">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Aucun stage trouvé</p>
-                                    <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Commence par créer un nouveau stage.</p>
+                    <tr>
+                        <td colspan="8" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
                                 </div>
-                            </td>
-                        </tr>
+                                <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Aucun stage trouvé</p>
+                                <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Commence par créer un nouveau stage.</p>
+                            </div>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
