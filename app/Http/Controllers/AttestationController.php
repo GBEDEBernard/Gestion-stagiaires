@@ -208,24 +208,44 @@ class AttestationController extends Controller
 
         // Envoyer les notifications aux signataires
         foreach ($notifiedUsers as $user) {
-            if ($user->getEmailForVerification()) {
+            $emailUsers = $user->email;
+            $emailPersonnel = $user->personnel?->email;
+            $emailToSend = $user->getEmailForVerification();
+
+            if ($emailToSend) {
                 try {
-                    Mail::to($user->getEmailForVerification())
+                    Mail::to($emailToSend)
                         ->queue(new AttestationSignerNotificationMail($user, $stage, $attestation));
-                    
+
                     Log::info('Notification signature envoyée', [
-                        'signataire' => $user->email,
                         'attestation' => $attestation->reference,
-                        'stagiaire' => $stage->etudiant->personnel->nom
+                        'stagiaire' => $stage->etudiant->personnel->nom,
+                        'signataire_id' => $user->id,
+                        'signataire_nom' => $user->personnel?->full_name ?? $user->name,
+                        'email_users' => $emailUsers,
+                        'email_personnel' => $emailPersonnel,
+                        'email_to_send' => $emailToSend,
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Erreur envoi notification signature', [
                         'error' => $e->getMessage(),
-                        'signataire' => $user->email
+                        'attestation' => $attestation->reference,
+                        'signataire_id' => $user->id,
+                        'email_to_send' => $emailToSend,
+                        'email_users' => $emailUsers,
+                        'email_personnel' => $emailPersonnel,
                     ]);
                 }
+            } else {
+                Log::warning('Notification signature non envoyée (email vide)', [
+                    'attestation' => $attestation->reference,
+                    'signataire_id' => $user->id,
+                    'email_users' => $emailUsers,
+                    'email_personnel' => $emailPersonnel,
+                ]);
             }
         }
+
 
         return redirect(encrypted_route('stages.attestation.show', $stage))
             ->with('success', 'Signataires enregistrés et notifications envoyées.');

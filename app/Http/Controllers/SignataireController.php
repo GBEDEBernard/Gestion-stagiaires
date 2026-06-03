@@ -57,14 +57,22 @@ class SignataireController extends Controller
     public function update(Request $request, Signataire $signataire)
     {
         $validated = $request->validate([
-            'nom'   => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
+            'nom' => 'required|string|max:255',
+            // email vient de user.personnel.email => on ne le valide pas ici
             'poste' => 'required|string|max:255',
             'sigle' => 'required|string|max:10',
             'ordre' => 'nullable|integer|min:1'
         ]);
 
+
         $signataire->update($validated);
+
+        // Optionnel : si tu veux que “poste” soit aussi reflété sur la fiche personnel
+        if ($signataire->user) {
+            // poste est dérivé via getPosteAttribute(), mais si tu veux vraiment l'éditer,
+            // il faut mettre à jour personnels.personnable.poste (selon ton schéma réel).
+        }
+
 
         return redirect()->route('signataires.index')
             ->with('success', 'Signataire modifié avec succès.');
