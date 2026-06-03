@@ -395,32 +395,111 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
             @endunlessrole
 
-            <!-- Profil Utilisateur (pied de page) -->
-            <div class="p-4 border-t border-slate-800/40" x-data="{ userMenuOpen: false }">
-                <button @click="userMenuOpen = !userMenuOpen" class="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-slate-800/30 transition">
-                    @if(Auth::user()->avatar)
-                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" class="w-9 h-9 rounded-full object-cover">
-                    @else
-                    <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white text-sm font-medium">
-                        {{ substr(Auth::user()->name, 0, 1) }}
-                    </div>
-                    @endif
-                    <div class="flex-1 text-left min-w-0">
-                        <p class="text-sm text-white truncate">{{ Auth::user()->name }}</p>
-                    </div>
-                    <svg class="w-4 h-4 text-slate-500 transition-transform duration-200" :class="userMenuOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+        </div>
 
-                <div x-show="userMenuOpen" x-transition @click.outside="userMenuOpen = false" class="mt-2 rounded-xl bg-slate-900/60 border border-slate-800/40 overflow-hidden">
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/40 transition">Paramètres</a>
-                    <form method="POST" action="{{ route('logout') }}">
+        <!-- Profil Utilisateur — pied de page (popup enrichie) -->
+        <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-slate-400/10 shadow-[0_-8px_32px_0_rgba(0,0,0,0.32)]"
+             x-data="{ open: false }">
+
+            {{-- Overlay transparent pour fermer au clic dehors --}}
+            <div x-show="open" x-cloak @click="open = false" class="fixed inset-0 z-50"></div>
+
+            {{-- Popup flottante — au-dessus de l'overlay --}}
+            <div
+                x-show="open"
+                x-cloak
+                @click.stop
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-3"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-3"
+                class="fixed bottom-[78px] left-3 w-[268px] z-[60] rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_24px_64px_rgba(0,0,0,0.75),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]">
+
+                {{-- Header utilisateur --}}
+                <div class="p-4 bg-gradient-to-br from-indigo-500/[0.06] to-transparent border-b border-white/5">
+                    <div class="flex items-center gap-3">
+                        @if(Auth::user()->avatar)
+                        <div class="relative flex-shrink-0">
+                            <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                                 class="w-[42px] h-[42px] rounded-xl object-cover ring-2 ring-indigo-500/50 shadow-lg shadow-black/40">
+                            <span class="absolute -bottom-0.5 -right-0.5 w-[11px] h-[11px] bg-emerald-500 rounded-full border-2 border-gray-900"></span>
+                        </div>
+                        @else
+                        <div class="relative flex-shrink-0">
+                            <div class="w-[42px] h-[42px] rounded-xl flex items-center justify-center text-[15px] font-bold text-white bg-gradient-to-br from-indigo-500 to-indigo-800 ring-2 ring-indigo-500/50 shadow-lg shadow-black/40">
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            </div>
+                            <span class="absolute -bottom-0.5 -right-0.5 w-[11px] h-[11px] bg-emerald-500 rounded-full border-2 border-gray-900"></span>
+                        </div>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                            <p class="text-[11px] text-slate-400/60 truncate mt-0.5 leading-tight">{{ Auth::user()->email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="p-1.5">
+                    <a href="{{ route('profile.edit') }}"
+                       class="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-slate-300/90 hover:text-slate-200 hover:bg-indigo-500/[0.13] transition-colors">
+                        <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/[0.14] flex-shrink-0">
+                            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </span>
+                        Paramètres du compte
+                    </a>
+
+                    <div class="mx-2 my-1 h-px bg-white/5"></div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
-                        <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition">Déconnexion</button>
+                        <button type="submit"
+                            class="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-300/85 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/[0.12] flex-shrink-0">
+                                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                            </span>
+                            Déconnexion
+                        </button>
                     </form>
                 </div>
             </div>
+
+            {{-- ===== BOUTON DÉCLENCHEUR ===== --}}
+            <button
+                @click="open = !open"
+                class="relative z-[1] w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-indigo-500/[0.08] hover:border-indigo-500/20 transition-colors">
+
+                @if(Auth::user()->avatar)
+                <div class="relative flex-shrink-0">
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                         class="w-[34px] h-[34px] rounded-[9px] object-cover">
+                    <span class="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] bg-emerald-500 rounded-full border-2 border-[#1e2433]"></span>
+                </div>
+                @else
+                <div class="relative flex-shrink-0">
+                    <div class="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center text-[13px] font-bold text-white bg-gradient-to-br from-indigo-500 to-indigo-800">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] bg-emerald-500 rounded-full border-2 border-[#1e2433]"></span>
+                </div>
+                @endif
+
+                <div class="flex-1 min-w-0 text-left">
+                    <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                    <p class="text-[11px] text-slate-400/55 truncate leading-snug">{{ Auth::user()->email }}</p>
+                </div>
+
+                <svg class="w-[15px] h-[15px] flex-shrink-0 text-slate-400/45" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M11.47 4.72a.75.75 0 0 1 1.06 1.06L8 10.31 3.47 5.78a.75.75 0 0 1 1.06-1.06L8 8.19l3.47-3.47ZM11.47 9.28a.75.75 0 0 0 1.06-1.06L8 3.69 3.47 8.22a.75.75 0 0 0 1.06 1.06L8 5.81l3.47 3.47Z"/>
+                </svg>
+            </button>
         </div>
     </nav>
 

@@ -24,50 +24,54 @@
 
 ## ✅ Règles de fonctionnement (à respecter par l'agent)
 
-1. Ne **jamais** committer : l'utilisateur s'en charge.
+1. Ne **jamais** committer sans demande : l'utilisateur s'en charge (sauf instruction explicite).
 2. À la fin d'une tâche → donner **✅ FEU VERT** + un **message de commit** prêt à copier.
 3. Mettre ce fichier à jour **au fil de l'eau** (statut, notes, décisions).
 4. Garder les modifications **ciblées** (pas de refactor hors périmètre non demandé).
 
+> ⚠️ **Incident 2026-06-03** : un `git pull` (fast-forward) + 2 commits faits **en parallèle**
+> pendant la session ont réinitialisé le working tree et **écrasé des modifications non commitées**.
+> Leçon : committer tôt ; éviter de laisser l'agent travailler pendant un pull/reset.
+
 ---
 
-## 🟢 Tâches EN COURS / À FAIRE
+## 🟢 Tâches
 
-### T-001 — Refonte du menu profil (`navigation.blade.php`) en Tailwind
-- **Statut** : ⚠️ ANNULÉE / sans objet (voir note ci-dessous)
+### T-001 — Menu profil sidebar : popup enrichie en Tailwind
+- **Statut** : ✅ Terminé (en attente de commit utilisateur)
 - **Fichier** : `resources/views/layouts/navigation.blade.php`
-- **Problème initial** : la popup profil flottante était en CSS inline → à convertir en Tailwind.
-- **Ce qui s'est passé** : un `git pull` (fast-forward) + 2 commits faits en parallèle pendant la
-  session (2026-06-03) ont **réinitialisé le working tree** et écrasé la modification non commitée.
-  La popup en CSS inline **n'existe plus** : `navigation.blade.php` est revenu à sa version simple
-  d'origine (`userMenuOpen`, « Paramètres / Déconnexion »), **déjà en Tailwind**. La tâche n'a donc
-  plus d'objet en l'état.
-- **À décider** : soit on laisse tel quel (menu simple suffisant), soit on reconstruit une popup
-  profil enrichie (avatar + email + actions) directement en Tailwind. À confirmer par l'utilisateur.
+- **Historique** :
+  - Version initiale visée : popup flottante en **CSS inline** → à convertir en Tailwind.
+  - L'incident du 2026-06-03 a réinitialisé le fichier vers sa version simple d'origine
+    (`userMenuOpen`, « Paramètres / Déconnexion »).
+  - Décision utilisateur : **reconstruire** la popup enrichie, en Tailwind cette fois.
+- **Action faite** : popup profil reconstruite **100 % Tailwind** (aucun `style=`/`onmouseover`) :
+  - Bloc épinglé en **pied de sidebar** (`flex-shrink-0`, sorti de la zone scrollable).
+  - Bouton déclencheur (avatar + nom + email + chevrons), popup flottante (`position: fixed`)
+    avec header utilisateur (avatar + statut en ligne), liens **Paramètres du compte** et
+    **Déconnexion**, overlay de fermeture au clic dehors, transitions Alpine + `x-cloak`.
 
 ### T-002 — Précision GPS du geofence : dynamique (pas de valeur par défaut figée)
-- **Statut** : ✅ Terminé (ré-appliqué après le reset)
-- **Fichiers** :
-  - `resources/views/admin/sites/partials/form.blade.php`
-  - `database/migrations/2026_05_26_000000_update_geofence_accuracy_defaults.php` (supprimé)
+- **Statut** : ✅ Terminé — **commité** (`e5f9dbb`)
+- **Fichier** : `resources/views/admin/sites/partials/form.blade.php`
 - **Demande** : l'admin doit pouvoir **saisir/modifier lui-même** la précision GPS max ; pas de
   valeur par défaut imposée (ni 50, ni 100).
-- **Actions faites** :
-  - Form : champ `geofence_allowed_accuracy_meters` → **plus de défaut** (`?? ''`), vide en
-    création (admin saisit), valeur existante affichée en édition. Reste `required`, ajout
-    `min=5 max=500`, placeholder et texte d'aide.
-  - La migration `2026_05_26...` qui forçait la valeur à 100 a disparu lors du reset (jamais
-    commitée) — c'est l'effet voulu.
-- **Note** : la validation côté `SiteController@validatePayload` impose déjà `integer|min:5|max:500`.
+- **Action faite** : champ `geofence_allowed_accuracy_meters` → **plus de défaut** (`?? ''`),
+  vide en création (admin saisit), valeur existante affichée en édition. `required`, `min=5`,
+  `max=500`, placeholder + texte d'aide.
+- **Note** : la validation `SiteController@validatePayload` impose déjà `integer|min:5|max:500`.
+  Plus de migration forçant la valeur (l'ancienne `2026_05_26...` a disparu au reset, jamais
+  commitée — effet voulu).
 
 ---
 
-## 📦 Travaux déjà présents sur la branche (non liés aux demandes ci-dessus)
-- `vite.config.js` : forçage IPv4 (`127.0.0.1`) pour corriger le HMR sur Windows.
-- `public/build/manifest.json` : régénéré par un build Vite.
+## 📦 Travaux présents sur la branche (non liés aux demandes ci-dessus)
+- `vite.config.js` : forçage IPv4 (`127.0.0.1`) pour corriger le HMR sur Windows. **Non commité.**
 
 ---
 
 ## 🗒️ Journal des décisions
 - 2026-06-03 : création de ce fichier de suivi.
-- 2026-06-03 : T-001 & T-002 implémentées (voir sections ci-dessus).
+- 2026-06-03 : T-002 (précision GPS dynamique) implémentée et **commitée** (`e5f9dbb`).
+- 2026-06-03 : incident reset (pull parallèle) → travail non commité écrasé ; T-002 ré-appliquée.
+- 2026-06-03 : T-001 — décision de reconstruire la popup profil enrichie en Tailwind ; faite.
