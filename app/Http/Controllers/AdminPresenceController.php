@@ -37,6 +37,7 @@ class AdminPresenceController extends Controller
         $absenceData = $this->presenceService->getAbsencesWithDetails($period, $dateFrom, $dateTo);
         $absences = $absenceData['counts'];
         $absenceDays = $absenceData['details'];
+        $absenceItems = $absenceData['items'];
 
         $days = $this->presenceService->listAttendanceDays($request->only([
             'date_from',
@@ -53,6 +54,7 @@ class AdminPresenceController extends Controller
             'groupStats',
             'topLate',
             'absences',
+            'absenceItems',
             'period',
             'group',
             'days',

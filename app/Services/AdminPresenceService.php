@@ -731,7 +731,7 @@ class AdminPresenceService
                         $name = $et->user?->name ?? 'Inconnu';
                         $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
                         $absentDaysByUserName[$name][] = [
-                            'label' => $days->isoFormat('dddd D MMMM YYYY'),
+                            'label' => $days->locale('fr')->isoFormat('dddd D MMMM YYYY'),
                             'date' => $dateKey,
                         ];
                     }
@@ -763,9 +763,19 @@ class AdminPresenceService
             $details[$name] = $absentDaysByUserName[$name] ?? [];
         }
 
+        $items = [];
+        foreach ($counts as $name => $count) {
+            $items[] = [
+                'user' => $name,
+                'count' => $count,
+                'details' => $absentDaysByUserName[$name] ?? [],
+            ];
+        }
+
         return [
             'counts' => $counts,
             'details' => $details,
+            'items' => $items,
         ];
     }
 

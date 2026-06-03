@@ -395,18 +395,56 @@
 
         .pres-modal-item {
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: .75rem;
+            grid-template-columns: auto 1fr;
+            gap: .85rem;
             align-items: center;
             padding: 1rem 1.1rem;
             border-radius: .95rem;
             background: var(--bg2);
             border: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: slideIn 280ms ease forwards;
         }
 
-        .pres-modal-item span {
-            font-size: .95rem;
+        .pres-modal-item-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--rose);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .pres-modal-item-content {
+            display: grid;
+            gap: .25rem;
+        }
+
+        .pres-modal-item-title {
+            font-weight: 600;
             color: var(--text);
+            font-size: .95rem;
+        }
+
+        .pres-modal-item-sub {
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .pres-modal-empty {
@@ -1316,12 +1354,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($absences as $userName => $count)
+                            @foreach($absenceItems as $item)
                             <tr>
-                                <td style="font-weight:500;">{{ $userName }}</td>
+                                <td style="font-weight:500;">{{ $item['user'] }}</td>
                                 <td>
-                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-user="{{ e($userName) }}" data-count="{{ $count }}">
-                                        {{ $count }} j
+                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-index="{{ $loop->index }}">
+                                        {{ $item['count'] }} j
                                     </button>
                                 </td>
                             </tr>
@@ -1369,7 +1407,7 @@
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absent'] ?? []);
             const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
-            const absenceDetails = @json($absenceDays ?? []);
+            const absenceItems = @json($absenceItems ?? []);
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
@@ -1384,26 +1422,32 @@
                 if (!days || days.length === 0) {
                     return '<div class="pres-modal-empty">Aucune date d\'absence disponible pour cet utilisateur.</div>';
                 }
-                return `<ul class="pres-modal-list">${days.map(day => `
-                    <li class="pres-modal-item">
-                        <span>${day.label}</span>
-                        <span>${day.date}</span>
+                return `<ul class="pres-modal-list">${days.map((day, index) => `
+                    <li class="pres-modal-item" style="animation-delay: ${index * 80}ms;">
+                        <span class="pres-modal-item-marker">✖</span>
+                        <div class="pres-modal-item-content">
+                            <div class="pres-modal-item-title">${day.label}</div>
+                            <div class="pres-modal-item-sub">${day.date}</div>
+                        </div>
                     </li>
                 `).join('')}</ul>`;
             };
 
-            const openAbsenceModal = (userName, count) => {
-                const days = absenceDetails[userName] ?? [];
-                absenceModalTitle.textContent = `Absences de ${userName}`;
-                absenceModalMeta.textContent = `${count} jour${count > 1 ? 's' : ''} d'absence`;
-                absenceModalBody.innerHTML = renderAbsenceDays(days);
+            const openAbsenceModal = (index) => {
+                const item = absenceItems[index] ?? null;
+                if (!item) {
+                    return;
+                }
+                absenceModalTitle.textContent = `Absences de ${item.user}`;
+                absenceModalMeta.textContent = `${item.count} jour${item.count > 1 ? 's' : ''} d'absence`;
+                absenceModalBody.innerHTML = renderAbsenceDays(item.details);
                 absenceModalBackdrop?.classList.add('active');
                 absenceModalBackdrop?.setAttribute('aria-hidden', 'false');
             };
 
             absenceButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    openAbsenceModal(button.dataset.user, button.dataset.count);
+                    openAbsenceModal(button.dataset.index);
                 });
             });
 
