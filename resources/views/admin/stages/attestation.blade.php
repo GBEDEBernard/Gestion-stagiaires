@@ -44,7 +44,7 @@
             pointer-events: none;
         }
 
-        .a4-container > * {
+        .a4-container>* {
             position: relative;
             z-index: 1;
         }
@@ -124,9 +124,15 @@
 
         .content {
             text-align: justify;
-            line-height: 1.6;
+            line-height: 1.85;
             font-size: 18px;
-            margin-top: 50px;
+            margin-top: 30px;
+        }
+
+        /* ALINÉA : retrait de la première ligne uniquement */
+        .content p {
+            margin: 18px 0;
+            text-indent: 30px;
         }
 
         .signatures {
@@ -268,97 +274,97 @@
 
     // Fonction pour convertir un nombre en lettres avec formatage (01, 02, etc.)
     $numberToFrench = function($num) {
-        $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
-        $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
-        $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+    $ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+    $teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    $tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
 
-        if ($num < 10) return $ones[$num];
+    if ($num < 10) return $ones[$num];
         if ($num < 20) return $teens[$num - 10];
         if ($num < 100) {
-            $ten = floor($num / 10);
-            $one = $num % 10;
-            return $tens[$ten] . ($one > 0 ? '-' . $ones[$one] : '');
+        $ten=floor($num / 10);
+        $one=$num % 10;
+        return $tens[$ten] . ($one> 0 ? '-' . $ones[$one] : '');
         }
         return (string)$num;
-    };
+        };
 
-    // Calcul de la durée en mois avec format "un (01) mois" ou "deux (02) mois"
-    $mois = ceil($diffDays / 30);
-    $moisEnLettres = $numberToFrench($mois);
-    $moisAvecZero = str_pad($mois, 2, '0', STR_PAD_LEFT);
-    $dureeTexte = "$moisEnLettres ($moisAvecZero) " . ($mois > 1 ? 'mois' : 'mois');
+        // Calcul de la durée en mois avec format "un (01) mois" ou "deux (02) mois"
+        $mois = ceil($diffDays / 30);
+        $moisEnLettres = $numberToFrench($mois);
+        $moisAvecZero = str_pad($mois, 2, '0', STR_PAD_LEFT);
+        $dureeTexte = "$moisEnLettres ($moisAvecZero) " . ($mois > 1 ? 'mois' : 'mois');
 
-    // Année académique
-    $year = $now->year;
-    $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
+        // Année académique
+        $year = $now->year;
+        $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
 
-    // Genre et civilité
-    $genre = strtolower($stage->etudiant->personnel->genre ?? 'masculin');
-    $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
-    $pronom = $genre === 'feminin' ? 'elle' : 'il';
+        // Genre et civilité
+        $genre = strtolower($stage->etudiant->personnel->genre ?? 'masculin');
+        $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
+        $pronom = $genre === 'feminin' ? 'elle' : 'il';
 
-    // Thème complet
-    $texteTheme = $stage->theme ?: 'a effectué son stage avec sérieux et diligence.';
-    
-    // Nom du service/domaine
-    $serviceNom =  $stage->domaine->nom ?? 'notre entreprise';
-    
-    // Gestion de la préposition (de, d')
-    $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
-    $firstChar = mb_substr($serviceNom, 0, 1);
-    
-    if ($serviceNom === 'notre entreprise') {
+        // Thème complet
+        $texteTheme = $stage->theme ?: 'a effectué son stage avec sérieux et diligence.';
+
+        // Nom du service/domaine
+        $serviceNom = $stage->domaine->nom ?? 'notre entreprise';
+
+        // Gestion de la préposition (de, d')
+        $voyelles = ['a','e','i','o','u','y','A','E','I','O','U','Y','H','h'];
+        $firstChar = mb_substr($serviceNom, 0, 1);
+
+        if ($serviceNom === 'notre entreprise') {
         $prepositionService = '';
         $serviceDisplay = '';
-    } elseif (in_array($firstChar, $voyelles)) {
+        } elseif (in_array($firstChar, $voyelles)) {
         $prepositionService = "d'";
         $serviceDisplay = $serviceNom;
-    } else {
+        } else {
         $prepositionService = " ";
         $serviceDisplay = $serviceNom;
-    }
-    
-    // Type de stage
-    $typeStage = $stage->typestage->libelle ?? 'stage';
-    $typeStageLower = strtolower($typeStage);
-    @endphp
+        }
 
-    <div class="a4-container">
+        // Type de stage
+        $typeStage = $stage->typestage->libelle ?? 'stage';
+        $typeStageLower = strtolower($typeStage);
+        @endphp
 
-        <div class="header">
-            <img src="{{ secure_asset('images/TFGLOGO.png') }}" alt="Logo">
-            <div class="text-header">
-                <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
-                <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
-                <p class="p1">
-                    Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
+        <div class="a4-container">
+
+            <div class="header">
+                <img src="{{ secure_asset('images/TFGLOGO.png') }}" alt="Logo">
+                <div class="text-header">
+                    <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
+                    <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
+                    <p class="p1">
+                        Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
+                    </p>
+                </div>
+            </div>
+
+            <div class="rcf">Réf : {{ $reference ?? 'N/A' }}</div>
+            <h1 class="title">ATTESTATION DE STAGE</h1>
+
+            <div class="content">
+                <p>
+                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever SARL (TFG SARL)</b>,
+                    atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
+                    a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
+                    dans notre entreprise au sein de la {{ $prepositionService }} {{ $serviceDisplay }} durant la période du
+                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
+                    pour le compte de l'année académique <b>{{ $academicYear }}</b>.
+                </p>
+                <p>
+                    {{ $texteTheme }}
+                </p>
+                <p>
+                    En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.
                 </p>
             </div>
-        </div>
 
-        <div class="rcf">Réf : {{ $reference ?? 'N/A' }}</div>
-        <h1 class="title">ATTESTATION DE STAGE</h1>
-
-        <div class="content">
-            <p>
-                Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever SARL (TFG SARL)</b>, 
-                atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b> 
-                a effectué un stage {{ $typeStageLower }}  de {{ $dureeTexte }}  
-                 dans notre entreprise au sein de la {{ $prepositionService }} {{ $serviceDisplay }} durant la période du 
-                <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>, 
-                pour le compte de l'année académique <b>{{ $academicYear }}</b>.
-            </p>
-            <p>
-            {{ $texteTheme }}
-            </p>
-            <p>
-                En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit.
-            </p>
-        </div>
-
-        {{-- Signatures --}}
-        <div class="signatures">
-            @if(count($signataires) == 1)
+            {{-- Signatures --}}
+            <div class="signatures">
+                @if(count($signataires) == 1)
                 <div class="sign director">
                     <p><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
                     @php $parOrdre = $signataires[0]->pivot->par_ordre ?? false; @endphp
@@ -368,7 +374,7 @@
                     <p style="margin-top:8px;"><b>{{ $signataires[0]->poste }}</b></p>
                     <p style="margin-top:90px;"><u><b>{{ $signataires[0]->nom }}</b></u></p>
                 </div>
-            @else
+                @else
                 <div class="sign-row">
                     @foreach($signataires as $signataire)
                     <div class="sign-item">
@@ -382,21 +388,21 @@
                     </div>
                     @endforeach
                 </div>
-            @endif
+                @endif
+            </div>
+
+            <div class="company">
+                <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
+                    Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
+                    Site Web : www.tfgbusiness.com
+                    Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
+            </div>
         </div>
 
-        <div class="company">
-            <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
-                Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
-                Site Web : www.tfgbusiness.com
-                Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
+        <div class="buttons-container">
+            <a href="{{ encrypted_route('stages.show', $stage->id) }}" class="back">Retour</a>
+            <button type="button" class="print" onclick="window.print()">Imprimer</button>
         </div>
-    </div>
-
-    <div class="buttons-container">
-        <a href="{{ encrypted_route('stages.show', $stage->id) }}" class="back">Retour</a>
-        <button type="button" class="print" onclick="window.print()">Imprimer</button>
-    </div>
 
 </body>
 
