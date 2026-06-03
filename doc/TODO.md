@@ -102,7 +102,20 @@
     - Modèles : `Task` (owner/messages/dailyReports + `scopeVisibleTo` par owner + helpers
       `isCompleted`/`isOverdue` + `STATUSES`), `DailyReport` (task + champs), `TaskMessage` (new),
       `User` (ownedTasks/taskMessages). Vérifié via tinker (schéma + relations OK).
-  - **P2** Tâches côté producteur (contrôleur/permissions/`scopeVisibleTo` + UI « Mes tâches »).
+  - **P2** ✅ **FAIT** (en attente commit) — Tâches côté producteur :
+    - Permissions : `tasks.view/create/edit/delete` accordées à `etudiant` + `employe` ;
+      `superviseur` = `tasks.view/review` (lecture + commentaire). Maj du preset
+      (`RolePermissionPresetService`) + migration `2026_06_03_000004` qui applique aux rôles.
+    - Routes : groupe `admin/tasks` remplacé par `/tasks` (producteur) + route `tasks.show`.
+    - `TaskController` réécrit : ownership (`owner_id`), contexte stage auto pour étudiant,
+      employé sans stage, redirections via `encrypted_route` (⚠️ id nu = 404 à cause de
+      `DecryptRouteParameter::isEncrypted`), filtres statut/recherche, stats.
+    - Vues producteur : `tasks/index` (slate, modal création, stats, filtres, cartes),
+      `tasks/show` (hub : header+progression+rapports liés+fil — scaffold P3/P4), `tasks/edit`.
+    - Composants réutilisables : `x-task-status-badge`, `x-progress-bar`, `x-priority-dot`.
+    - Nav : item « Mes tâches » (étudiant + employé). Anciennes vues `admin/tasks/*` supprimées.
+    - Vérifié : migrations OK, `route:list`, `view:cache` (compile sans erreur), permissions
+      par rôle, aucune référence orpheline.
   - **P3** Rapport ↔ tâche + progression (form sélecteur tâche + curseur ; câblage service ;
     auto-complétion 100 %).
   - **P4** Chat par tâche (`task_messages` modèle/contrôleur/UI ; `respond()` ; notifications).

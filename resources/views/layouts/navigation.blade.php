@@ -77,6 +77,13 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             </svg></div>
                         <span>Rapport journalier</span>
                     </a>
+                    {{-- Mes tâches --}}
+                    <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('tasks.*') ? 'bg-teal-500/20 text-teal-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
+                        <div class="p-2 rounded-xl bg-teal-500/10"><svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg></div>
+                        <span>Mes tâches</span>
+                    </a>
                     {{-- Mon Stage --}}
                     <a href="{{ route('student.stage') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('student.stage') ? 'bg-indigo-500/20 text-indigo-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
                         <div class="p-2 rounded-xl bg-indigo-500/10"><svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,6 +202,20 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @endif
                     </div>
                 </div>
+
+                <!-- Mes tâches (employé : producteur de rapports) -->
+                @hasrole('employe')
+                <div class="mb-4">
+                    <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 group {{ request()->routeIs('tasks.*') ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg shadow-teal-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <div class="p-2 rounded-xl {{ request()->routeIs('tasks.*') ? 'bg-white/20' : 'bg-teal-500/20' }}">
+                            <svg class="w-5 h-5 {{ request()->routeIs('tasks.*') ? 'text-white' : 'text-teal-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                        </div>
+                        <span>Mes tâches</span>
+                    </a>
+                </div>
+                @endhasrole
 
                 <!-- 3. Stages (uniquement pour admin) -->
                 @role('admin')
