@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    {{-- Modal Attestation --}}
+    {{-- Modal Attestation CORRIGÉE --}}
     <div id="modalAttestation" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
@@ -89,8 +89,9 @@
                             name="signataires[{{ $user->id }}][ordre]"
                             min="1" max="2"
                             placeholder="Ordre"
-                            class="w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
+                            class="ordre-input w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
                             id="ordre_{{ $user->id }}"
+                            style="opacity: 0.5;"
                             disabled>
 
                         <label for="parordre_{{ $user->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
@@ -98,7 +99,8 @@
                                 name="signataires[{{ $user->id }}][par_ordre]"
                                 value="1"
                                 id="parordre_{{ $user->id }}"
-                                class="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                                class="parordre-checkbox rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                                style="opacity: 0.5;"
                                 disabled>
                             <span>P.O</span>
                         </label>
@@ -511,18 +513,35 @@
         </div>
     </div>
 
-    {{-- Script gestion des signataires --}}
+    {{-- Script CORRIGÉ pour la gestion des signataires --}}
     <script>
-        document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                const ordreInputId = this.dataset.ordre;
-                const parOrdreId = this.dataset.parordre;
-
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
+                const ordreInputId = checkbox.dataset.ordre;
+                const parOrdreId = checkbox.dataset.parordre;
                 const ordreInput = document.getElementById(ordreInputId);
                 const parOrdreInput = document.getElementById(parOrdreId);
-
-                if (ordreInput) ordreInput.disabled = !this.checked;
-                if (parOrdreInput) parOrdreInput.disabled = !this.checked;
+                
+                // Fonction pour mettre à jour l'état des champs
+                function updateFieldsState(isChecked) {
+                    if (ordreInput) {
+                        ordreInput.disabled = !isChecked;
+                        ordreInput.style.opacity = isChecked ? '1' : '0.5';
+                        ordreInput.style.backgroundColor = isChecked ? 'white' : '#f3f4f6';
+                    }
+                    if (parOrdreInput) {
+                        parOrdreInput.disabled = !isChecked;
+                        parOrdreInput.style.opacity = isChecked ? '1' : '0.5';
+                    }
+                }
+                
+                // État initial
+                updateFieldsState(checkbox.checked);
+                
+                // Écouter les changements
+                checkbox.addEventListener('change', function() {
+                    updateFieldsState(this.checked);
+                });
             });
         });
     </script>
