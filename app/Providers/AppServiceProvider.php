@@ -15,6 +15,7 @@ use App\Models\Service;
 use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Signataire;
+use App\Models\Task;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use App\Http\ViewComposers\NavigationComposer;
@@ -101,7 +102,11 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('site', function ($value) {
             return $this->resolveEncryptedModel($value, \App\Models\Site::class);
         });
-       
+
+        // T-003 : binding chiffré pour les tâches (sinon 404 sur tasks.show/edit/messages/review)
+        Route::bind('task', function ($value) {
+            return $this->resolveEncryptedModel($value, Task::class);
+        });
     }
 
     /**

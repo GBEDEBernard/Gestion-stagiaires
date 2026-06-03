@@ -143,6 +143,49 @@
 - **Phase 0 (réparée en chemin)** : route `admin.reports.respond` désormais fonctionnelle.
   Champs legacy `reviewed_by`/`reviewed_at` du rapport réutilisés par `respond()`.
 
+### T-003-BUGFIX — Correctifs après test utilisateur (2026-06-03)
+- **404 sur les tâches** (tasks.show/edit/messages/review) : **CAUSE** = il manquait
+  `Route::bind('task', ...)` dans `AppServiceProvider` (le pattern de binding chiffré existait
+  pour stage/etudiant/user… mais pas task → l'id restait chiffré → `findOrFail(token)` → 404).
+  **FIX** : ajout du binding `task` (même `resolveEncryptedModel`). Roundtrip vérifié. ✔
+  → Le **chat devient accessible** (la page tâche s'ouvre) ; superviseurs/admins peuvent répondre.
+- **403 / "Unexpected token '<'" sur `admin/reports/respond`** : le JS attend du JSON mais
+  `respond()` renvoyait une redirection. **FIX** : `respond()` renvoie `response()->json(...)`.
+- Tokens chiffrés de l'app vérifiés **URL-safe** (0/20 avec `/ + =`) → pas d'autre correctif requis.
+
+### T-004 — Refonte UX : tout sur une seule vue (unifié, moderne, pro) — 🟡 À PLANIFIER
+- **Demande** : ne plus avoir d'onglets séparés (Suivi tâches vs Suivi rapports ; Mes tâches vs
+  Rapports). **Tout géré ensemble** sur une vue, de façon dynamique et professionnelle.
+  Style moderne, **hovers doux** (pas d'effet agressif/translate/scale ni gradients criards),
+  **espacement** généreux, icônes cohérentes.
+- **Direction proposée** (master-détail) :
+  - **Producteur** : 1 vue « Espace de travail » = liste de mes tâches (gauche) + détail tâche
+    (droite) avec description, progression, **ses rapports** + **chat** + **rapport du jour inline**.
+    La page `/reports` séparée devient redondante.
+  - **Admin/Superviseur** : 1 vue « Suivi » = liste tâches (filtres producteur/période/statut) +
+    détail (rapports + chat + actions de revue). Fusionne suivi-tâches & suivi-rapports.
+  - **Style** : palette neutre slate/zinc, `hover:bg-*/50` discrets, `rounded-xl`, icônes line
+    stroke 1.5, beaucoup d'espace. Adoucir aussi la sidebar (retirer `hover:translate-x-1`,
+    gradients vifs).
+- **Statut** : ✅ **FAIT** (producteur + sidebar) — en attente commit + test visuel.
+- **Décisions** : master-détail 2 colonnes ; `/reports` fusionné ; restyle T-003 + sidebar.
+- **Réalisé** :
+  - `TaskController` : `index`/`show` rendent **`tasks/workspace`** (master-détail) via
+    `workspaceData()` (liste gauche + tâche sélectionnée droite + `todayReport`).
+  - `resources/views/tasks/workspace.blade.php` (NOUVEAU) : liste filtrable/recherche à gauche,
+    détail à droite, modal création, style neutre slate, hovers doux.
+  - `resources/views/tasks/partials/detail.blade.php` (NOUVEAU) : header+actions (owner/relecteur),
+    progression+sparkline, **rapport du jour inline** (compose vers `reports.store`), rapports,
+    **chat** — le tout sur la même vue.
+  - Anciennes `tasks/index.blade.php` & `tasks/show.blade.php` supprimées.
+  - `DailyReportController@index` : producteurs redirigés vers `tasks.index` (`/reports` fusionné).
+  - Sidebar : retrait `hover:translate-x-1` (×21), gradients vifs tonifiés, entrées rapports
+    séparées retirées (étudiant/employé « Rapport journalier », admin « Suivi rapports »),
+    « Mes tâches » → « Espace de travail ».
+  - Rendu vérifié via tinker (workspace vide + détail propriétaire) sans erreur.
+- **Reste (optionnel, non bloquant)** : restyle de la page `admin/tasks/tracking` en master-détail
+  (actuellement table → clique vers le workspace, ce qui couvre déjà la fusion rapports+chat).
+
 ---
 
 ## 📦 Travaux présents sur la branche (non liés aux demandes ci-dessus)

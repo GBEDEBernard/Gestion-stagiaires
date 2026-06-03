@@ -22,6 +22,11 @@ class DailyReportController extends Controller
      */
     public function index(Request $request)
     {
+        // T-004 : les rapports sont désormais gérés dans l'Espace de travail (sous chaque tâche).
+        if ($request->user()->hasAnyRole(['etudiant', 'employe'])) {
+            return redirect()->route('tasks.index');
+        }
+
         $user = $request->user();
         $period = $request->get('period', 'daily');
 

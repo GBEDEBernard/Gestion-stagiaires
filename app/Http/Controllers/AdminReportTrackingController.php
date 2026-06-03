@@ -149,6 +149,7 @@ class AdminReportTrackingController extends Controller
             );
         }
 
-        return back()->with('success', 'Réponse envoyée.');
+        // La page de suivi poste en AJAX et attend du JSON.
+        return response()->json(['success' => true, 'message' => 'Réponse envoyée.']);
     }
 }

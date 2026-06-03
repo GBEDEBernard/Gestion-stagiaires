@@ -20,31 +20,12 @@ class TaskController extends Controller
     /**
      * Liste « Mes tâches » (producteur) — admin/superviseur voient via scopeVisibleTo.
      */
+    /**
+     * Espace de travail (master-détail). Sans tâche sélectionnée = colonne droite vide.
+     */
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $status = $request->get('status');
-
-        $tasks = Task::with(['owner', 'stage.etudiant'])
-            ->visibleTo($user)
-            ->when(
-                in_array($status, Task::STATUSES, true),
-                fn($q) => $q->where('status', $status)
-            )
-            ->when($request->filled('q'), fn($q) => $q->where('title', 'like', '%' . $request->get('q') . '%'))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        $base = Task::query()->visibleTo($user);
-        $stats = [
-            'pending'     => (clone $base)->where('status', 'pending')->count(),
-            'in_progress' => (clone $base)->where('status', 'in_progress')->count(),
-            'blocked'     => (clone $base)->where('status', 'blocked')->count(),
-            'completed'   => (clone $base)->where('status', 'completed')->count(),
-        ];
-
-        return view('tasks.index', compact('tasks', 'stats', 'status'));
+        return view('tasks.workspace', $this->workspaceData($request, null));
     }
 
     public function store(Request $request)
@@ -87,7 +68,7 @@ class TaskController extends Controller
     /**
      * Détail tâche = hub (header + progression + rapports liés + fil de discussion).
      */
-    public function show(Task $task)
+    public function show(Request $request, Task $task)
     {
         $user = auth()->user();
 
@@ -104,7 +85,50 @@ class TaskController extends Controller
             'messages.user',
         ]);
 
-        return view('tasks.show', compact('task'));
+        return view('tasks.workspace', $this->workspaceData($request, $task));
+    }
+
+    /**
+     * Données communes de l'espace de travail : liste (gauche) + tâche sélectionnée (droite).
+     *
+     * @return array<string, mixed>
+     */
+    protected function workspaceData(Request $request, ?Task $selected): array
+    {
+        $user = auth()->user();
+        $status = $request->get('status');
+        $q = $request->get('q');
+
+        $tasks = Task::with(['owner'])
+            ->visibleTo($user)
+            ->when(in_array($status, Task::STATUSES, true), fn($qb) => $qb->where('status', $status))
+            ->when($q, fn($qb) => $qb->where('title', 'like', "%{$q}%"))
+            ->latest('updated_at')
+            ->limit(100)
+            ->get();
+
+        $base = Task::query()->visibleTo($user);
+        $stats = [
+            'pending'     => (clone $base)->where('status', 'pending')->count(),
+            'in_progress' => (clone $base)->where('status', 'in_progress')->count(),
+            'blocked'     => (clone $base)->where('status', 'blocked')->count(),
+            'completed'   => (clone $base)->where('status', 'completed')->count(),
+        ];
+
+        // Rapport déjà soumis aujourd'hui pour la tâche sélectionnée (par le propriétaire).
+        $todayReport = null;
+        if ($selected && $selected->owner_id === $user->id) {
+            $todayReport = $selected->dailyReports
+                ->first(fn($r) => $r->report_date->isToday());
+        }
+
+        return [
+            'tasks'       => $tasks,
+            'stats'       => $stats,
+            'status'      => $status,
+            'selected'    => $selected,
+            'todayReport' => $todayReport,
+        ];
     }
 
     public function edit(Task $task)
