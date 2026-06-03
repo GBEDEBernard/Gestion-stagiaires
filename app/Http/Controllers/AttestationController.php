@@ -38,11 +38,14 @@ class AttestationController extends Controller
             $reference = $attestation->reference;
         }
 
-        $eligibleUsers = User::role('admin')
+       $eligibleUsers = User::role('admin')
             ->where('is_signer', true)
             ->permission('signer_attestation')
             ->with(['personnel.personnable'])
-            ->orderBy('users.name')
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->select('users.*')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
             ->get();
 
         $selectedSignataireIds = $attestation->signataires()

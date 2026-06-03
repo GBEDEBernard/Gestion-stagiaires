@@ -41,9 +41,9 @@ return new class extends Migration
         }
 
         // Ajout de la colonne user_id à la table signataires
-        if (!Schema::hasColumn('signataires', 'user_id')) {
+        if (Schema::hasTable('signataires') && !Schema::hasColumn('signataires', 'user_id')) {
             Schema::table('signataires', function (Blueprint $table) {
-                $table->foreignId('user_id')->nullable()->after('email')->constrained('users')->nullOnDelete();
+                $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->nullOnDelete();
             });
         }
 
@@ -69,7 +69,7 @@ return new class extends Migration
         }
 
         // Supprimer la colonne user_id de signataires
-        if (Schema::hasColumn('signataires', 'user_id')) {
+        if (Schema::hasTable('signataires') && Schema::hasColumn('signataires', 'user_id')) {
             Schema::table('signataires', function (Blueprint $table) {
                 $table->dropConstrainedForeignId('user_id');
             });
