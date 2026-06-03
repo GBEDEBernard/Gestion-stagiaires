@@ -63,6 +63,53 @@
   Plus de migration forçant la valeur (l'ancienne `2026_05_26...` a disparu au reset, jamais
   commitée — effet voulu).
 
+### T-003 — EPIC : Rapports journaliers liés aux tâches (progression + chat)
+- **Statut** : 🟡 Plan + **spec UI/UX figée** (`doc/UI-SPEC-T003.md`) — **en attente du GO final**.
+- **📄 Spec UI/UX détaillée (écran par écran)** : voir **`doc/UI-SPEC-T003.md`** — disposition,
+  champs, boutons, composants, états, edge cases, statuts/couleurs, inspirations (Asana/Linear/
+  Jira/Geekbot/Motion). À lire avant toute implémentation d'écran.
+- **But métier** :
+  - Les **producteurs** (employé/étudiant) créent leurs **tâches**.
+  - Le **rapport du jour** se rattache à **une tâche** + déclare une **progression**.
+  - On travaille **plusieurs jours** sur la même tâche jusqu'à 100 % (= terminée).
+  - Chaque **tâche** porte un **fil de discussion** (producteur + superviseur + admin).
+  - L'admin a un **suivi mensuel** complet des tâches.
+- **Décisions verrouillées (2026-06-03)** :
+  1. Tâches créées **uniquement par les producteurs** ; admin/superviseur = lecture + commentaire.
+  2. Chat **au niveau de la TÂCHE** (fil unique ; les rapports s'y insèrent comme jalons).
+  3. Progression = **dernière valeur déclarée** ; **100 % ⇒ tâche `completed`**.
+  4. **Une seule tâche par rapport** (lien direct ; `daily_report_items` non utilisé).
+- **État de l'existant (constat)** :
+  - `tasks` : créées par admin only, `etudiant_id` NOT NULL (employés exclus). Champs utiles déjà
+    là (`status`, `priority`, `last_progress_percent`, `started_at`, `completed_at`).
+  - `daily_reports` : 1/jour, pas de lien tâche câblé ; `completion_rate` inutilisé.
+  - `daily_report_items` (rapport→tâche) et `task_updates` : **tables présentes mais jamais
+    utilisées**.
+  - `daily_report_reviews` : **affiché** mais **aucune route pour créer** ; route
+    `admin.reports.respond` **cassée** (méthode `respond()` absente).
+  - `DailyReportService.storeForToday` : ignore `items`, ne touche pas les tâches.
+- **Schéma cible (migrations)** :
+  - `tasks` : + `owner_id` (FK users) ; `etudiant_id` & `stage_id` → nullable ; backfill.
+  - `daily_reports` : + `task_id` (FK tasks, nullable) + `task_progress_percent` (0–100).
+  - **`task_messages`** (NOUVELLE) : `task_id`, `user_id`, `body`, `type`
+    (message|report_jalon|status_change), `daily_report_id` nullable, timestamps.
+  - `task_updates` : réutilisée comme historique de progression.
+- **Plan par phases** :
+  - **P1** ✅ **FAIT** (en attente commit) — Schéma & modèles :
+    - Migrations `2026_06_03_000001/2/3` : `tasks.owner_id` (+ `etudiant_id`/`stage_id` nullable,
+      backfill owner_id=assigned_by) ; `daily_reports.task_id` + `task_progress_percent` ;
+      table `task_messages`.
+    - Modèles : `Task` (owner/messages/dailyReports + `scopeVisibleTo` par owner + helpers
+      `isCompleted`/`isOverdue` + `STATUSES`), `DailyReport` (task + champs), `TaskMessage` (new),
+      `User` (ownedTasks/taskMessages). Vérifié via tinker (schéma + relations OK).
+  - **P2** Tâches côté producteur (contrôleur/permissions/`scopeVisibleTo` + UI « Mes tâches »).
+  - **P3** Rapport ↔ tâche + progression (form sélecteur tâche + curseur ; câblage service ;
+    auto-complétion 100 %).
+  - **P4** Chat par tâche (`task_messages` modèle/contrôleur/UI ; `respond()` ; notifications).
+  - **P5** Suivi admin (suivi mensuel + détail tâche : timeline rapports + courbe Chart.js + réponse).
+- **À réparer en chemin (Phase 0)** : route `admin.reports.respond` cassée ; clarifier les champs
+  legacy `reviewed_by`/`supervisor_comment` vs `reviews`.
+
 ---
 
 ## 📦 Travaux présents sur la branche (non liés aux demandes ci-dessus)

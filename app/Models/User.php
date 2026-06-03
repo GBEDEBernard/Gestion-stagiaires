@@ -117,9 +117,20 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Task::class, 'assigned_by');
     }
 
+    /** Tâches dont l'utilisateur est le producteur propriétaire (T-003). */
+    public function ownedTasks()
+    {
+        return $this->hasMany(Task::class, 'owner_id');
+    }
+
     public function taskUpdates()
     {
         return $this->hasMany(TaskUpdate::class, 'updated_by');
+    }
+
+    public function taskMessages()
+    {
+        return $this->hasMany(TaskMessage::class);
     }
 
     public function attestationApprovals()

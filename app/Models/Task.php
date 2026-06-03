@@ -14,6 +14,7 @@ class Task extends Model
     protected $fillable = [
         'stage_id',
         'etudiant_id',
+        'owner_id',
         'assigned_by',
         'title',
         'description',
@@ -29,7 +30,15 @@ class Task extends Model
         'due_date' => 'date',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'last_progress_percent' => 'integer',
     ];
+
+    /** Statuts du cycle de vie (cf. doc/UI-SPEC-T003.md §2). */
+    public const STATUSES = ['pending', 'in_progress', 'blocked', 'changes_requested', 'completed'];
+
+    /* =======================
+       RELATIONS
+    ======================= */
 
     public function stage()
     {
@@ -39,6 +48,12 @@ class Task extends Model
     public function etudiant()
     {
         return $this->belongsTo(Etudiant::class);
+    }
+
+    /** Le producteur propriétaire de la tâche (employé ou étudiant). */
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function assignedBy()
@@ -56,6 +71,38 @@ class Task extends Model
         return $this->hasMany(DailyReportItem::class);
     }
 
+    /** Rapports journaliers rattachés à cette tâche (lien direct). */
+    public function dailyReports()
+    {
+        return $this->hasMany(DailyReport::class)->orderByDesc('report_date');
+    }
+
+    /** Fil de discussion de la tâche (messages + jalons + changements de statut). */
+    public function messages()
+    {
+        return $this->hasMany(TaskMessage::class)->orderBy('created_at');
+    }
+
+    /* =======================
+       HELPERS
+    ======================= */
+
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_date
+            && !$this->isCompleted()
+            && $this->due_date->isPast();
+    }
+
+    /* =======================
+       SCOPES
+    ======================= */
+
     public function scopeVisibleTo($query, $user)
     {
         // 👑 ADMIN : voit tout
@@ -63,19 +110,16 @@ class Task extends Model
             return $query;
         }
 
-        // 👨‍🏫 SUPERVISEUR : voit les tâches de ses étudiants
+        // 👨‍🏫 SUPERVISEUR : voit les tâches des stages qu'il supervise
+        //    + (le cas échéant) les tâches des producteurs de son domaine.
         if ($user->hasRole('superviseur')) {
-            return $query->whereHas('stage', function ($q) use ($user) {
-                $q->where('supervisor_id', $user->id);
+            return $query->where(function ($q) use ($user) {
+                $q->whereHas('stage', fn($s) => $s->where('supervisor_id', $user->id))
+                    ->orWhere('owner_id', $user->id);
             });
         }
 
-        // 👨‍🎓 ÉTUDIANT : voit uniquement ses tâches
-        if ($user->hasRole('etudiant')) {
-            return $query->where('etudiant_id', optional($user->etudiant)->id);
-        }
-
-        // 👨‍🔧 EMPLOYÉ : ses propres tâches assignées
-        return $query->where('assigned_by', $user->id);
+        // 👨‍🎓 / 👨‍🔧 PRODUCTEUR (étudiant ou employé) : uniquement ses tâches.
+        return $query->where('owner_id', $user->id);
     }
 }
