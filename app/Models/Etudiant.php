@@ -13,7 +13,7 @@ class Etudiant extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['personnel_id', 'ecole', 'niveau']; // plus de champs personnels
+    protected $fillable = ['personnel_id', 'ecole', 'niveau', 'supervisor_id']; // plus de champs personnels
 
     // Relation polymorphique avec Personnel
     public function personnel()
@@ -93,5 +93,9 @@ class Etudiant extends Model
     public function getFullNameAttribute(): string
     {
         return trim(($this->prenom ?? '') . ' ' . ($this->nom ?? ''));
+    }
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 }

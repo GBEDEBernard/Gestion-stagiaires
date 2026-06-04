@@ -10,6 +10,7 @@ use App\Models\Domaine;
 use App\Models\Personnel;
 use App\Models\Site;
 use App\Services\RolePermissionPresetService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -21,8 +22,6 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
 
 use Illuminate\Support\Str;
-
-
 
 class UserController extends Controller
 {
@@ -77,6 +76,8 @@ class UserController extends Controller
             }
         }
         $selectedPermissions = array_unique($selectedPermissions);
+
+        $superviseurs = User::role('superviseur')->get(['id', 'name', 'email']);
 
         $allPermissions = Permission::orderBy('name')->get();
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
@@ -206,7 +207,6 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $user->load('personnel', 'roles', 'permissions');
-
         $roles = $this->roleService->orderedRoles();
         $rolePermissionMap = $this->roleService->rolePermissionMap();
 
@@ -223,15 +223,26 @@ class UserController extends Controller
         $employeSiteId = null;
         $employePoste = '';
         $employeMatricule = '';
+        $etudiantSupervisorId = null;
 
         $profil = $user->profil();
         if ($profil instanceof Etudiant) {
             $etudiantEcole = $profil->ecole ?? '';
+            $etudiantSupervisorId = $profil->supervisor_id;
         } elseif ($profil instanceof Employe) {
             $employeSiteId = $profil->site_id;
             $employePoste = $profil->poste;
             $employeMatricule = $profil->matricule;
         }
+
+        // Superviseurs possibles : administrateurs et superviseurs
+        $superviseurs = User::role(['admin', 'superviseur'])
+            ->with('personnel')
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->select('users.*')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->get();
 
         $formData = [
             'user' => $user,
@@ -253,6 +264,9 @@ class UserController extends Controller
             'employeMatricule' => $employeMatricule,
             'domaineIdValue' => $user->domaine_id ?? ($profil instanceof Employe ? $profil->domaine_id : null),
             'isSignerValue' => (bool)$user->is_signer,
+            'superviseurs' => $superviseurs,
+            'supervisorIdValue' => ($profil instanceof Employe) ? $profil->supervisor_id : null,
+            'etudiantSupervisorId' => $etudiantSupervisorId,
         ];
 
         return view('admin.users.edit', compact('formData'));
@@ -276,16 +290,18 @@ class UserController extends Controller
             'telephone' => 'nullable|string|max:20',
             'genre' => 'nullable|string|max:50',
             'etudiant_ecole' => 'nullable|string|max:255',
+            'etudiant_supervisor_id' => 'nullable|exists:users,id',
             'domaine_id' => 'nullable|exists:domaines,id',
             'employe_site_id' => 'nullable|exists:sites,id',
             'employe_poste' => 'nullable|string|max:255',
+            'supervisor_id' => 'nullable|exists:users,id',
             'is_signer' => 'nullable|boolean',
         ]);
 
         DB::transaction(function () use ($validated, $user, $request) {
+            // Mise à jour du personnel
             if ($user->personnel) {
                 $emailChanged = $user->personnel->email !== $validated['email'];
-
                 $user->personnel->update([
                     'nom' => $validated['nom'],
                     'prenom' => $validated['prenom'],
@@ -293,7 +309,6 @@ class UserController extends Controller
                     'telephone' => $validated['telephone'] ?? null,
                     'genre' => $validated['genre'] ?? null,
                 ]);
-
                 if ($emailChanged) {
                     $user->update([
                         'email' => $validated['email'],
@@ -302,17 +317,16 @@ class UserController extends Controller
                 }
             }
 
+            // Mise à jour de l'utilisateur
             $userData = [
                 'email' => $validated['email'],
                 'status' => $validated['status'],
                 'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
-                'is_signer' => isset($validated['is_signer']) ? (bool)$validated['is_signer'] : $user->is_signer,
+                'is_signer' => $validated['is_signer'] ?? false,
             ];
-
             if (Schema::hasColumn('users', 'name')) {
                 $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);
             }
-
             $user->update($userData);
 
             if ($request->filled('password')) {
@@ -324,33 +338,43 @@ class UserController extends Controller
                 ]);
             }
 
+            // Rôles
             $allRoles = [];
-
             if ($request->filled('user_type')) {
                 $allRoles[] = $request->user_type;
             }
-
             if (isset($validated['roles']) && is_array($validated['roles'])) {
                 $allRoles = array_merge($allRoles, $validated['roles']);
             }
-
             $allRoles = array_unique($allRoles);
-
             if (!empty($allRoles)) {
                 $user->syncRoles($allRoles);
             }
 
+            // Mise à jour de la fiche métier
             $profil = $user->profil();
-
             if ($profil instanceof Etudiant) {
                 $profil->update([
                     'ecole' => $validated['etudiant_ecole'] ?? null,
+                    'supervisor_id' => $validated['etudiant_supervisor_id'] ?? null,
                 ]);
+
+                // 🔥 Synchronisation avec le stage actif de l'étudiant
+                $stageActif = $profil->stages()
+                    ->where('date_fin', '>=', now())
+                    ->orWhereNull('date_fin')
+                    ->orderBy('date_debut', 'desc')
+                    ->first();
+
+                if ($stageActif && !empty($validated['etudiant_supervisor_id'])) {
+                    $stageActif->update(['supervisor_id' => $validated['etudiant_supervisor_id']]);
+                }
             } elseif ($profil instanceof Employe) {
                 $profil->update([
                     'site_id' => $validated['employe_site_id'] ?? $profil->site_id,
                     'poste' => $validated['employe_poste'] ?? $profil->poste,
                     'domaine_id' => $validated['domaine_id'] ?? $profil->domaine_id,
+                    'supervisor_id' => $validated['supervisor_id'] ?? null,
                 ]);
             }
         });
@@ -359,7 +383,7 @@ class UserController extends Controller
         if ($request->filled('password')) {
             $message .= ' Un nouveau mot de passe temporaire a été défini.';
         }
-
+        
         return redirect()->route('admin.users.index')->with('success', $message);
     }
 

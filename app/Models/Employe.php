@@ -16,7 +16,9 @@ class Employe extends Model
         'site_id',
         'poste',
         'matricule',
+        'supervisor_id',
     ];
+
 
     /**
      * Relation inverse du polymorphisme :
@@ -51,5 +53,15 @@ class Employe extends Model
     public function site()
     {
         return $this->belongsTo(Site::class);
+    }
+
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function supervisedEmployees()
+    {
+        return $this->hasMany(Employe::class, 'supervisor_id');
     }
 }

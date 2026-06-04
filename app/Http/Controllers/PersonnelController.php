@@ -239,6 +239,7 @@ class PersonnelController extends Controller
                     'max:255',
                     Rule::unique('employes', 'matricule')->ignore($personnel->personnable_id),
                 ],
+                'supervisor_id' => 'nullable|exists:users,id',
             ];
         } else {
             $typeRules = [];
@@ -257,13 +258,16 @@ class PersonnelController extends Controller
         ]);
 
         if ($formType === 'etudiant' && $personnel->personnable) {
-            $personnel->personnable->update(['ecole' => $data['ecole'] ?? $personnel->personnable->ecole]);
+            $personnel->personnable->update([
+                'ecole' => $data['ecole'] ?? $personnel->personnable->ecole,
+            ]);
         } elseif ($formType === 'employe' && $personnel->personnable) {
             $personnel->personnable->update([
-                'domaine_id' => $data['domaine_id'] ?? $personnel->personnable->domaine_id,
-                'site_id'    => $data['site_id'] ?? $personnel->personnable->site_id,
-                'poste'      => $data['poste'] ?? $personnel->personnable->poste,
-                'matricule'  => $data['matricule'] ?? $personnel->personnable->matricule,
+                'domaine_id'    => $data['domaine_id'] ?? $personnel->personnable->domaine_id,
+                'site_id'       => $data['site_id'] ?? $personnel->personnable->site_id,
+                'poste'         => $data['poste'] ?? $personnel->personnable->poste,
+                'matricule'     => $data['matricule'] ?? $personnel->personnable->matricule,
+                'supervisor_id' => $data['supervisor_id'] ?? null,
             ]);
         }
 
@@ -276,18 +280,36 @@ class PersonnelController extends Controller
         return view('admin.personnels.show', compact('personnel'));
     }
 
-    public function edit(Personnel $personnel)
+     public function edit(Personnel $personnel)
     {
         $personnel->load('personnable');
         $domaines = Domaine::all();
         $sites    = Site::all();
-        $type     = match ($personnel->personnable_type) {
+        $type = match ($personnel->personnable_type) {
             Employe::class => 'employe',
             Etudiant::class => 'etudiant',
             default => 'inconnu',
         };
-        return view('admin.personnels.edit', compact('personnel', 'domaines', 'sites', 'type'));
+
+        // Superviseurs possibles : administrateurs et superviseurs
+        $superviseurs = User::role(['admin', 'superviseur'])
+            ->with('personnel')
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->select('users.*')
+            ->orderBy('personnels.nom')
+            ->get();
+
+        $supervisorIdValue = ($personnel->personnable instanceof Employe)
+            ? $personnel->personnable->supervisor_id
+            : null;
+
+        return view('admin.personnels.edit', compact(
+            'personnel', 'domaines', 'sites', 'type',
+            'superviseurs', 'supervisorIdValue'
+        ));
     }
+
+   
 
 
     public function trash()

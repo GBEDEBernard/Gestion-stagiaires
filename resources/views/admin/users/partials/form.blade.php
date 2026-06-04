@@ -160,6 +160,21 @@ $userType = $selectedRoles[0] ?? 'admin';
             <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
             @enderror
         </div>
+        {{-- SUPERVISEUR POUR ÉTUDIANT --}}
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superviseur attitré</label>
+            <select name="etudiant_supervisor_id" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl @error('etudiant_supervisor_id') border-red-500 @enderror">
+                <option value="">Aucun</option>
+                @foreach($superviseurs ?? [] as $sup)
+                <option value="{{ $sup->id }}" {{ old('etudiant_supervisor_id', $etudiantSupervisorId ?? null) == $sup->id ? 'selected' : '' }}>
+                    {{ $sup->personnel?->full_name ?? $sup->name }} ({{ $sup->email }})
+                </option>
+                @endforeach
+            </select>
+            @error('etudiant_supervisor_id')
+            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
+        </div>
     </div>
     @endif
 
@@ -212,6 +227,20 @@ $userType = $selectedRoles[0] ?? 'admin';
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Poste</label>
                 <input type="text" name="employe_poste" value="{{ old('employe_poste', $employePoste ?? '') }}" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl @error('employe_poste') border-red-500 @enderror">
                 @error('employe_poste')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superviseur </label>
+                <select name="supervisor_id" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl @error('supervisor_id') border-red-500 @enderror">
+                    <option value="">Aucun</option>
+                    @foreach($superviseurs ?? [] as $sup)
+                    <option value="{{ $sup->id }}" {{ old('supervisor_id', $supervisorIdValue ?? null) == $sup->id ? 'selected' : '' }}>
+                        {{ $sup->personnel?->full_name ?? $sup->name }} ({{ $sup->email }})
+                    </option>
+                    @endforeach
+                </select>
+                @error('supervisor_id')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                 @enderror
             </div>

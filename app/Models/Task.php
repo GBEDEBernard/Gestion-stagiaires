@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Etudiant;
+use App\Models\Stage;
+use App\Models\User;
+use App\Models\TaskUpdate;
+use App\Models\DailyReportItem;
+use App\Models\DailyReport;
+use App\Models\TaskMessage;
 
 class Task extends Model
 {
@@ -103,23 +110,53 @@ class Task extends Model
        SCOPES
     ======================= */
 
-    public function scopeVisibleTo($query, $user)
-    {
-        // 👑 ADMIN : voit tout
-        if ($user->hasRole('admin')) {
-            return $query;
-        }
+    // app/Models/Task.php
 
-        // 👨‍🏫 SUPERVISEUR : voit les tâches des stages qu'il supervise
-        //    + (le cas échéant) les tâches des producteurs de son domaine.
-        if ($user->hasRole('superviseur')) {
-            return $query->where(function ($q) use ($user) {
-                $q->whereHas('stage', fn($s) => $s->where('supervisor_id', $user->id))
-                    ->orWhere('owner_id', $user->id);
-            });
-        }
 
-        // 👨‍🎓 / 👨‍🔧 PRODUCTEUR (étudiant ou employé) : uniquement ses tâches.
-        return $query->where('owner_id', $user->id);
-    }
+        public function scopeVisibleTo($query, $user)
+        {
+            // ADMIN : voit tout
+            if ($user->hasRole('admin')) {
+                return $query;
+            }
+
+            // SUPERVISEUR : voit les tâches
+            //   - des stages qu’il supervise (étudiants liés à un stage)
+            //   - des employés dont il est le superviseur attitré (employes.supervisor_id)
+            //   - des étudiants dont il est le superviseur direct (etudiants.supervisor_id)
+            //   - ses propres tâches
+            if ($user->hasRole('superviseur')) {
+                // IDs des stages supervisés
+                $stageIds = Stage::where('supervisor_id', $user->id)->pluck('id');
+
+                // IDs des utilisateurs (employés) supervisés via employes.supervisor_id
+                $supervisedEmployeUserIds = Employe::where('supervisor_id', $user->id)
+                    ->with('personnel.user')
+                    ->get()
+                    ->map(fn($e) => optional($e->personnel?->user)->id)
+                    ->filter()
+                    ->values();
+
+                // IDs des utilisateurs (étudiants) supervisés via etudiants.supervisor_id
+                $supervisedEtudiantUserIds = Etudiant::where('supervisor_id', $user->id)
+                    ->with('personnel.user')
+                    ->get()
+                    ->map(fn($e) => optional($e->personnel?->user)->id)
+                    ->filter()
+                    ->values();
+
+                $supervisedUserIds = $supervisedEmployeUserIds
+                    ->merge($supervisedEtudiantUserIds)
+                    ->unique();
+
+                return $query->where(function ($q) use ($user, $stageIds, $supervisedUserIds) {
+                    $q->whereIn('stage_id', $stageIds)               // tâches des stages supervisés
+                    ->orWhereIn('owner_id', $supervisedUserIds)     // tâches des employés/étudiants supervisés
+                    ->orWhere('owner_id', $user->id);               // ses propres tâches
+                });
+            }
+
+            // PRODUCTEUR (étudiant ou employé) : uniquement ses propres tâches
+            return $query->where('owner_id', $user->id);
+        }
 }
