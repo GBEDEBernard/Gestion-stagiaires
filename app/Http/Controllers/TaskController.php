@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\TaskMessage;
 use App\Services\NotificationService;
 use App\Services\UserProfileLinkService;
+use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -14,15 +15,10 @@ class TaskController extends Controller
 {
     public function __construct(
         protected UserProfileLinkService $profileLink,
-        protected NotificationService $notifications
+        protected NotificationService $notifications,
+        protected EmailNotificationService $emailService
     ) {}
 
-    /**
-     * Liste « Mes tâches » (producteur) — admin/superviseur voient via scopeVisibleTo.
-     */
-    /**
-     * Espace de travail (master-détail). Sans tâche sélectionnée = colonne droite vide.
-     */
     public function index(Request $request)
     {
         return view('tasks.workspace', $this->workspaceData($request, null));
@@ -60,39 +56,40 @@ class TaskController extends Controller
             'description' => "Tache {$task->title} creee",
         ]);
 
+        // Notification email
+        $this->emailService->notifyTaskCreated($task);
+
         return redirect()
             ->to(encrypted_route('tasks.show', $task))
             ->with('success', 'Tâche créée avec succès.');
     }
 
-    /**
-     * Détail tâche = hub (header + progression + rapports liés + fil de discussion).
-     */
-    public function show(Request $request, Task $task)
-    {
-        $user = auth()->user();
+   public function show(Request $request, Task $task)
+{
+    $user = auth()->user();
 
-        abort_unless(
-            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
-            403
-        );
+    // Si l'utilisateur connecté ne peut pas voir cette tâche,
+    // on le déconnecte et redirige vers login avec un message
+    if (!Task::whereKey($task->getKey())->visibleTo($user)->exists()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        $task->load([
-            'owner',
-            'assignedBy',
-            'stage.etudiant',
-            'dailyReports',
-            'messages.user',
-        ]);
-
-        return view('tasks.workspace', $this->workspaceData($request, $task));
+        return redirect()->route('login')
+            ->with('info', 'Veuillez vous connecter avec le bon compte pour accéder à cette tâche.');
     }
 
-    /**
-     * Données communes de l'espace de travail : liste (gauche) + tâche sélectionnée (droite).
-     *
-     * @return array<string, mixed>
-     */
+    $task->load([
+        'owner',
+        'assignedBy',
+        'stage.etudiant',
+        'dailyReports',
+        'messages.user',
+    ]);
+
+    return view('tasks.workspace', $this->workspaceData($request, $task));
+}
+
     protected function workspaceData(Request $request, ?Task $selected): array
     {
         $user = auth()->user();
@@ -115,26 +112,18 @@ class TaskController extends Controller
             'completed'   => (clone $base)->where('status', 'completed')->count(),
         ];
 
-        // Rapport déjà soumis aujourd'hui pour la tâche sélectionnée (par le propriétaire).
         $todayReport = null;
         if ($selected && $selected->owner_id === $user->id) {
             $todayReport = $selected->dailyReports
                 ->first(fn($r) => $r->report_date->isToday());
         }
 
-        return [
-            'tasks'       => $tasks,
-            'stats'       => $stats,
-            'status'      => $status,
-            'selected'    => $selected,
-            'todayReport' => $todayReport,
-        ];
+        return compact('tasks', 'stats', 'status', 'selected', 'todayReport');
     }
 
     public function edit(Task $task)
     {
         $this->authorizeOwner($task);
-
         return view('tasks.edit', compact('task'));
     }
 
@@ -196,9 +185,6 @@ class TaskController extends Controller
         return redirect()->route('tasks.index')->with('success', 'Tâche supprimée.');
     }
 
-    /**
-     * Action de revue (superviseur / admin) : demander des corrections ou valider.
-     */
     public function review(Request $request, Task $task)
     {
         $user = auth()->user();
@@ -251,27 +237,19 @@ class TaskController extends Controller
                 'clipboard-check',
                 $data['action'] === 'request_changes' ? 'amber' : 'green'
             );
+
+            // Notification email
+            $this->emailService->notifyTaskReviewed($task, $user, $data['action'], $data['comment'] ?? null);
         }
 
         return back()->with('success', 'Action enregistrée.');
     }
 
-    /* =========================================================================
-       HELPERS
-    ========================================================================= */
-
-    /** Seul le propriétaire (producteur) peut éditer/supprimer sa tâche. */
     protected function authorizeOwner(Task $task): void
     {
         abort_unless($task->owner_id === auth()->id(), 403);
     }
 
-    /**
-     * Résout le contexte étudiant (stage actif + etudiant) pour rattacher la tâche.
-     * Les employés n'ont ni stage ni etudiant → [null, null].
-     *
-     * @return array{0: int|null, 1: int|null}
-     */
     protected function resolveStudentContext($user): array
     {
         if (!$user->hasRole('etudiant')) {

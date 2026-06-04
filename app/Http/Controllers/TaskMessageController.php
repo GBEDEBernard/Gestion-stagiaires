@@ -6,19 +6,17 @@ use App\Models\Task;
 use App\Models\TaskMessage;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TaskMessageController extends Controller
 {
     public function __construct(
-        protected NotificationService $notifications
+        protected NotificationService $notifications,
+        protected EmailNotificationService $emailService
     ) {}
 
-    /**
-     * Poste un message dans le fil de discussion d'une tâche.
-     * Autorisé : propriétaire + superviseur du stage + admin (via scopeVisibleTo).
-     */
     public function store(Request $request, Task $task)
     {
         $user = auth()->user();
@@ -32,22 +30,22 @@ class TaskMessageController extends Controller
             'body' => 'required|string|max:5000',
         ]);
 
-        TaskMessage::create([
+        $message = TaskMessage::create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'type'    => 'message',
             'body'    => $data['body'],
         ]);
 
+        // Notification par email
+        $this->emailService->notifyNewMessage($task, $user, $data['body']);
+
+        // Notification interne (conservée)
         $this->notifyOtherParty($task, $user, $data['body']);
 
         return back()->with('success', 'Message envoyé.');
     }
 
-    /**
-     * Notifie « l'autre partie » : si l'auteur est un relecteur → le producteur ;
-     * si l'auteur est le producteur → superviseur + admins.
-     */
     protected function notifyOtherParty(Task $task, User $author, string $body): void
     {
         $url = encrypted_route('tasks.show', $task);
