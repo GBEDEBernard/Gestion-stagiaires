@@ -143,7 +143,6 @@
                 </form>
             </div>
         </div>
-        {{-- modal toujours rendu; affichage contrôlé par style et JS pour tolérer pertes de session/host --}}
 
         {{-- Formulaire principal --}}
         <div class="mb-8">

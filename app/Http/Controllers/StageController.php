@@ -23,7 +23,6 @@ class StageController extends Controller
     {
         $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'domaine', 'service', 'site', 'supervisor', 'badge', 'jours']);
 
-        // Filtre par statut
         if ($request->filled('statut')) {
             if ($request->statut === 'En cours') {
                 $query->whereDate('date_debut', '<=', now())
@@ -35,12 +34,10 @@ class StageController extends Controller
             }
         }
 
-        // Filtre par type de stage
         if ($request->filled('typestage')) {
             $query->where('typestage_id', $request->typestage);
         }
 
-        // Filtre par nom étudiant
         if ($request->filled('nom')) {
             $query->whereHas('etudiant.personnel', function ($q) use ($request) {
                 $q->where('nom', 'like', '%' . $request->nom . '%')
@@ -48,7 +45,6 @@ class StageController extends Controller
             });
         }
 
-        // Filtre par école
         if ($request->filled('ecole')) {
             $query->whereHas('etudiant', function ($q) use ($request) {
                 $q->where('ecole', 'like', '%' . $request->ecole . '%');
@@ -70,9 +66,9 @@ class StageController extends Controller
                 ->where('date_fin', '>=', $now);
         })->get();
 
-        $badges = Badge::whereDoesntHave('stages', function ($query) use ($now) {
-            $query->where('date_debut', '<=', $now)
-                ->where('date_fin', '>=', $now);
+        // Badges disponibles : ceux qui ne sont utilisés dans AUCUN stage actif ou futur
+        $badges = Badge::whereDoesntHave('stages', function ($query) {
+            $query->where('date_fin', '>=', now());
         })->get();
 
         $typestages = TypeStage::all();
@@ -98,23 +94,9 @@ class StageController extends Controller
 
         $jours = Jour::all();
 
-        // Récupération du flag modal et de l'étudiant pré-sélectionné.
-        // On accepte soit la session flash (redirigée depuis la création de personnel),
-        // soit les query params `show_modal` / `etudiant_id` pour la compatibilité.
         $showModalFromSession = session()->pull('show_modal', false);
         $showModal = $showModalFromSession || request()->boolean('show_modal');
-
         $preselectedEtudiantId = session()->pull('preselected_etudiant_id', null) ?? request()->query('etudiant_id');
-
-        // Diagnostic log pour vérifier la présence des flags (utile en debug local)
-        Log::debug('StageController.create modal flags', [
-            'session_show_modal' => $showModalFromSession,
-            'request_show_modal' => request()->query('show_modal'),
-            'computed_showModal' => $showModal,
-            'session_preselected' => session()->get('preselected_etudiant_id'),
-            'preselectedEtudiantId' => $preselectedEtudiantId,
-            'query_etudiant_id' => request()->query('etudiant_id'),
-        ]);
 
         return view('admin.stages.create', compact(
             'etudiants',
@@ -192,11 +174,13 @@ class StageController extends Controller
                             $innerQuery->where('date_debut', '<=', $dateDebut)
                                 ->where('date_fin', '>=', $dateFin);
                         });
-                })->exists();
+                })
+                ->where('date_fin', '>=', now())
+                ->exists();
 
             if ($conflictBadge) {
                 return back()->withErrors([
-                    'badge_id' => 'Ce badge est deja attribue a un autre stage pour ces dates.',
+                    'badge_id' => 'Ce badge est déjà attribué à un autre stage actif ou futur pour ces dates.',
                 ])->withInput();
             }
         }
@@ -318,7 +302,16 @@ class StageController extends Controller
             ->select('users.*')
             ->get();
 
-        $badges = Badge::all();
+        // Badges disponibles : ceux non utilisés dans un stage actif/futur,
+        // plus le badge actuel du stage (pour qu'il reste sélectionné)
+        $badges = Badge::where(function ($query) use ($stage) {
+            $query->whereDoesntHave('stages', function ($q) {
+                $q->where('date_fin', '>=', now());
+            })->orWhereHas('stages', function ($q) use ($stage) {
+                $q->where('id', $stage->badge_id);
+            });
+        })->get();
+
         $jours = Jour::all();
         $selectedJours = $stage->jours->pluck('id')->toArray();
 
@@ -383,11 +376,13 @@ class StageController extends Controller
                             $innerQuery->where('date_debut', '<=', $dateDebut)
                                 ->where('date_fin', '>=', $dateFin);
                         });
-                })->exists();
+                })
+                ->where('date_fin', '>=', now())
+                ->exists();
 
             if ($conflictBadge) {
                 return back()->withErrors([
-                    'badge_id' => 'Ce badge est deja attribue a un autre stage pour ces dates.',
+                    'badge_id' => 'Ce badge est déjà attribué à un autre stage actif ou futur pour ces dates.',
                 ])->withInput();
             }
         }
@@ -441,10 +436,8 @@ class StageController extends Controller
     public function badge(Stage $stage)
     {
         $stage->load(['etudiant', 'service', 'typestage', 'badge', 'jours']);
-
         $aujourdHui    = now();
         $statutEnCours = $stage->date_debut > $aujourdHui ? 'A venir' : ($stage->date_fin < $aujourdHui ? 'Termine' : 'En cours');
-
         return view('admin.stages.badge', compact('stage', 'statutEnCours'));
     }
 
@@ -471,15 +464,16 @@ class StageController extends Controller
     {
         $stage = Stage::onlyTrashed()->findOrFail($id);
         $stage->restore();
-
+ 
         return redirect()->route('stages.index')->with('success', 'Stage restaure avec succes.');
     }
 
     public function forceDelete($id)
     {
         $stage = Stage::onlyTrashed()->findOrFail($id);
+ 
         $stage->forceDelete();
-
+  
         return redirect()->route('stages.trash')->with('success', 'Stage supprime definitivement.');
     }
 }
