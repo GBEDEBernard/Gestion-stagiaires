@@ -413,14 +413,9 @@ class UserController extends Controller
         return back()->with('success', $message);
     }
 
-    public function show(User $user)
-    {
-        $profil = $user->profil();
-        if ($profil instanceof Etudiant) {
-            return redirect()->route('etudiants.show', $profil);
-        } elseif ($profil instanceof Employe) {
-            return redirect()->route('employes.show', $profil);
-        }
-        return redirect()->route('admin.users.index');
-    }
+   public function show(User $user)
+{
+    $user->load('personnel', 'roles', 'permissions');
+    return view('admin.users.show', compact('user'));
+}
 }
