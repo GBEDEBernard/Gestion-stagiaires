@@ -185,9 +185,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </div>
                 </div>
 
-<<<<<<< HEAD
-                <!-- 3. Stages (uniquement pour admin) - AVEC PERSISTANCE -->
-=======
                 <!-- Espace de travail (employé : producteur de rapports) -->
                 @hasrole('employe')
                 <div class="mb-4">
@@ -203,7 +200,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endhasrole
 
                 <!-- 3. Stages (uniquement pour admin) -->
->>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                 @role('admin')
                 @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
                 <div class="mb-4" x-data="{ openStages: {{ request()->routeIs('stages.*') || request()->routeIs('type_stages.*') || request()->routeIs('services.*') || request()->routeIs('signataires.*') || request()->routeIs('jours.*') ? 'true' : 'false' }} }">
@@ -234,13 +230,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Types de stage</span>
                         </a>
                         @endcan
-<<<<<<< HEAD
                         <!-- @can('services.view')
                         <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-=======
-                        @can('services.view')
-                        <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
->>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                             <span>Services</span>
                         </a>
@@ -257,13 +248,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>jours</span>
                         </a>
                         @endcan
-<<<<<<< HEAD
                         <!-- @can('stages.view')
                         <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group hover:translate-x-1">
-=======
-                        @can('stages.view')
-                        <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group">
->>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                             <span>Corbeille</span>
                         </a>
@@ -352,13 +338,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Domaines</span>
                         </a>
                         @endcan
-<<<<<<< HEAD
-                        <!-- @role('admin')
-                        <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-=======
                         @role('admin|superviseur')
                         <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
->>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Suivi des tâches</span>
                         </a>
