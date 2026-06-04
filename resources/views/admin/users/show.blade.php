@@ -29,7 +29,13 @@
 
     <div class="py-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
+    <!-- bouton retour sur la page precedente -->
+     <a href="{{ route('admin.users.index') }}" class="flex items-center gap-2 text-blue-500 hover:text-blue-700">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9.707 16.293a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        <span>Retour à la liste des utilisateurs</span>
+    </a>
             <!-- Carte d'en-tête -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 text-white">
                 <div class="flex items-center gap-6">
