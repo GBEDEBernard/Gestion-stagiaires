@@ -70,12 +70,12 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             </svg></div>
                         <span>Historique</span>
                     </a>
-                    {{-- Rapport journalier --}}
-                    <a href="{{ route('reports.index') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('reports.*') ? 'bg-amber-500/20 text-amber-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
-                        <div class="p-2 rounded-xl bg-amber-500/10"><svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-5-3-5 3V6a2 2 0 012-2z" />
+                    {{-- Espace de travail (tâches + rapports + discussion) --}}
+                    <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('tasks.*') ? 'bg-teal-500/20 text-teal-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
+                        <div class="p-2 rounded-xl bg-teal-500/10"><svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                             </svg></div>
-                        <span>Rapport journalier</span>
+                        <span>Espace de travail</span>
                     </a>
                     {{-- Mon Stage --}}
                     <a href="{{ route('student.stage') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('student.stage') ? 'bg-indigo-500/20 text-indigo-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
@@ -136,52 +136,44 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     <div x-show="openPresence" x-collapse @click.outside="openPresence = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
                         @can('presence.view')
-                        <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400"></div>
                             <span>Pointages journalières</span>
                         </a>
-                        <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-emerald-400"></div>
                             <span>Historique général</span>
                         </a>
                         @endcan
                         @can('daily_reports.view')
-                        <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:bg-rose-400"></div>
                             <span>Anomalies de présence</span>
                         </a>
-                        <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400"></div>
-                            <span>Suivi rapports</span>
-                        </a>
                         @endcan
                         @role('admin|superviseur')
-                        <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Permissions</span>
                         </a>
                         @endrole
                         @role('admin|superviseur')
-                        <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Statistiques Globales</span>
                         </a>
                         @endrole
                         @else
                         {{-- Employé simple --}}
-                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Pointage</span>
                         </a>
-                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             <span>Historique</span>
                         </a>
-                        <a href="{{ route('reports.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                            <span>Rapport journalier</span>
-                        </a>
-                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
                             <span>Permissions</span>
                             @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
@@ -193,7 +185,25 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <!-- 3. Stages (uniquement pour admin) - AVEC PERSISTANCE -->
+=======
+                <!-- Espace de travail (employé : producteur de rapports) -->
+                @hasrole('employe')
+                <div class="mb-4">
+                    <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-colors duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                        <div class="p-2 rounded-xl {{ request()->routeIs('tasks.*') ? 'bg-teal-500/20' : 'bg-teal-500/20' }}">
+                            <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                        </div>
+                        <span>Espace de travail</span>
+                    </a>
+                </div>
+                @endhasrole
+
+                <!-- 3. Stages (uniquement pour admin) -->
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                 @role('admin')
                 @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
                 <div class="mb-4" x-data="{ openStages: {{ request()->routeIs('stages.*') || request()->routeIs('type_stages.*') || request()->routeIs('services.*') || request()->routeIs('signataires.*') || request()->routeIs('jours.*') ? 'true' : 'false' }} }">
@@ -213,37 +223,47 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </button>
                     <div x-show="openStages" x-collapse @click.outside="openStages = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('stages.view')
-                        <a href="{{ route('stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             <span>Liste des stages</span>
                         </a>
                         @endcan
                         @can('type_stages.view')
-                        <a href="{{ route('type_stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('type_stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Types de stage</span>
                         </a>
                         @endcan
+<<<<<<< HEAD
                         <!-- @can('services.view')
                         <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+=======
+                        @can('services.view')
+                        <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                             <span>Services</span>
                         </a>
                         @endcan -->
                         @can('signataires.view')
-                        <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                             <span>Signataires</span>
                         </a>
                         @endcan
                         @can('jour_stage.view')
-                        <a href="{{ route('jours.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('jours.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
                             <span>jours</span>
                         </a>
                         @endcan
+<<<<<<< HEAD
                         <!-- @can('stages.view')
                         <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group hover:translate-x-1">
+=======
+                        @can('stages.view')
+                        <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group">
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                             <span>Corbeille</span>
                         </a>
@@ -273,25 +293,25 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </button>
                     <div x-show="openPersonnes" x-collapse @click.outside="openPersonnes = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('personnels.view')
-                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                             <span>Personnels</span>
                         </a>
                         @endcan
                         @can('etudiants.view')
-                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Étudiants</span>
                         </a>
                         @endcan
                         @role('admin|superviseur')
-                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Employés</span>
                         </a>
                         @endrole
                         @can('badges.view')
-                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Badges</span>
                         </a>
@@ -321,21 +341,26 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </button>
                     <div x-show="openOrganisation" x-collapse @click.outside="openOrganisation = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('sites.view')
-                        <a href="{{ route('sites.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('sites.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
                             <span>Sites</span>
                         </a>
                         @endcan
                         @can('domaines.view')
-                        <a href="{{ route('domaines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('domaines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                             <span>Domaines</span>
                         </a>
                         @endcan
+<<<<<<< HEAD
                         <!-- @role('admin')
                         <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+=======
+                        @role('admin|superviseur')
+                        <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                            <span>Tâches</span>
+                            <span>Suivi des tâches</span>
                         </a>
                         @endrole -->
                     </div>
@@ -361,11 +386,11 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </svg>
                     </button>
                     <div x-show="openAccess" x-collapse @click.outside="openAccess = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                             <span>Utilisateurs</span>
                         </a>
-                        <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Rôles</span>
                         </a>
@@ -390,32 +415,111 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
             </div>
             @endunlessrole
 
-            <!-- Profil Utilisateur (pied de page) -->
-            <div class="p-4 border-t border-slate-800/40" x-data="{ userMenuOpen: false }">
-                <button @click="userMenuOpen = !userMenuOpen" class="w-full flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-slate-800/30 transition">
-                    @if(Auth::user()->avatar)
-                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" class="w-9 h-9 rounded-full object-cover">
-                    @else
-                    <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white text-sm font-medium">
-                        {{ substr(Auth::user()->name, 0, 1) }}
-                    </div>
-                    @endif
-                    <div class="flex-1 text-left min-w-0">
-                        <p class="text-sm text-white truncate">{{ Auth::user()->name }}</p>
-                    </div>
-                    <svg class="w-4 h-4 text-slate-500 transition-transform duration-200" :class="userMenuOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+        </div>
 
-                <div x-show="userMenuOpen" x-transition @click.outside="userMenuOpen = false" class="mt-2 rounded-xl bg-slate-900/60 border border-slate-800/40 overflow-hidden">
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/40 transition">Paramètres</a>
-                    <form method="POST" action="{{ route('logout') }}">
+        <!-- Profil Utilisateur — pied de page (popup enrichie) -->
+        <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-slate-400/10 shadow-[0_-8px_32px_0_rgba(0,0,0,0.32)]"
+             x-data="{ open: false }">
+
+            {{-- Overlay transparent pour fermer au clic dehors --}}
+            <div x-show="open" x-cloak @click="open = false" class="fixed inset-0 z-50"></div>
+
+            {{-- Popup flottante — au-dessus de l'overlay --}}
+            <div
+                x-show="open"
+                x-cloak
+                @click.stop
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-3"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-3"
+                class="fixed bottom-[78px] left-3 w-[268px] z-[60] rounded-2xl overflow-hidden bg-gray-900 border border-white/10 shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_24px_64px_rgba(0,0,0,0.75),0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]">
+
+                {{-- Header utilisateur --}}
+                <div class="p-4 bg-gradient-to-br from-indigo-500/[0.06] to-transparent border-b border-white/5">
+                    <div class="flex items-center gap-3">
+                        @if(Auth::user()->avatar)
+                        <div class="relative flex-shrink-0">
+                            <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                                 class="w-[42px] h-[42px] rounded-xl object-cover ring-2 ring-indigo-500/50 shadow-lg shadow-black/40">
+                            <span class="absolute -bottom-0.5 -right-0.5 w-[11px] h-[11px] bg-emerald-500 rounded-full border-2 border-gray-900"></span>
+                        </div>
+                        @else
+                        <div class="relative flex-shrink-0">
+                            <div class="w-[42px] h-[42px] rounded-xl flex items-center justify-center text-[15px] font-bold text-white bg-gradient-to-br from-indigo-500 to-indigo-800 ring-2 ring-indigo-500/50 shadow-lg shadow-black/40">
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            </div>
+                            <span class="absolute -bottom-0.5 -right-0.5 w-[11px] h-[11px] bg-emerald-500 rounded-full border-2 border-gray-900"></span>
+                        </div>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                            <p class="text-[11px] text-slate-400/60 truncate mt-0.5 leading-tight">{{ Auth::user()->email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="p-1.5">
+                    <a href="{{ route('profile.edit') }}"
+                       class="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-slate-300/90 hover:text-slate-200 hover:bg-indigo-500/[0.13] transition-colors">
+                        <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/[0.14] flex-shrink-0">
+                            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </span>
+                        Paramètres du compte
+                    </a>
+
+                    <div class="mx-2 my-1 h-px bg-white/5"></div>
+
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
-                        <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition">Déconnexion</button>
+                        <button type="submit"
+                            class="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-300/85 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/[0.12] flex-shrink-0">
+                                <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                            </span>
+                            Déconnexion
+                        </button>
                     </form>
                 </div>
             </div>
+
+            {{-- ===== BOUTON DÉCLENCHEUR ===== --}}
+            <button
+                @click="open = !open"
+                class="relative z-[1] w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-indigo-500/[0.08] hover:border-indigo-500/20 transition-colors">
+
+                @if(Auth::user()->avatar)
+                <div class="relative flex-shrink-0">
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}"
+                         class="w-[34px] h-[34px] rounded-[9px] object-cover">
+                    <span class="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] bg-emerald-500 rounded-full border-2 border-[#1e2433]"></span>
+                </div>
+                @else
+                <div class="relative flex-shrink-0">
+                    <div class="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center text-[13px] font-bold text-white bg-gradient-to-br from-indigo-500 to-indigo-800">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] bg-emerald-500 rounded-full border-2 border-[#1e2433]"></span>
+                </div>
+                @endif
+
+                <div class="flex-1 min-w-0 text-left">
+                    <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                    <p class="text-[11px] text-slate-400/55 truncate leading-snug">{{ Auth::user()->email }}</p>
+                </div>
+
+                <svg class="w-[15px] h-[15px] flex-shrink-0 text-slate-400/45" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M11.47 4.72a.75.75 0 0 1 1.06 1.06L8 10.31 3.47 5.78a.75.75 0 0 1 1.06-1.06L8 8.19l3.47-3.47ZM11.47 9.28a.75.75 0 0 0 1.06-1.06L8 3.69 3.47 8.22a.75.75 0 0 0 1.06 1.06L8 5.81l3.47 3.47Z"/>
+                </svg>
+            </button>
         </div>
     </nav>
 

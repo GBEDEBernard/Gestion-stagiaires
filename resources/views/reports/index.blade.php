@@ -53,6 +53,35 @@
                             @method('PUT')
                             @endisset
 
+                            <!-- Tâche concernée + progression -->
+                            @if(($activeTasks ?? collect())->isNotEmpty())
+                            <div x-data="{ prog: {{ (int) old('task_progress_percent', 0) }} }">
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Tâche concernée</label>
+                                <select name="task_id"
+                                    @change="prog = parseInt($event.target.selectedOptions[0].dataset.progress || prog)"
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">
+                                    <option value="">— Aucune tâche —</option>
+                                    @foreach($activeTasks as $t)
+                                    <option value="{{ $t->id }}" data-progress="{{ (int) $t->last_progress_percent }}" {{ old('task_id') == $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
+                                    @endforeach
+                                </select>
+
+                                <div class="mt-3">
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">
+                                        Progression de la tâche : <span class="font-semibold text-slate-900" x-text="prog + '%'"></span>
+                                    </label>
+                                    <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog"
+                                        class="w-full accent-slate-900">
+                                </div>
+                            </div>
+                            @else
+                            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600">
+                                Aucune tâche active.
+                                <a href="{{ route('tasks.index') }}" class="font-medium text-slate-900 underline">Créer une tâche</a>
+                                pour y rattacher ce rapport et suivre ta progression.
+                            </div>
+                            @endif
+
                             <!-- Summary -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-2">Résumé</label>

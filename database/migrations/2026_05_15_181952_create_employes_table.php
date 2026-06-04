@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('employes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('personnel_id')->nullable()->constrained('personnels')->nullOnDelete();
             $table->foreignId('domaine_id')->constrained();
             $table->foreignId('site_id')->constrained();
             $table->string('poste')->nullable();

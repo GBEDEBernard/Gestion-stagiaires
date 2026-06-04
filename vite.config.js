@@ -8,4 +8,14 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    server: {
+        // Force IPv4 binding to avoid browsers trying IPv6 [::1] which can
+        // cause HMR WebSocket failures on some Windows setups / firewalls.
+        host: '127.0.0.1',
+        port: 5173,
+        hmr: {
+            host: '127.0.0.1',
+            protocol: 'ws',
+        },
+    },
 });

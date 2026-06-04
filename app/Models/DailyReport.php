@@ -15,6 +15,7 @@ class DailyReport extends Model
         'etudiant_id',
         'user_id',
         'attendance_day_id',
+        'task_id',
         'report_date',
         'title',
         'summary',
@@ -22,6 +23,7 @@ class DailyReport extends Model
         'next_steps',
         'hours_declared',
         'completion_rate',
+        'task_progress_percent',
         'status',
         'submitted_at',
         'reviewed_by',
@@ -35,6 +37,7 @@ class DailyReport extends Model
         'reviewed_at' => 'datetime',
         'hours_declared' => 'float',
         'completion_rate' => 'integer',
+        'task_progress_percent' => 'integer',
     ];
 
     /* =======================
@@ -59,6 +62,12 @@ class DailyReport extends Model
     public function attendanceDay()
     {
         return $this->belongsTo(AttendanceDay::class);
+    }
+
+    /** Tâche documentée par ce rapport (une seule tâche par rapport). */
+    public function task()
+    {
+        return $this->belongsTo(Task::class);
     }
 
     public function items()

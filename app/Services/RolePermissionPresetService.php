@@ -42,6 +42,11 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                // T-003 : les producteurs gèrent leurs propres tâches
+                'tasks.view',
+                'tasks.create',
+                'tasks.edit',
+                'tasks.delete',
                 // Permissions pour les demandes de permission
                 'permissions.view',
                 'permissions.create',
@@ -60,9 +65,8 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.review',
                 'daily_reports.approve',
+                // T-003 : le superviseur LIT et COMMENTE les tâches (pas de création/assignation)
                 'tasks.view',
-                'tasks.create',
-                'tasks.edit',
                 'tasks.review',
                 'attendance_anomalies.view',
                 'attendance_anomalies.review',
@@ -83,7 +87,11 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                // T-003 : les producteurs gèrent leurs propres tâches
                 'tasks.view',
+                'tasks.create',
+                'tasks.edit',
+                'tasks.delete',
                 'stages.view',
                 // Permissions pour les demandes de permission
                 'permissions.view',

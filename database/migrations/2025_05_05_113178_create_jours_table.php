@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('jours', function (Blueprint $table) {
             $table->id();
-            $table->string('jour')->unique();       
+            $table->string('jour')->unique();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

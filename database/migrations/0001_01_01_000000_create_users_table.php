@@ -3,24 +3,29 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Spatie\Permission\Traits\HasRoles;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    use HasRoles;
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('personnel_id')->nullable()->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->foreignId('domaine_id')->nullable();
             $table->string('password');
             $table->rememberToken();
+            $table->string('status')->default('actif');
+            $table->string('phone')->nullable();
+            $table->text('bio')->nullable();
+            $table->string('avatar')->nullable();
+            $table->boolean('must_change_password')->default(false);
+            $table->timestamp('temporary_password_created_at')->nullable();
+            $table->timestamp('password_changed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -39,13 +44,10 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

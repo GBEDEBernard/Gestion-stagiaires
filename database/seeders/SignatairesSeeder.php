@@ -3,23 +3,32 @@
 namespace Database\Seeders;
 
 use App\Models\Signataire;
+<<<<<<< HEAD
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+=======
+use Illuminate\Support\Facades\Schema;
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
 
 class SignatairesSeeder extends Seeder
 {
     public function run(): void
     {
+<<<<<<< HEAD
         Permission::firstOrCreate([
             'name'       => 'signer_attestation',
             'guard_name' => 'web',
         ]);
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+=======
+        // Désactiver les contraintes
+        Schema::disableForeignKeyConstraints();
+>>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
         Signataire::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::enableForeignKeyConstraints();
 
         $definitions = [
             'Directeur Général'           => ['sigle' => 'DG',  'ordre' => 1, 'peut_par_ordre' => false],

@@ -27,6 +27,9 @@ return new class extends Migration
             $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('validated_at')->nullable();
             $table->text('summary_notes')->nullable();
+            $table->string('arrival_status')->nullable();
+            $table->string('departure_status')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['stage_id', 'attendance_date']);

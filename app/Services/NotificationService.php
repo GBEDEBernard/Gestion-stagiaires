@@ -6,9 +6,35 @@ use App\Models\AppNotification;
 use App\Models\Etudiant;
 use App\Models\Stage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class NotificationService
 {
+    /**
+     * Pousse une notification ciblée à un utilisateur précis (événementiel).
+     * Utilisé par T-003 (nouveau rapport, nouveau message, corrections demandées).
+     */
+    public function push(
+        int $userId,
+        string $type,
+        string $title,
+        string $message,
+        ?string $url = null,
+        string $icon = 'bell',
+        string $color = 'blue'
+    ): void {
+        AppNotification::create([
+            'unique_id' => $type . '_' . (string) Str::uuid(),
+            'user_id'   => $userId,
+            'type'      => $type,
+            'title'     => $title,
+            'message'   => $message,
+            'icon'      => $icon,
+            'color'     => $color,
+            'url'       => $url,
+        ]);
+    }
+
     /**
      * Generer les notifications automatiquement (ADMIN/SUPERVISEUR uniquement).
      */

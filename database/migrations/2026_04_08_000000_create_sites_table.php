@@ -24,10 +24,21 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        Schema::table('stages', function (Blueprint $table) {
+            $table->foreign('site_id')
+                ->references('id')
+                ->on('sites')
+                ->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('stages', function (Blueprint $table) {
+            $table->dropForeign(['site_id']);
+        });
+
         Schema::dropIfExists('sites');
     }
 };
