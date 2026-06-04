@@ -106,13 +106,7 @@ class Task extends Model
             && $this->due_date->isPast();
     }
 
-    /* =======================
-       SCOPES
-    ======================= */
-
-    // app/Models/Task.php
-
-
+//    scope pour filtrer les tâches visibles par un utilisateur donné, selon son rôle et ses liens avec les stages/étudiants/employés
         public function scopeVisibleTo($query, $user)
         {
             // ADMIN : voit tout
