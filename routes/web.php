@@ -439,11 +439,4 @@ Route::prefix('attestation')->group(function () {
         ->name('attestation.sign.submit');
 });
 
-// Les routes suivantes doivent être DANS le groupe auth, avant la fermeture
-// stades.attestation.show utilise déjà la méthode showStageAttestation
-// Il faut changer le nom de la route
-Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])
-    ->name('stages.attestation.show')->middleware('permission:attestation.view');
-
-
     });
