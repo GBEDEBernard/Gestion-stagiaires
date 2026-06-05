@@ -103,9 +103,23 @@ php artisan reverb:start
 # Update .env to use Reverb config
 ```
 
-### Option 3: Polling Only (No WebSocket)
+### Option 3: Polling Only (No WebSocket) — DEFAULT
 
-Keep `BROADCAST_CONNECTION=log` - frontend will use polling fallback. Useful for ngrok environments where WebSocket ports don't pass through.
+This is the default. `BROADCAST_CONNECTION=log` on the server and an **empty
+`VITE_PUSHER_APP_KEY`** on the client. With no client key, `resources/js/echo.js`
+sets `window.Echo = null` and never opens a socket — so there are no failed
+connection retries in the browser console. The task chat refreshes via polling
+(4s). Ideal for ngrok environments where the WS port isn't forwarded.
+
+To switch from polling to real-time you must do BOTH:
+1. Start a WS server (Pusher Fake Server or `php artisan reverb:start`) and set
+   `BROADCAST_CONNECTION=pusher` (or `reverb`) so the server actually emits events.
+2. Set `VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"` and **rebuild assets**
+   (`npm run build`). Vite inlines `VITE_*` vars at build time, so a rebuild is
+   required for the client to pick up the key.
+
+> Note: Echo and polling can run simultaneously. `merge()` is idempotent (keyed
+> by message id), so a message arriving via both paths is not duplicated.
 
 ## Testing
 

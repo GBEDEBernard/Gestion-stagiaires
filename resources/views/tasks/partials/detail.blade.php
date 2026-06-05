@@ -423,7 +423,8 @@
 
             setupEcho() {
                 // Phase 3: Echo real-time subscriptions (with polling fallback).
-                if (typeof window.Echo === 'undefined') return;
+                // window.Echo is null when no WS server is configured/reachable.
+                if (!window.Echo) return;
 
                 const taskId = this.payload.task?.id;
                 if (!taskId) return;
