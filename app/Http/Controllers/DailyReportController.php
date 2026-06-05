@@ -178,8 +178,25 @@ class DailyReportController extends Controller
 
     public function store(StoreDailyReportRequest $request)
     {
-        $this->dailyReportService
-            ->storeForToday($request->user(), $request->validated());
+        $data = $request->validated();
+
+        // T-005 : rapport vocal — on stocke le fichier et on injecte voice_path/duration.
+        if ($request->hasFile('voice')) {
+            $file = $request->file('voice');
+            $mime = $file->getMimeType() ?: 'application/octet-stream';
+
+            $audioOk = str_starts_with($mime, 'audio/')
+                || in_array($mime, ['video/webm', 'video/ogg', 'application/ogg', 'application/octet-stream'], true);
+
+            abort_unless($audioOk, 422, 'Fichier vocal invalide.');
+
+            $data['voice_path'] = $file->store('report-voices/' . $request->user()->id, 'public');
+            $data['voice_duration'] = $request->integer('voice_duration') ?: null;
+        }
+
+        unset($data['voice']); // l'UploadedFile ne doit pas descendre dans le service
+
+        $this->dailyReportService->storeForToday($request->user(), $data);
 
         return back()->with('success', 'Rapport enregistré.');
     }

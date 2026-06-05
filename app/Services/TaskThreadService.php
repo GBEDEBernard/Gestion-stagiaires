@@ -151,6 +151,14 @@ class TaskThreadService
             ->all();
     }
 
+    /** Réactions sérialisées d'un message (exposé pour l'endpoint react()). */
+    public function reactionsFor(TaskMessage $m, ?User $viewer): array
+    {
+        $m->loadMissing('reactions');
+
+        return $this->reactions($m, $viewer);
+    }
+
     private function reactions(TaskMessage $m, ?User $viewer): array
     {
         if ($m->reactions->isEmpty()) {

@@ -89,7 +89,10 @@ class DailyReportService
                 'task_id' => $task?->id,
                 'task_progress_percent' => $task ? ($payload['task_progress_percent'] ?? $task->last_progress_percent) : null,
                 'title' => 'Rapport du ' . today()->format('d/m/Y'),
-                'summary' => $payload['summary'],
+                // T-005 : résumé optionnel si rapport vocal.
+                'summary' => $payload['summary'] ?? null,
+                'voice_path' => $payload['voice_path'] ?? null,
+                'voice_duration' => $payload['voice_duration'] ?? null,
                 'blockers' => $payload['blockers'] ?? null,
                 'next_steps' => $payload['next_steps'] ?? null,
                 'hours_declared' => $payload['hours_declared'] ?? 0,
