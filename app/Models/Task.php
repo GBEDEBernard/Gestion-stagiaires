@@ -24,17 +24,25 @@ class Task extends Model
         'last_progress_percent',
         'started_at',
         'completed_at',
+        'validated_by',
+        'validated_at',
+        'discussion_reopened_at',
     ];
 
     protected $casts = [
         'due_date' => 'date',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'validated_at' => 'datetime',
+        'discussion_reopened_at' => 'datetime',
         'last_progress_percent' => 'integer',
     ];
 
-    /** Statuts du cycle de vie (cf. doc/UI-SPEC-T003.md §2). */
-    public const STATUSES = ['pending', 'in_progress', 'blocked', 'changes_requested', 'completed'];
+    /**
+     * Statuts du cycle de vie (cf. doc/UI-SPEC-T003.md §2 + T-005).
+     * `awaiting_validation` : 100 % atteint, en attente de la clôture ADMIN.
+     */
+    public const STATUSES = ['pending', 'in_progress', 'blocked', 'changes_requested', 'awaiting_validation', 'completed'];
 
     /* =======================
        RELATIONS
@@ -59,6 +67,18 @@ class Task extends Model
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    /** Admin ayant validé (clôturé) la tâche. */
+    public function validatedBy()
+    {
+        return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    /** Curseurs de lecture (✓✓) des participants. */
+    public function reads()
+    {
+        return $this->hasMany(TaskRead::class);
     }
 
     public function updates()
@@ -92,11 +112,40 @@ class Task extends Model
         return $this->status === 'completed';
     }
 
+    public function isAwaitingValidation(): bool
+    {
+        return $this->status === 'awaiting_validation';
+    }
+
     public function isOverdue(): bool
     {
         return $this->due_date
             && !$this->isCompleted()
             && $this->due_date->isPast();
+    }
+
+    /**
+     * État de la discussion (T-005) :
+     *  - 'locked' : tâche créée mais aucun rapport encore → discussion pas ouverte.
+     *  - 'closed' : tâche clôturée par l'admin → lecture seule (réouvrable).
+     *  - 'open'   : au moins un rapport et tâche non clôturée → chat actif.
+     */
+    public function discussionState(): string
+    {
+        if ($this->isCompleted()) {
+            return 'closed';
+        }
+
+        $hasReport = $this->relationLoaded('dailyReports')
+            ? $this->dailyReports->isNotEmpty()
+            : $this->dailyReports()->exists();
+
+        return $hasReport ? 'open' : 'locked';
+    }
+
+    public function isDiscussionOpen(): bool
+    {
+        return $this->discussionState() === 'open';
     }
 
     /* =======================

@@ -117,9 +117,14 @@ class TaskController extends Controller
 
         // Rapport déjà soumis aujourd'hui pour la tâche sélectionnée (par le propriétaire).
         $todayReport = null;
-        if ($selected && $selected->owner_id === $user->id) {
-            $todayReport = $selected->dailyReports
-                ->first(fn($r) => $r->report_date->isToday());
+        $thread = null;
+        if ($selected) {
+            if ($selected->owner_id === $user->id) {
+                $todayReport = $selected->dailyReports
+                    ->first(fn($r) => $r->report_date->isToday());
+            }
+
+            $thread = app(\App\Services\TaskThreadService::class)->payload($selected, $user);
         }
 
         return [
@@ -128,6 +133,7 @@ class TaskController extends Controller
             'status'      => $status,
             'selected'    => $selected,
             'todayReport' => $todayReport,
+            'thread'      => $thread,
         ];
     }
 
@@ -254,6 +260,105 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'Action enregistrée.');
+    }
+
+    /**
+     * Clôture de la tâche — ADMIN UNIQUEMENT (T-005).
+     * L'admin déclare la tâche terminée quand il est satisfait des rapports.
+     * → status=completed, discussion fermée (lecture seule).
+     */
+    public function complete(Request $request, Task $task)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasRole('admin'), 403);
+        abort_unless(
+            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
+            403
+        );
+
+        $data = $request->validate([
+            'comment' => 'nullable|string|max:5000',
+        ]);
+
+        if (!$task->isCompleted()) {
+            $task->update([
+                'status'                 => 'completed',
+                'last_progress_percent'  => 100,
+                'completed_at'           => $task->completed_at ?: now(),
+                'validated_by'           => $user->id,
+                'validated_at'           => now(),
+                'discussion_reopened_at' => null,
+            ]);
+
+            TaskMessage::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'type'    => 'status_change',
+                'body'    => '✅ Tâche validée et clôturée par ' . $user->name . '. La discussion est fermée.'
+                    . (!empty($data['comment']) ? ' — ' . $data['comment'] : ''),
+            ]);
+
+            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+                $this->notifications->push(
+                    (int) $task->owner_id,
+                    'task_completed',
+                    '✅ Tâche validée',
+                    $user->name . ' a clôturé « ' . Str::limit($task->title, 40) . ' »',
+                    encrypted_route('tasks.show', $task),
+                    'check-circle',
+                    'green'
+                );
+            }
+        }
+
+        return back()->with('success', 'Tâche clôturée.');
+    }
+
+    /**
+     * Réouverture de la discussion — ADMIN UNIQUEMENT (T-005).
+     * La tâche reprend (awaiting_validation si déjà à 100 %, sinon in_progress).
+     */
+    public function reopen(Request $request, Task $task)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasRole('admin'), 403);
+        abort_unless(
+            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
+            403
+        );
+
+        if ($task->isCompleted()) {
+            $task->update([
+                'status'                 => $task->last_progress_percent >= 100 ? 'awaiting_validation' : 'in_progress',
+                'completed_at'           => null,
+                'validated_by'           => null,
+                'validated_at'           => null,
+                'discussion_reopened_at' => now(),
+            ]);
+
+            TaskMessage::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'type'    => 'status_change',
+                'body'    => '🔓 Discussion rouverte par ' . $user->name . '. La tâche continue.',
+            ]);
+
+            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+                $this->notifications->push(
+                    (int) $task->owner_id,
+                    'task_reopened',
+                    '🔓 Tâche rouverte',
+                    $user->name . ' a rouvert « ' . Str::limit($task->title, 40) . ' »',
+                    encrypted_route('tasks.show', $task),
+                    'lock-open',
+                    'amber'
+                );
+            }
+        }
+
+        return back()->with('success', 'Discussion rouverte.');
     }
 
     /* =========================================================================

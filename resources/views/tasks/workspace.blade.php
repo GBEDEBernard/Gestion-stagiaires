@@ -79,7 +79,7 @@
             <!-- ===================== COLONNE DROITE : DÉTAIL ===================== -->
             <main class="min-w-0">
                 @if($selected)
-                    @include('tasks.partials.detail', ['task' => $selected, 'todayReport' => $todayReport])
+                    @include('tasks.partials.detail', ['task' => $selected, 'todayReport' => $todayReport, 'thread' => $thread])
                 @else
                 <div class="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 py-24 text-center">
                     <svg class="w-10 h-10 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m-7 5h8a2 2 0 002-2V7l-5-4H6a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
