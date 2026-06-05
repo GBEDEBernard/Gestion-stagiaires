@@ -117,8 +117,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 </div>
                 @endcan
 
-                <!-- 2. Suivi & Présence -->
-                <div class="mb-4" x-data="{ openPresence: false }">
+                <!-- 2. Suivi & Présence - AVEC PERSISTANCE -->
+                <div class="mb-4" x-data="{ openPresence: {{ request()->routeIs('attendance.tracking.index') || request()->routeIs('admin.presence.*') || request()->routeIs('reports.*') || request()->routeIs('permissions.*') || request()->routeIs('presence.*') ? 'true' : 'false' }} }">
                     <button @click="openPresence = !openPresence" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPresence ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -155,17 +155,14 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Permissions</span>
-
                         </a>
                         @endrole
-
                         @role('admin|superviseur')
                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Statistiques Globales</span>
                         </a>
                         @endrole
-
                         @else
                         {{-- Employé simple --}}
                         <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
@@ -188,24 +185,10 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </div>
                 </div>
 
-                <!-- Espace de travail (employé : producteur de rapports) -->
-                @hasrole('employe')
-                <div class="mb-4">
-                    <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-colors duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                        <div class="p-2 rounded-xl {{ request()->routeIs('tasks.*') ? 'bg-teal-500/20' : 'bg-teal-500/20' }}">
-                            <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                        </div>
-                        <span>Espace de travail</span>
-                    </a>
-                </div>
-                @endhasrole
-
-                <!-- 3. Stages (uniquement pour admin) -->
+                <!-- 3. Stages (uniquement pour admin) - AVEC PERSISTANCE -->
                 @role('admin')
                 @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
-                <div class="mb-4" x-data="{ openStages: false }">
+                <div class="mb-4" x-data="{ openStages: {{ request()->routeIs('stages.*') || request()->routeIs('type_stages.*') || request()->routeIs('services.*') || request()->routeIs('signataires.*') || request()->routeIs('jours.*') ? 'true' : 'false' }} }">
                     <button @click="openStages = !openStages" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openStages ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -233,12 +216,12 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Types de stage</span>
                         </a>
                         @endcan
-                        @can('services.view')
-                        <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                        <!-- @can('services.view')
+                        <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                             <span>Services</span>
                         </a>
-                        @endcan
+                        @endcan -->
                         @can('signataires.view')
                         <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
@@ -248,24 +231,24 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @can('jour_stage.view')
                         <a href="{{ route('jours.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
-                            <span>Jours</span>
+                            <span>jours</span>
                         </a>
                         @endcan
-                        @can('stages.view')
-                        <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group">
+                        <!-- @can('stages.view')
+                        <a href="{{ route('stages.trash') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400/80 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                             <span>Corbeille</span>
                         </a>
-                        @endcan
+                        @endcan -->
                     </div>
                 </div>
                 @endcanany
                 @endrole
 
-                <!-- 4. Personnes -->
+                <!-- 4. Personnes - AVEC PERSISTANCE -->
                 @if(!auth()->user()->hasRole('etudiant'))
                 @canany(['etudiants.view', 'employes.view', 'personnels.view', 'badges.view'])
-                <div class="mb-4" x-data="{ openPersonnes: false }">
+                <div class="mb-4" x-data="{ openPersonnes: {{ request()->routeIs('personnels.*') || request()->routeIs('etudiants.*') || request()->routeIs('employes.*') || request()->routeIs('badges.*') ? 'true' : 'false' }} }">
                     <button @click="openPersonnes = !openPersonnes" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPersonnes ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -284,10 +267,9 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @can('personnels.view')
                         <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            <span>Personnel (unifié)</span>
+                            <span>Personnels</span>
                         </a>
                         @endcan
-
                         @can('etudiants.view')
                         <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
@@ -300,7 +282,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Employés</span>
                         </a>
                         @endrole
-
                         @can('badges.view')
                         <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
@@ -312,10 +293,10 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcanany
                 @endif
 
-                <!-- 5. Organisation -->
+                <!-- 5. Organisation - AVEC PERSISTANCE -->
                 @if(!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe'))
                 @canany(['sites.view', 'domaines.view', 'tasks.view'])
-                <div class="mb-4" x-data="{ openOrganisation: false }">
+                <div class="mb-4" x-data="{ openOrganisation: {{ request()->routeIs('sites.*') || request()->routeIs('domaines.*') || request()->routeIs('tasks.*') ? 'true' : 'false' }} }">
                     <button @click="openOrganisation = !openOrganisation" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openOrganisation ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -343,20 +324,20 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Domaines</span>
                         </a>
                         @endcan
-                        @role('admin|superviseur')
-                        <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                        <!-- @role('admin')
+                        <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Suivi des tâches</span>
                         </a>
-                        @endrole
+                        @endrole -->
                     </div>
                 </div>
                 @endcanany
                 @endif
 
-                <!-- 6. Accès & Sécurité (admin uniquement) -->
+                <!-- 6. Accès & Sécurité (admin uniquement) - AVEC PERSISTANCE -->
                 @role('admin')
-                <div class="mb-4" x-data="{ openAccess: false }">
+                <div class="mb-4" x-data="{ openAccess: {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') ? 'true' : 'false' }} }">
                     <button @click="openAccess = !openAccess" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openAccess ? 'bg-gradient-to-r from-indigo-700 to-indigo-800 text-white shadow-lg shadow-indigo-800/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">

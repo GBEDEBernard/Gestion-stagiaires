@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Badge;
+use App\Models\Domaine;
 use App\Models\Etudiant;
 use App\Models\Jour;
-use App\Models\Service;
 use App\Models\Signataire;
 use App\Models\Site;
 use App\Models\Stage;
@@ -19,47 +19,43 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class StageController extends Controller
 {
-   public function index(Request $request)
-{
-    $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'service', 'site', 'supervisor', 'badge', 'jours']);
+    public function index(Request $request)
+    {
+        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'domaine', 'service', 'site', 'supervisor', 'badge', 'jours']);
 
-    // Filtre par statut
-    if ($request->filled('statut')) {
-        if ($request->statut === 'En cours') {
-            $query->whereDate('date_debut', '<=', now())
-                ->whereDate('date_fin', '>=', now());
-        } elseif (in_array($request->statut, ['Termine', 'Terminé'], true)) {
-            $query->whereDate('date_fin', '<', now());
-        } elseif (in_array($request->statut, ['A venir', 'À venir'], true)) {
-            $query->whereDate('date_debut', '>', now());
+        if ($request->filled('statut')) {
+            if ($request->statut === 'En cours') {
+                $query->whereDate('date_debut', '<=', now())
+                    ->whereDate('date_fin', '>=', now());
+            } elseif (in_array($request->statut, ['Termine', 'Terminé'], true)) {
+                $query->whereDate('date_fin', '<', now());
+            } elseif (in_array($request->statut, ['A venir', 'À venir'], true)) {
+                $query->whereDate('date_debut', '>', now());
+            }
         }
-    }
 
-    // Filtre par type de stage
-    if ($request->filled('typestage')) {
-        $query->where('typestage_id', $request->typestage);
-    }
-    
-    // Filtre par nom étudiant
-    if ($request->filled('nom')) {
-        $query->whereHas('etudiant.personnel', function ($q) use ($request) {
-            $q->where('nom', 'like', '%' . $request->nom . '%')
-              ->orWhere('prenom', 'like', '%' . $request->nom . '%');
-        });
-    }
-    
-    // Filtre par école
-    if ($request->filled('ecole')) {
-        $query->whereHas('etudiant', function ($q) use ($request) {
-            $q->where('ecole', 'like', '%' . $request->ecole . '%');
-        });
-    }
+        if ($request->filled('typestage')) {
+            $query->where('typestage_id', $request->typestage);
+        }
 
-    $stages = $query->paginate(5)->withQueryString();
-    $typestages = TypeStage::all();
+        if ($request->filled('nom')) {
+            $query->whereHas('etudiant.personnel', function ($q) use ($request) {
+                $q->where('nom', 'like', '%' . $request->nom . '%')
+                    ->orWhere('prenom', 'like', '%' . $request->nom . '%');
+            });
+        }
 
-    return view('admin.stages.index', compact('stages', 'typestages'));
-}
+        if ($request->filled('ecole')) {
+            $query->whereHas('etudiant', function ($q) use ($request) {
+                $q->where('ecole', 'like', '%' . $request->ecole . '%');
+            });
+        }
+
+        $stages = $query->paginate(5)->withQueryString();
+        $typestages = TypeStage::all();
+
+        return view('admin.stages.index', compact('stages', 'typestages'));
+    }
 
     public function create()
     {
@@ -70,13 +66,13 @@ class StageController extends Controller
                 ->where('date_fin', '>=', $now);
         })->get();
 
-        $badges = Badge::whereDoesntHave('stages', function ($query) use ($now) {
-            $query->where('date_debut', '<=', $now)
-                ->where('date_fin', '>=', $now);
+        // Badges disponibles : ceux qui ne sont utilisés dans AUCUN stage actif ou futur
+        $badges = Badge::whereDoesntHave('stages', function ($query) {
+            $query->where('date_fin', '>=', now());
         })->get();
 
         $typestages = TypeStage::all();
-        $services = Service::all();
+        $domaines = Domaine::all();
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
@@ -98,28 +94,14 @@ class StageController extends Controller
 
         $jours = Jour::all();
 
-        // Récupération du flag modal et de l'étudiant pré-sélectionné.
-        // On accepte soit la session flash (redirigée depuis la création de personnel),
-        // soit les query params `show_modal` / `etudiant_id` pour la compatibilité.
         $showModalFromSession = session()->pull('show_modal', false);
         $showModal = $showModalFromSession || request()->boolean('show_modal');
-
         $preselectedEtudiantId = session()->pull('preselected_etudiant_id', null) ?? request()->query('etudiant_id');
-
-        // Diagnostic log pour vérifier la présence des flags (utile en debug local)
-        Log::debug('StageController.create modal flags', [
-            'session_show_modal' => $showModalFromSession,
-            'request_show_modal' => request()->query('show_modal'),
-            'computed_showModal' => $showModal,
-            'session_preselected' => session()->get('preselected_etudiant_id'),
-            'preselectedEtudiantId' => $preselectedEtudiantId,
-            'query_etudiant_id' => request()->query('etudiant_id'),
-        ]);
 
         return view('admin.stages.create', compact(
             'etudiants',
             'typestages',
-            'services',
+            'domaines',
             'sites',
             'supervisors',
             'badges',
@@ -134,7 +116,7 @@ class StageController extends Controller
         $request->validate([
             'etudiant_id'  => 'required|exists:etudiants,id',
             'typestage_id' => 'nullable|exists:typestages,id',
-            'service_id'   => 'nullable|exists:services,id',
+            'domaine_id'   => 'nullable|exists:domaines,id',
             'site_id'      => 'nullable|exists:sites,id',
             'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
@@ -192,11 +174,13 @@ class StageController extends Controller
                             $innerQuery->where('date_debut', '<=', $dateDebut)
                                 ->where('date_fin', '>=', $dateFin);
                         });
-                })->exists();
+                })
+                ->where('date_fin', '>=', now())
+                ->exists();
 
             if ($conflictBadge) {
                 return back()->withErrors([
-                    'badge_id' => 'Ce badge est deja attribue a un autre stage pour ces dates.',
+                    'badge_id' => 'Ce badge est déjà attribué à un autre stage actif ou futur pour ces dates.',
                 ])->withInput();
             }
         }
@@ -204,7 +188,7 @@ class StageController extends Controller
         $stage = Stage::create($request->only([
             'etudiant_id',
             'typestage_id',
-            'service_id',
+            'domaine_id',
             'site_id',
             'supervisor_id',
             'badge_id',
@@ -226,21 +210,38 @@ class StageController extends Controller
 
     public function show(Stage $stage)
     {
-        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'service', 'site', 'supervisor']);
+        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'service', 'site', 'supervisor']);
 
         $statutEnCours = $stage->date_debut && $stage->date_fin
             ? (now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : (now()->gt($stage->date_fin) ? 'Termine' : 'A venir'))
             : 'A venir';
 
         $signataires = Signataire::orderBy('ordre')->get();
-        $etudiant    = $stage->etudiant;
+        $eligibleUsers = User::role('admin')
+            ->where('is_signer', true)
+            ->permission('signer_attestation')
+            ->with(['personnel.personnable'])
+            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+            ->select('users.*')
+            ->orderBy('personnels.nom')
+            ->orderBy('personnels.prenom')
+            ->get();
 
+        $selectedSignataireIds = [];
+        if ($stage->attestation) {
+            $selectedSignataireIds = $stage->attestation->signataires()
+                ->pluck('user_id')
+                ->filter()
+                ->all();
+        }
+
+        $etudiant    = $stage->etudiant;
         $nombreStages = $etudiant->stages()->count();
 
         $stagesTermines = $etudiant->stages()
             ->where('id', '!=', $stage->id)
             ->where('date_fin', '<', now())
-            ->with(['typestage', 'service'])
+            ->with(['typestage', 'domaine'])
             ->orderBy('date_fin', 'desc')
             ->get();
 
@@ -269,6 +270,8 @@ class StageController extends Controller
             'stage',
             'statutEnCours',
             'signataires',
+            'eligibleUsers',
+            'selectedSignataireIds',
             'nombreStages',
             'stagesTermines',
             'attestations',
@@ -280,7 +283,7 @@ class StageController extends Controller
     {
         $etudiants = Etudiant::all();
         $typestages = TypeStage::all();
-        $services = Service::all();
+        $domaines = Domaine::all();
         $sites = Site::where('is_active', true)
             ->where(function ($query) {
                 $query->where('code', 'like', 'TFG%')
@@ -299,7 +302,16 @@ class StageController extends Controller
             ->select('users.*')
             ->get();
 
-        $badges = Badge::all();
+        // Badges disponibles : ceux non utilisés dans un stage actif/futur,
+        // plus le badge actuel du stage (pour qu'il reste sélectionné)
+        $badges = Badge::where(function ($query) use ($stage) {
+            $query->whereDoesntHave('stages', function ($q) {
+                $q->where('date_fin', '>=', now());
+            })->orWhereHas('stages', function ($q) use ($stage) {
+                $q->where('id', $stage->badge_id);
+            });
+        })->get();
+
         $jours = Jour::all();
         $selectedJours = $stage->jours->pluck('id')->toArray();
 
@@ -307,7 +319,7 @@ class StageController extends Controller
             'stage',
             'etudiants',
             'typestages',
-            'services',
+            'domaines',
             'sites',
             'supervisors',
             'badges',
@@ -321,14 +333,14 @@ class StageController extends Controller
         $request->validate([
             'etudiant_id'  => 'required|exists:etudiants,id',
             'typestage_id' => 'nullable|exists:typestages,id',
-            'service_id'   => 'nullable|exists:services,id',
+            'domaine_id'   => 'nullable|exists:domaines,id',
             'site_id'      => 'nullable|exists:sites,id',
             'supervisor_id' => 'nullable|exists:users,id',
             'badge_id'     => 'nullable|exists:badges,id',
             'theme'        => 'nullable|string|max:255',
             'date_debut'   => 'required|date',
             'date_fin'     => 'required|date|after_or_equal:date_debut',
-            'jours_id'     => 'nullable|array',
+            'jours_id'     => 'required|array',
             'jours_id.*'   => 'exists:jours,id',
         ]);
 
@@ -364,11 +376,13 @@ class StageController extends Controller
                             $innerQuery->where('date_debut', '<=', $dateDebut)
                                 ->where('date_fin', '>=', $dateFin);
                         });
-                })->exists();
+                })
+                ->where('date_fin', '>=', now())
+                ->exists();
 
             if ($conflictBadge) {
                 return back()->withErrors([
-                    'badge_id' => 'Ce badge est deja attribue a un autre stage pour ces dates.',
+                    'badge_id' => 'Ce badge est déjà attribué à un autre stage actif ou futur pour ces dates.',
                 ])->withInput();
             }
         }
@@ -376,7 +390,7 @@ class StageController extends Controller
         $stage->update($request->only([
             'etudiant_id',
             'typestage_id',
-            'service_id',
+            'domaine_id',
             'site_id',
             'supervisor_id',
             'badge_id',
@@ -411,21 +425,19 @@ class StageController extends Controller
         return redirect()->route('stages.index')->with('success', 'Stage supprime.');
     }
 
-    public function servicesDisponibles(Etudiant $etudiant)
+    public function domainesDisponibles(Etudiant $etudiant)
     {
-        $servicesFaits = $etudiant->stages()->pluck('service_id')->toArray();
-        $services = Service::whereNotIn('id', $servicesFaits)->get();
+        $domainesFaits = $etudiant->stages()->pluck('domaine_id')->toArray();
+        $domaines = Domaine::whereNotIn('id', $domainesFaits)->get();
 
-        return response()->json($services);
+        return response()->json($domaines);
     }
 
     public function badge(Stage $stage)
     {
         $stage->load(['etudiant', 'service', 'typestage', 'badge', 'jours']);
-
         $aujourdHui    = now();
         $statutEnCours = $stage->date_debut > $aujourdHui ? 'A venir' : ($stage->date_fin < $aujourdHui ? 'Termine' : 'En cours');
-
         return view('admin.stages.badge', compact('stage', 'statutEnCours'));
     }
 
@@ -452,15 +464,16 @@ class StageController extends Controller
     {
         $stage = Stage::onlyTrashed()->findOrFail($id);
         $stage->restore();
-
+ 
         return redirect()->route('stages.index')->with('success', 'Stage restaure avec succes.');
     }
 
     public function forceDelete($id)
     {
         $stage = Stage::onlyTrashed()->findOrFail($id);
+ 
         $stage->forceDelete();
-
+  
         return redirect()->route('stages.trash')->with('success', 'Stage supprime definitivement.');
     }
 }

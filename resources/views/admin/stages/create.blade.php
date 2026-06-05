@@ -13,7 +13,7 @@
                         </svg>
                     </button>
                 </div>
-                <form action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-6">
+                <form id="stageFormModal" action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-6">
                     @csrf
                     <div class="space-y-4">
                         <div>
@@ -57,11 +57,11 @@
                             </div>
 
                             <div>
-                                <label for="service_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                                <select name="service_id" id="service_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                <label for="domaine_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                                <select name="domaine_id" id="domaine_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
                                     <option value="">Sélectionner</option>
-                                    @foreach($services as $service)
-                                    <option value="{{ $service->id }}">{{ $service->nom }}</option>
+                                    @foreach($domaines as $domaine)
+                                    <option value="{{ $domaine->id }}">{{ $domaine->nom }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -123,6 +123,10 @@
                                 </label>
                                 @endforeach
                             </div>
+                            @error('jours_id')
+                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                            <p id="joursErrorModal" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                         </div>
                     </div>
 
@@ -139,7 +143,6 @@
                 </form>
             </div>
         </div>
-        {{-- modal toujours rendu; affichage contrôlé par style et JS pour tolérer pertes de session/host --}}
 
         {{-- Formulaire principal --}}
         <div class="mb-8">
@@ -159,7 +162,7 @@
         @endif
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <form action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-8">
+            <form id="stageForm" action="{{ route('stages.store') }}" method="POST" class="p-6 space-y-8">
                 @csrf
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -214,12 +217,12 @@
                         </div>
 
                         <div>
-                            <label for="service_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                            <select name="service_id" id="service_id"
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services</label>
+                            <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un service</option>
-                                @foreach($services as $service)
-                                <option value="{{ $service->id }}" {{ old('service_id') == $service->id ? 'selected' : '' }}>{{ $service->nom }}</option>
+                                <option value="">Sélectionner un domaine de service</option>
+                                @foreach($domaines as $domaine)
+                                <option value="{{ $domaine->id }}" {{ old('domaine_id') == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -287,6 +290,10 @@
                         </label>
                         @endforeach
                     </div>
+                    @error('jours_id')
+                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                    <p id="joursError" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                 </div>
 
                 <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
@@ -337,25 +344,25 @@
                 return;
             }
 
-            fetch(`/admin/etudiants/${etudiantId}/services`)
+            fetch(`/admin/etudiants/${etudiantId}/domaines`)
                 .then(res => res.json())
                 .then(data => {
-                    const serviceSelects = [
-                        document.getElementById('service_id'),
-                        document.getElementById('service_id_modal')
+                    const domaineSelects = [
+                        document.getElementById('domaine_id'),
+                        document.getElementById('domaine_id_modal')
                     ];
-                    serviceSelects.forEach(serviceSelect => {
-                        if (!serviceSelect) return;
-                        serviceSelect.innerHTML = '<option value="">Sélectionner un service</option>';
-                        data.forEach(service => {
+                    domaineSelects.forEach(domaineSelect => {
+                        if (!domaineSelect) return;
+                        domaineSelect.innerHTML = '<option value="">Sélectionner un domaine</option>';
+                        data.forEach(domaine => {
                             const opt = document.createElement('option');
-                            opt.value = service.id;
-                            opt.text = service.nom;
-                            serviceSelect.appendChild(opt);
+                            opt.value = domaine.id;
+                            opt.text = domaine.nom;
+                            domaineSelect.appendChild(opt);
                         });
                     });
                 })
-                .catch(err => console.error('Erreur lors du chargement des services :', err));
+                .catch(err => console.error('Erreur lors du chargement des domaines :', err));
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -393,6 +400,67 @@
             const modal = document.getElementById('stageModal');
             if (modal && e.target === modal) {
                 closeModal();
+            }
+        });
+    </script>
+
+    <script>
+        function validateJours(form, errorElementId) {
+            const checkboxes = form.querySelectorAll('input[name="jours_id[]"]');
+            let found = false;
+            checkboxes.forEach(cb => {
+                if (cb.checked) found = true;
+            });
+            const errEl = document.getElementById(errorElementId);
+            if (!found) {
+                if (errEl) errEl.style.display = 'block';
+                return false;
+            }
+            if (errEl) errEl.style.display = 'none';
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainForm = document.getElementById('stageForm');
+            if (mainForm) {
+                mainForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursError')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
+
+            const modalForm = document.getElementById('stageFormModal');
+            if (modalForm) {
+                modalForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursErrorModal')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
+
+            const editForm = document.getElementById('stageFormEdit');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    if (!validateJours(this, 'joursErrorEdit')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
             }
         });
     </script>

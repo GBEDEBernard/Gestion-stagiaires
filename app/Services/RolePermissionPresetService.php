@@ -58,6 +58,7 @@ class RolePermissionPresetService
                 'stages.view',
                 'attestation.view',
                 'attestation.approve',
+                'signer_attestation',
                 'sites.view',
                 'presence.view',
                 'presence.audit',

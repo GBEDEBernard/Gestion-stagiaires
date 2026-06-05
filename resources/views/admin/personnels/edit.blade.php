@@ -30,31 +30,31 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Prénom *</label>
                         <input type="text" name="prenom" value="{{ old('prenom', $personnel->prenom) }}" required
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Nom *</label>
                         <input type="text" name="nom" value="{{ old('nom', $personnel->nom) }}" required
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Email *</label>
                         <input type="email" name="email" value="{{ old('email', $personnel->email) }}" required
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Téléphone</label>
                         <input type="text" name="telephone" value="{{ old('telephone', $personnel->telephone) }}"
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Genre</label>
                         <select name="genre"
-                                class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                        text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                             <option value="">Sélectionner</option>
                             <option value="Homme" {{ old('genre', $personnel->genre) == 'Homme' ? 'selected' : '' }}>Homme</option>
@@ -65,13 +65,13 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Date de naissance</label>
                         <input type="date" name="date_naissance" value="{{ old('date_naissance', $personnel->date_naissance) }}"
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Adresse</label>
                         <textarea name="adresse" rows="3"
-                                  class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                          text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">{{ old('adresse', $personnel->adresse) }}</textarea>
                     </div>
                 </div>
@@ -79,16 +79,19 @@
                 <div class="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-3xl border border-gray-200 dark:border-gray-700">
                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Type de personnel</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-300 mt-1">
-                        Ce personnel est enregistré comme <strong class="text-gray-700 dark:text-sky-400">{{ $type === 'employe' ? 'Employé' : 'Étudiant' }}</strong>.
+                        Ce personnel est enregistré comme
+                        <strong class="text-gray-700 dark:text-sky-400">
+                            {{ $type === 'employe' ? 'Employé' : ($type === 'etudiant' ? 'Étudiant' : 'Inconnu') }}
+                        </strong>.
                     </p>
                 </div>
 
                 <div id="etudiant-fields" class="space-y-6 {{ $type !== 'etudiant' ? 'hidden' : '' }}">
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Informations étudiant</h3>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École *</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
                         <input type="text" name="ecole" value="{{ old('ecole', optional($personnel->personnable)->ecole) }}"
-                               class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                            class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                       text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                     </div>
                 </div>
@@ -97,9 +100,9 @@
                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Informations employé</h3>
                     <div class="grid gap-6 md:grid-cols-2">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Domaine *</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Domaine</label>
                             <select name="domaine_id"
-                                    class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                                class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                            text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                                 <option value="">Sélectionner</option>
                                 @foreach($domaines as $domaine)
@@ -110,7 +113,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Site *</label>
                             <select name="site_id"
-                                    class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                                class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                            text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                                 <option value="">Sélectionner</option>
                                 @foreach($sites as $site)
@@ -121,13 +124,13 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Poste</label>
                             <input type="text" name="poste" value="{{ old('poste', optional($personnel->personnable)->poste) }}"
-                                   class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                                class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                           text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Matricule *</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Matricule</label>
                             <input type="text" name="matricule" value="{{ old('matricule', optional($personnel->personnable)->matricule) }}"
-                                   class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
+                                class="mt-2 w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl
                                           text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
                         </div>
                     </div>

@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    {{-- Modal Attestation --}}
+    {{-- Modal Attestation CORRIGÉE --}}
     <div id="modalAttestation" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
@@ -67,37 +67,40 @@
 
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Sélectionnez les signataires pour cette attestation :</p>
 
-                @forelse($signataires as $signataire)
+                @forelse($eligibleUsers as $user)
                 <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                     <input type="checkbox"
-                        name="signataires[{{ $signataire->id }}][selected]"
+                        name="signataires[{{ $user->id }}][selected]"
                         value="1"
                         class="signataire-checkbox w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                        id="sign_{{ $signataire->id }}"
-                        data-ordre="ordre_{{ $signataire->id }}"
-                        data-parordre="parordre_{{ $signataire->id }}">
+                        id="sign_{{ $user->id }}"
+                        data-ordre="ordre_{{ $user->id }}"
+                        data-parordre="parordre_{{ $user->id }}"
+                        @if(in_array($user->id, $selectedSignataireIds ?? [])) checked @endif>
 
-                    <label for="sign_{{ $signataire->id }}" class="flex-1 cursor-pointer">
-                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $signataire->nom }}</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $signataire->poste }})</span>
+                    <label for="sign_{{ $user->id }}" class="flex-1 cursor-pointer">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $user->personnel->full_name ?? $user->name }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $user->signerRoleLabel() }})</span>
                     </label>
 
-                    @if(!$signataire->isDG() && $signataire->peut_par_ordre)
+                    @if(!$user->isDG())
                     <div class="flex items-center gap-2">
                         <input type="number"
-                            name="signataires[{{ $signataire->id }}][ordre]"
+                            name="signataires[{{ $user->id }}][ordre]"
                             min="1" max="2"
                             placeholder="Ordre"
-                            class="w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
-                            id="ordre_{{ $signataire->id }}"
+                            class="ordre-input w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
+                            id="ordre_{{ $user->id }}"
+                            style="opacity: 0.5;"
                             disabled>
 
-                        <label for="parordre_{{ $signataire->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                        <label for="parordre_{{ $user->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                             <input type="checkbox"
-                                name="signataires[{{ $signataire->id }}][par_ordre]"
+                                name="signataires[{{ $user->id }}][par_ordre]"
                                 value="1"
-                                id="parordre_{{ $signataire->id }}"
-                                class="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                                id="parordre_{{ $user->id }}"
+                                class="parordre-checkbox rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                                style="opacity: 0.5;"
                                 disabled>
                             <span>P.O</span>
                         </label>
@@ -292,7 +295,7 @@
                             </p>
                         </div>
 
-                        {{-- Service --}}
+                        {{-- Domaine --}}
                         <div class="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 rounded-xl p-4 border border-cyan-100 dark:border-cyan-800/30">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="p-1.5 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg">
@@ -300,10 +303,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 </div>
-                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Service</span>
+                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Domaine</span>
                             </div>
-                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->service->nom ?? 'Non défini' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->service->responsable ?? 'Responsable non défini' }}</p>
+                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->domaine->nom ?? 'Non défini' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->domaine->description ?? 'Aucune description' }}</p>
                         </div>
 
                         {{-- Jours de travail --}}
@@ -355,7 +358,7 @@
                                 <div>
                                     <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $stageHist->theme ?? 'Stage' }}</p>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->service->nom ?? 'Service non défini' }}
+                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->domaine->nom ?? 'Domaine non défini' }}
                                     </p>
                                 </div>
                             </div>
@@ -510,18 +513,35 @@
         </div>
     </div>
 
-    {{-- Script gestion des signataires --}}
+    {{-- Script CORRIGÉ pour la gestion des signataires --}}
     <script>
-        document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                const ordreInputId = this.dataset.ordre;
-                const parOrdreId = this.dataset.parordre;
-
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
+                const ordreInputId = checkbox.dataset.ordre;
+                const parOrdreId = checkbox.dataset.parordre;
                 const ordreInput = document.getElementById(ordreInputId);
                 const parOrdreInput = document.getElementById(parOrdreId);
-
-                if (ordreInput) ordreInput.disabled = !this.checked;
-                if (parOrdreInput) parOrdreInput.disabled = !this.checked;
+                
+                // Fonction pour mettre à jour l'état des champs
+                function updateFieldsState(isChecked) {
+                    if (ordreInput) {
+                        ordreInput.disabled = !isChecked;
+                        ordreInput.style.opacity = isChecked ? '1' : '0.5';
+                        ordreInput.style.backgroundColor = isChecked ? 'white' : '#f3f4f6';
+                    }
+                    if (parOrdreInput) {
+                        parOrdreInput.disabled = !isChecked;
+                        parOrdreInput.style.opacity = isChecked ? '1' : '0.5';
+                    }
+                }
+                
+                // État initial
+                updateFieldsState(checkbox.checked);
+                
+                // Écouter les changements
+                checkbox.addEventListener('change', function() {
+                    updateFieldsState(this.checked);
+                });
             });
         });
     </script>

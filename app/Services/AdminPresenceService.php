@@ -651,6 +651,134 @@ class AdminPresenceService
     //  ABSENCES
     // ══════════════════════════════════════════════════════════════════════════
 
+    public function getAbsencesWithDetails(string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        if ($dateFrom || $dateTo) {
+            $startDate = $dateFrom ? Carbon::parse($dateFrom)->startOfDay() : now()->startOfMonth();
+            $endDate   = $dateTo   ? Carbon::parse($dateTo)->endOfDay()     : now()->endOfMonth();
+        } else {
+            switch ($period) {
+                case 'week':
+                    $startDate = now()->startOfWeek()->startOfDay();
+                    $endDate = now()->endOfWeek()->endOfDay();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear()->startOfDay();
+                    $endDate = now()->endOfYear()->endOfDay();
+                    break;
+                default:
+                    $startDate = now()->startOfMonth()->startOfDay();
+                    $endDate = now()->endOfMonth()->endOfDay();
+                    break;
+            }
+        }
+
+        $systemStart = $this->systemStartDate();
+        if ($startDate->lt($systemStart)) {
+            $startDate = $systemStart->copy();
+        }
+
+        $today = today()->endOfDay();
+
+        $absentCountByUserName = [];
+        $absentDaysByUserName = [];
+
+        $employeeIds = User::whereHas('personnel', function ($query) {
+            $query->where('personnable_type', Employe::class);
+        })
+            ->where('status', 'actif')
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
+        $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
+
+        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
+            ->weekdays()
+            ->select(['attendance_date', 'etudiant_id', 'user_id', 'first_check_in_at'])
+            ->get()
+            ->groupBy(fn($d) => Carbon::parse($d->attendance_date)->format('Y-m-d'));
+
+        $days = $startDate->copy();
+        while ($days->lte($endDate)) {
+            if ($days->isWeekend() || $days->gt($today)) {
+                $days->addDay();
+                continue;
+            }
+
+            $dateKey         = $days->format('Y-m-d');
+            $attendanceForDay = $attendanceDays->get($dateKey) ?? collect();
+
+            $presentEtudiantIds = $attendanceForDay
+                ->filter(fn($ad) => !empty($ad->first_check_in_at) && !is_null($ad->etudiant_id))
+                ->pluck('etudiant_id')->unique()->values()->all();
+
+            $presentEmployeeIds = $attendanceForDay
+                ->filter(fn($ad) => !empty($ad->first_check_in_at) && !is_null($ad->user_id) && is_null($ad->etudiant_id))
+                ->pluck('user_id')->unique()->values()->all();
+
+            $activeStageEtudiantIds = Stage::whereDate('date_debut', '<=', $dateKey)
+                ->whereDate('date_fin', '>=', $dateKey)
+                ->distinct('etudiant_id')->pluck('etudiant_id')->values()->all();
+
+            $absentEtudiantIds = array_values(array_diff($activeStageEtudiantIds, $presentEtudiantIds));
+            if (!empty($absentEtudiantIds)) {
+                $etudiantUsers = Etudiant::whereIn('id', $absentEtudiantIds)->with('user')->get();
+                foreach ($etudiantUsers as $et) {
+                    $userCreatedAt = Carbon::parse($et->user?->created_at ?? $systemStart)->startOfDay();
+                    if ($days->gte($userCreatedAt)) {
+                        $name = $et->user?->name ?? 'Inconnu';
+                        $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
+                        $absentDaysByUserName[$name][] = [
+                            'label' => $days->locale('fr')->isoFormat('dddd D MMMM YYYY'),
+                            'date' => $dateKey,
+                        ];
+                    }
+                }
+            }
+
+            foreach ($employeeIds as $uid) {
+                if (!in_array($uid, $presentEmployeeIds)) {
+                    $empCreatedAt = $employeeCreatedAtById[$uid] ?? $systemStart;
+                    if ($days->gte($empCreatedAt)) {
+                        $name = $employeeNameById[$uid] ?? 'Inconnu';
+                        $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
+                        $absentDaysByUserName[$name][] = [
+                            'label' => $days->isoFormat('dddd D MMMM YYYY'),
+                            'date' => $dateKey,
+                        ];
+                    }
+                }
+            }
+
+            $days->addDay();
+        }
+
+        arsort($absentCountByUserName);
+        $counts = array_slice($absentCountByUserName, 0, 10, true);
+        $details = [];
+
+        foreach (array_keys($counts) as $name) {
+            $details[$name] = $absentDaysByUserName[$name] ?? [];
+        }
+
+        $items = [];
+        foreach ($counts as $name => $count) {
+            $items[] = [
+                'user' => $name,
+                'count' => $count,
+                'details' => $absentDaysByUserName[$name] ?? [],
+            ];
+        }
+
+        return [
+            'counts' => $counts,
+            'details' => $details,
+            'items' => $items,
+        ];
+    }
+
     public function getAbsences(string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
     {
         if ($dateFrom || $dateTo) {

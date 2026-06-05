@@ -1,12 +1,12 @@
 @php
-    $primaryGeofence = isset($site) ? ($site->geofences->firstWhere('is_primary', true) ?? $site->geofences->first()) : null;
+$primaryGeofence = isset($site) ? ($site->geofences->firstWhere('is_primary', true) ?? $site->geofences->first()) : null;
 @endphp
 
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
     <form action="{{ isset($site) ? encrypted_route('sites.update', $site) : route('sites.store') }}" method="POST" class="p-6 space-y-8">
         @csrf
         @if(isset($site))
-            @method('PUT')
+        @method('PUT')
         @endif
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -48,8 +48,18 @@
 
             <div>
                 <label for="country" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pays</label>
-                <input type="text" name="country" id="country" value="{{ old('country', $site->country ?? 'Benin') }}"
+                @php
+                $countries = [
+                'Benin','Togo','Nigeria','Ghana','Burkina Faso','Niger','Côte d\'Ivoire','Mali','Senegal','Cameroon'
+                ];
+                $currentCountry = old('country', $site->country ?? 'Benin');
+                @endphp
+                <select name="country" id="country" onchange="handleCountryChange(this)"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
+                    @foreach($countries as $c)
+                    <option value="{{ $c }}" {{ $currentCountry === $c ? 'selected' : '' }}>{{ $c }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -78,31 +88,31 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="geofence_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de la zone <span class="text-red-500">*</span></label>
-                    <input type="text" name="geofence_name" id="geofence_name" value="{{ old('geofence_name', $primaryGeofence->name ?? 'Zone principale') }}" required
+                    <input type="text" name="geofence_name" id="geofence_name" placeholder="Zone principale" value="{{ old('geofence_name', $primaryGeofence->name ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
                 <div>
                     <label for="geofence_radius_meters" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rayon autorise (metres) <span class="text-red-500">*</span></label>
-                    <input type="number" name="geofence_radius_meters" id="geofence_radius_meters" value="{{ old('geofence_radius_meters', $primaryGeofence->radius_meters ?? 100) }}" required
+                    <input type="number" name="geofence_radius_meters" id="geofence_radius_meters" placeholder="100" value="{{ old('geofence_radius_meters', $primaryGeofence->radius_meters ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
                 <div>
                     <label for="geofence_latitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude centre <span class="text-red-500">*</span></label>
-                    <input type="number" step="0.0000001" name="geofence_latitude" id="geofence_latitude" value="{{ old('geofence_latitude', $primaryGeofence->center_latitude ?? $site->latitude ?? '') }}" required
+                    <input type="number" step="0.0000001" name="geofence_latitude" id="geofence_latitude" placeholder="Latitude" value="{{ old('geofence_latitude', $primaryGeofence->center_latitude ?? $site->latitude ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
                 <div>
                     <label for="geofence_longitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Longitude centre <span class="text-red-500">*</span></label>
-                    <input type="number" step="0.0000001" name="geofence_longitude" id="geofence_longitude" value="{{ old('geofence_longitude', $primaryGeofence->center_longitude ?? $site->longitude ?? '') }}" required
+                    <input type="number" step="0.0000001" name="geofence_longitude" id="geofence_longitude" placeholder="Longitude" value="{{ old('geofence_longitude', $primaryGeofence->center_longitude ?? $site->longitude ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
                 <div>
                     <label for="geofence_allowed_accuracy_meters" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Precision GPS max (metres) <span class="text-red-500">*</span></label>
-                    <input type="number" name="geofence_allowed_accuracy_meters" id="geofence_allowed_accuracy_meters" min="5" max="500" placeholder="Ex : 50" value="{{ old('geofence_allowed_accuracy_meters', $primaryGeofence->allowed_accuracy_meters ?? '') }}" required
+                    <input type="number" name="geofence_allowed_accuracy_meters" id="geofence_allowed_accuracy_meters" placeholder="50" value="{{ old('geofence_allowed_accuracy_meters', $primaryGeofence->allowed_accuracy_meters ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Valeur libre (5 à 500 m), définie par l'administrateur selon la tolérance souhaitée.</p>
                 </div>
@@ -121,14 +131,36 @@
             </div>
         </div>
 
+        <script>
+            function handleCountryChange(select) {
+                try {
+                    var country = select.value;
+                    // stocke le pays choisi sur le formulaire pour usage côté client
+                    var form = select.closest('form');
+                    if (form) form.dataset.country = country;
+                    // focus propre sur le champ ville pour faciliter la saisie
+                    var city = document.getElementById('city');
+                    if (city) city.focus();
+                    // déclencher un événement personnalisée si besoin
+                    select.dispatchEvent(new CustomEvent('countryChanged', {
+                        detail: {
+                            country: country
+                        }
+                    }));
+                } catch (e) {
+                    console && console.error('country change handler error', e);
+                }
+            }
+        </script>
+
         @if ($errors->any())
-            <div class="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700">
-                <ul class="space-y-1 text-sm">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+        <div class="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-rose-700">
+            <ul class="space-y-1 text-sm">
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
         @endif
 
         <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">

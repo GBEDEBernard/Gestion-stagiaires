@@ -325,6 +325,142 @@
             background: var(--bg3);
         }
 
+        .pres-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.65);
+            padding: 1.5rem;
+        }
+
+        .pres-modal-backdrop.active {
+            display: flex;
+        }
+
+        .pres-modal {
+            width: min(100%, 560px);
+            background: var(--bg);
+            border-radius: 1.25rem;
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+            overflow: hidden;
+        }
+
+        .pres-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.4rem 1.5rem;
+            border-bottom: 1px solid rgba(15, 23, 42, .08);
+        }
+
+        .pres-modal-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .pres-modal-meta {
+            margin: .35rem 0 0;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .pres-modal-close {
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 1.45rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .pres-modal-body {
+            padding: 1.5rem;
+            max-height: min(70vh, 420px);
+            overflow-y: auto;
+        }
+
+        .pres-modal-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: .8rem;
+        }
+
+        .pres-modal-item {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: .85rem;
+            align-items: center;
+            padding: 1rem 1.1rem;
+            border-radius: .95rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: slideIn 280ms ease forwards;
+        }
+
+        .pres-modal-item-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--rose);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .pres-modal-item-content {
+            display: grid;
+            gap: .25rem;
+        }
+
+        .pres-modal-item-title {
+            font-weight: 600;
+            color: var(--text);
+            font-size: .95rem;
+        }
+
+        .pres-modal-item-sub {
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pres-modal-empty {
+            color: var(--muted);
+            font-size: .95rem;
+            line-height: 1.65;
+        }
+
+        .pres-absence-count-button {
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+
         /* KPI CARDS */
         .pres-kpis {
             display: grid;
@@ -1218,10 +1354,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($absences as $userName => $count)
+                            @foreach($absenceItems as $item)
                             <tr>
-                                <td style="font-weight:500;">{{ $userName }}</td>
-                                <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
+                                <td style="font-weight:500;">{{ $item['user'] }}</td>
+                                <td>
+                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-index="{{ $loop->index }}">
+                                        {{ $item['count'] }} j
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -1230,6 +1370,21 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <div class="pres-modal-backdrop" id="absenceModalBackdrop" aria-hidden="true">
+        <div class="pres-modal" role="dialog" aria-modal="true" aria-labelledby="absenceModalTitle">
+            <div class="pres-modal-header">
+                <div>
+                    <h2 class="pres-modal-title" id="absenceModalTitle">Jours d'absence</h2>
+                    <p class="pres-modal-meta" id="absenceModalMeta">Sélectionnez un utilisateur pour voir les dates.</p>
+                </div>
+                <button type="button" class="pres-modal-close" id="absenceModalClose" aria-label="Fermer la modale">×</button>
+            </div>
+            <div class="pres-modal-body" id="absenceModalBody">
+                <div class="pres-modal-empty">Cliquez sur un total d'absences pour afficher les jours.</div>
+            </div>
         </div>
     </div>
 
@@ -1252,8 +1407,65 @@
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absent'] ?? []);
             const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
+            const absenceItems = @json($absenceItems ?? []);
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
+
+            const absenceModalBackdrop = document.getElementById('absenceModalBackdrop');
+            const absenceModalClose = document.getElementById('absenceModalClose');
+            const absenceModalTitle = document.getElementById('absenceModalTitle');
+            const absenceModalMeta = document.getElementById('absenceModalMeta');
+            const absenceModalBody = document.getElementById('absenceModalBody');
+            const absenceButtons = document.querySelectorAll('.pres-absence-count-button');
+
+            const renderAbsenceDays = (days) => {
+                if (!days || days.length === 0) {
+                    return '<div class="pres-modal-empty">Aucune date d\'absence disponible pour cet utilisateur.</div>';
+                }
+                return `<ul class="pres-modal-list">${days.map((day, index) => `
+                    <li class="pres-modal-item" style="animation-delay: ${index * 80}ms;">
+                        <span class="pres-modal-item-marker">✖</span>
+                        <div class="pres-modal-item-content">
+                            <div class="pres-modal-item-title">${day.label}</div>
+                            <div class="pres-modal-item-sub">${day.date}</div>
+                        </div>
+                    </li>
+                `).join('')}</ul>`;
+            };
+
+            const openAbsenceModal = (index) => {
+                const item = absenceItems[index] ?? null;
+                if (!item) {
+                    return;
+                }
+                absenceModalTitle.textContent = `Absences de ${item.user}`;
+                absenceModalMeta.textContent = `${item.count} jour${item.count > 1 ? 's' : ''} d'absence`;
+                absenceModalBody.innerHTML = renderAbsenceDays(item.details);
+                absenceModalBackdrop?.classList.add('active');
+                absenceModalBackdrop?.setAttribute('aria-hidden', 'false');
+            };
+
+            absenceButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    openAbsenceModal(button.dataset.index);
+                });
+            });
+
+            if (absenceModalClose && absenceModalBackdrop) {
+                absenceModalClose.addEventListener('click', () => {
+                    absenceModalBackdrop.classList.remove('active');
+                    absenceModalBackdrop.setAttribute('aria-hidden', 'true');
+                });
+            }
+
+            if (absenceModalBackdrop) {
+                absenceModalBackdrop.addEventListener('click', (event) => {
+                    if (event.target === absenceModalBackdrop) {
+                        absenceModalBackdrop.classList.remove('active');
+                        absenceModalBackdrop.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
 
             const ctx = document.getElementById('chartGlobal');
             if (ctx && labels.length > 0) {
