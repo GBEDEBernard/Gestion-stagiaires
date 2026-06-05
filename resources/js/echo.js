@@ -1,14 +1,13 @@
 /**
- * Laravel Echo initialization (Pusher protocol — works with Pusher,
- * a Pusher Fake Server, or Laravel Reverb, which speaks the same protocol).
+ * Laravel Echo + Reverb (protocole Pusher).
  *
- * Design goals:
- *  - Real-time updates when a WebSocket server is reachable.
- *  - Graceful degradation: if the server is down or unreachable (e.g. behind
- *    an ngrok tunnel that doesn't forward the WS port), the app keeps working
- *    because the task chat falls back to polling.
+ * Objectifs :
+ *  - Temps réel quand le serveur Reverb (`php artisan reverb:start`) est joignable.
+ *  - Dégradation gracieuse : si aucun serveur n'est configuré/joignable
+ *    (clé absente, port WS non exposé via ngrok, contenu mixte HTTPS→ws…),
+ *    `window.Echo` vaut null et le chat bascule sur le polling. Rien ne casse.
  *
- * Usage from Alpine:
+ * Utilisation côté Alpine :
  *   window.Echo?.private(`task.${id}`)
  *       .listen('message.created', (e) => { ... });
  */
@@ -18,31 +17,28 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-const key = import.meta.env.VITE_PUSHER_APP_KEY;
+const key = import.meta.env.VITE_REVERB_APP_KEY;
 
-// Only attempt a connection when a key is configured. Without one there is no
-// server to talk to, so we skip Echo entirely and let polling do the work.
+// Pas de clé => pas de serveur à contacter : on reste en polling (zéro retry WS).
 if (key) {
     try {
+        const scheme = import.meta.env.VITE_REVERB_SCHEME ?? 'http';
+        const forceTLS = scheme === 'https';
+
         window.Echo = new Echo({
-            broadcaster: 'pusher',
+            broadcaster: 'reverb',
             key,
-            cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt',
-            wsHost: import.meta.env.VITE_PUSHER_HOST ?? window.location.hostname,
-            wsPort: Number(import.meta.env.VITE_PUSHER_PORT ?? 6001),
-            wssPort: Number(import.meta.env.VITE_PUSHER_PORT ?? 443),
-            forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'http') === 'https',
-            encrypted: (import.meta.env.VITE_PUSHER_SCHEME ?? 'http') === 'https',
+            wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
+            wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+            wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
+            forceTLS,
             enabledTransports: ['ws', 'wss'],
-            disableStats: true,
         });
 
-        // Don't let connection errors bubble up as uncaught — polling covers us.
-        window.Echo.connector?.pusher?.connection?.bind('error', () => {
-            // Silent: the chat component continues polling.
-        });
+        // Les erreurs de connexion ne doivent pas remonter : le polling couvre.
+        window.Echo.connector?.pusher?.connection?.bind('error', () => {});
     } catch (e) {
-        console.warn('[Echo] init failed, falling back to polling:', e?.message ?? e);
+        console.warn('[Echo] init échouée, repli sur le polling :', e?.message ?? e);
         window.Echo = null;
     }
 } else {
