@@ -124,8 +124,8 @@ it('rend la page tâche (état verrouillé) sans erreur pour le propriétaire', 
     $this->actingAs($owner)
         ->get(route('tasks.show', $task))
         ->assertOk()
-        ->assertSee('Discussion')
-        ->assertSee('Premier rapport')
+        ->assertSee('discussion')
+        ->assertSee('premier rapport')
         ->assertSee($task->title);
 });
 

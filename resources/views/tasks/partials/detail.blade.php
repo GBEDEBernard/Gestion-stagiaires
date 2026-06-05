@@ -19,111 +19,188 @@
     ];
 @endphp
 
-<div class="space-y-5" x-data="taskChat(@js($thread), @js($cfg))" x-init="init()">
+@php
+    $pct = (int) $task->last_progress_percent;
+    $ringR = 26; $ringC = 2 * M_PI * $ringR; $ringOff = $ringC * (1 - min(100, max(0, $pct)) / 100);
+    $accent = match($task->priority) {
+        'urgent' => 'from-rose-500 via-red-500 to-orange-400',
+        'high'   => 'from-orange-400 to-amber-400',
+        'low'    => 'from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-500',
+        default  => 'from-indigo-500 via-violet-500 to-sky-400',
+    };
+@endphp
+
+<div class="space-y-6" x-data="taskChat(@js($thread), @js($cfg))" x-init="init()">
 
     {{-- ============================= EN-TÊTE TÂCHE ============================= --}}
-    <div class="rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/50 p-6 shadow-sm">
-        <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0">
-                <div class="flex items-center gap-2 mb-2.5 flex-wrap">
-                    <x-task-status-badge :status="$task->status" />
-                    <x-priority-dot :priority="$task->priority" with-label />
-                    @if($task->isOverdue())
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-300">En retard</span>
-                    @endif
-                    @if($state === 'closed')
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 11h14v10H5z"/></svg>
-                        Discussion fermée
-                    </span>
-                    @endif
-                </div>
-                <h2 class="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{{ $task->title }}</h2>
-                <div class="mt-2 flex items-center gap-2.5 text-xs text-slate-400 flex-wrap">
-                    <span class="inline-flex items-center gap-1.5">
-                        <x-avatar :name="$task->owner?->name ?? '?'" size="xs" />
-                        {{ $task->owner?->name }}
-                    </span>
-                    @if($task->due_date)<span>· échéance {{ $task->due_date->format('d/m/Y') }}</span>@endif
-                    <span>· {{ $task->dailyReports->count() }} rapport(s)</span>
+    <section class="relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 shadow-sm transition-shadow hover:shadow-md">
+        {{-- Liseré d'accent (couleur = priorité) --}}
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r {{ $accent }}"></div>
+
+        <div class="p-6 sm:p-7 flex items-start gap-5">
+            {{-- Anneau de progression (desktop) --}}
+            <div class="relative hidden sm:flex flex-shrink-0 w-[72px] h-[72px] items-center justify-center">
+                <svg class="w-[72px] h-[72px] -rotate-90" viewBox="0 0 64 64">
+                    <defs>
+                        <linearGradient id="ring{{ $task->id }}" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#10b981"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="32" cy="32" r="26" fill="none" stroke-width="6" class="stroke-slate-100 dark:stroke-slate-700/60"/>
+                    <circle cx="32" cy="32" r="26" fill="none" stroke-width="6" stroke-linecap="round"
+                            stroke="url(#ring{{ $task->id }})"
+                            stroke-dasharray="{{ round($ringC, 2) }}" stroke-dashoffset="{{ round($ringOff, 2) }}"
+                            style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-base font-bold tabular-nums text-slate-900 dark:text-white">{{ $pct }}<span class="text-[10px] font-medium text-slate-400 align-top">%</span></span>
                 </div>
             </div>
 
+            {{-- Bloc central --}}
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <x-task-status-badge :status="$task->status" />
+                    <x-priority-dot :priority="$task->priority" with-label />
+                    @if($task->isOverdue())
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-300">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+                        En retard
+                    </span>
+                    @endif
+                    @if($state === 'closed')
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 11h14v10H5z"/></svg>
+                        Clôturée
+                    </span>
+                    @endif
+                </div>
+
+                <h2 class="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-white leading-tight">{{ $task->title }}</h2>
+
+                <div class="mt-2.5 flex items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                    <span class="inline-flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+                        <x-avatar :name="$task->owner?->name ?? '?'" size="xs" />
+                        {{ $task->owner?->name }}
+                    </span>
+                    @if($task->due_date)
+                    <span class="inline-flex items-center gap-1 {{ $task->isOverdue() ? 'text-red-500 dark:text-red-400 font-medium' : '' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+                        {{ $task->due_date->translatedFormat('d M Y') }}
+                    </span>
+                    @endif
+                    <span class="inline-flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+                        {{ $task->dailyReports->count() }} rapport{{ $task->dailyReports->count() > 1 ? 's' : '' }}
+                    </span>
+                    @if($points->count() >= 2)
+                    @php
+                        $w=84;$h=20;$n=$points->count();
+                        $coords=$points->map(fn($p,$i)=>round($n>1?$i*($w/($n-1)):0,1).','.round($h-($p/100*$h),1))->implode(' ');
+                        $area='0,'.$h.' '.$coords.' '.$w.','.$h;
+                    @endphp
+                    <span class="inline-flex items-center gap-1.5" title="Tendance de progression">
+                        <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-[72px] h-5" preserveAspectRatio="none">
+                            <defs><linearGradient id="spark{{ $task->id }}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity=".3"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
+                            <polygon points="{{ $area }}" fill="url(#spark{{ $task->id }})"/>
+                            <polyline points="{{ $coords }}" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Actions : primaire contextuelle + menu ⋯ --}}
             <div class="flex items-center gap-2 flex-shrink-0">
-                {{-- Admin : clôturer / rouvrir --}}
-                @if($isAdmin)
-                    @if($task->isCompleted())
+                @if($isAdmin && $task->isCompleted())
                     <form method="POST" action="{{ encrypted_route('tasks.reopen', $task) }}">
                         @csrf
-                        <button class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
+                        <button class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h12a1.5 1.5 0 011.5 1.5v6a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5v-6a1.5 1.5 0 011.5-1.5z"/></svg>
                             Rouvrir
                         </button>
                     </form>
-                    @else
+                @elseif($isAdmin)
                     <form method="POST" action="{{ encrypted_route('tasks.complete', $task) }}" onsubmit="return confirm('Clôturer définitivement cette tâche ? La discussion sera fermée.')">
                         @csrf
-                        <button class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm {{ $task->isAwaitingValidation() ? 'ring-2 ring-emerald-200 dark:ring-emerald-900/40' : '' }}">
+                        <button class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm {{ $task->isAwaitingValidation() ? 'ring-2 ring-emerald-300/60 dark:ring-emerald-500/40 animate-pulse' : '' }}">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                            Terminer la tâche
+                            Terminer
                         </button>
                     </form>
-                    @endif
                 @elseif($isReviewer && !$task->isCompleted())
-                <form method="POST" action="{{ encrypted_route('tasks.review', $task) }}">
-                    @csrf <input type="hidden" name="action" value="request_changes">
-                    <button class="px-3 py-2 text-xs font-medium rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">Corrections</button>
-                </form>
+                    <form method="POST" action="{{ encrypted_route('tasks.review', $task) }}">
+                        @csrf <input type="hidden" name="action" value="request_changes">
+                        <button class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a6.759 6.759 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.759 6.759 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/></svg>
+                            Corrections
+                        </button>
+                    </form>
                 @endif
 
-                {{-- Propriétaire : éditer / supprimer --}}
                 @if($isOwner)
-                    @unless($task->isCompleted())
-                    <a href="{{ encrypted_route('tasks.edit', $task) }}" class="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 transition-colors" title="Éditer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.86 4.49l2.65 2.65M3 21l.66-3.6a2 2 0 01.54-1.06L16.3 3.94a1.5 1.5 0 012.12 0l1.64 1.64a1.5 1.5 0 010 2.12L7.72 19.8a2 2 0 01-1.06.54L3 21z"/></svg>
-                    </a>
-                    @endunless
-                    <form method="POST" action="{{ encrypted_route('tasks.destroy', $task) }}" onsubmit="return confirm('Supprimer cette tâche ?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="p-2 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 transition-colors" title="Supprimer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.34 9m-4.8 0L9.26 9M19.2 6.2L18 19a2 2 0 01-2 1.8H8A2 2 0 016 19L4.8 6.2M9 6.2V4a1 1 0 011-1h4a1 1 0 011 1v2.2M3.5 6.2h17"/></svg>
-                        </button>
-                    </form>
+                <div class="relative" x-data="{ open:false }" @keydown.escape="open=false">
+                    <button @click="open=!open" @click.outside="open=false"
+                            class="p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 transition-colors" title="Plus d'actions">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 6.75a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 13.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM12 20.25a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.right
+                         class="absolute right-0 mt-1.5 w-48 z-30 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl ring-1 ring-black/5 py-1.5">
+                        @unless($task->isCompleted())
+                        <a href="{{ encrypted_route('tasks.edit', $task) }}" class="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.86 4.49l2.65 2.65M3 21l.66-3.6a2 2 0 01.54-1.06L16.3 3.94a1.5 1.5 0 012.12 0l1.64 1.64a1.5 1.5 0 010 2.12L7.72 19.8a2 2 0 01-1.06.54L3 21z"/></svg>
+                            Éditer la tâche
+                        </a>
+                        @endunless
+                        <form method="POST" action="{{ encrypted_route('tasks.destroy', $task) }}" onsubmit="return confirm('Supprimer cette tâche ?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.34 9m-4.8 0L9.26 9M19.2 6.2L18 19a2 2 0 01-2 1.8H8A2 2 0 016 19L4.8 6.2M9 6.2V4a1 1 0 011-1h4a1 1 0 011 1v2.2M3.5 6.2h17"/></svg>
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+                </div>
                 @endif
             </div>
         </div>
 
-        {{-- Progression --}}
-        <div class="mt-5 flex items-center gap-4">
-            <div class="flex-1"><x-progress-bar :percent="$task->last_progress_percent" /></div>
-            @if($points->count() >= 2)
-            @php
-                $w=120;$h=28;$n=$points->count();
-                $coords=$points->map(fn($p,$i)=>round($n>1?$i*($w/($n-1)):0,1).','.round($h-($p/100*$h),1))->implode(' ');
-            @endphp
-            <svg viewBox="0 0 {{ $w }} {{ $h }}" class="w-28 h-7 text-emerald-500 flex-shrink-0" preserveAspectRatio="none">
-                <polyline points="{{ $coords }}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            @endif
+        {{-- Progression (mobile, l'anneau étant masqué) --}}
+        <div class="sm:hidden px-6 -mt-1 pb-1">
+            <x-progress-bar :percent="$task->last_progress_percent" />
         </div>
 
         @if($task->description)
-        <p class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700/60 text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line">{{ $task->description }}</p>
+        <div class="px-6 sm:px-7 pb-6 sm:pb-7">
+            <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300 whitespace-pre-line border-t border-slate-100 dark:border-slate-700/60 pt-4">{{ $task->description }}</p>
+        </div>
         @endif
-    </div>
+    </section>
 
     {{-- ===================== DÉPÔT DE RAPPORT (propriétaire) ===================== --}}
     @if($isOwner && !$task->isCompleted())
-    <div class="rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/50 p-6 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                {{ $state === 'locked' ? 'Premier rapport' : 'Nouveau rapport' }}
-            </h3>
+    <section x-data="{ openReport: {{ $state === 'locked' ? 'true' : 'false' }} }"
+             class="overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 shadow-sm">
+        <button type="button" @click="openReport = !openReport"
+                class="w-full flex items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-700/20">
+            <span class="flex items-center gap-3 min-w-0">
+                <span class="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500/10 to-emerald-500/10 dark:from-indigo-500/25 dark:to-emerald-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                </span>
+                <span class="min-w-0">
+                    <span class="block text-sm font-semibold text-slate-900 dark:text-white">{{ $state === 'locked' ? 'Déposer le premier rapport' : 'Nouveau rapport' }}</span>
+                    <span class="block text-[11px] text-slate-400 truncate">{{ $state === 'locked' ? 'Ouvrira la discussion de la tâche' : ($todayReport ? 'Tu as déjà rapporté aujourd’hui' : 'Mets à jour ton avancement du jour') }}</span>
+                </span>
+            </span>
             @if($state === 'locked')
-            <span class="text-[11px] text-slate-400">Déposer le 1er rapport ouvrira la discussion</span>
+            <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-indigo-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span> à faire
+            </span>
             @endif
-        </div>
-
+            <svg class="w-5 h-5 flex-shrink-0 text-slate-400 transition-transform duration-300" :class="openReport ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <div x-show="openReport" x-collapse>
+            <div class="px-6 pb-6 pt-1">
         @if($todayReport)
         <div class="rounded-xl bg-slate-50 dark:bg-slate-900/40 p-4 border border-slate-100 dark:border-slate-700/50">
             <div class="flex items-center justify-between mb-1.5">
@@ -206,22 +283,31 @@
             </div>
         </form>
         @endif
-    </div>
+            </div>
+        </div>
+    </section>
     @endif
 
     {{-- ============================== DISCUSSION ============================== --}}
-    <div class="rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/50 shadow-sm overflow-hidden flex flex-col">
+    <div class="rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 shadow-sm overflow-hidden flex flex-col">
 
         {{-- En-tête discussion --}}
-        <div class="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/60">
-            <div class="flex items-center gap-2.5">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Discussion</h3>
-                <template x-if="isOpen">
-                    <span class="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-                        <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>
-                        en direct
-                    </span>
-                </template>
+        <div class="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/30">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="flex-shrink-0 w-9 h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 01-2.555-.337A5.97 5.97 0 015.41 20.97a5.97 5.97 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
+                </span>
+                <div class="min-w-0 leading-tight">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">Fil de discussion</h3>
+                    <template x-if="isOpen">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+                            <span class="relative flex h-1.5 w-1.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>
+                            en direct
+                        </span>
+                    </template>
+                    <template x-if="isClosed"><span class="text-[11px] text-slate-400">clôturée</span></template>
+                    <template x-if="isLocked"><span class="text-[11px] text-slate-400">verrouillée</span></template>
+                </div>
             </div>
             {{-- Destinataires --}}
             <template x-if="recipients.length">
@@ -229,7 +315,7 @@
                     <span class="text-[11px] text-slate-400 hidden sm:inline">Destinataires</span>
                     <div class="flex -space-x-2">
                         <template x-for="r in recipients" :key="r.id">
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-semibold text-white ring-2 ring-white dark:ring-slate-800"
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-semibold text-white ring-2 ring-white dark:ring-slate-800 transition-transform hover:-translate-y-0.5"
                                   :style="'background:'+avatarColor(r.name)" :title="r.name" x-text="r.initials"></span>
                         </template>
                     </div>
@@ -240,12 +326,15 @@
         {{-- État VERROUILLÉ : pas encore de rapport --}}
         <template x-if="isLocked">
             <div class="py-16 px-6 text-center">
-                <div class="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700/40 flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 11h14v10H5z"/></svg>
+                <div class="relative mx-auto w-16 h-16 mb-5">
+                    <div class="absolute inset-0 rounded-full bg-slate-200 dark:bg-slate-700/40 animate-ping opacity-30" style="animation-duration:2.5s"></div>
+                    <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-white dark:from-slate-700/50 dark:to-slate-800 flex items-center justify-center shadow-inner border border-slate-100 dark:border-slate-700">
+                        <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h10.5a2.25 2.25 0 012.25 2.25v6a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-6a2.25 2.25 0 012.25-2.25z"/></svg>
+                    </div>
                 </div>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">La discussion s'ouvrira au premier rapport</p>
-                <p class="mt-1 text-xs text-slate-400">
-                    {{ $isOwner ? 'Dépose ton premier rapport ci-dessus pour démarrer les échanges.' : 'En attente du premier rapport du producteur.' }}
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">La discussion s'ouvrira au premier rapport</p>
+                <p class="mt-1.5 text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    {{ $isOwner ? 'Dépose ton premier rapport ci-dessus pour démarrer les échanges avec ton encadrant.' : 'En attente du premier rapport du producteur.' }}
                 </p>
             </div>
         </template>
@@ -254,35 +343,40 @@
         <template x-if="!isLocked">
             <div class="flex flex-col">
 
-                {{-- Rapport épinglé --}}
+                {{-- Rapport épinglé (briefing) --}}
                 <template x-if="pinned">
-                    <div class="mx-4 mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/40 overflow-hidden">
-                        <div class="border-l-[3px] border-slate-900 dark:border-white px-4 py-3.5">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                    <div class="mx-4 mt-4 relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800/60 dark:to-slate-800/20 shadow-sm">
+                        <div class="absolute left-0 inset-y-0 w-1 bg-gradient-to-b from-indigo-500 to-emerald-500"></div>
+                        <div class="pl-5 pr-4 py-4">
+                            <div class="flex items-center justify-between gap-2 mb-2.5">
+                                <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 9V4h1a1 1 0 100-2H7a1 1 0 100 2h1v5a4 4 0 01-2 3.46V14h5v7l1 1 1-1v-7h5v-1.54A4 4 0 0116 9z"/></svg>
-                                    Rapport épinglé
+                                    Dernier rapport
                                 </span>
                                 <span class="text-[11px] text-slate-400" x-text="pinned.date_human"></span>
                             </div>
                             <div class="flex items-start gap-3">
-                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-semibold text-white flex-shrink-0"
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xs font-semibold text-white flex-shrink-0 shadow-sm"
                                       :style="'background:'+avatarColor(pinned.author.name)" x-text="pinned.author.initials"></span>
                                 <div class="min-w-0 flex-1">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <span class="text-sm font-semibold text-slate-900 dark:text-white" x-text="pinned.author.name"></span>
                                         <template x-if="pinned.progress !== null">
-                                            <span class="text-xs font-semibold text-emerald-600" x-text="pinned.progress + '%'"></span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300" x-text="pinned.progress + '%'"></span>
                                         </template>
                                     </div>
                                     {{-- Vocal --}}
                                     <template x-if="pinned.is_voice">
-                                        <div class="mt-2 flex items-center gap-2.5 rounded-lg bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 px-3 py-2 max-w-xs">
+                                        <div class="mt-2 voice-bubble flex items-center gap-2.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 px-3 py-2 max-w-xs shadow-sm">
                                             <audio :src="pinned.voice_url" preload="none" x-ref="pinnedAudio"></audio>
-                                            <button type="button" @click="toggleAudio($refs.pinnedAudio)" class="w-8 h-8 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center flex-shrink-0">
+                                            <button type="button" @click="toggleAudio($refs.pinnedAudio)" class="w-9 h-9 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center flex-shrink-0">
                                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                             </button>
-                                            <div class="flex-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                                            <div class="flex-1 flex items-center gap-0.5 h-6 overflow-hidden">
+                                                <template x-for="i in 20" :key="i">
+                                                    <span class="w-0.5 rounded-full bg-slate-300 dark:bg-slate-600" :style="'height:'+(25 + Math.round(55 * Math.abs(Math.sin(i * 1.7))))+'%'"></span>
+                                                </template>
+                                            </div>
                                             <span class="text-[11px] text-slate-400 tabular-nums" x-text="fmtDur(pinned.voice_duration)"></span>
                                         </div>
                                     </template>
@@ -291,7 +385,9 @@
                                         <p class="mt-1 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="pinned.summary"></p>
                                     </template>
                                     <template x-if="pinned.blockers">
-                                        <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">⚠ <span x-text="pinned.blockers"></span></p>
+                                        <p class="mt-2 inline-flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-2.5 py-1.5">
+                                            <svg class="w-3.5 h-3.5 mt-px flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                                        <span x-text="pinned.blockers"></span></p>
                                     </template>
                                     <template x-if="canMessage && isOpen">
                                         <button type="button" @click="replyToPinned()" class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
@@ -306,12 +402,12 @@
                 </template>
 
                 {{-- Fil des messages --}}
-                <div x-ref="scroll" class="px-4 py-4 space-y-1 overflow-y-auto" style="height:46vh; min-height:300px;">
+                <div x-ref="scroll" class="relative px-4 py-4 space-y-1 overflow-y-auto bg-gradient-to-b from-slate-50/40 via-transparent to-transparent dark:from-slate-900/20" style="height:48vh; min-height:320px;">
                     <template x-for="group in grouped" :key="group.key">
                         <div class="space-y-3">
-                            {{-- Séparateur de date --}}
-                            <div class="flex items-center justify-center my-3">
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-medium text-slate-400 bg-slate-100 dark:bg-slate-700/40" x-text="group.label"></span>
+                            {{-- Séparateur de date (collant) --}}
+                            <div class="sticky top-0 z-10 flex items-center justify-center my-3 pointer-events-none">
+                                <span class="px-3 py-0.5 rounded-full text-[11px] font-medium text-slate-500 dark:text-slate-300 bg-white/85 dark:bg-slate-800/85 backdrop-blur border border-slate-200/70 dark:border-slate-700/60 shadow-sm" x-text="group.label"></span>
                             </div>
 
                             <template x-for="m in group.items" :key="m.id">
@@ -397,7 +493,7 @@
                                                             <a :href="m.attachment.url" target="_blank" rel="noopener" download class="flex items-center gap-2.5 py-0.5">
                                                                 <span class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                                                       :class="m.mine ? 'bg-white/20 dark:bg-slate-900/15' : 'bg-slate-900/10 dark:bg-white/15'">
-                                                                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
                                                                 </span>
                                                                 <span class="min-w-0">
                                                                     <span class="block font-medium truncate max-w-[180px]" x-text="m.attachment.name"></span>
@@ -495,11 +591,16 @@
 
                 {{-- Composer / Bannière fermée --}}
                 <template x-if="isClosed">
-                    <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-900/30 text-center">
-                        <p class="text-xs text-slate-500 dark:text-slate-400">
-                            <svg class="w-4 h-4 inline -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 11h14v10H5z"/></svg>
-                            Discussion clôturée. {{ $isAdmin ? 'Tu peux la rouvrir depuis l\'en-tête.' : 'Seul un administrateur peut la rouvrir.' }}
-                        </p>
+                    <div class="px-5 py-5 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-900/30">
+                        <div class="flex items-center justify-center gap-2.5">
+                            <span class="w-8 h-8 rounded-full bg-slate-200/70 dark:bg-slate-700/60 flex items-center justify-center flex-shrink-0">
+                                <svg class="w-4 h-4 text-slate-500 dark:text-slate-300" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h10.5a2.25 2.25 0 012.25 2.25v6a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-6a2.25 2.25 0 012.25-2.25z"/></svg>
+                            </span>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
+                                <span class="font-semibold text-slate-600 dark:text-slate-300">Discussion clôturée.</span>
+                                {{ $isAdmin ? 'Tu peux la rouvrir depuis l\'en-tête.' : 'Seul un administrateur peut la rouvrir.' }}
+                            </p>
+                        </div>
                     </div>
                 </template>
 
@@ -551,33 +652,34 @@
                         <input type="file" x-ref="imageInput" accept="image/*" class="hidden" @change="sendFile($event.target, 'image')">
                         <input type="file" x-ref="fileInput" class="hidden" @change="sendFile($event.target, 'file')">
 
-                        <form @submit.prevent="send()" class="flex items-end gap-2" x-show="recorder.state !== 'recording'">
+                        <form @submit.prevent="send()" x-show="recorder.state !== 'recording'"
+                              class="flex items-end gap-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 shadow-sm transition focus-within:ring-2 focus-within:ring-slate-900/10 dark:focus-within:ring-white/10 focus-within:border-slate-400 dark:focus-within:border-slate-500">
                             {{-- Joindre image --}}
                             <button type="button" @click="$refs.imageInput.click()" :disabled="sending"
-                                class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0 disabled:opacity-40" title="Joindre une image">
+                                class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0 disabled:opacity-40" title="Joindre une image">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 9.75h.008v.008H18V9.75zM2.25 6.75v10.5a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25z"/></svg>
                             </button>
                             {{-- Joindre fichier --}}
                             <button type="button" @click="$refs.fileInput.click()" :disabled="sending"
-                                class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0 disabled:opacity-40" title="Joindre un fichier">
+                                class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0 disabled:opacity-40" title="Joindre un fichier">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/></svg>
                             </button>
 
                             <textarea x-ref="input" x-model="body" rows="1" placeholder="Écrire un message…"
                                 @input="typingPing()"
                                 @keydown.enter="if(!$event.shiftKey){ $event.preventDefault(); send() }"
-                                class="flex-1 px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 resize-none transition max-h-32"></textarea>
+                                class="flex-1 px-2 py-2 text-sm bg-transparent border-0 focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-400 resize-none transition max-h-32"></textarea>
 
                             {{-- Micro (si pas de texte) ou Envoyer --}}
                             <template x-if="!body.trim()">
                                 <button type="button" @click="startRec()" :disabled="sending"
-                                    class="w-11 h-11 flex items-center justify-center rounded-xl text-white bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex-shrink-0 disabled:opacity-40 shadow-sm" title="Message vocal">
+                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-slate-900 dark:hover:bg-white dark:hover:text-slate-900 transition-colors flex-shrink-0 disabled:opacity-40" title="Message vocal">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/></svg>
                                 </button>
                             </template>
                             <template x-if="body.trim()">
                                 <button type="submit" :disabled="sending"
-                                    class="w-11 h-11 flex items-center justify-center rounded-xl text-white bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                                    class="w-9 h-9 flex items-center justify-center rounded-xl text-white bg-gradient-to-br from-slate-900 to-slate-700 dark:from-white dark:to-slate-200 dark:text-slate-900 hover:opacity-90 transition flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.27 3.27a.5.5 0 01.67-.6l16.5 8.25a.5.5 0 010 .9L4 20.33a.5.5 0 01-.67-.6L6 12zm0 0h6"/></svg>
                                 </button>
                             </template>
