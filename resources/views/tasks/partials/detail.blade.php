@@ -414,10 +414,42 @@
             init() {
                 this.$nextTick(() => this.scrollBottom());
                 this.startPolling();
+                this.setupEcho();
                 this.markRead();
                 document.addEventListener('visibilitychange', () => {
                     if (!document.hidden) this.refresh();
                 });
+            },
+
+            setupEcho() {
+                // Phase 3: Echo real-time subscriptions (with polling fallback).
+                if (typeof window.Echo === 'undefined') return;
+
+                const taskId = this.payload.task?.id;
+                if (!taskId) return;
+
+                try {
+                    window.Echo.private(`task.${taskId}`)
+                        .listen('message.created', () => {
+                            // New message: refresh to get full payload
+                            this.refresh();
+                        })
+                        .listen('reaction.added', () => {
+                            // Reaction: refresh to update reactions
+                            this.refresh();
+                        })
+                        .listen('message.read', () => {
+                            // Read receipt: subtle update (could be a typing indicator in future)
+                            this.refresh();
+                        })
+                        .listen('user.typing', (event) => {
+                            // Future: add typing indicator
+                            // console.log(`${event.user_name} is typing...`);
+                        });
+                } catch (e) {
+                    // Echo not available (Reverb down, ngrok issue, etc.)
+                    // Polling will still work as fallback.
+                }
             },
 
             startPolling() {

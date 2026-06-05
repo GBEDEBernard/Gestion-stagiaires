@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Broadcast;
 use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
@@ -41,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Paginator::useTailwind();
+
+        // Load broadcast channels
+        Broadcast::routes();
+        require base_path('routes/channels.php');
 
         // Enregistrer le ViewComposer pour la navigation
         View::composer('layouts.navigation', NavigationComposer::class);

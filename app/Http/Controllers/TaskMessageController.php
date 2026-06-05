@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TaskMessageCreated;
+use App\Events\TaskMessageRead;
 use App\Models\Task;
 use App\Models\TaskMessage;
 use App\Models\TaskRead;
@@ -73,7 +75,7 @@ class TaskMessageController extends Controller
 
         $this->notifyOtherParty($task, $user, $data['body']);
 
-        // TODO (Phase 3) : broadcast(new TaskMessageSent($message))->toOthers();
+        broadcast(new TaskMessageCreated($message, $task))->toOthers();
 
         if ($this->wantsJson($request)) {
             $message->load(['user', 'parent.user', 'dailyReport', 'reactions']);
@@ -104,6 +106,7 @@ class TaskMessageController extends Controller
 
         if ($upTo) {
             $this->touchRead($task, $user->id, (int) $upTo);
+            broadcast(new TaskMessageRead($task, $user->id, (int) $upTo, now()->toIso8601String()))->toOthers();
         }
 
         return response()->json(['ok' => true, 'last_read_message_id' => $upTo]);
