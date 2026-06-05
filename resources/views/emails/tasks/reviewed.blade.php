@@ -1,19 +1,20 @@
 <x-mail::message>
-# Bonjour {{ $recipientName }},
+# {{ $greeting }} {{ $recipientCivilite }} {{ $recipientName }},
 
 **{{ $reviewer->name }}** a révisé votre tâche **{{ $task->title }}**.
 
-**Décision :** @if($action === 'approve') ✅ Validée @else ✏️ Corrections demandées @endif
+**Décision :**
+@if($action === 'approve') ✅ Validée @else ✏️ Corrections demandées @endif
 
 @if($comment)
-**Commentaire :**  
+**Commentaire :**
 {{ $comment }}
 @endif
 
-<x-mail::button :url="$taskUrl">
+<x-mail::button :url="$taskUrl" color="primary">
 Voir la tâche
 </x-mail::button>
 
-Cordialement,  
+Cordialement,
 {{ config('app.name') }}
 </x-mail::message>

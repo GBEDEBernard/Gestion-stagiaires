@@ -14,15 +14,17 @@ class TaskReviewedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-   
-public function __construct(
+    public function __construct(
         public Task $task,
         public User $reviewer,
         public string $action,
         public ?string $comment,
         public string $recipientName,
+        public string $recipientCivilite,
+        public string $greeting,
         public string $taskUrl        // ← reçu, pas recalculé
     ) {}
+
 
     public function envelope(): Envelope
     {
@@ -40,5 +42,8 @@ public function __construct(
         return new Content(markdown: 'emails.tasks.reviewed');
     }
 
-    public function attachments(): array { return []; }
+    public function attachments(): array
+    {
+        return [];
+    }
 }

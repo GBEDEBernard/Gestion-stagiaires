@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'gestion des stagiaire'),
+'name' => env('APP_NAME', 'Technology forever group (TFG)'),
 
     /*
     |--------------------------------------------------------------------------

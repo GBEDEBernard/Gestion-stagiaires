@@ -13,17 +13,18 @@ class TaskReportSubmittedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    
     public function __construct(
         public Task $task,
         public string $recipientName,
-        public string $taskUrl        // ← reçu, pas recalculé
+        public string $recipientCivilite,
+        public string $greeting,
+        public string $taskUrl,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Nouveau rapport sur la tâche : ' . $this->task->title,
+            subject: 'Rapport soumis : ' . $this->task->title,
         );
     }
 
@@ -32,5 +33,8 @@ class TaskReportSubmittedMail extends Mailable
         return new Content(markdown: 'emails.tasks.report_submitted');
     }
 
-    public function attachments(): array { return []; }
+    public function attachments(): array
+    {
+        return [];
+    }
 }

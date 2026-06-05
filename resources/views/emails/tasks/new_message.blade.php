@@ -1,15 +1,16 @@
 <x-mail::message>
-# Bonjour {{ $recipientName }},
+# {{ $greeting }} {{ $recipientCivilite }} {{ $recipientName }},
 
 **{{ $sender->name }}** a posté un nouveau message sur la tâche **{{ $task->title }}**.
 
-**Message :**  
+**Message :**
+
 {{ $messageBody }}
 
-<x-mail::button :url="$taskUrl">
+<x-mail::button :url="$taskUrl" color="primary">
 Voir la discussion
 </x-mail::button>
 
-Cordialement,  
+Cordialement,
 {{ config('app.name') }}
 </x-mail::message>

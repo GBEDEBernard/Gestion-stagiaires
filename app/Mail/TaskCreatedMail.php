@@ -16,10 +16,10 @@ class TaskCreatedMail extends Mailable
     public function __construct(
         public Task $task,
         public string $recipientName,
-        public string $taskUrl        // ← reçu depuis EmailNotificationService
-    ) {
-        // Ne PAS recalculer $this->taskUrl ici
-    }
+        public string $recipientCivilite,
+        public string $greeting,
+        public string $taskUrl,
+    ) {}
 
     public function envelope(): Envelope
     {
@@ -33,5 +33,8 @@ class TaskCreatedMail extends Mailable
         return new Content(markdown: 'emails.tasks.created');
     }
 
-    public function attachments(): array { return []; }
+    public function attachments(): array
+    {
+        return [];
+    }
 }

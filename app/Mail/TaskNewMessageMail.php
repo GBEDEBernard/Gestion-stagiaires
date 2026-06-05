@@ -15,13 +15,16 @@ class TaskNewMessageMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-   public function __construct(
+    public function __construct(
         public Task $task,
         public User $sender,
         public string $messageBody,
         public string $recipientName,
+        public string $recipientCivilite,
+        public string $greeting,
         public string $taskUrl        // ← reçu, pas recalculé
     ) {}
+
 
     public function envelope(): Envelope
     {
@@ -35,5 +38,8 @@ class TaskNewMessageMail extends Mailable
         return new Content(markdown: 'emails.tasks.new_message');
     }
 
-    public function attachments(): array { return []; }
+    public function attachments(): array
+    {
+        return [];
+    }
 }
