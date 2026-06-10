@@ -285,7 +285,11 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         </a>
                         @endcan
                         <!-- @can('etudiants.view')
+<<<<<<< HEAD
                         <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+=======
+                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+>>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Étudiants</span>
                         </a>
@@ -294,8 +298,13 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Employés</span>
+<<<<<<< HEAD
                         </a> -->
                         @endrole
+=======
+                        </a>
+                        @endrole -->
+>>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
                         @can('badges.view')
                         <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>

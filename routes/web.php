@@ -118,7 +118,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{stage}/badge/download', [BadgeController::class, 'download'])->name('stages.badge.download')->middleware('permission:badges.download');
 
         // Attestation
-        Route::get('{stage}/attestation', [AttestationController::class, 'show'])->name('stages.attestation.show')->middleware('permission:attestation.view');
+        Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])->name('stages.attestation.show')->middleware('permission:attestation.view');
         Route::post('{stage}/attestation/store', [AttestationController::class, 'store'])->name('stages.attestation.store')->middleware('permission:attestation.create');
         Route::get('{stage}/attestation/download', [AttestationController::class, 'generatePDF'])->name('stages.attestation.download')->middleware('permission:attestation.download')->defaults('type', 'download');
         Route::get('{stage}/attestation/print', [AttestationController::class, 'generatePDF'])->name('stages.attestation.print')->middleware('permission:attestation.print')->defaults('type', 'print');
@@ -439,9 +439,14 @@ Route::prefix('attestation')->group(function () {
         ->name('attestation.sign.submit');
 });
 
+<<<<<<< HEAD
 // routes/web.php — ajouter cette route
 Route::get('/email-access/{token}', [App\Http\Controllers\EmailAccessController::class, 'handle'])
     ->name('email.access')
     ->middleware('signed');
     
+=======
+
+
+>>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
     });
