@@ -453,14 +453,6 @@ Route::prefix('attestation')->group(function () {
         ->name('attestation.sign.submit');
 });
 
-<<<<<<< HEAD
-// routes/web.php — ajouter cette route
-Route::get('/email-access/{token}', [App\Http\Controllers\EmailAccessController::class, 'handle'])
-    ->name('email.access')
-    ->middleware('signed');
-    
-=======
 
 
->>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
     });
