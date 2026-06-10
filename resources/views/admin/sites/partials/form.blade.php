@@ -113,10 +113,14 @@ $primaryGeofence = isset($site) ? ($site->geofences->firstWhere('is_primary', tr
                 <div>
                     <label for="geofence_allowed_accuracy_meters" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Precision GPS max (metres) <span class="text-red-500">*</span></label>
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <input type="number" name="geofence_allowed_accuracy_meters" id="geofence_allowed_accuracy_meters" placeholder="50" value="{{ old('geofence_allowed_accuracy_meters', $primaryGeofence->allowed_accuracy_meters ?? '') }}" required
 =======
                     <input type="number" name="geofence_allowed_accuracy_meters" id="geofence_allowed_accuracy_meters" min="5" max="500" placeholder="Ex : 50" value="{{ old('geofence_allowed_accuracy_meters', $primaryGeofence->allowed_accuracy_meters ?? '') }}" required
 >>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
+=======
+                    <input type="number" name="geofence_allowed_accuracy_meters" id="geofence_allowed_accuracy_meters" placeholder="50" value="{{ old('geofence_allowed_accuracy_meters', $primaryGeofence->allowed_accuracy_meters ?? '') }}" required
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Valeur libre (5 à 500 m), définie par l'administrateur selon la tolérance souhaitée.</p>
                 </div>

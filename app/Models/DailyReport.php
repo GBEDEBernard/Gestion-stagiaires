@@ -18,7 +18,10 @@ class DailyReport extends Model
         'task_id',
         'report_date',
         'title',
+        'introduction',
         'summary',
+        'voice_path',
+        'voice_duration',
         'blockers',
         'next_steps',
         'hours_declared',
@@ -94,6 +97,19 @@ class DailyReport extends Model
     public function isStudentReport(): bool
     {
         return !is_null($this->etudiant_id);
+    }
+
+    /** Rapport déposé sous forme de message vocal (T-005). */
+    public function isVoice(): bool
+    {
+        return !is_null($this->voice_path);
+    }
+
+    public function voiceUrl(): ?string
+    {
+        return $this->voice_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->voice_path)
+            : null;
     }
 
     /* =======================

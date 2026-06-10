@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Task;
-use App\Models\TaskMessage;
 use App\Services\NotificationService;
 use App\Services\UserProfileLinkService;
 use App\Services\EmailNotificationService;
@@ -75,8 +74,21 @@ class TaskController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+<<<<<<< HEAD
         return redirect()->route('login')
             ->with('info', 'Veuillez vous connecter avec le bon compte pour accéder à cette tâche.');
+=======
+        $task->load([
+            'owner',
+            'assignedBy',
+            'stage.etudiant',
+            'dailyReports.reviews.reviewer',
+            'dailyReports.user',
+            'dailyReports.etudiant.user',
+        ]);
+
+        return view('tasks.workspace', $this->workspaceData($request, $task));
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     }
 
     $task->load([
@@ -113,9 +125,11 @@ class TaskController extends Controller
         ];
 
         $todayReport = null;
-        if ($selected && $selected->owner_id === $user->id) {
-            $todayReport = $selected->dailyReports
-                ->first(fn($r) => $r->report_date->isToday());
+        if ($selected) {
+            if ($selected->owner_id === $user->id) {
+                $todayReport = $selected->dailyReports
+                    ->first(fn($r) => $r->report_date->isToday());
+            }
         }
 
         return compact('tasks', 'stats', 'status', 'selected', 'todayReport');
@@ -205,22 +219,22 @@ class TaskController extends Controller
                 $task->update(['status' => 'changes_requested']);
             }
 
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'status_change',
-                'body'    => 'Corrections demandées par ' . $user->name
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Corrections demandées',
+                'description' => 'Corrections demandées par ' . $user->name
+                    . ' sur « ' . Str::limit($task->title, 40) . ' »'
                     . (!empty($data['comment']) ? ' : ' . $data['comment'] : ''),
             ]);
 
             $title = '✏️ Corrections demandées';
             $message = $user->name . ' demande des corrections sur « ' . Str::limit($task->title, 40) . ' »';
         } else {
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'message',
-                'body'    => $data['comment'] ?: 'Travail validé. 👍',
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Travail validé',
+                'description' => $user->name . ' a validé « ' . Str::limit($task->title, 40) . ' »'
+                    . (!empty($data['comment']) ? ' : ' . $data['comment'] : ''),
             ]);
 
             $title = '✅ Travail validé';
@@ -245,6 +259,111 @@ class TaskController extends Controller
         return back()->with('success', 'Action enregistrée.');
     }
 
+<<<<<<< HEAD
+=======
+    /**
+     * Clôture de la tâche — ADMIN UNIQUEMENT (T-005).
+     * L'admin déclare la tâche terminée quand il est satisfait des rapports.
+     * → status=completed, discussion fermée (lecture seule).
+     */
+    public function complete(Request $request, Task $task)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasRole('admin'), 403);
+        abort_unless(
+            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
+            403
+        );
+
+        $data = $request->validate([
+            'comment' => 'nullable|string|max:5000',
+        ]);
+
+        if (!$task->isCompleted()) {
+            $task->update([
+                'status'                 => 'completed',
+                'last_progress_percent'  => 100,
+                'completed_at'           => $task->completed_at ?: now(),
+                'validated_by'           => $user->id,
+                'validated_at'           => now(),
+                'discussion_reopened_at' => null,
+            ]);
+
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Tâche clôturée',
+                'description' => '✅ Tâche « ' . Str::limit($task->title, 40) . ' » clôturée par ' . $user->name
+                    . (!empty($data['comment']) ? ' — ' . $data['comment'] : ''),
+            ]);
+
+            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+                $this->notifications->push(
+                    (int) $task->owner_id,
+                    'task_completed',
+                    '✅ Tâche validée',
+                    $user->name . ' a clôturé « ' . Str::limit($task->title, 40) . ' »',
+                    encrypted_route('tasks.show', $task),
+                    'check-circle',
+                    'green'
+                );
+            }
+        }
+
+        return back()->with('success', 'Tâche clôturée.');
+    }
+
+    /**
+     * Réouverture de la discussion — ADMIN UNIQUEMENT (T-005).
+     * La tâche reprend (awaiting_validation si déjà à 100 %, sinon in_progress).
+     */
+    public function reopen(Request $request, Task $task)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasRole('admin'), 403);
+        abort_unless(
+            Task::whereKey($task->getKey())->visibleTo($user)->exists(),
+            403
+        );
+
+        if ($task->isCompleted()) {
+            $task->update([
+                'status'                 => $task->last_progress_percent >= 100 ? 'awaiting_validation' : 'in_progress',
+                'completed_at'           => null,
+                'validated_by'           => null,
+                'validated_at'           => null,
+                'discussion_reopened_at' => now(),
+            ]);
+
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Tâche rouverte',
+                'description' => '🔓 Tâche « ' . Str::limit($task->title, 40) . ' » rouverte par ' . $user->name . '.',
+            ]);
+
+            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+                $this->notifications->push(
+                    (int) $task->owner_id,
+                    'task_reopened',
+                    '🔓 Tâche rouverte',
+                    $user->name . ' a rouvert « ' . Str::limit($task->title, 40) . ' »',
+                    encrypted_route('tasks.show', $task),
+                    'lock-open',
+                    'amber'
+                );
+            }
+        }
+
+        return back()->with('success', 'Discussion rouverte.');
+    }
+
+    /* =========================================================================
+       HELPERS
+    ========================================================================= */
+
+    /** Seul le propriétaire (producteur) peut éditer/supprimer sa tâche. */
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     protected function authorizeOwner(Task $task): void
     {
         abort_unless($task->owner_id === auth()->id(), 403);

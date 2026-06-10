@@ -4,29 +4,41 @@ namespace Database\Seeders;
 
 use App\Models\Signataire;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+<<<<<<< HEAD
 =======
 use Illuminate\Support\Facades\Schema;
 >>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
+=======
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
 
 class SignatairesSeeder extends Seeder
 {
     public function run(): void
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         Permission::firstOrCreate([
             'name'       => 'signer_attestation',
             'guard_name' => 'web',
         ]);
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+<<<<<<< HEAD
 =======
         // Désactiver les contraintes
         Schema::disableForeignKeyConstraints();
 >>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
+=======
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         Signataire::truncate();
         Schema::enableForeignKeyConstraints();
 

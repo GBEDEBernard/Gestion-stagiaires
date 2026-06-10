@@ -71,9 +71,23 @@
                 </div>
                 @endif
 
+                <!-- Introduction -->
+                <div>
+                    <label for="introduction" class="block text-sm font-semibold text-slate-900 mb-3">Introduction</label>
+                    <textarea
+                        id="introduction"
+                        name="introduction"
+                        rows="3"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('introduction') border-red-500 focus:ring-red-500 @enderror"
+                        placeholder="Une brève introduction sur les objectifs du jour...">{{ old('introduction', $report->introduction) }}</textarea>
+                    @error('introduction')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Summary -->
                 <div>
-                    <label for="summary" class="block text-sm font-semibold text-slate-900 mb-3">Résumé</label>
+                    <label for="summary" class="block text-sm font-semibold text-slate-900 mb-3">Travail réalisé</label>
                     <textarea
                         id="summary"
                         name="summary"
@@ -147,17 +161,21 @@
                 </div>
 
                 <!-- FORM ACTIONS -->
-                <div class="flex items-center gap-4 pt-6 border-t border-slate-200">
+                <div class="flex items-center gap-3 pt-6 border-t border-slate-200">
                     <a href="{{ route('reports.index') }}"
                         class="px-6 py-3 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all duration-200">
                         Annuler
                     </a>
-                    <button type="submit"
-                        class="px-6 py-3 text-sm font-medium text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all duration-200 flex items-center gap-2">
+                    <button type="submit" name="status_action" value="draft"
+                        class="px-6 py-3 text-sm font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50 transition-all duration-200">
+                        Enregistrer brouillon
+                    </button>
+                    <button type="submit" name="status_action" value="submit"
+                        class="px-6 py-3 text-sm font-medium text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all duration-200 flex items-center gap-2 ml-auto">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        Enregistrer les modifications
+                        Soumettre le rapport
                     </button>
                 </div>
 

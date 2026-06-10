@@ -207,10 +207,20 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
         Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
 
-        // Fil de discussion (producteur + superviseur + admin) — T-003 Phase 4
+        // Fil de discussion (producteur + superviseur + admin) — T-003 / T-005
+        Route::get('{task}/thread', [TaskMessageController::class, 'index'])->name('tasks.thread')->middleware('permission:tasks.view');
         Route::post('{task}/messages', [TaskMessageController::class, 'store'])->name('tasks.messages.store')->middleware('permission:tasks.view');
+        Route::patch('{task}/messages/{message}', [TaskMessageController::class, 'update'])->name('tasks.messages.update')->middleware('permission:tasks.view');
+        Route::delete('{task}/messages/{message}', [TaskMessageController::class, 'destroy'])->name('tasks.messages.destroy')->middleware('permission:tasks.view');
+        Route::post('{task}/messages/{message}/react', [TaskMessageController::class, 'react'])->name('tasks.messages.react')->middleware('permission:tasks.view');
+        Route::post('{task}/typing', [TaskMessageController::class, 'typing'])->name('tasks.typing')->middleware('permission:tasks.view');
+        Route::post('{task}/read', [TaskMessageController::class, 'markRead'])->name('tasks.read')->middleware('permission:tasks.view');
         // Actions de revue (superviseur / admin)
         Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
+
+        // Clôture / réouverture de la tâche — ADMIN UNIQUEMENT (T-005)
+        Route::post('{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->middleware('permission:tasks.review');
+        Route::post('{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->middleware('permission:tasks.review');
     });
 
     // ---------------- Signataires ----------------
@@ -302,6 +312,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         // mise à jour (utilisateur propriétaire uniquement)
         Route::put('{report}', [DailyReportController::class, 'update'])
             ->name('reports.update');
+
+        // commentaire sur un rapport (étudiant, superviseur, admin)
+        Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
+            ->name('reports.comments.store');
     });
     // Employes
     Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {

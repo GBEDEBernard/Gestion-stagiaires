@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "chart.js": "^4.5.1",
-    "lucide": "^1.8.0"
+    "laravel-echo": "^2.3.7",
+    "lucide": "^1.8.0",
+    "pusher-js": "^8.5.0"
   }
 }

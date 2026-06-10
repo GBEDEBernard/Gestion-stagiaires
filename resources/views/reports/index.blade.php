@@ -84,7 +84,16 @@
 
                             <!-- Summary -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Résumé</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Introduction <span class="text-slate-400 text-xs">(optionnel)</span></label>
+                                <textarea name="introduction"
+                                    rows="2"
+                                    placeholder="Contexte ou objectif de la journée..."
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">{{ old('introduction') }}</textarea>
+                            </div>
+
+                            <!-- Summary -->
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Résumé <span class="text-red-500">*</span></label>
                                 <textarea name="summary"
                                     rows="4"
                                     required
@@ -129,7 +138,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex justify-end gap-4 pt-4 border-t border-slate-50">
+                            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-50">
                                 <button type="button"
                                     @click="open = false"
                                     class="px-5 py-3 text-sm font-medium border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200">
@@ -138,9 +147,16 @@
 
                                 <button type="submit"
                                     name="status_action"
+                                    value="draft"
+                                    class="px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all duration-200">
+                                    Enregistrer brouillon
+                                </button>
+
+                                <button type="submit"
+                                    name="status_action"
                                     value="submit"
                                     class="px-5 py-3 text-sm font-medium bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-md hover:shadow-lg">
-                                    {{ isset($editReport) ? 'Mettre à jour' : 'Enregistrer' }}
+                                    {{ isset($editReport) ? 'Mettre à jour' : 'Soumettre' }}
                                 </button>
                             </div>
                         </form>
@@ -217,8 +233,13 @@
                                 </span>
                             </div>
                             <p class="text-base text-slate-600 leading-relaxed">
-                                {{ nl2br(e($report->summary)) }}
+                            {{ nl2br(e($report->summary)) }}
                             </p>
+                                @if($report->introduction)
+                                <p class="mt-1 text-sm text-slate-400 italic leading-relaxed">
+                                    {{ Str::limit($report->introduction, 120) }}
+                                </p>
+                                @endif
                         </div>
 
                         <!-- ACTIONS -->
@@ -450,79 +471,111 @@
 
                 let statusBadge = '';
                 if (report.status === 'submitted') {
-                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>Soumis</span>';
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">Soumis</span>';
                 } else if (report.status === 'reviewed') {
-                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Révisé</span>';
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">Révisé</span>';
                 } else {
-                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>Brouillon</span>';
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Brouillon</span>';
                 }
 
+                // -- Sections du rapport --
+                const introHtml = report.introduction
+                    ? `<div class="bg-slate-50 rounded-xl p-4">
+                        <h5 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Introduction</h5>
+                        <p class="text-slate-800 leading-relaxed whitespace-pre-line">${escapeHtml(report.introduction)}</p>
+                      </div>`
+                    : '';
+
+                const summaryHtml = report.summary
+                    ? `<div class="bg-slate-50 rounded-xl p-4">
+                        <h5 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Travail réalisé</h5>
+                        <p class="text-slate-800 leading-relaxed whitespace-pre-line">${escapeHtml(report.summary)}</p>
+                      </div>`
+                    : '';
+
+                const blockersHtml = report.blockers
+                    ? `<div class="border-l-4 border-red-300 bg-red-50 rounded-r-xl p-4">
+                        <h5 class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Blocages rencontrés</h5>
+                        <p class="text-red-900 whitespace-pre-line">${escapeHtml(report.blockers)}</p>
+                      </div>`
+                    : '';
+
+                const nextStepsHtml = report.next_steps
+                    ? `<div class="border-l-4 border-emerald-300 bg-emerald-50 rounded-r-xl p-4">
+                        <h5 class="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">Prochaines étapes</h5>
+                        <p class="text-emerald-900 whitespace-pre-line">${escapeHtml(report.next_steps)}</p>
+                      </div>`
+                    : '';
+
+                const hoursHtml = report.hours_declared
+                    ? `<div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3M6 6h12"/></svg>
+                        ${report.hours_declared}h déclarées
+                       </div>`
+                    : '';
+
+                // -- Commentaires --
                 let reviewsHtml = '';
                 if (reviews.length > 0) {
-                    reviewsHtml = '<div class="mt-6 pt-6 border-t border-slate-200"><h4 class="text-lg font-semibold text-slate-900 mb-4">Reviews et commentaires</h4>';
+                    reviewsHtml += `<div class="mt-6 pt-6 border-t border-slate-100">
+                        <h4 class="text-sm font-semibold text-slate-700 mb-3">Commentaires (${reviews.length})</h4>
+                        <div class="space-y-3">`;
                     reviews.forEach(review => {
+                        const isAuthorReply = review.action === 'author_reply';
                         reviewsHtml += `
-                            <div class="bg-slate-50 rounded-lg p-4 mb-3">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="font-medium text-slate-900">${review.reviewer_name}</span>
-                                    <span class="text-sm text-slate-500">${review.created_at}</span>
+                            <div class="flex gap-3 ${isAuthorReply ? 'flex-row-reverse' : ''}">
+                                <div class="flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold"
+                                     style="background:${isAuthorReply ? '#dbeafe' : '#f1f5f9'}; color:${isAuthorReply ? '#1d4ed8' : '#475569'}">
+                                    ${escapeHtml(review.reviewer_name.charAt(0).toUpperCase())}
                                 </div>
-                                <p class="text-slate-700">${review.comment}</p>
-                            </div>
-                        `;
+                                <div class="flex-1 ${isAuthorReply ? 'text-right' : ''}">
+                                    <div class="inline-block rounded-2xl px-4 py-2.5 max-w-prose"
+                                         style="background:${isAuthorReply ? '#eff6ff' : '#f8fafc'}">
+                                        <p class="text-sm font-medium text-slate-800 mb-0.5">${escapeHtml(review.reviewer_name)}</p>
+                                        <p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(review.comment)}</p>
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-1 px-1">${review.created_at}</p>
+                                </div>
+                            </div>`;
                     });
-                    reviewsHtml += '</div>';
+                    reviewsHtml += '</div></div>';
                 }
 
+                // -- Formulaire d'ajout de commentaire --
+                const commentFormHtml = `
+                    <form class="mt-4 flex gap-2" onsubmit="submitComment(event, ${reportId})">
+                        <input type="text" id="comment-input-${reportId}" placeholder="Ajouter un commentaire..."
+                               class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-slate-400 focus:border-transparent" required />
+                        <button type="submit" class="px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-xl hover:bg-slate-700 transition">
+                            Envoyer
+                        </button>
+                    </form>`;
+
                 const content = `
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between">
+                    <div class="space-y-5">
+                        <div class="flex items-start justify-between">
                             <div>
-                                <h4 class="text-2xl font-bold text-slate-900">${report.report_date_formatted}</h4>
-                                <div class="mt-2">${statusBadge}</div>
+                                <h4 class="text-xl font-bold text-slate-900">${report.report_date_formatted}</h4>
+                                <div class="mt-1.5 flex items-center gap-3">
+                                    ${statusBadge}
+                                    ${hoursHtml}
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-sm text-slate-500">Créé ${report.created_at_formatted}</div>
-                                ${report.updated_at_formatted !== report.created_at_formatted ? `<div class="text-sm text-slate-500">Modifié ${report.updated_at_formatted}</div>` : ''}
+                            <div class="text-right text-xs text-slate-400">
+                                <div>Créé ${report.created_at_formatted}</div>
+                                ${report.updated_at_formatted !== report.created_at_formatted ? `<div>Modifié ${report.updated_at_formatted}</div>` : ''}
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-slate-50 rounded-lg p-4">
-                                <h5 class="text-sm font-medium text-slate-700 mb-2">Résumé du travail</h5>
-                                <p class="text-slate-900 whitespace-pre-line">${report.summary}</p>
-                            </div>
-
-                            <div class="space-y-4">
-                                ${report.hours_declared ? `
-                                <div class="bg-blue-50 rounded-lg p-4">
-                                    <div class="flex items-center gap-2 text-blue-700 mb-1">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3M6 6h12"></path>
-                                        </svg>
-                                        <span class="font-medium">Heures travaillées</span>
-                                    </div>
-                                    <p class="text-2xl font-bold text-blue-900">${report.hours_declared}h</p>
-                                </div>
-                                ` : ''}
-
-                                ${report.blockers ? `
-                                <div class="bg-red-50 rounded-lg p-4">
-                                    <h5 class="text-sm font-medium text-red-700 mb-2">Blocages rencontrés</h5>
-                                    <p class="text-red-900 whitespace-pre-line">${report.blockers}</p>
-                                </div>
-                                ` : ''}
-
-                                ${report.next_steps ? `
-                                <div class="bg-green-50 rounded-lg p-4">
-                                    <h5 class="text-sm font-medium text-green-700 mb-2">Prochaines étapes</h5>
-                                    <p class="text-green-900 whitespace-pre-line">${report.next_steps}</p>
-                                </div>
-                                ` : ''}
-                            </div>
+                        <div class="space-y-3">
+                            ${introHtml}
+                            ${summaryHtml}
+                            ${blockersHtml}
+                            ${nextStepsHtml}
                         </div>
 
                         ${reviewsHtml}
+                        ${commentFormHtml}
                     </div>
                 `;
 
@@ -531,8 +584,39 @@
             })
             .catch(error => {
                 console.error('Erreur lors du chargement du rapport:', error);
-                alert('Erreur lors du chargement du rapport');
             });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function submitComment(e, reportId) {
+        e.preventDefault();
+        const input = document.getElementById(`comment-input-${reportId}`);
+        const comment = input.value.trim();
+        if (!comment) return;
+
+        fetch(`/reports/${reportId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ comment }),
+        })
+        .then(r => r.json())
+        .then(() => {
+            input.value = '';
+            viewReportDetails(reportId); // recharge la modale
+        })
+        .catch(err => console.error(err));
     }
 
     function closeReportDetailsModal() {

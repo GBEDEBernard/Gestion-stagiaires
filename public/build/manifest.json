@@ -1,17 +1,40 @@
 {
+  "_pusher-Ci8FJMCt.js": {
+    "file": "assets/pusher-Ci8FJMCt.js",
+    "name": "pusher",
+    "isDynamicEntry": true
+  },
+  "node_modules/laravel-echo/dist/echo.js": {
+    "file": "assets/echo-BMlpzgK2.js",
+    "name": "echo",
+    "src": "node_modules/laravel-echo/dist/echo.js",
+    "isDynamicEntry": true
+  },
   "resources/css/app.css": {
+<<<<<<< HEAD
 <<<<<<< HEAD
     "file": "assets/app-D_qeTI3K.css",
 =======
     "file": "assets/app-3IxtJ5gm.css",
 >>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
+=======
+    "file": "assets/app-MACXPxU4.css",
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
+<<<<<<< HEAD
     "file": "assets/app-nq1tZXoD.js",
+=======
+    "file": "assets/app-BRMRiQt2.js",
+>>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/laravel-echo/dist/echo.js",
+      "_pusher-Ci8FJMCt.js"
+    ]
   }
 }

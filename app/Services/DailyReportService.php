@@ -7,7 +7,6 @@ use App\Models\DailyReport;
 use App\Models\Etudiant;
 use App\Models\Stage;
 use App\Models\Task;
-use App\Models\TaskMessage;
 use App\Models\TaskUpdate;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -56,14 +55,22 @@ class DailyReportService
                 ->when(!$stage, fn($q) => $q->where('user_id', $user->id))
                 ->first();
 
-            // 🔥 FIX ANTI DOUBLON PROPRE
+            // Résolution de la tâche rattachée (doit appartenir au producteur).
+            $task = $this->resolveOwnedTask($payload['task_id'] ?? null, $user);
+
+            // 🔥 ANTI-DOUBLON (T-005) : par TÂCHE/jour si rattaché à une tâche
+            // (chaque tâche a son propre fil de rapports), sinon par producteur/jour
+            // (rapport de présence legacy, hors tâche).
             $query = DailyReport::whereDate('report_date', today());
 
-            if ($user->hasRole('employe')) {
-                $query->where('user_id', $user->id);
+            if ($task) {
+                $query->where('task_id', $task->id);
+            } elseif ($user->hasRole('employe')) {
+                $query->where('user_id', $user->id)->whereNull('task_id');
             } else {
                 $query->where('etudiant_id', $etudiant->id)
-                    ->where('stage_id', $stage->id);
+                    ->where('stage_id', $stage->id)
+                    ->whereNull('task_id');
             }
 
             $report = $query->first();
@@ -73,9 +80,6 @@ class DailyReportService
                 $report->report_date = today();
             }
 
-            // Résolution de la tâche rattachée (doit appartenir au producteur).
-            $task = $this->resolveOwnedTask($payload['task_id'] ?? null, $user);
-
             $report->fill([
                 'stage_id' => $stage?->id,
                 'etudiant_id' => $etudiant?->id,
@@ -84,7 +88,8 @@ class DailyReportService
                 'task_id' => $task?->id,
                 'task_progress_percent' => $task ? ($payload['task_progress_percent'] ?? $task->last_progress_percent) : null,
                 'title' => 'Rapport du ' . today()->format('d/m/Y'),
-                'summary' => $payload['summary'],
+                'introduction' => $payload['introduction'] ?? null,
+                'summary' => $payload['summary'] ?? null,
                 'blockers' => $payload['blockers'] ?? null,
                 'next_steps' => $payload['next_steps'] ?? null,
                 'hours_declared' => $payload['hours_declared'] ?? 0,
@@ -123,21 +128,21 @@ class DailyReportService
 
     /**
      * Applique la progression déclarée à la tâche, journalise (task_update),
-     * insère un jalon dans le fil de discussion, gère l'auto-complétion à 100 %
-     * et notifie superviseur + admins (seulement si le rapport est soumis).
+     * gère l'auto-complétion à 100 % et notifie superviseur + admins (seulement si le rapport est soumis).
      */
     public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
     {
         $progress = (int) ($report->task_progress_percent ?? $task->last_progress_percent);
         $progress = max(0, min(100, $progress));
 
-        $wasCompleted = $task->status === 'completed';
+        $originalStatus = $task->status;
 
-        // Transition de statut basée sur la progression.
         $newStatus = $task->status;
-        if ($progress >= 100) {
+        if ($originalStatus === 'completed') {
             $newStatus = 'completed';
-        } elseif ($progress > 0 && in_array($task->status, ['pending', 'changes_requested'], true)) {
+        } elseif ($progress >= 100) {
+            $newStatus = 'awaiting_validation';
+        } elseif ($progress > 0 && in_array($originalStatus, ['pending', 'changes_requested', 'awaiting_validation'], true)) {
             $newStatus = 'in_progress';
         }
 
@@ -145,7 +150,6 @@ class DailyReportService
             'last_progress_percent' => $progress,
             'status' => $newStatus,
             'started_at' => $task->started_at ?: ($progress > 0 ? now() : null),
-            'completed_at' => $progress >= 100 ? ($task->completed_at ?: now()) : null,
         ]);
 
         // Historique de progression.
@@ -158,25 +162,6 @@ class DailyReportService
             'note' => Str::limit($report->summary, 280),
             'happened_at' => now(),
         ]);
-
-        // Jalon dans le fil de la tâche.
-        TaskMessage::create([
-            'task_id' => $task->id,
-            'user_id' => $user->id,
-            'type' => 'report_jalon',
-            'daily_report_id' => $report->id,
-            'body' => 'Rapport du ' . $report->report_date->format('d/m/Y') . ' — progression ' . $progress . '%',
-        ]);
-
-        // Changement de statut « terminée ».
-        if ($progress >= 100 && !$wasCompleted) {
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type' => 'status_change',
-                'body' => 'Tâche marquée comme terminée (100%).',
-            ]);
-        }
 
         if ($notify) {
             $this->notifyReviewersOfReport($task, $report, $user);
