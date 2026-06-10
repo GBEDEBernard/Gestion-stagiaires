@@ -74,10 +74,6 @@ class TaskController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-<<<<<<< HEAD
-        return redirect()->route('login')
-            ->with('info', 'Veuillez vous connecter avec le bon compte pour accéder à cette tâche.');
-=======
         $task->load([
             'owner',
             'assignedBy',
@@ -88,7 +84,6 @@ class TaskController extends Controller
         ]);
 
         return view('tasks.workspace', $this->workspaceData($request, $task));
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     }
 
     $task->load([
@@ -259,8 +254,6 @@ class TaskController extends Controller
         return back()->with('success', 'Action enregistrée.');
     }
 
-<<<<<<< HEAD
-=======
     /**
      * Clôture de la tâche — ADMIN UNIQUEMENT (T-005).
      * L'admin déclare la tâche terminée quand il est satisfait des rapports.
@@ -363,7 +356,6 @@ class TaskController extends Controller
     ========================================================================= */
 
     /** Seul le propriétaire (producteur) peut éditer/supprimer sa tâche. */
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     protected function authorizeOwner(Task $task): void
     {
         abort_unless($task->owner_id === auth()->id(), 403);

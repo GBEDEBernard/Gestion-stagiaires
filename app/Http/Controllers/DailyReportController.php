@@ -24,30 +24,17 @@ class DailyReportController extends Controller
      */
     public function index(Request $request)
     {
-<<<<<<< HEAD
-        if ($request->user()->hasAnyRole(['etudiant', 'employe'])) {
-            return redirect()->route('tasks.index');
-        }
-
-        $user = $request->user();
-        $period = $request->get('period', 'daily');
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-=======
         $user    = $request->user();
         $period  = $request->get('period', 'daily');
 
         $etudiant   = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         $isEmployee = $user->hasRole('employe');
 
         $activeStage = $etudiant
             ? $this->dailyReportService->resolveActiveStageForUser($user)
             : null;
 
-<<<<<<< HEAD
-=======
         // Tâches actives du producteur (pour sélecteur dans le formulaire).
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         $activeTasks = Task::where('owner_id', $user->id)
             ->where('status', '!=', 'completed')
             ->latest()
@@ -58,26 +45,16 @@ class DailyReportController extends Controller
             ->with(['task', 'reviews'])
             ->orderByDesc('report_date');
 
-<<<<<<< HEAD
-        $editReport = null;
-=======
         $editReport  = null;
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         $todayReport = null;
 
         if ($period === 'daily') {
             $todayReport = (clone $query)->whereDate('report_date', today())->first();
-<<<<<<< HEAD
-            $reports = (clone $query)->limit(10)->get();
-            return view('reports.index', compact(
-                'todayReport', 'reports', 'period', 'activeStage', 'activeTasks', 'isEmployee', 'editReport'
-=======
             $reports     = (clone $query)->limit(10)->get();
 
             return view('reports.index', compact(
                 'todayReport', 'reports', 'period',
                 'activeStage', 'activeTasks', 'isEmployee', 'editReport'
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
             ));
         }
 
@@ -90,33 +67,6 @@ class DailyReportController extends Controller
         $reports = $query->whereBetween('report_date', [$dateFrom, now()])->get();
 
         return view('reports.index', compact(
-<<<<<<< HEAD
-            'reports', 'period', 'activeStage', 'activeTasks', 'isEmployee', 'editReport', 'todayReport'
-        ));
-    }
-
-    public function edit(DailyReport $report)
-    {
-        $user = auth()->user();
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-
-        if ($report->user_id !== $user->id && $report->etudiant_id !== optional($etudiant)->id) {
-            abort(403);
-        }
-
-        $report->load(['task', 'reviews']);
-
-        $activeTasks = Task::where('owner_id', $user->id)
-            ->where(function ($q) use ($report) {
-                $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id);
-            })
-            ->latest()
-            ->get(['id', 'title', 'last_progress_percent']);
-
-        return view('reports.edit', compact('report', 'activeTasks'));
-    }
-
-=======
             'reports', 'period', 'activeStage', 'activeTasks',
             'isEmployee', 'editReport', 'todayReport'
         ));
@@ -125,18 +75,13 @@ class DailyReportController extends Controller
     /**
      * Détails d'un rapport (JSON pour la modale).
      */
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     public function show(Request $request, DailyReport $report)
     {
         $user     = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-<<<<<<< HEAD
-        if ($report->user_id !== $user->id &&
-=======
         if (
             $report->user_id !== $user->id &&
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
             $report->etudiant_id !== optional($etudiant)->id &&
             !$user->hasRole('admin') &&
             !$user->hasRole('superviseur')) {
@@ -201,23 +146,11 @@ class DailyReportController extends Controller
      */
     public function store(StoreDailyReportRequest $request)
     {
-<<<<<<< HEAD
-        $this->dailyReportService->storeForToday($request->user(), $request->validated());
-
-        // Notifier par email si le rapport est lié à une tâche
-        if ($request->filled('task_id')) {
-            $task = Task::find($request->task_id);
-            if ($task) {
-                $this->emailService->notifyReportSubmitted($task);
-            }
-        }
-=======
         $data = $request->validated();
 
         unset($data['voice']); // résidu éventuel de l'ancienne implémentation
 
         $this->dailyReportService->storeForToday($request->user(), $data);
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
 
         return back()->with('success', 'Rapport enregistré.');
     }
@@ -258,10 +191,7 @@ class DailyReportController extends Controller
 
         $report->update($data);
 
-<<<<<<< HEAD
-=======
         // Répercuter la progression sur la tâche si rattachée.
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         if (!empty($data['task_id'])) {
             $task = Task::find($data['task_id']);
             if ($task && $task->owner_id === $user->id && $task->status !== 'completed') {
@@ -281,9 +211,6 @@ class DailyReportController extends Controller
 
         return back()->with('success', 'Rapport mis à jour.');
     }
-<<<<<<< HEAD
-}
-=======
 
     /**
      * Ajouter un commentaire sur un rapport (superviseur / admin / auteur du rapport).
@@ -329,4 +256,4 @@ class DailyReportController extends Controller
         return back()->with('success', 'Commentaire ajouté.');
     }
 }
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
+

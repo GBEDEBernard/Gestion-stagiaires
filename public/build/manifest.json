@@ -11,24 +11,12 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "file": "assets/app-D_qeTI3K.css",
-=======
-    "file": "assets/app-3IxtJ5gm.css",
->>>>>>> 4e83ef8912e77932aeeac52a490923fd7cec7179
-=======
-    "file": "assets/app-MACXPxU4.css",
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
+    "file": "assets/app-C06VnEOB.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-<<<<<<< HEAD
-    "file": "assets/app-nq1tZXoD.js",
-=======
-    "file": "assets/app-BRMRiQt2.js",
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
+    "file": "assets/app-fneNpz0C.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
