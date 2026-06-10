@@ -278,7 +278,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Personnels</span>
                         </a>
                         @endcan
-                        @can('etudiants.view')
+                        <!-- @can('etudiants.view')
                         <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Étudiants</span>
@@ -289,7 +289,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Employés</span>
                         </a>
-                        @endrole
+                        @endrole -->
                         @can('badges.view')
                         <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
