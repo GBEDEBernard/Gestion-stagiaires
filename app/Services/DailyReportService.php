@@ -7,7 +7,6 @@ use App\Models\DailyReport;
 use App\Models\Etudiant;
 use App\Models\Stage;
 use App\Models\Task;
-use App\Models\TaskMessage;
 use App\Models\TaskUpdate;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -89,10 +88,8 @@ class DailyReportService
                 'task_id' => $task?->id,
                 'task_progress_percent' => $task ? ($payload['task_progress_percent'] ?? $task->last_progress_percent) : null,
                 'title' => 'Rapport du ' . today()->format('d/m/Y'),
-                // T-005 : résumé optionnel si rapport vocal.
+                'introduction' => $payload['introduction'] ?? null,
                 'summary' => $payload['summary'] ?? null,
-                'voice_path' => $payload['voice_path'] ?? null,
-                'voice_duration' => $payload['voice_duration'] ?? null,
                 'blockers' => $payload['blockers'] ?? null,
                 'next_steps' => $payload['next_steps'] ?? null,
                 'hours_declared' => $payload['hours_declared'] ?? 0,
@@ -131,8 +128,7 @@ class DailyReportService
 
     /**
      * Applique la progression déclarée à la tâche, journalise (task_update),
-     * insère un jalon dans le fil de discussion, gère l'auto-complétion à 100 %
-     * et notifie superviseur + admins (seulement si le rapport est soumis).
+     * gère l'auto-complétion à 100 % et notifie superviseur + admins (seulement si le rapport est soumis).
      */
     public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
     {
@@ -141,12 +137,8 @@ class DailyReportService
 
         $originalStatus = $task->status;
 
-        // Transition de statut basée sur la progression.
-        // ⚠️ T-005 : 100 % N'AUTO-CLÔTURE PLUS. La tâche passe « en attente de
-        // validation » ; seul un ADMIN la clôture (status=completed) via complete().
         $newStatus = $task->status;
         if ($originalStatus === 'completed') {
-            // Déjà clôturée par l'admin : un rapport ne la rétrograde pas.
             $newStatus = 'completed';
         } elseif ($progress >= 100) {
             $newStatus = 'awaiting_validation';
@@ -158,7 +150,6 @@ class DailyReportService
             'last_progress_percent' => $progress,
             'status' => $newStatus,
             'started_at' => $task->started_at ?: ($progress > 0 ? now() : null),
-            // completed_at reste piloté par l'admin (clôture), pas par la progression.
         ]);
 
         // Historique de progression.
@@ -171,25 +162,6 @@ class DailyReportService
             'note' => Str::limit($report->summary, 280),
             'happened_at' => now(),
         ]);
-
-        // Jalon dans le fil de la tâche.
-        TaskMessage::create([
-            'task_id' => $task->id,
-            'user_id' => $user->id,
-            'type' => 'report_jalon',
-            'daily_report_id' => $report->id,
-            'body' => 'Rapport du ' . $report->report_date->format('d/m/Y') . ' — progression ' . $progress . '%',
-        ]);
-
-        // Objectif atteint : on signale l'attente de validation admin (pas de clôture auto).
-        if ($newStatus === 'awaiting_validation' && $originalStatus !== 'awaiting_validation') {
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type' => 'status_change',
-                'body' => '🎯 Objectif 100 % atteint — en attente de validation par un administrateur.',
-            ]);
-        }
 
         if ($notify) {
             $this->notifyReviewersOfReport($task, $report, $user);

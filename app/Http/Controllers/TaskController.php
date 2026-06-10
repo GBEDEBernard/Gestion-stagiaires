@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Task;
-use App\Models\TaskMessage;
 use App\Services\NotificationService;
 use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
@@ -81,8 +80,9 @@ class TaskController extends Controller
             'owner',
             'assignedBy',
             'stage.etudiant',
-            'dailyReports',
-            'messages.user',
+            'dailyReports.reviews.reviewer',
+            'dailyReports.user',
+            'dailyReports.etudiant.user',
         ]);
 
         return view('tasks.workspace', $this->workspaceData($request, $task));
@@ -117,14 +117,11 @@ class TaskController extends Controller
 
         // Rapport déjà soumis aujourd'hui pour la tâche sélectionnée (par le propriétaire).
         $todayReport = null;
-        $thread = null;
         if ($selected) {
             if ($selected->owner_id === $user->id) {
                 $todayReport = $selected->dailyReports
                     ->first(fn($r) => $r->report_date->isToday());
             }
-
-            $thread = app(\App\Services\TaskThreadService::class)->payload($selected, $user);
         }
 
         return [
@@ -133,7 +130,6 @@ class TaskController extends Controller
             'status'      => $status,
             'selected'    => $selected,
             'todayReport' => $todayReport,
-            'thread'      => $thread,
         ];
     }
 
@@ -225,22 +221,22 @@ class TaskController extends Controller
                 $task->update(['status' => 'changes_requested']);
             }
 
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'status_change',
-                'body'    => 'Corrections demandées par ' . $user->name
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Corrections demandées',
+                'description' => 'Corrections demandées par ' . $user->name
+                    . ' sur « ' . Str::limit($task->title, 40) . ' »'
                     . (!empty($data['comment']) ? ' : ' . $data['comment'] : ''),
             ]);
 
             $title = '✏️ Corrections demandées';
             $message = $user->name . ' demande des corrections sur « ' . Str::limit($task->title, 40) . ' »';
         } else {
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'message',
-                'body'    => $data['comment'] ?: 'Travail validé. 👍',
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Travail validé',
+                'description' => $user->name . ' a validé « ' . Str::limit($task->title, 40) . ' »'
+                    . (!empty($data['comment']) ? ' : ' . $data['comment'] : ''),
             ]);
 
             $title = '✅ Travail validé';
@@ -291,11 +287,10 @@ class TaskController extends Controller
                 'discussion_reopened_at' => null,
             ]);
 
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'status_change',
-                'body'    => '✅ Tâche validée et clôturée par ' . $user->name . '. La discussion est fermée.'
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Tâche clôturée',
+                'description' => '✅ Tâche « ' . Str::limit($task->title, 40) . ' » clôturée par ' . $user->name
                     . (!empty($data['comment']) ? ' — ' . $data['comment'] : ''),
             ]);
 
@@ -338,11 +333,10 @@ class TaskController extends Controller
                 'discussion_reopened_at' => now(),
             ]);
 
-            TaskMessage::create([
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'type'    => 'status_change',
-                'body'    => '🔓 Discussion rouverte par ' . $user->name . '. La tâche continue.',
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Tâche rouverte',
+                'description' => '🔓 Tâche « ' . Str::limit($task->title, 40) . ' » rouverte par ' . $user->name . '.',
             ]);
 
             if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {

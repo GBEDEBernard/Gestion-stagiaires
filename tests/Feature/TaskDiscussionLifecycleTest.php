@@ -1,11 +1,10 @@
 <?php
 
 use App\Models\DailyReport;
+use App\Models\DailyReportReview;
 use App\Models\Task;
-use App\Models\TaskMessage;
 use App\Models\User;
 use App\Services\DailyReportService;
-use App\Services\TaskThreadService;
 use Database\Seeders\RolePermissionSeeder;
 
 beforeEach(function () {
@@ -37,14 +36,7 @@ function makeReport(User $owner, Task $task, int $progress): DailyReport
     ]);
 }
 
-it('garde la discussion verrouillée tant qu\'aucun rapport n\'existe', function () {
-    $owner = User::factory()->create();
-    $task = makeTask($owner);
-
-    expect($task->discussionState())->toBe('locked');
-});
-
-it('ouvre la discussion au premier rapport et épingle ce rapport', function () {
+it('ouvre la discussion au premier rapport', function () {
     $owner = User::factory()->create();
     $task = makeTask($owner);
     $report = makeReport($owner, $task, 40);
@@ -54,13 +46,7 @@ it('ouvre la discussion au premier rapport et épingle ce rapport', function () 
 
     expect($task->status)->toBe('in_progress')
         ->and($task->last_progress_percent)->toBe(40)
-        ->and($task->discussionState())->toBe('open')
-        ->and(TaskMessage::where('task_id', $task->id)->where('type', 'report_jalon')->exists())->toBeTrue();
-
-    $payload = app(TaskThreadService::class)->payload($task, $owner);
-    expect($payload['pinned_report'])->not->toBeNull()
-        ->and($payload['pinned_report']['progress'])->toBe(40)
-        ->and($payload['pinned_report']['author']['initials'])->not->toBe('');
+        ->and($task->discussionState())->toBe('open');
 });
 
 it('passe « en attente de validation » à 100 % sans auto-clôturer', function () {
@@ -73,35 +59,10 @@ it('passe « en attente de validation » à 100 % sans auto-clôturer', function
 
     expect($task->status)->toBe('awaiting_validation')
         ->and($task->isCompleted())->toBeFalse()
-        ->and($task->completed_at)->toBeNull()
-        ->and(TaskMessage::where('task_id', $task->id)->where('type', 'status_change')->exists())->toBeTrue();
+        ->and($task->completed_at)->toBeNull();
 
     // La discussion reste ouverte (pas clôturée) tant que l'admin ne valide pas.
     expect($task->discussionState())->toBe('open');
-});
-
-it('épingle TOUJOURS le dernier rapport (l\'ancien se dé-épingle)', function () {
-    $owner = User::factory()->create();
-    $task = makeTask($owner);
-
-    $r1 = makeReport($owner, $task, 30);
-    app(DailyReportService::class)->syncTaskProgress($r1, $task, $owner, false);
-
-    // Rapport du lendemain à 60 %.
-    $r2 = DailyReport::create([
-        'user_id'               => $owner->id,
-        'task_id'               => $task->id,
-        'report_date'           => today()->addDay(),
-        'summary'               => 'Suite',
-        'task_progress_percent' => 60,
-        'status'                => 'submitted',
-        'hours_declared'        => 0,
-    ]);
-    app(DailyReportService::class)->syncTaskProgress($r2, $task->refresh(), $owner, false);
-
-    $payload = app(TaskThreadService::class)->payload($task->refresh(), $owner);
-    expect($payload['pinned_report']['id'])->toBe($r2->id)
-        ->and($payload['pinned_report']['progress'])->toBe(60);
 });
 
 it('clôture la discussion quand la tâche est terminée par l\'admin', function () {
@@ -115,7 +76,7 @@ it('clôture la discussion quand la tâche est terminée par l\'admin', function
     expect($task->discussionState())->toBe('closed');
 });
 
-it('rend la page tâche (état verrouillé) sans erreur pour le propriétaire', function () {
+it('rend la page workspace (état verrouillé) sans erreur pour le propriétaire', function () {
     $owner = User::factory()->create();
     $owner->assignRole('employe');
     $owner->givePermissionTo('tasks.view');
@@ -124,12 +85,10 @@ it('rend la page tâche (état verrouillé) sans erreur pour le propriétaire', 
     $this->actingAs($owner)
         ->get(route('tasks.show', $task))
         ->assertOk()
-        ->assertSee('discussion')
-        ->assertSee('premier rapport')
         ->assertSee($task->title);
 });
 
-it('rend la page tâche (discussion ouverte) avec le rapport épinglé dans le payload', function () {
+it('rend la page workspace (rapport soumis) avec le rapport visible', function () {
     $owner = User::factory()->create();
     $owner->assignRole('employe');
     $owner->givePermissionTo('tasks.view');
@@ -140,8 +99,7 @@ it('rend la page tâche (discussion ouverte) avec le rapport épinglé dans le p
     $this->actingAs($owner)
         ->get(route('tasks.show', $task->refresh()))
         ->assertOk()
-        ->assertSee('Discussion')
-        ->assertSee('Avancement du jour'); // résumé du rapport épinglé, embarqué dans le payload JSON
+        ->assertSee('Avancement du jour'); // résumé du rapport visible dans la section académique
 });
 
 it('dédoublonne les rapports par tâche/jour (un rapport par tâche par jour)', function () {
@@ -167,4 +125,59 @@ it('dédoublonne les rapports par tâche/jour (un rapport par tâche par jour)',
     expect($second->id)->toBe($first->id)
         ->and(DailyReport::where('task_id', $task->id)->whereDate('report_date', today())->count())->toBe(1)
         ->and($task->refresh()->last_progress_percent)->toBe(50);
+});
+
+it('permet de commenter un rapport via la route storeComment', function () {
+    $owner = User::factory()->create();
+    $owner->assignRole('employe');
+    $owner->givePermissionTo('tasks.view');
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $admin->givePermissionTo('tasks.view');
+
+    $task = makeTask($owner);
+    $report = makeReport($owner, $task, 50);
+
+    $this->actingAs($admin)
+        ->post(route('reports.comments.store', $report->id), [
+            'comment' => 'Bon travail, continue !',
+            'action'  => 'comment',
+        ])
+        ->assertRedirect();
+
+    expect(DailyReportReview::where('daily_report_id', $report->id)->count())->toBe(1);
+
+    $review = DailyReportReview::where('daily_report_id', $report->id)->first();
+    expect($review->comment)->toBe('Bon travail, continue !')
+        ->and($review->action)->toBe('comment')
+        ->and($review->reviewer_id)->toBe($admin->id);
+});
+
+it('permet à un admin de valider un rapport via la route storeComment', function () {
+    $owner = User::factory()->create();
+    $owner->assignRole('employe');
+    $owner->givePermissionTo('tasks.view');
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $admin->givePermissionTo('tasks.view');
+
+    $task = makeTask($owner);
+    $report = makeReport($owner, $task, 80);
+
+    $this->actingAs($admin)
+        ->post(route('reports.comments.store', $report->id), [
+            'comment' => 'Rapport d\'activité relu et validé.',
+            'action'  => 'approved',
+        ])
+        ->assertRedirect();
+
+    $report->refresh();
+    expect($report->status)->toBe('reviewed')
+        ->and($report->reviewed_by)->toBe($admin->id)
+        ->and($report->reviewed_at)->not->toBeNull();
+
+    $review = DailyReportReview::where('daily_report_id', $report->id)->first();
+    expect($review->action)->toBe('approved');
 });

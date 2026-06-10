@@ -312,6 +312,10 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         // mise à jour (utilisateur propriétaire uniquement)
         Route::put('{report}', [DailyReportController::class, 'update'])
             ->name('reports.update');
+
+        // commentaire sur un rapport (étudiant, superviseur, admin)
+        Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
+            ->name('reports.comments.store');
     });
     // Employes
     Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {

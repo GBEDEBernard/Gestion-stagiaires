@@ -109,25 +109,14 @@ class AdminReportTrackingController extends Controller
         $user = $request->user();
         $report = DailyReport::with(['task', 'etudiant.user'])->findOrFail($data['report_id']);
 
-        if ($report->task) {
-            TaskMessage::create([
-                'task_id'         => $report->task->id,
-                'user_id'         => $user->id,
-                'type'            => 'message',
-                'body'            => $data['comment'],
-                'daily_report_id' => $report->id,
-            ]);
-            $url = encrypted_route('tasks.show', $report->task);
-        } else {
-            DailyReportReview::create([
-                'daily_report_id' => $report->id,
-                'reviewer_id'     => $user->id,
-                'action'          => 'comment',
-                'comment'         => $data['comment'],
-                'reviewed_at'     => now(),
-            ]);
-            $url = route('admin.reports.index');
-        }
+        DailyReportReview::create([
+            'daily_report_id' => $report->id,
+            'reviewer_id'     => $user->id,
+            'action'          => 'comment',
+            'comment'         => $data['comment'],
+            'reviewed_at'     => now(),
+        ]);
+        $url = $report->task ? encrypted_route('tasks.show', $report->task) : route('admin.reports.index');
 
         $report->forceFill([
             'reviewed_by' => $user->id,

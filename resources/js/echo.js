@@ -1,48 +1,54 @@
 /**
- * Laravel Echo + Reverb (protocole Pusher).
+ * Echo instantiation with Reverb + fallback.
  *
- * Objectifs :
- *  - Temps réel quand le serveur Reverb (`php artisan reverb:start`) est joignable.
- *  - Dégradation gracieuse : si aucun serveur n'est configuré/joignable
- *    (clé absente, port WS non exposé via ngrok, contenu mixte HTTPS→ws…),
- *    `window.Echo` vaut null et le chat bascule sur le polling. Rien ne casse.
+ * - Attempts to connect to Laravel Reverb WebSocket on first load
+ * - Falls back to polling if WebSocket unavailable
+ * - Handles ngrok tunneling (WebSocket port 8080 may not pass through)
+ * - Gracefully handles missing dependencies (polling still works)
  *
- * Utilisation côté Alpine :
- *   window.Echo?.private(`task.${id}`)
- *       .listen('message.created', (e) => { ... });
+ * Usage:
+ *   window.Echo.private(`task.${task_id}`)
+ *       .listen('message.created', (event) => { ... })
+ *       .listen('reaction.added', (event) => { ... });
  */
 
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
+let Echo = null;
+window.Echo = null;
 
-window.Pusher = Pusher;
-
-const key = import.meta.env.VITE_REVERB_APP_KEY;
-
-// Pas de clé => pas de serveur à contacter : on reste en polling (zéro retry WS).
-if (key) {
+async function initEcho() {
     try {
-        const scheme = import.meta.env.VITE_REVERB_SCHEME ?? 'http';
-        const forceTLS = scheme === 'https';
+        // Attempt to import dependencies lazily so Vite can target older browsers.
+        const [{ default: EchoLib }, Pusher] = await Promise.all([
+            import('laravel-echo'),
+            import('pusher-js'),
+        ]);
 
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key,
-            wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-            wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-            wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
-            forceTLS,
+        window.Pusher = Pusher.default;
+
+        const echoConfig = {
+            broadcaster: 'pusher',
+            key: import.meta.env.VITE_PUSHER_APP_KEY || 'gestion-stagiaires-key',
+            cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt',
+            wsHost: import.meta.env.VITE_PUSHER_HOST || window.location.hostname,
+            wsPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '6001', 10),
+            wssPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '443', 10),
+            scheme: import.meta.env.VITE_PUSHER_SCHEME || 'http',
+            encrypted: import.meta.env.VITE_PUSHER_SCHEME === 'https',
             enabledTransports: ['ws', 'wss'],
-        });
+            disableStats: true,
+            csrfToken: document.querySelector('meta[name="csrf-token"]')?.content,
+        };
 
-        // Les erreurs de connexion ne doivent pas remonter : le polling couvre.
-        window.Echo.connector?.pusher?.connection?.bind('error', () => {});
+        Echo = new EchoLib(echoConfig);
+        window.Echo = Echo;
+        console.log('[Echo] Initialized');
     } catch (e) {
-        console.warn('[Echo] init échouée, repli sur le polling :', e?.message ?? e);
+        console.log('[Echo] Not available - polling will handle updates');
+        Echo = null;
         window.Echo = null;
     }
-} else {
-    window.Echo = null;
 }
 
-export default window.Echo;
+initEcho();
+
+export default Echo;

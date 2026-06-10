@@ -18,6 +18,7 @@ class DailyReport extends Model
         'task_id',
         'report_date',
         'title',
+        'introduction',
         'summary',
         'voice_path',
         'voice_duration',

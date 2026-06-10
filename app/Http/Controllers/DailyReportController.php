@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DailyReport\StoreDailyReportRequest;
-use App\Models\AttendanceDay;
 use App\Models\DailyReport;
+use App\Models\DailyReportReview;
 use App\Models\Task;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
@@ -18,126 +18,66 @@ class DailyReportController extends Controller
     ) {}
 
     /**
-     * 📊 AFFICHAGE (daily / history)
+     * Liste des rapports (tous rôles producteurs + admin/superviseur).
      */
     public function index(Request $request)
     {
-        // T-004 : les rapports sont désormais gérés dans l'Espace de travail (sous chaque tâche).
-        if ($request->user()->hasAnyRole(['etudiant', 'employe'])) {
-            return redirect()->route('tasks.index');
-        }
+        $user    = $request->user();
+        $period  = $request->get('period', 'daily');
 
-        $user = $request->user();
-        $period = $request->get('period', 'daily');
-
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+        $etudiant   = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isEmployee = $user->hasRole('employe');
-
-        if (!$etudiant && !$isEmployee && !$user->hasRole('admin')) {
-            abort(403);
-        }
 
         $activeStage = $etudiant
             ? $this->dailyReportService->resolveActiveStageForUser($user)
             : null;
 
-        // Tâches actives du producteur, proposées dans le formulaire de rapport.
+        // Tâches actives du producteur (pour sélecteur dans le formulaire).
         $activeTasks = Task::where('owner_id', $user->id)
             ->where('status', '!=', 'completed')
             ->latest()
             ->get(['id', 'title', 'last_progress_percent']);
 
-        $query = DailyReport::query()->visibleTo($user)
+        $query = DailyReport::query()
+            ->visibleTo($user)
             ->with(['task', 'reviews'])
             ->orderByDesc('report_date');
 
-        /* ======================
-       DAILY
-    ====================== */
-        $editReport = null;
+        $editReport  = null;
         $todayReport = null;
 
         if ($period === 'daily') {
-
-            $todayReport = (clone $query)
-                ->whereDate('report_date', today())
-                ->first();
-
-            $reports = (clone $query)->limit(10)->get();
+            $todayReport = (clone $query)->whereDate('report_date', today())->first();
+            $reports     = (clone $query)->limit(10)->get();
 
             return view('reports.index', compact(
-                'todayReport',
-                'reports',
-                'period',
-                'activeStage',
-                'activeTasks',
-                'isEmployee',
-                'editReport'
+                'todayReport', 'reports', 'period',
+                'activeStage', 'activeTasks', 'isEmployee', 'editReport'
             ));
         }
 
-        /* ======================
-       WEEKLY / MONTHLY
-    ====================== */
-
         $dateFrom = match ($period) {
-            'weekly' => now()->startOfWeek(),
+            'weekly'  => now()->startOfWeek(),
             'monthly' => now()->startOfMonth(),
-            default => now()->startOfWeek()
+            default   => now()->startOfWeek(),
         };
 
-        $reports = $query
-            ->whereBetween('report_date', [$dateFrom, now()])
-            ->get();
+        $reports = $query->whereBetween('report_date', [$dateFrom, now()])->get();
 
         return view('reports.index', compact(
-            'reports',
-            'period',
-            'activeStage',
-            'activeTasks',
-            'isEmployee',
-            'editReport',
-            'todayReport'
+            'reports', 'period', 'activeStage', 'activeTasks',
+            'isEmployee', 'editReport', 'todayReport'
         ));
     }
 
     /**
-     * 📝 ÉDITER UN RAPPORT
+     * Détails d'un rapport (JSON pour la modale).
      */
-    public function edit(DailyReport $report)
-    {
-        $user = auth()->user();
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-
-        // Vérifier les permissions
-        if (
-            $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($etudiant)->id
-        ) {
-            abort(403);
-        }
-
-        $report->load(['task', 'reviews']);
-
-        $activeTasks = Task::where('owner_id', $user->id)
-            ->where(function ($q) use ($report) {
-                $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id);
-            })
-            ->latest()
-            ->get(['id', 'title', 'last_progress_percent']);
-
-        return view('reports.edit', [
-            'report'      => $report,
-            'activeTasks' => $activeTasks,
-        ]);
-    }
-
     public function show(Request $request, DailyReport $report)
     {
-        $user = $request->user();
+        $user     = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        // Vérifier que l'utilisateur peut voir ce rapport
         if (
             $report->user_id !== $user->id &&
             $report->etudiant_id !== optional($etudiant)->id &&
@@ -151,59 +91,75 @@ class DailyReportController extends Controller
 
         return response()->json([
             'report' => [
-                'id' => $report->id,
-                'summary' => $report->summary,
-                'blockers' => $report->blockers,
-                'next_steps' => $report->next_steps,
-                'hours_declared' => $report->hours_declared,
-                'status' => $report->status,
-                'report_date' => $report->report_date,
-                'report_date_formatted' => $report->report_date->format('l j F Y'),
-                'created_at' => $report->created_at,
+                'id'                   => $report->id,
+                'introduction'         => $report->introduction,
+                'summary'              => $report->summary,
+                'blockers'             => $report->blockers,
+                'next_steps'           => $report->next_steps,
+                'hours_declared'       => $report->hours_declared,
+                'status'               => $report->status,
+                'report_date'          => $report->report_date,
+                'report_date_formatted'=> $report->report_date->format('l j F Y'),
+                'created_at'           => $report->created_at,
                 'created_at_formatted' => $report->created_at->diffForHumans(),
-                'updated_at' => $report->updated_at,
+                'updated_at'           => $report->updated_at,
                 'updated_at_formatted' => $report->updated_at->diffForHumans(),
             ],
-            'reviews' => $report->reviews->map(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'comment' => $review->comment,
-                    'reviewer_name' => $review->reviewer->name,
-                    'created_at' => $review->created_at->diffForHumans(),
-                    'action' => $review->action,
-                ];
-            }),
+            'reviews' => $report->reviews->map(fn($r) => [
+                'id'            => $r->id,
+                'comment'       => $r->comment,
+                'reviewer_name' => $r->reviewer->name,
+                'created_at'    => $r->created_at->diffForHumans(),
+                'action'        => $r->action ?? null,
+            ]),
         ]);
     }
 
+    /**
+     * Formulaire d'édition d'un rapport (page dédiée).
+     */
+    public function edit(DailyReport $report)
+    {
+        $user     = auth()->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+
+        if (
+            $report->user_id !== $user->id &&
+            $report->etudiant_id !== optional($etudiant)->id
+        ) {
+            abort(403);
+        }
+
+        $report->load(['task', 'reviews']);
+
+        $activeTasks = Task::where('owner_id', $user->id)
+            ->where(fn($q) => $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id))
+            ->latest()
+            ->get(['id', 'title', 'last_progress_percent']);
+
+        return view('reports.edit', compact('report', 'activeTasks'));
+    }
+
+    /**
+     * Créer un rapport (appel depuis la vue index ou workspace).
+     */
     public function store(StoreDailyReportRequest $request)
     {
         $data = $request->validated();
 
-        // T-005 : rapport vocal — on stocke le fichier et on injecte voice_path/duration.
-        if ($request->hasFile('voice')) {
-            $file = $request->file('voice');
-            $mime = $file->getMimeType() ?: 'application/octet-stream';
-
-            $audioOk = str_starts_with($mime, 'audio/')
-                || in_array($mime, ['video/webm', 'video/ogg', 'application/ogg', 'application/octet-stream'], true);
-
-            abort_unless($audioOk, 422, 'Fichier vocal invalide.');
-
-            $data['voice_path'] = $file->store('report-voices/' . $request->user()->id, 'public');
-            $data['voice_duration'] = $request->integer('voice_duration') ?: null;
-        }
-
-        unset($data['voice']); // l'UploadedFile ne doit pas descendre dans le service
+        unset($data['voice']); // résidu éventuel de l'ancienne implémentation
 
         $this->dailyReportService->storeForToday($request->user(), $data);
 
         return back()->with('success', 'Rapport enregistré.');
     }
 
+    /**
+     * Mettre à jour un rapport existant.
+     */
     public function update(Request $request, DailyReport $report)
     {
-        $user = $request->user();
+        $user     = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         if (
@@ -214,24 +170,36 @@ class DailyReportController extends Controller
         }
 
         $data = $request->validate([
-            'summary' => 'required|string',
-            'blockers' => 'nullable|string',
-            'next_steps' => 'nullable|string',
-            'hours_declared' => 'nullable|numeric|min:0|max:24',
-            'report_date' => 'nullable|date',
-            'task_id' => 'nullable|integer|exists:tasks,id',
-            'task_progress_percent' => 'nullable|integer|min:0|max:100',
+            'status_action'        => 'nullable|in:draft,submit',
+            'introduction'         => 'nullable|string|max:5000',
+            'summary'              => 'required|string',
+            'blockers'             => 'nullable|string',
+            'next_steps'           => 'nullable|string',
+            'hours_declared'       => 'nullable|numeric|min:0|max:24',
+            'report_date'          => 'nullable|date',
+            'task_id'              => 'nullable|integer|exists:tasks,id',
+            'task_progress_percent'=> 'nullable|integer|min:0|max:100',
         ]);
+
+        $statusAction = $data['status_action'] ?? null;
+        unset($data['status_action']);
+
+        if ($statusAction === 'submit') {
+            $data['status']       = 'submitted';
+            $data['submitted_at'] = now();
+        } elseif ($statusAction === 'draft') {
+            $data['status'] = 'draft';
+        }
 
         $report->update($data);
 
-        // Si une tâche (du producteur) est rattachée, répercuter la progression.
+        // Répercuter la progression sur la tâche si rattachée.
         if (!empty($data['task_id'])) {
-            $task = \App\Models\Task::find($data['task_id']);
+            $task = Task::find($data['task_id']);
             if ($task && $task->owner_id === $user->id && $task->status !== 'completed') {
                 $report->forceFill([
-                    'task_id' => $task->id,
-                    'task_progress_percent' => $data['task_progress_percent'] ?? $task->last_progress_percent,
+                    'task_id'              => $task->id,
+                    'task_progress_percent'=> $data['task_progress_percent'] ?? $task->last_progress_percent,
                 ])->save();
 
                 $this->dailyReportService->syncTaskProgress(
@@ -244,5 +212,49 @@ class DailyReportController extends Controller
         }
 
         return back()->with('success', 'Rapport mis à jour.');
+    }
+
+    /**
+     * Ajouter un commentaire sur un rapport (superviseur / admin / auteur du rapport).
+     */
+    public function storeComment(Request $request, DailyReport $report)
+    {
+        $user     = $request->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+
+        // L'auteur, le superviseur et l'admin peuvent commenter.
+        $isAuthor = $report->user_id === $user->id
+            || $report->etudiant_id === optional($etudiant)->id;
+
+        if (!$isAuthor && !$user->hasAnyRole(['admin', 'superviseur'])) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'comment' => 'required|string|max:5000',
+        ]);
+
+        DailyReportReview::create([
+            'daily_report_id' => $report->id,
+            'reviewer_id'     => $user->id,
+            'comment'         => $data['comment'],
+            'reviewed_at'     => now(),
+            'action'          => $user->hasAnyRole(['admin', 'superviseur']) ? 'comment' : 'author_reply',
+        ]);
+
+        // Marquer le rapport comme relu si c'est un superviseur/admin.
+        if ($user->hasAnyRole(['admin', 'superviseur']) && $report->status === 'submitted') {
+            $report->update([
+                'status'      => 'reviewed',
+                'reviewed_by' => $user->id,
+                'reviewed_at' => now(),
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Commentaire ajouté.');
     }
 }
