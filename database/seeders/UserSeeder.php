@@ -98,22 +98,6 @@ class UserSeeder extends Seeder
                 'personnable_id'   => $employe->id,
             ]);
 
-<<<<<<< HEAD
-            // 3. User - SANS le champ 'name'
-            $user = User::updateOrCreate(
-                ['personnel_id' => $personnel->id],
-                [
-                    'email'                     => $userData['email'],
-                    'password'                  => $userData['password'],
-                    'status'                    => $userData['status'],
-                    'email_verified_at'         => Carbon::now(),
-                    'is_signer'                 => $userData['is_signer'],
-                    'signataire_poste'          => $userData['is_signer'] ? $userData['poste'] : null,
-                    'signataire_sigle'          => $userData['is_signer'] ? ($userData['poste'] === 'Directeur Général' ? 'DG' : ($userData['poste'] === 'Directeur Technique' ? 'DT' : 'DTA')) : null,
-                    'signataire_ordre'          => $userData['is_signer'] ? ($userData['poste'] === 'Directeur Général' ? 1 : ($userData['poste'] === 'Directeur Technique' ? 2 : 3)) : null,
-                    'signataire_peut_par_ordre' => $userData['is_signer'] && $userData['poste'] !== 'Directeur Général',
-                ]
-=======
             $userAttributes = [
                 'password' => $userData['password'],
                 'status' => $userData['status'],
@@ -131,7 +115,6 @@ class UserSeeder extends Seeder
             $user = User::updateOrCreate(
                 ['personnel_id' => $personnel->id],
                 $userAttributes
->>>>>>> 49a0902eb66d18e67c5b0d41cf47d7f6493fbe63
             );
 
             // 4. Rôles
