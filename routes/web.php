@@ -453,6 +453,4 @@ Route::prefix('attestation')->group(function () {
         ->name('attestation.sign.submit');
 });
 
-
-
-    });
+ });

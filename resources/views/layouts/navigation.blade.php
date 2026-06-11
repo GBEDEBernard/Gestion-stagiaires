@@ -72,9 +72,11 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                     </a>
                     {{-- Espace de travail (tâches + rapports + discussion) --}}
                     <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('tasks.*') ? 'bg-teal-500/20 text-teal-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
-                        <div class="p-2 rounded-xl bg-teal-500/10"><svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="p-2 rounded-xl bg-teal-500/10">
+                            <svg class="w-5 h-5 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg></div>
+                            </svg>
+                        </div>
                         <span>Espace de travail</span>
                     </a>
                     {{-- Mon Stage --}}
@@ -118,7 +120,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcan
 
                 <!-- 2. Suivi & Présence - AVEC PERSISTANCE -->
-                <div class="mb-4" x-data="{ openPresence: {{ request()->routeIs('attendance.tracking.index') || request()->routeIs('admin.presence.*') || request()->routeIs('reports.*') || request()->routeIs('permissions.*') || request()->routeIs('presence.*') ? 'true' : 'false' }} }">
+                <div class="mb-4" x-data="{ openPresence: {{ request()->routeIs('attendance.tracking.index') || request()->routeIs('admin.presence.*') || request()->routeIs('reports.*') || request()->routeIs('permissions.*') || request()->routeIs('presence.*')  || request()->routeIs('tasks.index') ? 'true' : 'false' }} }">
                     <button @click="openPresence = !openPresence" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPresence ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -157,6 +159,13 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Permissions</span>
                         </a>
                         @endrole
+                   
+                         @role('admin|superviseur')
+                        <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                            <span>Espace de travail</span>
+                        </a>
+                        @endrole
                         @role('admin|superviseur')
                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
@@ -181,6 +190,15 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
                             @endif
                         </a>
+                      <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-2 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                           <div class="p-1 rounded-xl bg-teal-500/10">
+                            <svg class="w-3 h-3 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                          </div>
+                            <span class="relative z-10">Espace de travail</span>
+                        </a>
+                        
                         @endif
                     </div>
                 </div>
