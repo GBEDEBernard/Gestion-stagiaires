@@ -14,7 +14,6 @@ return new class extends Migration
             $table->foreignId('domaine_id')->constrained();
             $table->foreignId('site_id')->constrained();
             $table->string('poste')->nullable();
-            $table->string('matricule')->unique();
             $table->timestamps();
             $table->softDeletes();
         });

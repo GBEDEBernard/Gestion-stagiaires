@@ -27,7 +27,6 @@ class PersonnelController extends Controller
 
         $query = Personnel::with('personnable', 'user');
 
-
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('prenom', 'like', "%{$search}%")
@@ -36,7 +35,6 @@ class PersonnelController extends Controller
                     ->orWhere('telephone', 'like', "%{$search}%");
             });
         }
-
 
         if ($type && $type !== 'all') {
             if ($type === 'etudiant') {
@@ -48,17 +46,13 @@ class PersonnelController extends Controller
             }
         }
 
-
         if ($school) {
-
             if ($type && $type !== 'all' && $type !== 'etudiant') {
                 $query->whereRaw('0 = 1');
             } else {
-
                 if (!$type || $type === 'all') {
                     $query->where('personnable_type', Etudiant::class);
                 }
-
                 $query->whereExists(function ($subquery) use ($school) {
                     $subquery->select('id')
                         ->from('etudiants')
@@ -67,7 +61,6 @@ class PersonnelController extends Controller
                 });
             }
         }
-
 
         if ($account === 'with') {
             $query->whereHas('user');
@@ -89,10 +82,10 @@ class PersonnelController extends Controller
             $domainesParSite[$site->id] = $site->domaines->pluck('nom', 'id')->all();
         }
 
-        $now       = now();
+        $now        = now();
         $typestages = TypeStage::all();
-        $services  = Service::all();
-        $badges    = Badge::whereDoesntHave('stages', function ($query) use ($now) {
+        $services   = Service::all();
+        $badges     = Badge::whereDoesntHave('stages', function ($query) use ($now) {
             $query->where('date_debut', '<=', $now)
                 ->where('date_fin', '>=', $now);
         })->get();
@@ -149,19 +142,17 @@ class PersonnelController extends Controller
         if ($data['type'] === 'etudiant') {
             $typeRules = ['ecole' => 'required|string|max:255'];
         } else {
+            // Suppression de 'matricule'
             $typeRules = [
                 'domaine_id' => 'required|exists:domaines,id',
                 'site_id'    => 'required|exists:sites,id',
                 'poste'      => 'nullable|string|max:255',
-                'matricule'  => 'required|string|max:255|unique:employes,matricule',
             ];
         }
 
         $data = array_merge($data, $request->validate($typeRules));
 
-        // ─── ÉTAPE 1 : créer le Personnel d'abord ───────────────────────────
-        // On crée le personnel sans personnable_type/id pour l'instant,
-        // car on a besoin de son id pour renseigner personnel_id sur la fiche métier.
+        // Étape 1 : créer le Personnel
         $personnel = Personnel::create([
             'nom'            => $data['nom'],
             'prenom'         => $data['prenom'],
@@ -173,23 +164,23 @@ class PersonnelController extends Controller
             'created_by'     => auth()->id(),
         ]);
 
-        // ─── ÉTAPE 2 : créer la fiche métier avec personnel_id ──────────────
+        // Étape 2 : créer la fiche métier
         if ($data['type'] === 'etudiant') {
             $personnable = Etudiant::create([
-                'personnel_id' => $personnel->id, // ← FK directe
+                'personnel_id' => $personnel->id,
                 'ecole'        => $data['ecole'],
             ]);
         } else {
             $personnable = Employe::create([
-                'personnel_id' => $personnel->id, // ← FK directe (corrigé)
+                'personnel_id' => $personnel->id,
                 'domaine_id'   => $data['domaine_id'],
                 'site_id'      => $data['site_id'],
                 'poste'        => $data['poste'],
-                'matricule'    => $data['matricule'],
+                // pas de matricule
             ]);
         }
 
-        // ─── ÉTAPE 3 : mettre à jour le polymorphisme sur personnels ─────────
+        // Étape 3 : mettre à jour le polymorphisme
         $personnel->update([
             'personnable_type' => get_class($personnable),
             'personnable_id'   => $personnable->id,
@@ -206,11 +197,8 @@ class PersonnelController extends Controller
         return redirect()->route('personnels.index')->with('success', 'Personnel créé avec succès.');
     }
 
-
     public function update(Request $request, Personnel $personnel)
     {
-        $type = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
-
         $baseRules = [
             'nom'            => 'required|string|max:255',
             'prenom'         => 'required|string|max:255',
@@ -232,14 +220,8 @@ class PersonnelController extends Controller
                 'domaine_id' => 'sometimes|required|exists:domaines,id',
                 'site_id'    => 'sometimes|required|exists:sites,id',
                 'poste'      => 'nullable|string|max:255',
-                'matricule'  => [
-                    'sometimes',
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('employes', 'matricule')->ignore($personnel->personnable_id),
-                ],
                 'supervisor_id' => 'nullable|exists:users,id',
+                // plus de matricule
             ];
         } else {
             $typeRules = [];
@@ -266,8 +248,8 @@ class PersonnelController extends Controller
                 'domaine_id'    => $data['domaine_id'] ?? $personnel->personnable->domaine_id,
                 'site_id'       => $data['site_id'] ?? $personnel->personnable->site_id,
                 'poste'         => $data['poste'] ?? $personnel->personnable->poste,
-                'matricule'     => $data['matricule'] ?? $personnel->personnable->matricule,
                 'supervisor_id' => $data['supervisor_id'] ?? null,
+                // pas de matricule
             ]);
         }
 
@@ -280,37 +262,40 @@ class PersonnelController extends Controller
         return view('admin.personnels.show', compact('personnel'));
     }
 
-     public function edit(Personnel $personnel)
-    {
-        $personnel->load('personnable');
-        $domaines = Domaine::all();
-        $sites    = Site::all();
-        $type = match ($personnel->personnable_type) {
-            Employe::class => 'employe',
-            Etudiant::class => 'etudiant',
-            default => 'inconnu',
-        };
+   public function edit(Personnel $personnel)
+{
+    $personnel->load('personnable');
+    $domaines = Domaine::all();
+    $sites    = Site::all();
+    $type = match ($personnel->personnable_type) {
+        Employe::class => 'employe',
+        Etudiant::class => 'etudiant',
+        default => 'inconnu',
+    };
 
-        // Superviseurs possibles : administrateurs et superviseurs
-        $superviseurs = User::role(['admin', 'superviseur'])
-            ->with('personnel')
-            ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
-            ->select('users.*')
-            ->orderBy('personnels.nom')
-            ->get();
-
-        $supervisorIdValue = ($personnel->personnable instanceof Employe)
-            ? $personnel->personnable->supervisor_id
-            : null;
-
-        return view('admin.personnels.edit', compact(
-            'personnel', 'domaines', 'sites', 'type',
-            'superviseurs', 'supervisorIdValue'
-        ));
+    // Construction de la map site → domaines (comme dans create)
+    $allSites = Site::with('domaines')->get();
+    $domainesParSite = [];
+    foreach ($allSites as $site) {
+        $domainesParSite[$site->id] = $site->domaines->pluck('nom', 'id')->all();
     }
 
-   
+    $superviseurs = User::role(['admin', 'superviseur'])
+        ->with('personnel')
+        ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+        ->select('users.*')
+        ->orderBy('personnels.nom')
+        ->get();
 
+    $supervisorIdValue = ($personnel->personnable instanceof Employe)
+        ? $personnel->personnable->supervisor_id
+        : null;
+
+    return view('admin.personnels.edit', compact(
+        'personnel', 'domaines', 'sites', 'type',
+        'superviseurs', 'supervisorIdValue', 'domainesParSite'
+    ));
+}
 
     public function trash()
     {
@@ -320,43 +305,32 @@ class PersonnelController extends Controller
         return view('admin.personnels.trash', compact('personnels'));
     }
 
-
     public function destroy(Personnel $personnel)
     {
-
         if ($personnel->user) {
             $personnel->user->delete();
         }
-        // Supprimer la fiche employé si elle existe (même si personnable est null)
         if ($personnel->employe) {
             $personnel->employe->delete();
         }
-
-        // Supprimer la fiche étudiant si elle existe (même si personnable est null)
         if ($personnel->etudiant) {
             $personnel->etudiant->delete();
         }
-
         if ($personnel->personnable) {
             $personnel->personnable->delete();
         }
-
         $personnel->delete();
 
         return redirect()->route('personnels.index')
             ->with('success', 'Personnel déplacé dans la corbeille.');
     }
 
-
     public function restore($id)
     {
         $personnel = Personnel::onlyTrashed()->findOrFail($id);
-
-
         if ($personnel->personnable && $personnel->personnable->trashed()) {
             $personnel->personnable->restore();
         }
-
         if ($personnel->user && $personnel->user->trashed()) {
             $personnel->user->restore();
         }
@@ -366,16 +340,12 @@ class PersonnelController extends Controller
             ->with('success', 'Personnel restauré.');
     }
 
-
     public function forceDelete($id)
     {
         $personnel = Personnel::onlyTrashed()->findOrFail($id);
-
-
         if ($personnel->user) {
             $personnel->user->forceDelete();
         }
-
         if ($personnel->personnable) {
             $personnel->personnable->forceDelete();
         }
@@ -385,16 +355,13 @@ class PersonnelController extends Controller
             ->with('success', 'Personnel définitivement supprimé.');
     }
 
-
     public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
     {
         if ($personnel->user) {
             $service->resendProvisioningEmail($personnel);
-
             if (!$service->lastProvisioningEmailSent()) {
                 return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
             }
-
             return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
         }
 
@@ -405,7 +372,6 @@ class PersonnelController extends Controller
         if (!$service->lastProvisioningEmailSent()) {
             return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
         }
-
         return back()->with('success', "Compte généré pour {$personnel->full_name}.");
     }
 }

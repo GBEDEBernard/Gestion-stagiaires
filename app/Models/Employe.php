@@ -15,7 +15,6 @@ class Employe extends Model
         'domaine_id',
         'site_id',
         'poste',
-        'matricule',
         'supervisor_id',
     ];
 

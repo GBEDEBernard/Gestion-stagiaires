@@ -22,15 +22,18 @@
         <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-xl">{{ session('error') }}</div>
         @endif
 
-        <form id="personnelsFilterForm" method="GET" action="{{ route('personnels.index') }}" class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div class="grid gap-4 lg:grid-cols-4">
+        {{-- ── Filtres (AJAX) ── --}}
+        <form id="filters-form" method="GET" action="{{ route('personnels.index') }}"
+              class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Recherche</label>
-                    <input id="personnelsSearch" type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                    <input id="personnelsSearch" type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..."
+                           class="search-input mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Type</label>
-                    <select name="type" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                    <select name="type" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
                         <option value="all" {{ request('type') === 'all' ? ' selected' : '' }}>Tous</option>
                         <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Étudiant</option>
                         <option value="employe" {{ request('type') === 'employe' ? ' selected' : '' }}>Employé</option>
@@ -39,7 +42,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Statut de compte</label>
-                    <select name="account" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                    <select name="account" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
                         <option value="all" {{ request('account') === 'all' ? ' selected' : '' }}>Tous</option>
                         <option value="with" {{ request('account') === 'with' ? ' selected' : '' }}>Avec compte</option>
                         <option value="without" {{ request('account') === 'without' ? ' selected' : '' }}>Sans compte</option>
@@ -47,7 +50,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
-                    <select name="school" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                    <select name="school" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
                         <option value="">Toutes</option>
                         @foreach($schools as $school)
                         <option value="{{ $school }}" {{ request('school') === $school ? ' selected' : '' }}>{{ $school }}</option>
@@ -55,57 +58,13 @@
                     </select>
                 </div>
             </div>
-
-            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="text-sm text-gray-500 dark:text-gray-400">Filtrer les personnels affichés</div>
-                <div class="flex flex-col gap-2 sm:flex-row">
-                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition">Appliquer</button>
-                    <a href="{{ route('personnels.index') }}" class="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Réinitialiser</a>
-                </div>
+            <div class="mt-3 flex items-center justify-between">
+                <p id="result-count" class="text-xs text-gray-400">{{ $personnels->total() }} personnel(s) trouvé(s)</p>
             </div>
         </form>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var form = document.getElementById('personnelsFilterForm');
-                if (!form) return;
-
-                // submit when any select changes
-                form.querySelectorAll('select').forEach(function(sel) {
-                    sel.addEventListener('change', function() {
-                        form.submit();
-                    });
-                });
-
-                // debounce helper
-                function debounce(fn, delay) {
-                    var t;
-                    return function() {
-                        var args = arguments;
-                        clearTimeout(t);
-                        t = setTimeout(function() {
-                            fn.apply(null, args);
-                        }, delay);
-                    }
-                }
-
-                var search = document.getElementById('personnelsSearch');
-                if (search) {
-                    // submit on Enter
-                    search.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            form.submit();
-                        }
-                    });
-                    // debounce submit on input
-                    search.addEventListener('input', debounce(function() {
-                        form.submit();
-                    }, 600));
-                }
-            });
-        </script>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        {{-- ── Tableau responsive (conteneur AJAX) ── --}}
+        <div id="personnels-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-gray-900/50">
@@ -141,14 +100,13 @@
                             </td>
                             <td class="px-6 py-4 text-sm">
                                 @if($personnel->personnable)
-                                @if($personnel->personnable_type === App\Models\Etudiant::class)
-                                <div class="text-gray-900 dark:text-white"><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
-                                @elseif($personnel->personnable_type === App\Models\Employe::class)
-                                <div class="text-gray-900 dark:text-white"><span class="font-medium">Poste :</span> {{ $personnel->personnable->poste ?? '-' }}</div>
-                                <div class="text-gray-500 dark:text-gray-400">Matricule : {{ $personnel->personnable->matricule ?? '-' }}</div>
-                                @endif
+                                    @if($personnel->personnable_type === App\Models\Etudiant::class)
+                                        <div class="text-gray-900 dark:text-white"><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
+                                    @elseif($personnel->personnable_type === App\Models\Employe::class)
+                                        <div class="text-gray-900 dark:text-white"><span class="font-medium">Poste :</span> {{ $personnel->personnable->poste ?? '-' }}</div>
+                                    @endif
                                 @else
-                                <div class="text-gray-500 dark:text-gray-400">Aucun détail</div>
+                                    <div class="text-gray-500 dark:text-gray-400">Aucun détail</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
@@ -170,7 +128,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </a>
-                                <a href="{{ route('personnels.edit', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier" data-confirm-edit>
+                                <a href="{{ route('personnels.edit', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
@@ -199,19 +157,17 @@
         </div>
     </div>
 
-    <!-- Modal pour mot de passe personnalisé -->
+    {{-- Modal pour mot de passe personnalisé --}}
     <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
             <p class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
-
             <form id="passwordForm" method="POST" action="">
                 @csrf
                 <div class="mb-6">
                     <label for="customPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Mot de passe temporaire (optionnel)</label>
                     <input type="password" id="customPassword" name="custom_password" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                 </div>
-
                 <div class="flex gap-3">
                     <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
                     <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
@@ -241,6 +197,65 @@
             if (event.target === this) {
                 closePasswordModal();
             }
+        });
+
+        // ---- AJAX recherche dynamique (identique à celle des utilisateurs) ----
+        document.addEventListener('DOMContentLoaded', function () {
+            const filtersForm = document.getElementById('filters-form');
+            const searchInput = filtersForm?.querySelector('.search-input');
+            const filterSelects = filtersForm?.querySelectorAll('.filter-select');
+            const container = document.getElementById('personnels-table-container');
+
+            if (!filtersForm || !container) return;
+
+            let debounceTimer;
+
+            function updatePersonnelsTable() {
+                const url = new URL(filtersForm.action);
+                const formData = new FormData(filtersForm);
+                for (let [key, value] of formData.entries()) {
+                    if (value && value !== '') url.searchParams.set(key, value);
+                    else url.searchParams.delete(key);
+                }
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContainer = doc.getElementById('personnels-table-container');
+                    if (newContainer) {
+                        container.innerHTML = newContainer.innerHTML;
+                        const newCount = doc.querySelector('#result-count');
+                        const oldCount = document.getElementById('result-count');
+                        if (newCount && oldCount) oldCount.innerText = newCount.innerText;
+                    } else {
+                        const newTable = doc.querySelector('#personnels-table-container');
+                        if (newTable) container.innerHTML = newTable.innerHTML;
+                    }
+                })
+                .catch(err => console.error('Erreur AJAX:', err));
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => updatePersonnelsTable(), 400);
+                });
+            }
+
+            if (filterSelects) {
+                filterSelects.forEach(select => {
+                    select.addEventListener('change', () => updatePersonnelsTable());
+                });
+            }
+
+            filtersForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                updatePersonnelsTable();
+            });
         });
     </script>
 </x-app-layout>
