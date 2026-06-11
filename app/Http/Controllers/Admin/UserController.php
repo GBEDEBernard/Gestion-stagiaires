@@ -77,7 +77,8 @@ class UserController extends Controller
         }
         $selectedPermissions = array_unique($selectedPermissions);
 
-        $superviseurs = User::role('superviseur')->get(['id', 'name', 'email']);
+        // ✅ CORRECTION : ne pas sélectionner 'name' (colonne inexistante)
+        $superviseurs = User::role(['admin', 'superviseur'])->get(['id', 'email']);
 
         $allPermissions = Permission::orderBy('name')->get();
         $permissionGroups = $allPermissions->groupBy(fn($p) => explode('.', $p->name)[0]);
@@ -101,6 +102,7 @@ class UserController extends Controller
             'etudiants' => $etudiants,
             'domaines' => $domaines,
             'sites' => $sites,
+            'superviseurs' => $superviseurs, // ← ajouté
         ];
 
         return view('admin.users.create', compact('formData'));
@@ -299,7 +301,6 @@ class UserController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $user, $request) {
-            // Mise à jour du personnel
             if ($user->personnel) {
                 $emailChanged = $user->personnel->email !== $validated['email'];
                 $user->personnel->update([
@@ -317,7 +318,6 @@ class UserController extends Controller
                 }
             }
 
-            // Mise à jour de l'utilisateur
             $userData = [
                 'email' => $validated['email'],
                 'status' => $validated['status'],
@@ -338,7 +338,6 @@ class UserController extends Controller
                 ]);
             }
 
-            // Rôles
             $allRoles = [];
             if ($request->filled('user_type')) {
                 $allRoles[] = $request->user_type;
@@ -351,7 +350,6 @@ class UserController extends Controller
                 $user->syncRoles($allRoles);
             }
 
-            // Mise à jour de la fiche métier
             $profil = $user->profil();
             if ($profil instanceof Etudiant) {
                 $profil->update([
@@ -359,7 +357,6 @@ class UserController extends Controller
                     'supervisor_id' => $validated['etudiant_supervisor_id'] ?? null,
                 ]);
 
-                // 🔥 Synchronisation avec le stage actif de l'étudiant
                 $stageActif = $profil->stages()
                     ->where('date_fin', '>=', now())
                     ->orWhereNull('date_fin')
@@ -413,9 +410,9 @@ class UserController extends Controller
         return back()->with('success', $message);
     }
 
-   public function show(User $user)
-{
-    $user->load('personnel', 'roles', 'permissions');
-    return view('admin.users.show', compact('user'));
-}
+    public function show(User $user)
+    {
+        $user->load('personnel', 'roles', 'permissions');
+        return view('admin.users.show', compact('user'));
+    }
 }

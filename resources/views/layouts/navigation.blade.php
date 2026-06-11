@@ -335,7 +335,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcanany
                 @endif
 
-                <!-- 6. Accès & Sécurité (admin uniquement) - AVEC PERSISTANCE -->
+                <!-- 6Accès & Sécurité (admin uniquement) - AVEC PERSISTANCE -->
                 @role('admin')
                 <div class="mb-4" x-data="{ openAccess: {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') ? 'true' : 'false' }} }">
                     <button @click="openAccess = !openAccess" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openAccess ? 'bg-gradient-to-r from-indigo-700 to-indigo-800 text-white shadow-lg shadow-indigo-800/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">

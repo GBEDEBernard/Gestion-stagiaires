@@ -87,6 +87,43 @@ $userType = $selectedRoles[0] ?? 'admin';
             @endif
         </div>
     </div>
+    @else
+    {{-- Section création : mot de passe obligatoire --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            Sécurité
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe *</label>
+                <input type="password" name="password" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl @error('password') border-red-500 @enderror" required>
+                @error('password')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmer le mot de passe *</label>
+                <input type="password" name="password_confirmation" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl" required>
+            </div>
+            @if(in_array('admin', $selectedRoles))
+            <div class="md:col-span-2">
+                <label class="inline-flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/50 rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition">
+                    <input type="checkbox" name="is_signer" value="1" {{ old('is_signer', $isSignerValue ?? false) ? 'checked' : '' }} class="rounded border-blue-300 text-blue-600">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">Peut signer les attestations</span>
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
+                @error('is_signer')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
+            @endif
+        </div>
+    </div>
     @endif
 
     {{-- Section Informations personnelles --}}
@@ -231,7 +268,7 @@ $userType = $selectedRoles[0] ?? 'admin';
                 @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superviseur </label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superviseur attitré</label>
                 <select name="supervisor_id" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border rounded-xl @error('supervisor_id') border-red-500 @enderror">
                     <option value="">Aucun</option>
                     @foreach($superviseurs ?? [] as $sup)
