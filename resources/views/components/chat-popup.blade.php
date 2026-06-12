@@ -182,10 +182,10 @@
 </div>
 
 <script>
-const avatarColors = @js($avatarColors);
+document.addEventListener('alpine:init', () => {
+    const avatarColors = @js($avatarColors);
 
-function chatPopupComponent() {
-    return {
+    Alpine.data('chatPopupComponent', () => ({
         chatOpen: false,
         messages: @js($sortedReviews->toArray()),
 
@@ -217,6 +217,8 @@ function chatPopupComponent() {
 
         async submitMessage() {
             const form = document.getElementById('chat-form-{{ $report->id }}');
+            if (!form) return;
+
             const textarea = form.querySelector('textarea');
             const comment = textarea.value.trim();
 
@@ -241,15 +243,17 @@ function chatPopupComponent() {
 
                     this.$nextTick(() => {
                         const messagesDiv = document.getElementById('messages-{{ $report->id }}');
-                        setTimeout(() => {
-                            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                        }, 100);
+                        if (messagesDiv) {
+                            setTimeout(() => {
+                                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                            }, 100);
+                        }
                     });
                 }
             } catch (err) {
-                console.error('Erreur:', err);
+                console.error('Erreur d\'envoi:', err);
             }
         }
-    }
-}
+    }));
+});
 </script>
