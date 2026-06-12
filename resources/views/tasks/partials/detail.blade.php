@@ -37,7 +37,7 @@
     };
 @endphp
 
-{{-- Animations keyframes (uniquement pour l'entrée des messages) --}}
+{{-- Animations --}}
 <style>
 @keyframes d-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @keyframes d-pulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:0;transform:scale(2.2)} }
@@ -283,11 +283,10 @@
                 </div>
                 @endif
 
-                {{-- Chat Discussion Button --}}
+                {{-- Chat Discussion --}}
                 <div class="mt-5 pl-12">
                     <x-chat-popup :report="$report" :task="$task" :user="$user" :canComment="$canComment" />
                 </div>
-                {{-- FIN CHAT --}}
             </div>
             @endforeach
         </div>
