@@ -232,7 +232,7 @@ class DailyReportController extends Controller
             'comment' => 'required|string|max:5000',
         ]);
 
-        DailyReportReview::create([
+        $review = DailyReportReview::create([
             'daily_report_id' => $report->id,
             'reviewer_id'     => $user->id,
             'comment'         => $data['comment'],
@@ -250,7 +250,10 @@ class DailyReportController extends Controller
         }
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json([
+                'success' => true,
+                'review'  => $review->load('reviewer')
+            ]);
         }
 
         return back()->with('success', 'Commentaire ajouté.');

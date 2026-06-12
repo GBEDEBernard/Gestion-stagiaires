@@ -283,118 +283,9 @@
                 </div>
                 @endif
 
-                {{-- CHAT DISCUSSION (Tailwind pur) --}}
+                {{-- Chat Discussion Button --}}
                 <div class="mt-5 pl-12">
-                    <div class="rounded-2xl overflow-hidden bg-gray-50 border border-black/8 shadow-sm">
-                        {{-- Header --}}
-                        <div class="flex items-center justify-between px-3 py-2 bg-white border-b border-black/7">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-5 w-5 items-center justify-center rounded-full bg-black">
-                                    <svg class="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                    </svg>
-                                </div>
-                                <span class="text-xs font-bold text-black">Discussion</span>
-                                @if($report->reviews->count() > 0)
-                                <span class="inline-flex h-4 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white bg-black">{{ $report->reviews->count() }}</span>
-                                @endif
-                            </div>
-                            <span class="text-[9px] text-black/35">{{ $report->reviews->count() }} msg</span>
-                        </div>
-
-                        {{-- Zone des messages --}}
-                        @if($report->reviews->count() > 0)
-                        <div class="flex flex-col gap-0.5 p-2 overflow-y-auto max-h-[340px] scroll-smooth" id="chat-{{ $report->id }}">
-                            @php 
-                                $prevDay = null;
-                                $sortedReviews = $report->reviews->sortBy('created_at');
-                            @endphp
-                            @foreach($sortedReviews as $review)
-                            @php
-                                $rName   = $review->reviewer?->name ?? 'Système';
-                                $isMe    = $review->reviewer_id === $user->id;
-                                $initRev = strtoupper(substr($rName, 0, 2));
-                                $msgDay  = $review->created_at->format('d/m/Y');
-                                $avatarColors = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
-                                $avatarColor  = $isMe ? '#0a0a0a' : $avatarColors[crc32($rName) % count($avatarColors)];
-                            @endphp
-
-                            {{-- Séparateur de jour --}}
-                            @if($msgDay !== $prevDay)
-                            <div class="flex items-center gap-1.5 text-[9px] font-semibold text-black/35 my-1">
-                                <span class="flex-1 h-px bg-black/10"></span>
-                                <span>{{ $review->created_at->isToday() ? "Aujourd'hui" : ($review->created_at->isYesterday() ? 'Hier' : $review->created_at->format('d M Y')) }}</span>
-                                <span class="flex-1 h-px bg-black/10"></span>
-                            </div>
-                            @php $prevDay = $msgDay; @endphp
-                            @endif
-
-                            {{-- Ligne du message --}}
-                            <div class="flex items-end gap-0.5 {{ $isMe ? 'justify-end' : 'justify-start' }}">
-                                @if(!$isMe)
-                                <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style="background:{{ $avatarColor }};" title="{{ $rName }}">
-                                    {{ $initRev }}
-                                </div>
-                                @endif
-
-                                <div class="max-w-[100%]">
-                                    @if(!$isMe)
-                                    <div class="text-[9px] font-semibold text-black/40 ml-0.5 mb-0.5">{{ $rName }}</div>
-                                    @endif
-
-                                    {{-- BULLE DE MESSAGE : la hauteur s'adapte automatiquement au contenu --}}
-                                    <div class="w-fit px-1.5 py-0.5 text-xs leading-tight break-words whitespace-pre-wrap shadow-sm
-                                                {{ $isMe 
-                                                    ? 'bg-gradient-to-br from-violet-500 to-blue-600 text-white rounded-2xl rounded-br-md' 
-                                                    : 'bg-gray-100 text-black rounded-2xl rounded-bl-md' }}">
-                                        @php $action = $review->action ?? ''; @endphp
-                                        @if($action === 'approved')
-                                        <div class="inline-flex items-center gap-0.5 text-[8px] font-bold bg-emerald-200 text-emerald-800 px-1 rounded-sm mb-0.5">✓ Validé</div>
-                                        @elseif($action === 'rejected')
-                                        <div class="inline-flex items-center gap-0.5 text-[18px] font-bold bg-amber-200 text-amber-800 px-1 rounded-sm mb-0.5">⚠ Correction</div>
-                                        @endif
-                                        {{ $review->comment }}
-                                    </div>
-
-                                    <div class="text-[9px] text-black/40 mt-0.5 {{ $isMe ? 'text-right' : 'text-left' }} ml-0.5">
-                                        {{ $review->created_at->format('H:i') }}
-                                    </div>
-                                </div>
-
-                                @if($isMe)
-                                <div class="w-5"></div> {{-- espace réservé pour l'alignement --}}
-                                @endif
-                            </div>
-                            @endforeach
-                        </div>
-                        @else
-                        <div class="flex flex-col items-center justify-center py-6 px-4 text-center">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-full mb-1 bg-black/6">
-                                <svg class="h-4 w-4 text-black/25" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                </svg>
-                            </div>
-                            <p class="text-[10px] font-medium text-black/45">Aucun message</p>
-                        </div>
-                        @endif
-
-                        {{-- Input chat --}}
-                        @if(!$task->isCompleted())
-                        <form method="POST" action="{{ route('reports.comments.store', $report->id) }}" class="flex items-end gap-1.5 p-1.5 border-t border-black/7 bg-gray-50" id="chat-form-{{ $report->id }}">
-                            @csrf
-                            <textarea name="comment" required rows="1"
-                                      placeholder="Écrire un message…"
-                                      class="flex-1 bg-black/4 border border-black/8 rounded-full py-1.5 px-3 text-xs leading-tight resize-none min-h-[32px] max-h-24 focus:outline-none focus:bg-white focus:border-black/20 focus:ring-0"
-                                      oninput="this.style.height='32px';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-                                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.closest('form').submit();}"></textarea>
-                            <button type="submit" class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center shadow-sm hover:bg-gray-800 transition-transform active:scale-95" title="Envoyer">
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
-                                </svg>
-                            </button>
-                        </form>
-                        @endif
-                    </div>
+                    <x-chat-popup :report="$report" :task="$task" :user="$user" :canComment="$canComment" />
                 </div>
                 {{-- FIN CHAT --}}
             </div>
@@ -468,23 +359,6 @@
     </div>
 </div>
 
-{{-- Auto-scroll vers le bas --}}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    function scrollToBottom(container) {
-        if (container) container.scrollTop = container.scrollHeight;
-    }
-    document.querySelectorAll('[id^="chat-"]').forEach(el => scrollToBottom(el));
-    document.querySelectorAll('[id^="chat-form-"]').forEach(form => {
-        form.addEventListener('submit', () => {
-            setTimeout(() => {
-                const chatZone = form.closest('.rounded-2xl')?.querySelector('[id^="chat-"]');
-                if (chatZone) scrollToBottom(chatZone);
-            }, 100);
-        });
-    });
-});
-</script>
 
 @push('scripts')
 <script>
