@@ -53,9 +53,12 @@
         {{-- Messages Container --}}
         <div class="flex-1 overflow-y-auto scroll-smooth px-4 py-4 bg-gradient-to-b from-gray-50/50 to-white/80"
              id="messages-{{ $report->id }}"
-             style="scrollbar-width: none; -ms-overflow-style: none;">
+             style="scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent;">
             <style>
-                #messages-{{ $report->id }}::-webkit-scrollbar { display: none; }
+                #messages-{{ $report->id }}::-webkit-scrollbar { width: 6px; }
+                #messages-{{ $report->id }}::-webkit-scrollbar-track { background: transparent; }
+                #messages-{{ $report->id }}::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+                #messages-{{ $report->id }}::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
             </style>
 
             <template x-if="messages.length === 0">
@@ -95,7 +98,7 @@
                             </template>
 
                             {{-- Message bubble --}}
-                            <div class="px-3 py-1.5 rounded-lg shadow-sm text-sm leading-snug max-w-[280px] w-fit group/msg"
+                            <div class="px-2.5 py-1 rounded shadow-sm text-xs leading-tight max-w-[280px] w-fit group/msg"
                                  :class="message.reviewer_id === {{ $user->id }}
                                     ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white'
                                     : 'bg-gray-200 text-gray-900'">
