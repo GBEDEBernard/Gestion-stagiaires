@@ -316,6 +316,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         // commentaire sur un rapport (étudiant, superviseur, admin)
         Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
             ->name('reports.comments.store');
+            
+  // mise à jour d'un commentaire (superviseur ou admin)
+        Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
+            ->name('reports.comments.store');
+ 
+        Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])
+            ->name('reports.comments.update');
+ 
+        Route::delete('comments/{review}', [DailyReportController::class, 'destroyComment'])
+            ->name('reports.comments.destroy');
     });
     // Employes
     Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {
