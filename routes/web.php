@@ -36,9 +36,7 @@ use App\Http\Controllers\EtudiantsPresenceController;
 use App\Http\Controllers\SiteGeofenceController;
 use App\Http\Controllers\TacheController;
 use App\Http\Controllers\TacheController as ControllersTacheController;
-use App\Http\Controllers\AttestationSignatureController ;
-
-
+use App\Http\Controllers\AttestationSignatureController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,13 +48,11 @@ Route::get('/', fn() => redirect()->route('login'));
 
 require __DIR__ . '/auth.php';
 
-// Routes protégées
-// Routes protégées (mdp change non requis)
+// Routes protégées AVEC déchiffrement des paramètres (sauf pour "reports")
 Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
 
     // ---------------- Dashboard ----------------
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
@@ -87,10 +83,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
         Route::get('{etudiant}/domaines', [StageController::class, 'domainesDisponibles'])->name('etudiants.domaines')->middleware('auth');
 
-        // Génération de compte
         Route::post('etudiants/{etudiant}/generate-account', [EtudiantController::class, 'generateAccount'])->name('etudiants.generate-account');
 
-        // Corbeille
         Route::get('corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
         Route::put('{id}/restore', [EtudiantController::class, 'restore'])->name('etudiants.restore')->middleware('permission:etudiants.restore');
         Route::delete('{id}/force-delete', [EtudiantController::class, 'forceDelete'])->name('etudiants.forceDelete')->middleware('permission:etudiants.force-delete');
@@ -103,27 +97,17 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [StageController::class, 'index'])->name('stages.index')->middleware('permission:stages.view');
         Route::get('create', [StageController::class, 'create'])->name('stages.create')->middleware('permission:stages.create');
         Route::post('/', [StageController::class, 'store'])->name('stages.store')->middleware('permission:stages.create');
-
-        // Corbeille
         Route::get('corbeille', [StageController::class, 'trash'])->name('stages.trash')->middleware('permission:stages.view');
-
-        // Routes avec paramètres cryptés
         Route::get('{stage}', [StageController::class, 'show'])->name('stages.show')->middleware('permission:stages.view');
         Route::get('{stage}/edit', [StageController::class, 'edit'])->name('stages.edit')->middleware('permission:stages.edit');
         Route::put('{stage}', [StageController::class, 'update'])->name('stages.update')->middleware('permission:stages.edit');
         Route::delete('{stage}', [StageController::class, 'destroy'])->name('stages.destroy')->middleware('permission:stages.delete');
-
-        // Badge
         Route::get('{stage}/badge', [BadgeController::class, 'show'])->name('admin.stages.badge.show')->middleware('permission:badges.view');
         Route::get('{stage}/badge/download', [BadgeController::class, 'download'])->name('stages.badge.download')->middleware('permission:badges.download');
-
-        // Attestation
         Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])->name('stages.attestation.show')->middleware('permission:attestation.view');
         Route::post('{stage}/attestation/store', [AttestationController::class, 'store'])->name('stages.attestation.store')->middleware('permission:attestation.create');
         Route::get('{stage}/attestation/download', [AttestationController::class, 'generatePDF'])->name('stages.attestation.download')->middleware('permission:attestation.download')->defaults('type', 'download');
         Route::get('{stage}/attestation/print', [AttestationController::class, 'generatePDF'])->name('stages.attestation.print')->middleware('permission:attestation.print')->defaults('type', 'print');
-
-        // Corbeille actions
         Route::put('{id}/restore', [StageController::class, 'restore'])->name('stages.restore')->middleware('permission:stages.restore');
         Route::delete('{id}/force-delete', [StageController::class, 'forceDelete'])->name('stages.forceDelete')->middleware('permission:stages.force-delete');
     });
@@ -146,7 +130,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{badge}/edit', [BadgeController::class, 'edit'])->name('badges.edit')->middleware('permission:badges.edit');
         Route::put('{badge}', [BadgeController::class, 'update'])->name('badges.update')->middleware('permission:badges.edit');
         Route::delete('{badge}', [BadgeController::class, 'destroy'])->name('badges.destroy')->middleware('permission:badges.delete');
-
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreBadge'])->name('badges.restore')->middleware('permission:badges.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteBadge'])->name('badges.force-delete')->middleware('permission:badges.force-delete');
     });
@@ -159,7 +142,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{service}/edit', [ServiceController::class, 'edit'])->name('services.edit')->middleware('permission:services.edit');
         Route::put('{service}', [ServiceController::class, 'update'])->name('services.update')->middleware('permission:services.edit');
         Route::delete('{service}', [ServiceController::class, 'destroy'])->name('services.destroy')->middleware('permission:services.delete');
-
         Route::patch('{id}/restore', [CorbeilleController::class, 'restoreService'])->name('services.restore')->middleware('permission:services.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
@@ -191,14 +173,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     });
 
     // ---------------- API: Domaines par Site ----------------
-    // Route AJAX pour récupérer les domaines associés à un site (utilisée dans le formulaire utilisateur)
     Route::get('/api/sites/{site}/domaines', function (App\Models\Site $site) {
         $domaines = $site->domaines()->orderBy('nom')->get(['domaines.id', 'domaines.nom']);
         return response()->json($domaines);
     })->middleware('auth');
 
-    // ---------------- Taches (producteurs : etudiant / employe) ----------------
-    // Les producteurs gerent leurs propres taches ; admin/superviseur = lecture + commentaire.
+    // ---------------- Taches ----------------
     Route::prefix('tasks')->group(function () {
         Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
         Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
@@ -206,8 +186,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');
         Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
         Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
-
-        // Fil de discussion (producteur + superviseur + admin) — T-003 / T-005
         Route::get('{task}/thread', [TaskMessageController::class, 'index'])->name('tasks.thread')->middleware('permission:tasks.view');
         Route::post('{task}/messages', [TaskMessageController::class, 'store'])->name('tasks.messages.store')->middleware('permission:tasks.view');
         Route::patch('{task}/messages/{message}', [TaskMessageController::class, 'update'])->name('tasks.messages.update')->middleware('permission:tasks.view');
@@ -215,10 +193,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::post('{task}/messages/{message}/react', [TaskMessageController::class, 'react'])->name('tasks.messages.react')->middleware('permission:tasks.view');
         Route::post('{task}/typing', [TaskMessageController::class, 'typing'])->name('tasks.typing')->middleware('permission:tasks.view');
         Route::post('{task}/read', [TaskMessageController::class, 'markRead'])->name('tasks.read')->middleware('permission:tasks.view');
-        // Actions de revue (superviseur / admin)
         Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
-
-        // Clôture / réouverture de la tâche — ADMIN UNIQUEMENT (T-005)
         Route::post('{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->middleware('permission:tasks.review');
         Route::post('{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->middleware('permission:tasks.review');
     });
@@ -238,22 +213,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [UserController::class, 'index'])->name('admin.users.index')->middleware('permission:users.view');
         Route::get('create', [UserController::class, 'create'])->name('admin.users.create')->middleware('permission:users.create');
         Route::post('/', [UserController::class, 'store'])->name('admin.users.store')->middleware('permission:users.create');
-
-        // ↓ show AVANT les routes {user} pour éviter que "create" soit capturé
         Route::get('{user}', [UserController::class, 'show'])->name('admin.users.show')->middleware('permission:users.view');
-
         Route::get('{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
         Route::put('{user}', [UserController::class, 'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
-
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
-
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
- 
-        Route::patch('/admin/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
-    ->name('admin.users.toggle-status');
-        });
+        Route::patch('/admin/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
+    });
 
     // ---------------- Roles ----------------
     Route::prefix('admin/roles')->group(function () {
@@ -269,13 +237,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
 
     // ---------------- Espace stagiaire ----------------
-    Route::get('/mon-stage', [StudentStageController::class, 'show'])
-        ->name('student.stage');
+    Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
-        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])
-            ->name('superviseur.dashboard');
+        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])->name('superviseur.dashboard');
     });
 
     // ---------------- Presence ----------------
@@ -290,44 +256,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });
 
-    // ---------------- Rapports journaliers ----------------
-    Route::prefix('reports')->group(function () {
-
-        // accès lecture
-        Route::get('/', [DailyReportController::class, 'index'])
-            ->name('reports.index');
-
-        // détails d'un rapport
-        Route::get('{report}', [DailyReportController::class, 'show'])
-            ->name('reports.show');
-
-        // création (étudiant ou employé autorisé via logique controller)
-        Route::post('/', [DailyReportController::class, 'store'])
-            ->name('reports.store');
-
-        // édition (utilisateur propriétaire uniquement)
-        Route::get('{report}/edit', [DailyReportController::class, 'edit'])
-            ->name('reports.edit');
-
-        // mise à jour (utilisateur propriétaire uniquement)
-        Route::put('{report}', [DailyReportController::class, 'update'])
-            ->name('reports.update');
-
-        // commentaire sur un rapport (étudiant, superviseur, admin)
-        Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
-            ->name('reports.comments.store');
-            
-  // mise à jour d'un commentaire (superviseur ou admin)
-        Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])
-            ->name('reports.comments.store');
- 
-        Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])
-            ->name('reports.comments.update');
- 
-        Route::delete('comments/{review}', [DailyReportController::class, 'destroyComment'])
-            ->name('reports.comments.destroy');
-    });
-    // Employes
+    // ---------------- Employes ----------------
     Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {
         Route::get('/', [EmployeController::class, 'index'])->name('employes.index');
         Route::get('create', [EmployeController::class, 'create'])->name('employes.create');
@@ -336,17 +265,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{employe}/edit', [EmployeController::class, 'edit'])->name('employes.edit');
         Route::put('{employe}', [EmployeController::class, 'update'])->name('employes.update');
         Route::delete('{employe}', [EmployeController::class, 'destroy'])->name('employes.destroy');
-
-        // Afficher les détails d'un employé
         Route::get('{employe}', [EmployeController::class, 'show'])->name('employes.show')->middleware('permission:employes.view');
-
-        // Corbeille
         Route::get('corbeille', [EmployeController::class, 'trash'])->name('employes.trash');
         Route::put('{id}/restore', [EmployeController::class, 'restore'])->name('employes.restore');
         Route::delete('{id}/force-delete', [EmployeController::class, 'forceDelete'])->name('employes.force-delete');
     });
 
-    // Personnels
+    // ---------------- Personnels ----------------
     Route::prefix('admin/personnels')->middleware('permission:personnels.view')->group(function () {
         Route::get('/', [PersonnelController::class, 'index'])->name('personnels.index');
         Route::get('create', [PersonnelController::class, 'create'])->name('personnels.create')->middleware('permission:personnels.create');
@@ -356,12 +281,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{personnel}', [PersonnelController::class, 'update'])->name('personnels.update')->middleware('permission:personnels.edit');
         Route::delete('{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy')->middleware('permission:personnels.delete');
         Route::post('{personnel}/generate-account', [PersonnelController::class, 'generateAccount'])->name('personnels.generate-account')->middleware('permission:personnels.edit');
-     
-        // 🔥 NOUVEAU : routes pour la corbeille des personnels
         Route::put('{personnel}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
         Route::delete('{personnel}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
-      
-  });
+    });
 
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
@@ -372,14 +294,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
         Route::get('/pointage-suivi', [AdminPresenceController::class, 'pointageSuivi'])->name('admin.presence.pointage-suivi');
         Route::get('/export-pointages', [AdminPresenceController::class, 'exportPointages'])->name('admin.presence.export-pointages');
-        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
-            ->name('admin.presence.anomalies.resolve')
-            ->middleware('can:reviewAdminAnomalies');
+        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])->name('admin.presence.anomalies.resolve')->middleware('can:reviewAdminAnomalies');
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
-    //    route pour impression du suivi des pointages (version épurée pour impression)
-    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
-        ->name('admin.presence.print');
+    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])->name('admin.presence.print');
+
     // ---------------- Suivi des Pointages Admin ----------------
     Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
@@ -404,8 +323,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-
-        // 🔥 API JSON pour menu mobile dynamique
         Route::get('/unread-json', function () {
             $service = app(\App\Services\NotificationService::class);
             return response()->json([
@@ -423,13 +340,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
                 })
             ]);
         })->name('notifications.unread.json');
-
         Route::post('/mark-read/{id}', function ($id) {
             $service = app(\App\Services\NotificationService::class);
             $service->markAsRead($id);
             return response()->json(['success' => true]);
         })->name('notifications.mark-read.api');
-
         Route::post('/mark-all-read-api', function () {
             $service = app(\App\Services\NotificationService::class);
             $service->markAllAsRead();
@@ -437,13 +352,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         })->name('notifications.mark-all.api');
     });
 
-   // ---------------- Demandes de permission (Etudiant & Employé) ----------------
-Route::prefix('permissions')->middleware('permission:permissions.view')->group(function () {
-    Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
-    Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
-    Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
-    Route::post('{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
-});
+    // ---------------- Demandes de permission (Etudiant & Employé) ----------------
+    Route::prefix('permissions')->middleware('permission:permissions.view')->group(function () {
+        Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
+        Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
+        Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
+        Route::post('{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
+    });
 
     // ---------------- Demandes de permission (Admin) ----------------
     Route::prefix('admin/permissions')->middleware('role:admin|superviseur')->group(function () {
@@ -452,15 +367,23 @@ Route::prefix('permissions')->middleware('permission:permissions.view')->group(f
         Route::post('{permission}/decide', [AdminPermissionRequestController::class, 'decide'])->name('admin.permissions.decide');
     });
 
-  // ---------------- Attestation Routes ----------------
-// Routes pour la gestion des attestations (dans le groupe auth déjà existant)
-
-// Signature d'attestation (accès public avec token)
-Route::prefix('attestation')->group(function () {
-    Route::get('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'showSignature'])
-        ->name('attestation.sign');
-    Route::post('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'processSignature'])
-        ->name('attestation.sign.submit');
+    // ---------------- Attestation Routes ----------------
+    Route::prefix('attestation')->group(function () {
+        Route::get('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'showSignature'])->name('attestation.sign');
+        Route::post('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'processSignature'])->name('attestation.sign.submit');
+    });
 });
 
- });
+/// =============================================================================
+// ROUTES RAPPORTS SANS DÉCHIFFREMENT (IDs en clair)
+// =============================================================================
+Route::middleware(['auth', 'verified'])->prefix('reports')->group(function () {
+    Route::get('/', [DailyReportController::class, 'index'])->name('reports.index');
+    Route::get('{report}', [DailyReportController::class, 'show'])->name('reports.show');
+    Route::post('/', [DailyReportController::class, 'store'])->name('reports.store');
+    Route::get('{report}/edit', [DailyReportController::class, 'edit'])->name('reports.edit');
+    Route::put('{report}', [DailyReportController::class, 'update'])->name('reports.update');
+    Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])->name('reports.comments.store');
+    Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])->name('reports.comments.update');
+    Route::delete('comments/{review}', [DailyReportController::class, 'destroyComment'])->name('reports.comments.destroy');
+});

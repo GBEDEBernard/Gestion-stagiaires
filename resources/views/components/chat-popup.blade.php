@@ -3,11 +3,20 @@
 @php
     $sortedReviews = $report->reviews->sortBy('created_at')->values();
     $avatarColors = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+
+    // URLs normales (non chiffrées) car routes reports sont hors du middleware DecryptRouteParameter
+    $storeUrl = route('reports.comments.store', $report->id);
+    $updateUrlPattern = route('reports.comments.update', ['review' => '__ID__']);
+    $deleteUrlPattern = route('reports.comments.destroy', ['review' => '__ID__']);
 @endphp
 
-<div class="relative inline-block w-full" x-data="chatPopupComponent()" x-cloak>
+<div class="relative inline-block w-full" x-data="chatPopupComponent({
+    storeUrl: '{{ $storeUrl }}',
+    updateUrlPattern: '{{ $updateUrlPattern }}',
+    deleteUrlPattern: '{{ $deleteUrlPattern }}'
+})" x-cloak>
 
-    {{-- Bouton ouverture — disparaît quand le chat est ouvert --}}
+    {{-- Bouton ouverture --}}
     <button @click="openChat()"
             x-show="!chatOpen"
             class="w-full flex items-center justify-between gap-3 py-3 px-4 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 rounded-xl transition text-sm font-semibold text-indigo-700 border border-indigo-200/50 group active:scale-98">
@@ -115,7 +124,7 @@
                                         ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-br-sm'
                                         : 'bg-gray-200 text-gray-900 rounded-bl-sm'">
 
-                                    {{-- Badge statut (action) --}}
+                                    {{-- Badge statut --}}
                                     <template x-if="message.action === 'approved'">
                                         <div class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-1"
                                              :class="message.reviewer_id === {{ $user->id }} ? 'bg-white/20 text-white' : 'bg-emerald-300/60 text-emerald-800'">
@@ -150,7 +159,7 @@
                                 </div>
                             </div>
 
-                            {{-- Boutons d'action (toujours visibles, placés sous la bulle, alignés à gauche/droite) --}}
+                            {{-- Boutons d'action --}}
                             <div x-show="message.reviewer_id === {{ $user->id }} && (!editingId || editingId !== message.id)"
                                  class="flex items-center gap-1 mt-1"
                                  :class="message.reviewer_id === {{ $user->id }} ? 'justify-end' : 'justify-start'">
@@ -178,14 +187,12 @@
         <div class="border-t border-black/5 bg-white px-3 py-3 flex-shrink-0 safe-area-bottom">
             <form class="flex items-end gap-2" id="chat-form-{{ $report->id }}" @submit.prevent="submitMessage">
                 @csrf
-              
                 <button type="button"
                         class="flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center text-gray-500 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
                     </svg>
                 </button>
-             
                 <textarea name="comment"
                           required
                           rows="1"
@@ -195,7 +202,6 @@
                           oninput="this.style.height='42px'; this.style.height=Math.min(this.scrollHeight,100)+'px';"
                           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.closest('form').dispatchEvent(new Event('submit'));}">
                 </textarea>
-                
                 <button type="submit"
                         class="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 transition shadow-md flex items-center justify-center text-white active:scale-95">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -219,11 +225,14 @@ document.addEventListener('alpine:init', () => {
     const rawMessages = @js($sortedReviews->values()->toArray());
     const initialMessages = Array.isArray(rawMessages) ? [...rawMessages] : Object.values(rawMessages);
 
-    Alpine.data('chatPopupComponent', () => ({
+    Alpine.data('chatPopupComponent', (config) => ({
         chatOpen: false,
         messages: initialMessages,
         editingId: null,
         editContent: '',
+        storeUrl: config.storeUrl,
+        updateUrlPattern: config.updateUrlPattern,
+        deleteUrlPattern: config.deleteUrlPattern,
 
         getAvatarColor(name) {
             const n = name || 'S';
@@ -280,7 +289,7 @@ document.addEventListener('alpine:init', () => {
             formData.append('_token', form.querySelector('[name="_token"]').value);
 
             try {
-                const response = await fetch('{{ route("reports.comments.store", $report->id) }}', {
+                const response = await fetch(this.storeUrl, {
                     method: 'POST',
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -288,9 +297,6 @@ document.addEventListener('alpine:init', () => {
 
                 if (response.ok) {
                     const result = await response.json();
-                    if (!Array.isArray(this.messages)) {
-                        this.messages = Object.values(this.messages);
-                    }
                     this.messages.push(result.review);
                     textarea.value = '';
                     textarea.style.height = '42px';
@@ -298,9 +304,11 @@ document.addEventListener('alpine:init', () => {
                 } else {
                     const err = await response.json().catch(() => ({}));
                     console.error('Erreur serveur:', err);
+                    Swal.fire('Erreur', err.message || 'Impossible d\'envoyer le message', 'error');
                 }
             } catch (err) {
                 console.error('Erreur réseau:', err);
+                Swal.fire('Erreur', 'Problème de connexion', 'error');
             }
         },
 
@@ -318,8 +326,10 @@ document.addEventListener('alpine:init', () => {
             const newContent = this.editContent.trim();
             if (!newContent) return;
 
+            const url = this.updateUrlPattern.replace('__ID__', id);
+
             try {
-                const response = await fetch(`/reports/comments/${id}`, {
+                const response = await fetch(url, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -339,16 +349,15 @@ document.addEventListener('alpine:init', () => {
                     this.cancelEdit();
                 } else {
                     const err = await response.json().catch(() => ({}));
-                    alert(err.message || 'Erreur lors de la modification');
+                    Swal.fire('Erreur', err.message || 'Impossible de modifier', 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erreur réseau');
+                Swal.fire('Erreur', 'Problème de connexion', 'error');
             }
         },
 
         async deleteMessage(id) {
-            // ✅ Remplacement du confirm() par SweetAlert2
             const result = await Swal.fire({
                 title: 'Supprimer ce message ?',
                 text: "Cette action est irréversible.",
@@ -362,8 +371,10 @@ document.addEventListener('alpine:init', () => {
 
             if (!result.isConfirmed) return;
 
+            const url = this.deleteUrlPattern.replace('__ID__', id);
+
             try {
-                const response = await fetch(`/reports/comments/${id}`, {
+                const response = await fetch(url, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -372,7 +383,6 @@ document.addEventListener('alpine:init', () => {
                 });
                 if (response.ok) {
                     this.messages = this.messages.filter(m => m.id !== id);
-                    // Optionnel : notification toast de succès
                     Swal.fire({
                         icon: 'success',
                         title: 'Message supprimé',
