@@ -64,13 +64,13 @@ $primaryGeofence = isset($site) ? ($site->geofences->firstWhere('is_primary', tr
 
             <div>
                 <label for="latitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude du site</label>
-                <input type="number" step="0.0000001" name="latitude" id="latitude" value="{{ old('latitude', $site->latitude ?? '') }}"
+                <input type="number" step="any" name="latitude" id="latitude" value="{{ old('latitude', $site->latitude ?? '') }}"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
             </div>
 
             <div>
                 <label for="longitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Longitude du site</label>
-                <input type="number" step="0.0000001" name="longitude" id="longitude" value="{{ old('longitude', $site->longitude ?? '') }}"
+                <input type="number" step="any" name="longitude" id="longitude" value="{{ old('longitude', $site->longitude ?? '') }}"
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
             </div>
 
@@ -100,13 +100,13 @@ $primaryGeofence = isset($site) ? ($site->geofences->firstWhere('is_primary', tr
 
                 <div>
                     <label for="geofence_latitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude centre <span class="text-red-500">*</span></label>
-                    <input type="number" step="0.0000001" name="geofence_latitude" id="geofence_latitude" placeholder="Latitude" value="{{ old('geofence_latitude', $primaryGeofence->center_latitude ?? $site->latitude ?? '') }}" required
+                    <input type="number" step="any" name="geofence_latitude" id="geofence_latitude" placeholder="Latitude" value="{{ old('geofence_latitude', $primaryGeofence->center_latitude ?? $site->latitude ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
                 <div>
                     <label for="geofence_longitude" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Longitude centre <span class="text-red-500">*</span></label>
-                    <input type="number" step="0.0000001" name="geofence_longitude" id="geofence_longitude" placeholder="Longitude" value="{{ old('geofence_longitude', $primaryGeofence->center_longitude ?? $site->longitude ?? '') }}" required
+                    <input type="number" step="any" name="geofence_longitude" id="geofence_longitude" placeholder="Longitude" value="{{ old('geofence_longitude', $primaryGeofence->center_longitude ?? $site->longitude ?? '') }}" required
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-gray-900 dark:text-white">
                 </div>
 
