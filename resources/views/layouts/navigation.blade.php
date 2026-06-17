@@ -205,8 +205,8 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
 
                 <!-- 3. Stages (uniquement pour admin) - AVEC PERSISTANCE -->
                 @role('admin')
-                @canany(['stages.view', 'type_stages.view', 'services.view', 'signataires.view', 'jour_stage.view'])
-                <div class="mb-4" x-data="{ openStages: {{ request()->routeIs('stages.*') || request()->routeIs('type_stages.*') || request()->routeIs('services.*') || request()->routeIs('signataires.*') || request()->routeIs('jours.*') ? 'true' : 'false' }} }">
+                @canany(['stages.view', 'type_stages.view', 'signataires.view', 'jour_stage.view'])
+                <div class="mb-4" x-data="{ openStages: {{ request()->routeIs('stages.*') || request()->routeIs('type_stages.*') || request()->routeIs('signataires.*') || request()->routeIs('jours.*') ? 'true' : 'false' }} }">
                     <button @click="openStages = !openStages" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openStages ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -234,12 +234,6 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             <span>Types de stage</span>
                         </a>
                         @endcan
-                        <!-- @can('services.view')
-                        <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                            <span>Services</span>
-                        </a>
-                        @endcan -->
                         @can('signataires.view')
                         <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>

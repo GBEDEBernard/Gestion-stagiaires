@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stage;
-use App\Models\Service;
+use App\Models\Domaine;
 use App\Models\TypeStage;
 use App\Models\Badge;
 use App\Models\Activity;
@@ -79,7 +79,7 @@ class DashboardController extends Controller
         $inscritsGlobal = Stage::whereDate('date_debut', '>', $today)->count();
         $totalBadges = Badge::count();
         $totalTypes = TypeStage::count();
-        $totalServices = Service::count();
+        $totalDomaines = Domaine::count();
 
         // ==================== NOUVELLES STATISTIQUES ====================
         // Total attestations délivrées
@@ -115,8 +115,8 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        // Top services (avec le plus de stages)
-        $topServices = Service::withCount('stages')
+        // Top domaines (avec le plus de stages)
+        $topDomaines = Domaine::withCount('stages')
             ->orderByDesc('stages_count')
             ->take(5)
             ->get();
@@ -180,43 +180,43 @@ class DashboardController extends Controller
         $typesLabels = $typesStages->pluck('libelle')->toArray();
         $typesData = $typesStages->pluck('stages_count')->toArray();
 
-        // ==================== Stats par Service ====================
-        $servicesStats = Service::all()->map(function ($service) use ($today) {
-            $allStages = Stage::where('service_id', $service->id)
+        // ==================== Stats par Domaine ====================
+        $domainesStats = Domaine::all()->map(function ($domaine) use ($today) {
+            $allStages = Stage::where('domaine_id', $domaine->id)
                 ->select('id', 'date_debut', 'date_fin')
                 ->get();
 
-            $enCoursService = 0;
-            $terminesService = 0;
-            $inscritsService = 0;
+            $enCoursDomaine = 0;
+            $terminesDomaine = 0;
+            $inscritsDomaine = 0;
 
             foreach ($allStages as $stage) {
                 $debut = $stage->date_debut->startOfDay();
                 $fin = $stage->date_fin->endOfDay();
 
                 if ($today->between($debut, $fin)) {
-                    $enCoursService++;
+                    $enCoursDomaine++;
                 } elseif ($today->gt($fin)) {
-                    $terminesService++;
+                    $terminesDomaine++;
                 } elseif ($today->lt($debut)) {
-                    $inscritsService++;
+                    $inscritsDomaine++;
                 }
             }
 
             return [
-                'service' => $service->nom,
-                'enCours' => $enCoursService,
-                'termines' => $terminesService,
-                'inscrits' => $inscritsService,
-                'total' => $enCoursService + $terminesService + $inscritsService
+                'domaine' => $domaine->nom,
+                'enCours' => $enCoursDomaine,
+                'termines' => $terminesDomaine,
+                'inscrits' => $inscritsDomaine,
+                'total' => $enCoursDomaine + $terminesDomaine + $inscritsDomaine
             ];
         });
 
-        // Données pour le graphique services (pré-formatées)
-        $servicesLabelsJson = json_encode($servicesStats->pluck('service')->toArray());
-        $servicesEnCoursJson = json_encode($servicesStats->pluck('enCours')->toArray());
-        $servicesTerminesJson = json_encode($servicesStats->pluck('termines')->toArray());
-        $servicesInscritsJson = json_encode($servicesStats->pluck('inscrits')->toArray());
+        // Données pour le graphique domaines (pré-formatées)
+        $domainesLabelsJson = json_encode($domainesStats->pluck('domaine')->toArray());
+        $domainesEnCoursJson = json_encode($domainesStats->pluck('enCours')->toArray());
+        $domainesTerminesJson = json_encode($domainesStats->pluck('termines')->toArray());
+        $domainesInscritsJson = json_encode($domainesStats->pluck('inscrits')->toArray());
 
         // ==================== Taux et Pourcentages ====================
         $tauxPresence = $totalEtudiants > 0
@@ -264,9 +264,8 @@ class DashboardController extends Controller
         $stagesTrash = Stage::onlyTrashed()->get();
         $etudiantsTrash = Etudiant::onlyTrashed()->get();
         $badgesTrash = Badge::onlyTrashed()->get();
-        $servicesTrash = Service::onlyTrashed()->get();
         $totalTrash = $stagesTrash->count() + $etudiantsTrash->count() +
-            $badgesTrash->count() + $servicesTrash->count();
+            $badgesTrash->count();
 
         // ==================== SUIVI DES POINTAGES ====================
         $todayAttendance = AttendanceDay::whereDate('attendance_date', $today)
@@ -299,7 +298,7 @@ class DashboardController extends Controller
             'terminesGlobal',
             'inscritsGlobal',
             'totalBadges',
-            'totalServices',
+            'totalDomaines',
             'totalTypes',
 
             // Nouvelles statistiques
@@ -309,7 +308,7 @@ class DashboardController extends Controller
             'tauxEtudiantsActifs',
             'stagesParMois',
             'labelsMoisAnnee',
-            'topServices',
+            'topDomaines',
             'topTypes',
             'etudiantsSansStage',
             'dernieresActivites',
@@ -325,11 +324,11 @@ class DashboardController extends Controller
 
             'typesLabels',
             'typesData',
-            'servicesStats',
-            'servicesLabelsJson',
-            'servicesEnCoursJson',
-            'servicesTerminesJson',
-            'servicesInscritsJson',
+            'domainesStats',
+            'domainesLabelsJson',
+            'domainesEnCoursJson',
+            'domainesTerminesJson',
+            'domainesInscritsJson',
             'tauxPresence',
             'tauxReussite',
             'tauxAbandon',
@@ -342,7 +341,7 @@ class DashboardController extends Controller
             'stagesTrash',
             'etudiantsTrash',
             'badgesTrash',
-            'servicesTrash',
+
             'totalTrash',
 
             // Suivi pointages

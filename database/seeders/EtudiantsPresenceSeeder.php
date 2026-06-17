@@ -7,7 +7,6 @@ use App\Models\Badge;
 use App\Models\Etudiant;
 use App\Models\Jour;
 use App\Models\Personnel;
-use App\Models\Service;
 use App\Models\Site;
 use App\Models\Stage;
 use App\Models\TypeStage;
@@ -21,7 +20,6 @@ class EtudiantsPresenceSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->ensureServices();
         $this->ensureSites();
         $this->ensureTypeStages();
         $this->ensureJours();
@@ -120,7 +118,6 @@ class EtudiantsPresenceSeeder extends Seeder
                 ],
                 [
                     'typestage_id' => TypeStage::inRandomOrder()->first()->id,
-                    'service_id' => Service::inRandomOrder()->first()->id,
                     'site_id' => $tfgSite->id,
                     'supervisor_id' => User::role('superviseur')
                         ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
@@ -147,17 +144,6 @@ class EtudiantsPresenceSeeder extends Seeder
         }
 
         $this->createPersonnelUsers();
-    }
-
-    protected function ensureServices(): void
-    {
-        if (Service::count() === 0) {
-            Service::create(['nom' => 'Service Technique']);
-            Service::create(['nom' => 'Service Operationnel']);
-            Service::create(['nom' => 'Service Commercial']);
-            Service::create(['nom' => 'Service RH']);
-            Service::create(['nom' => 'Service Finance']);
-        }
     }
 
     protected function ensureSites(): void

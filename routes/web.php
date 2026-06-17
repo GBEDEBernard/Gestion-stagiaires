@@ -11,7 +11,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\StageController;
-use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
 use App\Http\Controllers\CorbeilleController;
@@ -137,18 +136,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{badge}', [BadgeController::class, 'destroy'])->name('badges.destroy')->middleware('permission:badges.delete');
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreBadge'])->name('badges.restore')->middleware('permission:badges.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteBadge'])->name('badges.force-delete')->middleware('permission:badges.force-delete');
-    });
-
-    // ---------------- Services ----------------
-    Route::prefix('admin/services')->group(function () {
-        Route::get('/', [ServiceController::class, 'index'])->name('services.index')->middleware('permission:services.view');
-        Route::get('create', [ServiceController::class, 'create'])->name('services.create')->middleware('permission:services.create');
-        Route::post('/', [ServiceController::class, 'store'])->name('services.store')->middleware('permission:services.create');
-        Route::get('{service}/edit', [ServiceController::class, 'edit'])->name('services.edit')->middleware('permission:services.edit');
-        Route::put('{service}', [ServiceController::class, 'update'])->name('services.update')->middleware('permission:services.edit');
-        Route::delete('{service}', [ServiceController::class, 'destroy'])->name('services.destroy')->middleware('permission:services.delete');
-        Route::patch('{id}/restore', [CorbeilleController::class, 'restoreService'])->name('services.restore')->middleware('permission:services.restore');
-        Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
     // ---------------- Domaines ----------------

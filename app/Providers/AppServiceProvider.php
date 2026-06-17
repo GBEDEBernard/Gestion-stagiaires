@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Broadcast;
 use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
-use App\Models\Service;
 use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Signataire;
@@ -61,7 +60,6 @@ class AppServiceProvider extends ServiceProvider
         Route::model('stage', Stage::class);
         Route::model('etudiant', Etudiant::class);
         Route::model('badge', Badge::class);
-        Route::model('service', Service::class);
         Route::model('jour', Jour::class);
         Route::model('type_stage', TypeStage::class);
         Route::model('signataire', Signataire::class);
@@ -87,10 +85,6 @@ class AppServiceProvider extends ServiceProvider
 
         Route::bind('badge', function ($value) {
             return $this->resolveEncryptedModel($value, Badge::class);
-        });
-
-        Route::bind('service', function ($value) {
-            return $this->resolveEncryptedModel($value, Service::class);
         });
 
         Route::bind('jour', function ($value) {

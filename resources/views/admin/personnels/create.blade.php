@@ -598,11 +598,11 @@
                     </select>
                 </div>
                 <div class="pc-field">
-                    <label>Service</label>
-                    <select name="service_id" class="pc-select">
+                    <label>Domaine</label>
+                    <select name="domaine_id" class="pc-select">
                         <option value="">— Sélectionner —</option>
-                        @foreach($services as $service)
-                        <option value="{{ $service->id }}">{{ $service->nom }}</option>
+                        @foreach($domaines as $domaine)
+                        <option value="{{ $domaine->id }}">{{ $domaine->nom }}</option>
                         @endforeach
                     </select>
                 </div>

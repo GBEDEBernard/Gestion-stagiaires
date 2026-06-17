@@ -14,7 +14,6 @@ class Stage extends Model
     protected $fillable = [
         'etudiant_id',
         'typestage_id',
-        'service_id',
         'site_id',
         'supervisor_id',
         'badge_id',
@@ -43,11 +42,6 @@ class Stage extends Model
     public function typestage()
     {
         return $this->belongsTo(TypeStage::class, 'typestage_id');
-    }
-
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
     }
 
     public function site()

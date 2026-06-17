@@ -7,7 +7,6 @@ use App\Models\Domaine;
 use App\Models\Employe;
 use App\Models\Etudiant;
 use App\Models\Personnel;
-use App\Models\Service;
 use App\Models\Site;
 use App\Models\TypeStage;
 use App\Models\User;
@@ -84,7 +83,7 @@ class PersonnelController extends Controller
 
         $now        = now();
         $typestages = TypeStage::all();
-        $services   = Service::all();
+        $domaines   = Domaine::all();
         $badges     = Badge::whereDoesntHave('stages', function ($query) use ($now) {
             $query->where('date_debut', '<=', $now)
                 ->where('date_fin', '>=', $now);
@@ -116,7 +115,7 @@ class PersonnelController extends Controller
             'sites',
             'domainesParSite',
             'typestages',
-            'services',
+            'domaines',
             'badges',
             'stageSites',
             'supervisors',

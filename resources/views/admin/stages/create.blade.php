@@ -217,10 +217,10 @@
                         </div>
 
                         <div>
-                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services</label>
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
                             <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un domaine de service</option>
+                                <option value="">Sélectionner un domaine</option>
                                 @foreach($domaines as $domaine)
                                 <option value="{{ $domaine->id }}" {{ old('domaine_id') == $domaine->id ? 'selected' : '' }}>{{ $domaine->nom }}</option>
                                 @endforeach

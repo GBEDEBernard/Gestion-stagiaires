@@ -21,7 +21,7 @@ class StageController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'domaine', 'service', 'site', 'supervisor', 'badge', 'jours']);
+        $query = Stage::with(['etudiant', 'etudiant.personnel', 'typestage', 'domaine', 'site', 'supervisor', 'badge', 'jours']);
 
         if ($request->filled('statut')) {
             if ($request->statut === 'En cours') {
@@ -210,7 +210,7 @@ class StageController extends Controller
 
     public function show(Stage $stage)
     {
-        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'service', 'site', 'supervisor']);
+        $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'site', 'supervisor']);
 
         $statutEnCours = $stage->date_debut && $stage->date_fin
             ? (now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : (now()->gt($stage->date_fin) ? 'Termine' : 'A venir'))
@@ -435,7 +435,7 @@ class StageController extends Controller
 
     public function badge(Stage $stage)
     {
-        $stage->load(['etudiant', 'service', 'typestage', 'badge', 'jours']);
+        $stage->load(['etudiant', 'typestage', 'badge', 'jours']);
         $aujourdHui    = now();
         $statutEnCours = $stage->date_debut > $aujourdHui ? 'A venir' : ($stage->date_fin < $aujourdHui ? 'Termine' : 'En cours');
         return view('admin.stages.badge', compact('stage', 'statutEnCours'));

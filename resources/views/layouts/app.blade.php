@@ -249,7 +249,6 @@
                                     'etudiants' => 'Étudiants',
                                     'employes' => 'Employés',
                                     'personnels' => 'Personnels',
-                                    'services' => 'Services',
                                     'sites' => 'Sites',
                                     'domaines' => 'Domaines',
                                     'presence' => 'Présence',

@@ -23,7 +23,7 @@ class SuperviseurDashboardController extends Controller
         abort_if(!$user->hasRole('superviseur'), 403);
 
         $supervisedStages = $user->supervisedStages()
-            ->with(['etudiant.user', 'site', 'attendanceDays' => function ($query) {
+            ->with(['etudiant.user', 'site', 'domaine', 'attendanceDays' => function ($query) {
                 $query->whereDate('attendance_date', today());
             }, 'dailyReports' => function ($query) {
                 $query->whereDate('report_date', today())->latest();

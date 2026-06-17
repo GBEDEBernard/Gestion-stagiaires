@@ -52,10 +52,6 @@ return [
     'presence.checkin' => 'Pointer les arrivées',
     'presence.checkout' => 'Pointer les départs',
     
-    'services.view' => 'Voir les services',
-    'services.create' => 'Créer des services',
-    'services.edit' => 'Modifier des services',
-    'services.delete' => 'Supprimer des services',
     
     'domaines.view' => 'Voir les domaines',
     'domaines.create' => 'Créer des domaines',
