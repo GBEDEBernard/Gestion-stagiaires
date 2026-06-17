@@ -97,9 +97,6 @@ return [
         'email' => [
             'unique' => 'Cet email est déjà utilisé pour un personnel.',
         ],
-        'matricule' => [
-            'unique' => 'Ce matricule est déjà utilisé.',
-        ],
     ],
 
     'attributes' => [
@@ -115,6 +112,5 @@ return [
         'domaine_id'     => 'domaine',
         'site_id'        => 'site',
         'poste'          => 'poste',
-        'matricule'      => 'matricule',
     ],
 ];

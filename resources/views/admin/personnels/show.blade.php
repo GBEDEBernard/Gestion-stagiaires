@@ -140,7 +140,6 @@
                         <div class="p-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Poste</label><p class="text-gray-900 dark:text-white font-medium">{{ $profil->poste ?? '-' }}</p></div>
-                                <div><label class="block text-sm text-gray-500 dark:text-gray-400">Matricule</label><p class="text-gray-900 dark:text-white font-medium">{{ $profil->matricule ?? '-' }}</p></div>
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Domaine</label><p class="text-gray-900 dark:text-white font-medium">{{ optional($profil->domaine)->nom ?? '-' }}</p></div>
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Site</label><p class="text-gray-900 dark:text-white font-medium">{{ optional($profil->site)->name ?? '-' }}</p></div>
                             </div>

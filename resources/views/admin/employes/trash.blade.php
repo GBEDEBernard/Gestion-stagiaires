@@ -8,11 +8,11 @@
         <x-trash-table
             :items="$employes"
             title="Employés supprimés"
-            :columns="['Employé', 'Email', 'Matricule', 'Supprimé']"
+            :columns="['Employé', 'Email', 'Supprimé']"
             :restoreRoute="'employes.restore'"
             :restoreMethod="'PUT'"
             :forceDeleteRoute="'employes.force-delete'"
-            :fields="['personnel.full_name','personnel.email','matricule']"
+            :fields="['personnel.full_name','personnel.email']"
             icon="👔"
             color="amber" />
     </div>

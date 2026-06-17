@@ -87,7 +87,6 @@ class UserSeeder extends Seeder
                 ['personnel_id' => $personnel->id],
                 [
                     'poste'     => $userData['poste'],
-                    'matricule' => 'TFG-' . strtoupper(substr($userData['nom'], 0, 3)) . '-' . str_pad(($index + 1), 3, '0', STR_PAD_LEFT),
                     'domaine_id' => 1,
                     'site_id'    => 1,
                 ]
@@ -98,29 +97,10 @@ class UserSeeder extends Seeder
                 'personnable_id'   => $employe->id,
             ]);
 
-<<<<<<< HEAD
-            $userAttributes = [
-                'password' => $userData['password'],
-                'status' => $userData['status'],
-                'email_verified_at' => Carbon::now(),
-            ];
-
-            if (Schema::hasColumn('users', 'name')) {
-                $userAttributes['name'] = $userData['name'];
-            }
-
-            if (Schema::hasColumn('users', 'email')) {
-                $userAttributes['email'] = $userData['email'];
-            }
-
-            $user = User::updateOrCreate(
-                ['personnel_id' => $personnel->id],
-                $userAttributes
-=======
-            // 3. User - SANS le champ 'name'
             $user = User::updateOrCreate(
                 ['personnel_id' => $personnel->id],
                 [
+                    'name'                      => trim($userData['prenom'] . ' ' . $userData['nom']),
                     'email'                     => $userData['email'],
                     'password'                  => $userData['password'],
                     'status'                    => $userData['status'],
@@ -131,7 +111,6 @@ class UserSeeder extends Seeder
                     'signataire_ordre'          => $userData['is_signer'] ? ($userData['poste'] === 'Directeur Général' ? 1 : ($userData['poste'] === 'Directeur Technique' ? 2 : 3)) : null,
                     'signataire_peut_par_ordre' => $userData['is_signer'] && $userData['poste'] !== 'Directeur Général',
                 ]
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
             );
 
             // 4. Rôles

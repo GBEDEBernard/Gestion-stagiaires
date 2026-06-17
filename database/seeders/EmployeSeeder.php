@@ -25,7 +25,6 @@ class EmployeSeeder extends Seeder
                 'email' => 'employe.tfg@tfg.local',
                 'domaine_id' => $tfg?->id,
                 'site_id' => 1,
-                'matricule' => 'EMP-TFG-001',
             ],
             [
                 'nom' => 'EPAC',
@@ -33,7 +32,6 @@ class EmployeSeeder extends Seeder
                 'email' => 'employe.epac@epac.local',
                 'domaine_id' => $epac?->id,
                 'site_id' => 1,
-                'matricule' => 'EMP-EPAC-001',
             ],
         ];
 
@@ -43,7 +41,7 @@ class EmployeSeeder extends Seeder
             }
 
             $employe = Employe::updateOrCreate(
-                ['matricule' => $data['matricule']],
+                ['personnel_id' => null],
                 [
                     'domaine_id' => $data['domaine_id'],
                     'site_id' => $data['site_id'],

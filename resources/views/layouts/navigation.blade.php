@@ -35,7 +35,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
         <div class="flex-shrink-0 border-b border-slate-800/40">
             <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-5 py-5 group hover:bg-slate-800/20 transition">
                 <div class="relative">
-                    <img src="{{ secure_asset('images/TFGLOGO.png') }}" alt="Logo TFG" class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
+                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG" class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
                     <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
                 </div>
                 <div class="flex flex-col leading-tight">

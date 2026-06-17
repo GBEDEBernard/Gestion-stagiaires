@@ -113,26 +113,7 @@
                                placeholder="Ex : Développeur, Comptable…"
                                class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
-                            Matricule <span class="text-red-500">*</span>
-                            <span class="ml-1 text-xs font-normal text-gray-400">(généré automatiquement)</span>
-                        </label>
-                        <div class="relative">
-                            <input type="text" name="matricule"
-                                   id="matricule"
-                                   value="{{ old('matricule', $nextMatricule) }}"
-                                   required
-                                   class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent pr-24">
-                            {{-- Badge "Auto" --}}
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium pointer-events-none">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                Auto
-                            </span>
-                        </div>
-                        <p class="mt-1 text-xs text-gray-400">Vous pouvez modifier ce matricule si besoin.</p>
-                        @error('matricule') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
+
                 </div>
             </div>
 

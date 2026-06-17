@@ -13,34 +13,6 @@ use Illuminate\Validation\Rule;
 class EmployeController extends Controller
 {
     // =========================================================================
-    // HELPER : génère le prochain matricule disponible au format EMP-001
-    // =========================================================================
-    private function generateNextMatricule(): string
-    {
-        // On récupère tous les matricules qui ressemblent à EMP-XXX
-        $last = Employe::withTrashed()
-            ->where('matricule', 'REGEXP', '^EMP-[0-9]+$')
-            ->orderByRaw('CAST(SUBSTRING(matricule, 5) AS UNSIGNED) DESC')
-            ->value('matricule');
-
-        if ($last) {
-            $number = (int) substr($last, 4); // extrait le numéro après "EMP-"
-            $next   = $number + 1;
-        } else {
-            $next = 1;
-        }
-
-        // S'assurer que le matricule généré n'est pas déjà pris (sécurité)
-        $candidate = 'EMP-' . str_pad($next, 3, '0', STR_PAD_LEFT);
-        while (Employe::withTrashed()->where('matricule', $candidate)->exists()) {
-            $next++;
-            $candidate = 'EMP-' . str_pad($next, 3, '0', STR_PAD_LEFT);
-        }
-
-        return $candidate;
-    }
-
-    // =========================================================================
     // INDEX
     // =========================================================================
     public function index(Request $request)
@@ -49,8 +21,7 @@ class EmployeController extends Controller
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('matricule', 'like', "%{$search}%")
-                  ->orWhereHas('personnel', function ($q2) use ($search) {
+                $q->whereHas('personnel', function ($q2) use ($search) {
                       $q2->where('nom', 'like', "%{$search}%")
                          ->orWhere('prenom', 'like', "%{$search}%")
                          ->orWhere('email', 'like', "%{$search}%");
@@ -85,11 +56,10 @@ class EmployeController extends Controller
     // =========================================================================
     public function create()
     {
-        $domaines          = Domaine::all();
-        $sites             = Site::all();
-        $nextMatricule     = $this->generateNextMatricule();
+        $domaines = Domaine::all();
+        $sites    = Site::all();
 
-        return view('admin.employes.create', compact('domaines', 'sites', 'nextMatricule'));
+        return view('admin.employes.create', compact('domaines', 'sites'));
     }
 
     // =========================================================================
@@ -107,7 +77,6 @@ class EmployeController extends Controller
             'domaine_id'     => 'required|exists:domaines,id',
             'site_id'        => 'required|exists:sites,id',
             'poste'          => 'nullable|string|max:255',
-            'matricule'      => 'required|string|max:255|unique:employes,matricule',
         ]);
 
         // 1. Personnel d'abord
@@ -127,7 +96,6 @@ class EmployeController extends Controller
             'domaine_id'   => $data['domaine_id'],
             'site_id'      => $data['site_id'],
             'poste'        => $data['poste'],
-            'matricule'    => $data['matricule'],
         ]);
 
         // 3. Polymorphisme sur personnel
@@ -201,7 +169,6 @@ class EmployeController extends Controller
             'domaine_id'     => 'required|exists:domaines,id',
             'site_id'        => 'required|exists:sites,id',
             'poste'          => 'nullable|string|max:255',
-            'matricule'      => ['required', 'string', 'max:255', Rule::unique('employes', 'matricule')->ignore($employe->id)],
         ]);
 
         $personnel->update([
@@ -217,7 +184,6 @@ class EmployeController extends Controller
             'domaine_id' => $data['domaine_id'],
             'site_id'    => $data['site_id'],
             'poste'      => $data['poste'],
-            'matricule'  => $data['matricule'],
         ]);
 
         return redirect()->route('employes.index')->with('success', 'Employé mis à jour.');

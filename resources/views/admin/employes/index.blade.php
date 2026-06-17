@@ -31,7 +31,7 @@
     <div class="grid gap-4 lg:grid-cols-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Recherche</label>
-            <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, prénom, email, matricule..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                            <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, prénom, email..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Domaine</label>
@@ -91,7 +91,7 @@
                 <thead>
                     <tr class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                         <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">N°</th>
-                        <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Matricule</th>
+
                         <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Nom complet</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Email</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Domaine</th>
@@ -108,8 +108,8 @@
                     {{-- ── Ligne orpheline (pas de personnel lié) ── --}}
                     @if(!$p)
                     <tr class="bg-red-50 dark:bg-red-900/10">
-                        <td class="px-5 py-3 text-xs text-red-500 dark:text-red-400" colspan="8">
-                            ⚠ Employé #{{ $emp->id }} (matricule : {{ $emp->matricule }}) — aucun personnel associé.
+                        <td class="px-5 py-3 text-xs text-red-500 dark:text-red-400" colspan="7">
+                            ⚠ Employé #{{ $emp->id }} — aucun personnel associé.
                             <form action="{{ route('employes.destroy', $emp) }}" method="POST" class="inline ml-3">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="text-xs underline text-red-600 dark:text-red-400 hover:text-red-800">Supprimer</button>
@@ -121,7 +121,7 @@
 
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-5 py-3.5 font-mono text-xs text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
-                        <td class="px-5 py-3.5 font-mono text-xs text-gray-500 dark:text-gray-400">{{ $emp->matricule }}</td>
+
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-2.5">
                                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 text-xs font-semibold text-amber-700 dark:text-amber-300">

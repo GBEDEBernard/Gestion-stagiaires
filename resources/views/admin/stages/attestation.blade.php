@@ -332,7 +332,7 @@
         <div class="a4-container">
 
             <div class="header">
-                <img src="{{ secure_asset('images/TFGLOGO.png') }}" alt="Logo">
+                <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo">
                 <div class="text-header">
                     <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
                     <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>

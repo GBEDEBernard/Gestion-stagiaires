@@ -35,7 +35,6 @@ class SyncPersonnelToSpecificTables extends Command
                 $siteId = Site::first()?->id ?? 1;
 
                 $employe = Employe::create([
-                    'matricule'  => 'AUTO-'.$p->id,
                     'domaine_id' => $domaineId,
                     'site_id'    => $siteId,
                     'poste'      => 'Poste à définir',

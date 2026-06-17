@@ -134,15 +134,6 @@
                         </div>
                         <p class="text-gray-900 dark:text-white font-medium">{{ $employe->poste ?? '-' }}</p>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-4">
-                        <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-4 0h4" />
-                            </svg>
-                            <span>Matricule</span>
-                        </div>
-                        <p class="text-gray-900 dark:text-white font-medium">{{ $employe->matricule ?? '-' }}</p>
-                    </div>
                 </div>
 
                 <!-- Section Compte utilisateur (si existant) -->

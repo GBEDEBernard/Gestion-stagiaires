@@ -156,9 +156,7 @@
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Poste</label>
                                     <p class="text-gray-900 dark:text-white font-medium">{{ $profil->poste ?? '-' }}</p>
                                 </div>
-                                <div><label class="block text-sm text-gray-500 dark:text-gray-400">Matricule</label>
-                                    <p class="text-gray-900 dark:text-white font-medium">{{ $profil->matricule ?? '-' }}</p>
-                                </div>
+
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Domaine</label>
                                     <p class="text-gray-900 dark:text-white font-medium">{{ optional($profil->domaine)->nom ?? '-' }}</p>
                                 </div>

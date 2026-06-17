@@ -21,8 +21,6 @@ use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Support\Str;
-
 class UserController extends Controller
 {
     public function __construct(protected RolePermissionPresetService $roleService) {}
@@ -129,7 +127,6 @@ class UserController extends Controller
         if (in_array('employe', $selectedRoles)) {
             $rules['site_id']   = 'required|exists:sites,id';
             $rules['domaine_id'] = 'required|exists:domaines,id';
-            $rules['matricule'] = 'nullable|string|max:255|unique:employes,matricule';
             $rules['poste']     = 'nullable|string|max:255';
         }
 
@@ -174,12 +171,10 @@ class UserController extends Controller
             }
 
             if (in_array('employe', $selectedRoles)) {
-                $matricule = $validated['matricule'] ?? 'EMP-' . strtoupper(Str::random(8));
                 $employe = Employe::create([
                     'personnel_id' => $personnel->id,
                     'domaine_id'   => $validated['domaine_id'],
                     'site_id'      => $validated['site_id'],
-                    'matricule'    => $matricule,
                     'poste'        => $validated['poste'] ?? 'Employé',
                 ]);
                 $personnel->update([
@@ -224,7 +219,6 @@ class UserController extends Controller
         $etudiantEcole = '';
         $employeSiteId = null;
         $employePoste = '';
-        $employeMatricule = '';
         $etudiantSupervisorId = null;
 
         $profil = $user->profil();
@@ -234,7 +228,6 @@ class UserController extends Controller
         } elseif ($profil instanceof Employe) {
             $employeSiteId = $profil->site_id;
             $employePoste = $profil->poste;
-            $employeMatricule = $profil->matricule;
         }
 
         // Superviseurs possibles : administrateurs et superviseurs
@@ -263,7 +256,6 @@ class UserController extends Controller
             'etudiantEcole' => $etudiantEcole,
             'employeSiteId' => $employeSiteId,
             'employePoste' => $employePoste,
-            'employeMatricule' => $employeMatricule,
             'domaineIdValue' => $user->domaine_id ?? ($profil instanceof Employe ? $profil->domaine_id : null),
             'isSignerValue' => (bool)$user->is_signer,
             'superviseurs' => $superviseurs,

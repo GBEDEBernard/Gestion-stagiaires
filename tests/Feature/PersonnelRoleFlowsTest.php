@@ -55,7 +55,6 @@ function createPersonnelFlowUser(string $role): User
             'domaine_id' => $domaine->id,
             'site_id' => $site->id,
             'poste' => 'Employe test',
-            'matricule' => 'FLOW-' . $user->id,
         ]);
 
         $user->update(['domaine_id' => $domaine->id]);
