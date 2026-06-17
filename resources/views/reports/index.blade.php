@@ -56,22 +56,23 @@
                             <!-- Tâche concernée + progression -->
                             @if(($activeTasks ?? collect())->isNotEmpty())
                             <div x-data="{ prog: {{ (int) old('task_progress_percent', 0) }} }">
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Tâche concernée</label>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">Tâche concernée</label>
                                 <select name="task_id"
                                     @change="prog = parseInt($event.target.selectedOptions[0].dataset.progress || prog)"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200">
                                     <option value="">— Aucune tâche —</option>
                                     @foreach($activeTasks as $t)
                                     <option value="{{ $t->id }}" data-progress="{{ (int) $t->last_progress_percent }}" {{ old('task_id') == $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
                                     @endforeach
                                 </select>
 
-                                <div class="mt-3">
-                                    <label class="block text-sm font-medium text-slate-700 mb-2">
-                                        Progression de la tâche : <span class="font-semibold text-slate-900" x-text="prog + '%'"></span>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-semibold text-slate-900 mb-2">
+                                        Progression : <span class="font-bold text-slate-700" x-text="prog + '%'"></span>
                                     </label>
                                     <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog"
-                                        class="w-full accent-slate-900">
+                                        class="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900"
+                                        style="accent-color: #0f172a">
                                 </div>
                             </div>
                             @else
@@ -82,80 +83,87 @@
                             </div>
                             @endif
 
-                            <!-- Summary -->
+                            <!-- Introduction -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Introduction <span class="text-slate-400 text-xs">(optionnel)</span></label>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">Introduction <span class="text-slate-400 text-xs">(optionnel)</span></label>
                                 <textarea name="introduction"
                                     rows="2"
                                     placeholder="Contexte ou objectif de la journée..."
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">{{ old('introduction') }}</textarea>
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400">{{ old('introduction') }}</textarea>
                             </div>
 
                             <!-- Summary -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Résumé <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">Travail réalisé <span class="text-red-500">*</span></label>
                                 <textarea name="summary"
                                     rows="4"
                                     required
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">{{ old('summary', $editReport->summary ?? '') }}</textarea>
+                                    placeholder="Décrivez vos activités du jour..."
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400">{{ old('summary', $editReport->summary ?? '') }}</textarea>
                             </div>
 
                             <!-- Blockers -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Blocages rencontrés</label>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">Blocages rencontrés</label>
                                 <textarea name="blockers"
                                     rows="3"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">{{ old('blockers', $editReport->blockers ?? '') }}</textarea>
+                                    placeholder="Listez les obstacles rencontrés..."
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400">{{ old('blockers', $editReport->blockers ?? '') }}</textarea>
                             </div>
 
                             <!-- Next Steps -->
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-2">Prochaines étapes</label>
+                                <label class="block text-sm font-semibold text-slate-900 mb-2">Prochaines étapes</label>
                                 <textarea name="next_steps"
                                     rows="3"
-                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200">{{ old('next_steps', $editReport->next_steps ?? '') }}</textarea>
+                                    placeholder="Décrivez vos prochaines actions..."
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400">{{ old('next_steps', $editReport->next_steps ?? '') }}</textarea>
                             </div>
 
                             <!-- Hours -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-2">Heures déclarées</label>
+                                    <label class="block text-sm font-semibold text-slate-900 mb-2">Heures déclarées</label>
                                     <input type="number"
                                         name="hours_declared"
                                         min="0"
                                         max="24"
                                         step="0.5"
-                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200"
+                                        placeholder="ex: 7.5"
+                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400"
                                         value="{{ old('hours_declared', $editReport->hours_declared ?? 0) }}">
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-2">Date du rapport</label>
+                                    <label class="block text-sm font-semibold text-slate-900 mb-2">Date du rapport</label>
                                     <input type="date"
                                         name="report_date"
-                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-base transition-all duration-200"
+                                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200"
                                         value="{{ old('report_date', $editReport->report_date ?? today()->toDateString()) }}">
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-50">
+                            <div class="flex items-center justify-end gap-2 pt-6 border-t border-slate-100">
                                 <button type="button"
                                     @click="open = false"
-                                    class="px-5 py-3 text-sm font-medium border border-slate-200 rounded-xl hover:bg-slate-50 transition-all duration-200">
+                                    class="px-5 py-3 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md">
                                     Annuler
                                 </button>
 
                                 <button type="submit"
                                     name="status_action"
                                     value="draft"
-                                    class="px-5 py-3 text-sm font-medium border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all duration-200">
+                                    class="px-5 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md">
                                     Enregistrer brouillon
                                 </button>
 
                                 <button type="submit"
                                     name="status_action"
                                     value="submit"
-                                    class="px-5 py-3 text-sm font-medium bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-md hover:shadow-lg">
+                                    class="px-5 py-3 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3L8 20H5v-3l8-8z"></path>
+                                    </svg>
                                     {{ isset($editReport) ? 'Mettre à jour' : 'Soumettre' }}
                                 </button>
                             </div>

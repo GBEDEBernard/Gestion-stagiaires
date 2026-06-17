@@ -55,30 +55,32 @@
                 <!-- Tâche concernée + progression -->
                 @if(($activeTasks ?? collect())->isNotEmpty())
                 <div x-data="{ prog: {{ (int) old('task_progress_percent', $report->task_progress_percent ?? 0) }} }">
-                    <label class="block text-sm font-semibold text-slate-900 mb-3">Tâche concernée</label>
+                    <label class="block text-sm font-semibold text-slate-900 mb-2">Tâche concernée</label>
                     <select name="task_id"
                         @change="prog = parseInt($event.target.selectedOptions[0].dataset.progress || prog)"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200">
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200">
                         <option value="">— Aucune tâche —</option>
                         @foreach($activeTasks as $t)
                         <option value="{{ $t->id }}" data-progress="{{ (int) $t->last_progress_percent }}" {{ old('task_id', $report->task_id) == $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
                         @endforeach
                     </select>
-                    <div class="mt-3">
-                        <label class="block text-sm font-semibold text-slate-900 mb-2">Progression : <span class="font-bold" x-text="prog + '%'"></span></label>
-                        <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="w-full accent-slate-900">
+                    <div class="mt-4">
+                        <label class="block text-sm font-semibold text-slate-900 mb-2">Progression : <span class="font-bold text-slate-700" x-text="prog + '%'"></span></label>
+                        <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog"
+                            class="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900 hover:accent-slate-800 transition-colors"
+                            style="accent-color: #0f172a">
                     </div>
                 </div>
                 @endif
 
                 <!-- Introduction -->
                 <div>
-                    <label for="introduction" class="block text-sm font-semibold text-slate-900 mb-3">Introduction</label>
+                    <label for="introduction" class="block text-sm font-semibold text-slate-900 mb-2">Introduction</label>
                     <textarea
                         id="introduction"
                         name="introduction"
                         rows="3"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('introduction') border-red-500 focus:ring-red-500 @enderror"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400 @error('introduction') border-red-400 focus:ring-red-400/30 @enderror"
                         placeholder="Une brève introduction sur les objectifs du jour...">{{ old('introduction', $report->introduction) }}</textarea>
                     @error('introduction')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -87,13 +89,13 @@
 
                 <!-- Summary -->
                 <div>
-                    <label for="summary" class="block text-sm font-semibold text-slate-900 mb-3">Travail réalisé</label>
+                    <label for="summary" class="block text-sm font-semibold text-slate-900 mb-2">Travail réalisé <span class="text-red-500">*</span></label>
                     <textarea
                         id="summary"
                         name="summary"
                         rows="5"
                         required
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('summary') border-red-500 focus:ring-red-500 @enderror"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400 @error('summary') border-red-400 focus:ring-red-400/30 @enderror"
                         placeholder="Décrivez vos activités du jour...">{{ old('summary', $report->summary) }}</textarea>
                     @error('summary')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -102,12 +104,12 @@
 
                 <!-- Blockers -->
                 <div>
-                    <label for="blockers" class="block text-sm font-semibold text-slate-900 mb-3">Blocages rencontrés</label>
+                    <label for="blockers" class="block text-sm font-semibold text-slate-900 mb-2">Blocages rencontrés</label>
                     <textarea
                         id="blockers"
                         name="blockers"
                         rows="4"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('blockers') border-red-500 focus:ring-red-500 @enderror"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400 @error('blockers') border-red-400 focus:ring-red-400/30 @enderror"
                         placeholder="Listez les obstacles rencontrés...">{{ old('blockers', $report->blockers) }}</textarea>
                     @error('blockers')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -116,12 +118,12 @@
 
                 <!-- Next Steps -->
                 <div>
-                    <label for="next_steps" class="block text-sm font-semibold text-slate-900 mb-3">Prochaines étapes</label>
+                    <label for="next_steps" class="block text-sm font-semibold text-slate-900 mb-2">Prochaines étapes</label>
                     <textarea
                         id="next_steps"
                         name="next_steps"
                         rows="4"
-                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('next_steps') border-red-500 focus:ring-red-500 @enderror"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400 @error('next_steps') border-red-400 focus:ring-red-400/30 @enderror"
                         placeholder="Décrivez vos prochaines actions...">{{ old('next_steps', $report->next_steps) }}</textarea>
                     @error('next_steps')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -131,7 +133,7 @@
                 <!-- Hours and Date -->
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <label for="hours_declared" class="block text-sm font-semibold text-slate-900 mb-3">Heures déclarées</label>
+                        <label for="hours_declared" class="block text-sm font-semibold text-slate-900 mb-2">Heures déclarées</label>
                         <input
                             type="number"
                             id="hours_declared"
@@ -139,7 +141,8 @@
                             min="0"
                             max="24"
                             step="0.5"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('hours_declared') border-red-500 focus:ring-red-500 @enderror"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 placeholder:text-slate-400 @error('hours_declared') border-red-400 focus:ring-red-400/30 @enderror"
+                            placeholder="ex: 7.5"
                             value="{{ old('hours_declared', $report->hours_declared) }}">
                         @error('hours_declared')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -147,12 +150,12 @@
                     </div>
 
                     <div>
-                        <label for="report_date" class="block text-sm font-semibold text-slate-900 mb-3">Date du rapport</label>
+                        <label for="report_date" class="block text-sm font-semibold text-slate-900 mb-2">Date du rapport</label>
                         <input
                             type="date"
                             id="report_date"
                             name="report_date"
-                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-500 focus:border-transparent text-base transition-all duration-200 @error('report_date') border-red-500 focus:ring-red-500 @enderror"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200 @error('report_date') border-red-400 focus:ring-red-400/30 @enderror"
                             value="{{ old('report_date', $report->report_date->toDateString()) }}">
                         @error('report_date')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -161,21 +164,21 @@
                 </div>
 
                 <!-- FORM ACTIONS -->
-                <div class="flex items-center gap-3 pt-6 border-t border-slate-200">
+                <div class="flex items-center gap-3 pt-8 border-t border-slate-100">
                     <a href="{{ route('reports.index') }}"
-                        class="px-6 py-3 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all duration-200">
+                        class="px-6 py-3 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md">
                         Annuler
                     </a>
                     <button type="submit" name="status_action" value="draft"
-                        class="px-6 py-3 text-sm font-medium text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50 transition-all duration-200">
+                        class="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow-md">
                         Enregistrer brouillon
                     </button>
                     <button type="submit" name="status_action" value="submit"
-                        class="px-6 py-3 text-sm font-medium text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all duration-200 flex items-center gap-2 ml-auto">
+                        class="px-6 py-3 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 ml-auto active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3L8 20H5v-3l8-8z"></path>
                         </svg>
-                        Soumettre le rapport
+                        Soumettre
                     </button>
                 </div>
 
