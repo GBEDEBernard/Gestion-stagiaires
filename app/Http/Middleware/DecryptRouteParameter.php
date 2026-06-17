@@ -16,7 +16,8 @@ class DecryptRouteParameter
     {
         // Liste des paramètres à déchiffrer
    // APRÈS
-   $paramsToDecrypt = ['stage', 'etudiant', 'badge', 'service', 'signataire', 'user', 'jour', 'type_stage', 'role', 'domaine','task'];
+   $paramsToDecrypt = ['stage', 'etudiant', 'badge', 'service', 'signataire', 'user',
+    'jour', 'type_stage', 'role', 'domaine','task','report', 'review'];
         foreach ($paramsToDecrypt as $param) {
             if ($request->route($param)) {
                 $value = $request->route($param);

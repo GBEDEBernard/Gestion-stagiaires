@@ -258,5 +258,55 @@ class DailyReportController extends Controller
 
         return back()->with('success', 'Commentaire ajouté.');
     }
-}
 
+    /**
+     * Mettre à jour un commentaire (message) — AJAX requis.
+     */
+    public function updateComment(Request $request, DailyReportReview $review)
+    {
+        $user = $request->user();
+
+        // Seul l'auteur du commentaire peut le modifier
+        if ($review->reviewer_id !== $user->id) {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+
+        $data = $request->validate([
+            'comment' => 'required|string|max:5000',
+        ]);
+
+        $review->update([
+            'comment'   => $data['comment'],
+            'edited_at' => now(),
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'comment'   => $review->comment,
+                'edited_at' => $review->edited_at->toISOString(),
+            ]);
+        }
+
+        return back()->with('success', 'Message modifié.');
+    }
+
+    /**
+     * Supprimer un commentaire (message) — AJAX requis.
+     */
+    public function destroyComment(DailyReportReview $review)
+    {
+        $user = auth()->user();
+
+        if ($review->reviewer_id !== $user->id) {
+            return response()->json(['message' => 'Action non autorisée.'], 403);
+        }
+
+        $review->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Message supprimé.');
+    }
+}

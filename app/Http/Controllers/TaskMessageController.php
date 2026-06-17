@@ -9,11 +9,7 @@ use App\Models\TaskMessage;
 use App\Models\TaskRead;
 use App\Models\User;
 use App\Services\NotificationService;
-<<<<<<< HEAD
-use App\Services\EmailNotificationService;
-=======
 use App\Services\TaskThreadService;
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -21,11 +17,6 @@ class TaskMessageController extends Controller
 {
     public function __construct(
         protected NotificationService $notifications,
-<<<<<<< HEAD
-        protected EmailNotificationService $emailService
-    ) {}
-
-=======
         protected TaskThreadService $thread
     ) {}
 
@@ -49,7 +40,6 @@ class TaskMessageController extends Controller
      * Autorisé : propriétaire + superviseur du stage + admin (via scopeVisibleTo),
      * uniquement lorsque la discussion est OUVERTE.
      */
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     public function store(Request $request, Task $task)
     {
         $user = auth()->user();
@@ -70,19 +60,6 @@ class TaskMessageController extends Controller
             'parent_id' => 'nullable|integer|exists:task_messages,id',
         ]);
 
-<<<<<<< HEAD
-        $message = TaskMessage::create([
-            'task_id' => $task->id,
-            'user_id' => $user->id,
-            'type'    => 'message',
-            'body'    => $data['body'],
-        ]);
-
-        // Notification par email
-        $this->emailService->notifyNewMessage($task, $user, $data['body']);
-
-        // Notification interne (conservée)
-=======
         $parentId = $this->resolveParentId($task, $data['parent_id'] ?? null);
 
         $message = TaskMessage::create([
@@ -96,7 +73,6 @@ class TaskMessageController extends Controller
         // L'auteur a « lu » son propre message.
         $this->touchRead($task, $user->id, $message->id);
 
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
         $this->notifyOtherParty($task, $user, $data['body']);
 
         broadcast(new TaskMessageCreated($message, $task))->toOthers();
@@ -113,8 +89,6 @@ class TaskMessageController extends Controller
         return back()->with('success', 'Message envoyé.');
     }
 
-<<<<<<< HEAD
-=======
     /**
      * Met à jour le curseur de lecture (✓✓) du lecteur jusqu'au dernier message.
      */
@@ -187,7 +161,6 @@ class TaskMessageController extends Controller
      * Notifie « l'autre partie » : si l'auteur est un relecteur → le producteur ;
      * si l'auteur est le producteur → superviseur + admins.
      */
->>>>>>> a3f3c4d71fcca141b9bc9600e2b9c87382976f8f
     protected function notifyOtherParty(Task $task, User $author, string $body): void
     {
         $url = encrypted_route('tasks.show', $task);

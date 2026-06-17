@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\DailyReport;
 
 class DailyReportReview extends Model
 {
@@ -16,18 +14,16 @@ class DailyReportReview extends Model
         'reviewer_id',
         'action',
         'comment',
+        'edited_at',
         'reviewed_at',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'edited_at'   => 'datetime',
     ];
 
-    /*
-    |-----------------------
-    | RELATIONS
-    |-----------------------
-    */
+    /* ── Relations ─────────────────────────────────────── */
 
     public function dailyReport()
     {
@@ -39,22 +35,14 @@ class DailyReportReview extends Model
         return $this->belongsTo(User::class, 'reviewer_id');
     }
 
-    /*
-    |-----------------------
-    | SCOPES UTILES
-    |-----------------------
-    */
+    /* ── Scopes ─────────────────────────────────────────── */
 
     public function scopeLatestFirst($query)
     {
         return $query->orderByDesc('reviewed_at');
     }
 
-    /*
-    |-----------------------
-    | HELPERS (OPTIONNEL)
-    |-----------------------
-    */
+    /* ── Helpers ─────────────────────────────────────────── */
 
     public function isApproved(): bool
     {
@@ -64,5 +52,10 @@ class DailyReportReview extends Model
     public function isRejected(): bool
     {
         return $this->action === 'rejected';
+    }
+
+    public function wasEdited(): bool
+    {
+        return !is_null($this->edited_at);
     }
 }
