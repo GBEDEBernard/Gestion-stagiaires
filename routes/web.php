@@ -50,6 +50,11 @@ Route::get('/', fn() => redirect()->route('login'));
 
 require __DIR__ . '/auth.php';
 
+// Route d'accès par email (URL signée temporaire)
+Route::get('/email-access', [App\Http\Controllers\EmailAccessController::class, 'handle'])
+    ->name('email.access')
+    ->middleware('signed');
+
 // Routes protégées
 // Routes protégées (mdp change non requis)
 Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
