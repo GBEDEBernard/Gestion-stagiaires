@@ -275,7 +275,7 @@
                 </div>
             </div>
 
-            {{-- Top domaines --}}
+            {{-- Top Domaines --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                     <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -417,7 +417,7 @@
                         ['Stages',$stagesTrash->count(),'text-purple-600','bg-purple-50 dark:bg-purple-900/20'],
                         ['Étudiants',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
                         ['Badges',$badgesTrash->count(),'text-amber-600','bg-amber-50 dark:bg-amber-900/20'],
-                        ['Badges',$badgesTrash->count(),'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
+                        ['Total',$totalTrash,'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
                     ] as [$lbl,$cnt,$cls,$bg])
                     <div class="{{ $bg }} rounded-xl p-3 sm:p-4 text-center hover:opacity-80 transition">
                         <p class="text-2xl sm:text-3xl font-bold {{ $cls }}">{{ $cnt }}</p>
