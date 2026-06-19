@@ -1167,9 +1167,9 @@
                         <span class="pres-action-icon">📍</span>
                         <span>Suivi Pointage</span>
                     </a>
-                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue">
+                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue">
                         <span class="pres-action-icon">📋</span>
-                        <span>Rapports</span>
+                        <span>Tâches</span>
                     </a>
                 </div>
             </div>
@@ -1243,7 +1243,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['drafts'] }}</div>
                         <div class="pres-kpi-label">Brouillons</div>
                         <div class="pres-kpi-sub">À compléter aujourd'hui</div>
                     </div>
@@ -1252,7 +1252,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">⏳</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['pending'] }}</div>
                         <div class="pres-kpi-label">En Attente</div>
                         <div class="pres-kpi-sub">À reviewer par sup.</div>
                     </div>
@@ -1261,7 +1261,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">✅</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['approved'] }}</div>
                         <div class="pres-kpi-label">Approuvés</div>
                         <div class="pres-kpi-sub">Cette semaine</div>
                     </div>
@@ -1270,15 +1270,15 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">🏆</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['validation_rate'] }}%</div>
                         <div class="pres-kpi-label">Taux Validation</div>
                         <div class="pres-kpi-sub">Objectif › 90%</div>
                     </div>
                 </div>
                 <div class="pres-reports-bottom">
-                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
+                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
                         <span class="pres-action-icon">📊</span>
-                        <span style="font-size:1rem;">Tous les Rapports</span>
+                        <span style="font-size:1rem;">Toutes les Tâches</span>
                     </a>
                     <div class="pres-tips">
                         <div class="pres-tips-title">💡 Astuces Suivi</div>
@@ -1289,7 +1289,7 @@
                         </ul>
                     </div>
                 </div>
-            </div>
+            </div>::
 
             {{-- TOP RETARDS & ABSENCES --}}
             <div class="pres-charts-grid mt-6">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Presence\ResolveAnomalyRequest;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceAnomaly;
+use App\Models\DailyReport;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\AdminPresenceService;
@@ -48,6 +49,18 @@ class AdminPresenceController extends Controller
             'anomalies_only'
         ]), 25);
 
+        // ── Rapports journaliers : stats dynamiques ──
+        $reportStats = [
+            'drafts'   => DailyReport::where('status', 'draft')->whereDate('report_date', today())->count(),
+            'pending'  => DailyReport::where('status', 'submitted')->count(),
+            'approved' => DailyReport::where('status', 'reviewed')
+                ->whereBetween('reviewed_at', [now()->startOfWeek(), now()->endOfWeek()])
+                ->count(),
+        ];
+        $totalReports = DailyReport::count();
+        $reviewedCount = DailyReport::where('status', 'reviewed')->count();
+        $reportStats['validation_rate'] = $totalReports > 0 ? round(($reviewedCount / $totalReports) * 100) : 0;
+
         return view('admin.presence.index', compact(
             'overview',
             'globalStats',
@@ -58,6 +71,7 @@ class AdminPresenceController extends Controller
             'period',
             'group',
             'days',
+            'reportStats',
             'request'
         ));
     }
