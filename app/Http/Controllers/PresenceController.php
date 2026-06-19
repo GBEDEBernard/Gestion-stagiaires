@@ -186,6 +186,8 @@ class PresenceController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
+        $isEarlyDeparture = now()->lt(today()->setTime(18, 0));
+
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
@@ -209,6 +211,7 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
+                'is_early_departure' => $isEarlyDeparture,
             ];
 
             // Calculer distance si geofence disponible
@@ -237,6 +240,7 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
+                'is_early_departure' => $isEarlyDeparture,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -261,6 +265,7 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
+                'is_early_departure' => $isEarlyDeparture,
             ];
 
             // No geofence for employee preview (calculated later in service)
@@ -277,7 +282,7 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
-
+                'is_early_departure' => $isEarlyDeparture,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -313,6 +318,7 @@ class PresenceController extends Controller
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
                 'is_late' => $isLate,
+                'is_early_departure' => $pending['is_early_departure'] ?? false,
             ];
 
             // Distance
@@ -341,6 +347,7 @@ class PresenceController extends Controller
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
                 'is_late' => $isLate,
+                'is_early_departure' => $pending['is_early_departure'] ?? false,
             ];
 
             // No geofence preview for employees
@@ -362,11 +369,22 @@ class PresenceController extends Controller
         try {
             $user = $request->user();
             $isLate = $pending['is_late'] ?? false;
+            $isEarlyDeparture = $pending['is_early_departure'] ?? false;
 
             // Validation observation obligatoire si retard
             $request->validate([
                 'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',
             ]);
+
+            // ✅ Départ anticipé avant 18h : permission requise
+            if ($isEarlyDeparture && $pending['type'] === 'check_out') {
+                $request->validate([
+                    'early_departure_permission' => 'required|accepted',
+                ], [
+                    'early_departure_permission.required' => 'Vous devez confirmer avoir une permission pour un départ avant 18h00.',
+                    'early_departure_permission.accepted' => 'Vous devez accepter la permission de départ anticipé.',
+                ]);
+            }
 
             $data = $pending;
             $data['device_uuid'] = $pending['device_uuid'];

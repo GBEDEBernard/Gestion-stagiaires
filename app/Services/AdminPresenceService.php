@@ -57,6 +57,7 @@ class AdminPresenceService
             'checkInEvent.trustedDevice',
             'checkOutEvent.trustedDevice',
             'anomalies',
+            'lateAnomaly',
         ])->orderByDesc('attendance_date');
 
         if (!empty($filters['date_from']))    $query->whereDate('attendance_date', '>=', $filters['date_from']);

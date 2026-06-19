@@ -133,6 +133,9 @@ class PresenceService
                 ],
             ]);
 
+            // ✅ Sync AttendanceDay FIRST so attendance_day_id is available for anomalies
+            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
+
             // Enregistrement d'une anomalie si la décision l'indique
             if (!empty($decision['anomaly'])) {
                 $this->recordAnomaly($event, $decision['anomaly'], $decision['severity'] ?? 'medium', [
@@ -152,7 +155,6 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
 
             return $event;
         });
@@ -449,6 +451,9 @@ class PresenceService
                 ],
             ]);
 
+            // ✅ Sync AttendanceDay FIRST so attendance_day_id is available for anomalies
+            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
+
             if (!empty($decision['anomaly'])) {
                 $this->recordAnomaly($event, $decision['anomaly'], $decision['severity'] ?? 'medium', [
                     'message' => $decision['message'],
@@ -465,7 +470,6 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
 
             return $event;
         });
@@ -723,7 +727,7 @@ class PresenceService
     {
         AttendanceAnomaly::create([
             'attendance_event_id' => $event->id,
-            'attendance_day_id'   => $event->attendanceDay?->id ?? null,
+            'attendance_day_id'   => $event->checkInDay?->id ?? $event->checkOutDay?->id,
             'stage_id'            => $event->stage_id ?? null,
             'etudiant_id'         => $event->etudiant_id ?? null,
             'user_id'             => $event->user_id,

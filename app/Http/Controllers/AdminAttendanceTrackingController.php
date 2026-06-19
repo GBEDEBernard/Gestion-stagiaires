@@ -85,6 +85,7 @@ class AdminAttendanceTrackingController extends Controller
                 'etudiant.user',
                 'stage.site',
                 'anomalies',
+                'lateAnomaly',
                 'checkInEvent.geofence.site',
             ])
             ->orderBy('etudiant_id')
@@ -98,6 +99,7 @@ class AdminAttendanceTrackingController extends Controller
                 'user',
                 'stage.site',
                 'anomalies',
+                'lateAnomaly',
                 'checkInEvent.geofence.site',
             ])
             ->orderBy('user_id')
