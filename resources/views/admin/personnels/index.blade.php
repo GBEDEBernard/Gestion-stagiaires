@@ -35,9 +35,9 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Type</label>
                     <select name="type" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
                         <option value="all" {{ request('type') === 'all' ? ' selected' : '' }}>Tous</option>
+                        <option value="admin" {{ request('type') === 'admin' ? ' selected' : '' }}>Admin</option>
                         <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Étudiant</option>
                         <option value="employe" {{ request('type') === 'employe' ? ' selected' : '' }}>Employé</option>
-                        <option value="inconnu" {{ request('type') === 'inconnu' ? ' selected' : '' }}>Inconnu</option>
                     </select>
                 </div>
                 <div>
@@ -87,7 +87,8 @@
                             </td>
                             <td class="px-6 py-4 text-sm">
                                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold 
-                                        @if($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
+                                        @if($personnel->type_label === 'Admin') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                                        @elseif($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
                                         @elseif($personnel->type_label === 'Étudiant') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
                                         @else bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
                                         @endif">

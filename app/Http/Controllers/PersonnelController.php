@@ -36,12 +36,14 @@ class PersonnelController extends Controller
         }
 
         if ($type && $type !== 'all') {
-            if ($type === 'etudiant') {
+            if ($type === 'admin') {
+                $query->whereHas('user', function ($q) {
+                    $q->role('admin');
+                });
+            } elseif ($type === 'etudiant') {
                 $query->where('personnable_type', Etudiant::class);
             } elseif ($type === 'employe') {
                 $query->where('personnable_type', Employe::class);
-            } elseif ($type === 'inconnu') {
-                $query->whereNull('personnable_type');
             }
         }
 

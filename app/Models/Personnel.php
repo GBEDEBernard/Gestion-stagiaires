@@ -107,6 +107,10 @@ class Personnel extends Model
 
     public function getTypeLabelAttribute(): string
     {
+        if ($this->user && $this->user->hasRole('admin')) {
+            return 'Admin';
+        }
+
         return match ($this->personnable_type) {
             Etudiant::class => 'Étudiant',
             Employe::class  => 'Employé',

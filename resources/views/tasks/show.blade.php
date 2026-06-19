@@ -289,59 +289,176 @@
             @if($isOwner && !$task->isCompleted())
             @php $state = $thread['task']['discussion_state'] ?? $task->discussionState(); @endphp
             <div class="sh-card sh-2 rounded-2xl overflow-hidden mb-4" x-data="{open:{{ $state==='locked'?'true':'false' }}}">
-                <button @click="open=!open" class="w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition"
-                        onmouseenter="this.style.background='rgba(0,0,0,.02)'" onmouseleave="this.style.background='transparent'">
-                    <div>
-                        <p class="text-[10px] font-semibold uppercase tracking-[.16em]" style="color:#059669;">{{ $state==='locked'?'Premier rapport':'Rapport du jour' }}</p>
-                        <h3 class="mt-0.5 text-base font-semibold" style="letter-spacing:-.01em;">{{ $todayReport?'Rapport déposé':'Ajouter une mise à jour' }}</h3>
+                <div class="h-[3px]" style="background:linear-gradient(90deg,#059669,#10b981);"></div>
+                <button @click="open=!open"
+                    class="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 text-left transition hover:bg-black/[.02]">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                              :style="open?'background:#059669;color:#fff;':'background:rgba(5,150,105,.08);color:#059669;'">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="text-[10px] font-semibold uppercase tracking-[.16em]" style="color:#059669;">
+                                {{ $state==='locked'?'Premier rapport':'Rapport du jour' }}
+                                <span class="ml-1.5 inline-block w-1.5 h-1.5 rounded-full" style="background:#059669;"></span>
+                            </p>
+                            <h3 class="mt-0.5 text-base font-semibold" style="letter-spacing:-.01em;">
+                                {{ $todayReport?'Rapport déposé aujourd\'hui':'Ajouter une mise à jour' }}
+                            </h3>
+                        </div>
                     </div>
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition"
-                          :style="open?'background:#0a0a0a;color:#fff;transform:rotate(180deg);':'background:rgba(0,0,0,.04);color:rgba(0,0,0,.5);'">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-                    </span>
+                    <div class="flex items-center gap-3">
+                        @if($todayReport)
+                        <span class="ws-mono text-xs font-medium px-2.5 py-1 rounded-lg hidden sm:inline-flex" style="background:rgba(5,150,105,.08);color:#059669;">
+                            {{ (int)$todayReport->task_progress_percent }}%
+                        </span>
+                        @endif
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200"
+                              :style="open?'background:#0a0a0a;color:#fff;transform:rotate(180deg);':'background:rgba(0,0,0,.04);color:rgba(0,0,0,.5);'">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+                        </span>
+                    </div>
                 </button>
                 <div x-show="open" x-collapse>
-                    <div class="border-t px-5 py-5" style="border-color:rgba(0,0,0,.06);">
+                    <div class="border-t px-5 sm:px-6 py-5 sm:py-6" style="border-color:rgba(0,0,0,.06);">
                         @if($todayReport)
-                        <div class="rounded-xl p-4" style="background:rgba(5,150,105,.05);border:1px solid rgba(5,150,105,.15);">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="flex items-center gap-2 text-sm font-medium" style="color:#059669;">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                                    Aujourd'hui · {{ (int)$todayReport->task_progress_percent }}%
-                                </span>
-                                <a href="{{ route('reports.edit', $todayReport->id) }}" class="text-sm font-medium" style="color:rgba(0,0,0,.4);">Modifier →</a>
+                        {{-- ── RAPPORT EXISTANT ── --}}
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full" style="background:rgba(5,150,105,.1);">
+                                        <svg class="h-3.5 w-3.5" style="color:#059669;" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+                                    </span>
+                                    <span class="text-sm font-medium" style="color:rgba(0,0,0,.6);">Rapport du jour</span>
+                                    <span class="text-xs" style="color:rgba(0,0,0,.3);">·</span>
+                                    <span class="text-xs" style="color:rgba(0,0,0,.4);">{{ $todayReport->created_at->format('H:i') }}</span>
+                                </div>
+                                <a href="{{ route('reports.edit', $todayReport->id) }}"
+                                   class="inline-flex items-center gap-1.5 text-xs font-medium transition rounded-lg px-2.5 py-1.5"
+                                   style="color:rgba(0,0,0,.45);"
+                                   onmouseenter="this.style.background='rgba(0,0,0,.05)';this.style.color='#0a0a0a'"
+                                   onmouseleave="this.style.background='transparent';this.style.color='rgba(0,0,0,.45)'">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l.72-3.95c.07-.39.26-.74.54-1.02L16.3 3.94a1.5 1.5 0 0 1 2.12 0l1.64 1.64a1.5 1.5 0 0 1 0 2.12L9.03 18.74c-.28.28-.63.47-1.02.54L4 20Z"/></svg>
+                                    Modifier
+                                </a>
                             </div>
-                            <p class="text-sm leading-7 whitespace-pre-line" style="color:rgba(0,0,0,.7);">{{ $todayReport->summary }}</p>
+
+                            {{-- Progress bar --}}
+                            @php $rpct = max(0, min(100, (int)$todayReport->task_progress_percent)); @endphp
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-[10px] font-semibold uppercase tracking-[.12em]" style="color:rgba(0,0,0,.35);">Progression</span>
+                                    <span class="ws-mono text-xs font-semibold px-2 py-0.5 rounded-md" style="background:rgba(0,0,0,.05);color:rgba(0,0,0,.6);">{{ $rpct }}%</span>
+                                </div>
+                                <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(0,0,0,.06);">
+                                    <div class="h-full rounded-full transition-all duration-700" style="width:{{ $rpct }}%;background:linear-gradient(90deg,#059669,#10b981);"></div>
+                                </div>
+                            </div>
+
+                            {{-- Summary --}}
+                            <div class="rounded-xl px-4 py-3.5" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.05);">
+                                <p class="text-[10px] font-semibold uppercase tracking-[.12em] mb-2" style="color:rgba(0,0,0,.3);">Travail effectué</p>
+                                <p class="text-sm leading-7 whitespace-pre-line" style="color:rgba(0,0,0,.7);">{{ $todayReport->summary }}</p>
+                            </div>
+
+                            {{-- Meta --}}
+                            <div class="flex flex-wrap items-center gap-3">
+                                @if($todayReport->blockers)
+                                <div class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style="background:rgba(245,158,11,.06);color:#b45309;border:1px solid rgba(245,158,11,.12);">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                                    {{ $todayReport->blockers }}
+                                </div>
+                                @endif
+                                @if($todayReport->hours_declared)
+                                <div class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style="background:rgba(59,130,246,.06);color:#2563eb;border:1px solid rgba(59,130,246,.12);">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                    {{ $todayReport->hours_declared }}h déclarées
+                                </div>
+                                @endif
+                                @if($todayReport->next_steps)
+                                <div class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style="background:rgba(139,92,246,.06);color:#7c3aed;border:1px solid rgba(139,92,246,.12);">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8-8 8-4-4-6 6"/></svg>
+                                    {{ $todayReport->next_steps }}
+                                </div>
+                                @endif
+                            </div>
                         </div>
                         @else
-                        <form method="POST" action="{{ route('reports.store') }}" class="space-y-4" x-data="{prog:{{ (int)$task->last_progress_percent }}}">
+                        {{-- ── FORMULAIRE ── --}}
+                        <form method="POST" action="{{ route('reports.store') }}" class="space-y-5" x-data="{prog:{{ (int)$task->last_progress_percent }}}">
                             @csrf
                             <input type="hidden" name="status_action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
-                            <div>
-                                <label class="block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5" style="color:rgba(0,0,0,.4);">Résumé <span style="color:#ef4444;">*</span></label>
-                                <textarea name="summary" rows="4" required placeholder="Ce que tu as accompli aujourd'hui…"
-                                    class="sh-input w-full rounded-xl px-3.5 py-2.5 text-sm leading-6 resize-none"></textarea>
+
+                            {{-- Summary avec floating label --}}
+                            <div class="relative">
+                                <textarea name="summary" rows="4" required placeholder=" "
+                                    class="sh-input peer w-full rounded-xl px-3.5 pt-5 pb-2.5 text-sm leading-6 resize-none transition placeholder:opacity-0 focus:placeholder:opacity-100"></textarea>
+                                <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                              peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                              peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                    Résumé du travail <span class="text-red-400">*</span>
+                                </label>
                             </div>
-                            <div class="rounded-xl p-4" style="background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);">
+
+                            {{-- Progression --}}
+                            <div class="rounded-xl p-4 sm:p-5" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.06);">
                                 <div class="flex items-center justify-between mb-3">
-                                    <label class="text-[10px] font-semibold uppercase tracking-[.14em]" style="color:rgba(0,0,0,.4);">Progression</label>
+                                    <label class="text-[10px] font-semibold uppercase tracking-[.12em] text-black/30">Progression</label>
                                     <span class="ws-mono text-sm font-semibold px-2.5 py-0.5 rounded-lg" style="background:#0a0a0a;color:#fff;" x-text="prog+'%'"></span>
                                 </div>
-                                <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="sh-range w-full">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5" style="color:rgba(0,0,0,.4);">Blocages</label>
-                                    <input type="text" name="blockers" placeholder="Optionnel" class="sh-input h-10 w-full rounded-xl px-3.5 text-sm">
+                                <div class="relative">
+                                    <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="sh-range w-full">
+                                    <div class="flex justify-between text-[10px] text-black/20 mt-1 px-0.5 select-none">
+                                        <span>0%</span>
+                                        <span>25%</span>
+                                        <span>50%</span>
+                                        <span>75%</span>
+                                        <span>100%</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5" style="color:rgba(0,0,0,.4);">Heures déclarées</label>
-                                    <input type="number" name="hours_declared" min="0" max="24" step="0.5" placeholder="Optionnel" class="sh-input h-10 w-full rounded-xl px-3.5 text-sm">
+                            </div>
+
+                            {{-- Blocages & Heures --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div class="relative">
+                                    <input type="text" name="blockers" placeholder=" "
+                                        class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                    <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                  peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                  peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                        Blocages
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" name="hours_declared" min="0" max="24" step="0.5" placeholder=" "
+                                        class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                    <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                  peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                  peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                        Heures déclarées
+                                    </label>
                                 </div>
                             </div>
-                            <div class="flex justify-end">
-                                <button type="submit" class="sh-btn inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
+
+                            {{-- Prochaines étapes --}}
+                            <div class="relative">
+                                <input type="text" name="next_steps" placeholder=" "
+                                    class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                              peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                              peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                    Prochaines étapes
+                                </label>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <p class="text-xs" style="color:rgba(0,0,0,.3);">
+                                    <span class="text-red-400">*</span> Champs obligatoires
+                                </p>
+                                <button type="submit" class="sh-btn inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-medium">
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/></svg>
                                     {{ $state==='locked'?'Ouvrir la discussion':'Envoyer le rapport' }}
                                 </button>
