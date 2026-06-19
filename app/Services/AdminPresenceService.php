@@ -201,9 +201,10 @@ class AdminPresenceService
             }
         }
 
-        // ✅ Date d'activation du système — aucune absence avant cette date
+        $today = today();
+
+        // ✅ Date d'activation du système — aucun absent compté avant
         $systemStart = $this->systemStartDate();
-        $today       = today();
 
         // ── Données pointage réelles (jours ouvrés uniquement) ───────────────
         $dailyStats = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
@@ -222,11 +223,12 @@ class AdminPresenceService
             ->get()
             ->keyBy('date');
 
-        // Nombre d'employés actifs attendus
+        // Nombre d'employés actifs attendus (exclure les admin)
         $expectedEmployeesCount = User::whereHas('personnel', function ($query) {
             $query->where('personnable_type', Employe::class);
         })
             ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->count();
 
         $allDates      = [];
@@ -241,12 +243,6 @@ class AdminPresenceService
 
             // ── Ignorer week-ends ─────────────────────────────────────────────
             if ($currentDate->isWeekend()) {
-                $currentDate->addDay();
-                continue;
-            }
-
-            // ✅ Ignorer les jours AVANT l'activation du système
-            if ($currentDate->lt($systemStart)) {
                 $currentDate->addDay();
                 continue;
             }
@@ -268,29 +264,22 @@ class AdminPresenceService
 
             $expectedTotal = $studentsCount + $expectedEmployeesCount;
 
-            // Ignorer les jours où personne n'est encore inscrit dans le système
-            if ($expectedTotal === 0) {
-                $currentDate->addDay();
-                continue;
-            }
-
-            $allDates[] = $dateLabel;
-            $dayStats   = $dailyStats->get($dateKey);
+            $isBeforeSystemStart = $currentDate->lt($systemStart);
+            $allDates[]          = $dateLabel;
+            $dayStats            = $dailyStats->get($dateKey);
 
             if ($dayStats) {
                 $presentData[]     = (int) $dayStats->present;
                 $lateMinutesData[] = (int) $dayStats->late_minutes;
                 $lateDaysData[]    = (int) $dayStats->late_days;
                 $workedHoursData[] = round((int) $dayStats->worked_minutes / 60, 1);
-                // Absences = attendus - présents (min 0)
-                $absentData[]      = max(0, $expectedTotal - (int) $dayStats->present);
+                $absentData[]      = $isBeforeSystemStart ? 0 : max(0, $expectedTotal - (int) $dayStats->present);
             } else {
-                // Personne n'a pointé → tous absents
                 $presentData[]     = 0;
                 $lateMinutesData[] = 0;
                 $lateDaysData[]    = 0;
                 $workedHoursData[] = 0;
-                $absentData[]      = $expectedTotal;
+                $absentData[]      = $isBeforeSystemStart ? 0 : $expectedTotal;
             }
 
             $currentDate->addDay();
@@ -420,8 +409,7 @@ class AdminPresenceService
 
     private function generateChartData(Builder $query, Carbon $startDate, Carbon $endDate): array
     {
-        $systemStart = $this->systemStartDate();
-        $today       = today();
+        $today = today();
 
         $dailyStats = $query
             ->selectRaw('
@@ -441,12 +429,8 @@ class AdminPresenceService
 
         $currentDate = $startDate->copy()->startOfDay();
         while ($currentDate <= $endDate) {
-            // ✅ Ignorer week-ends, avant activation, jours futurs
-            if (
-                $currentDate->isWeekend()
-                || $currentDate->lt($systemStart)
-                || $currentDate->gt($today)
-            ) {
+            // ✅ Ignorer week-ends et jours futurs
+            if ($currentDate->isWeekend() || $currentDate->gt($today)) {
                 $currentDate->addDay();
                 continue;
             }
@@ -687,6 +671,7 @@ class AdminPresenceService
             $query->where('personnable_type', Employe::class);
         })
             ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->pluck('id')
             ->values()
             ->all();
@@ -814,6 +799,7 @@ class AdminPresenceService
             $query->where('personnable_type', Employe::class);
         })
             ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->pluck('id')
             ->values()
             ->all();

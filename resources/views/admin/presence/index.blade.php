@@ -657,6 +657,34 @@
             height: 220px;
         }
 
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .78rem;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
         /* QUICK ACTIONS */
         .pres-actions-grid {
             display: grid;
@@ -1175,21 +1203,32 @@
             </div>
 
             {{-- CHARTS --}}
+            @php $hasChartData = !empty($globalStats['chart_data']['labels']); @endphp
+            @if($hasChartData)
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
                 <div class="pres-card">
-                    <div class="pres-chart-wrap" style="height:280px;">
+                    <div class="chart-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présents</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>En retard</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absents</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f97316;border-radius:2px;"></span>Retard (min) →</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;border-radius:2px;"></span>Heures travaillées →</div>
+                    </div>
+                    <div class="chart-container" style="height:300px;">
                         <canvas id="chartGlobal"></canvas>
                     </div>
                 </div>
             </div>
 
             <div class="pres-card mt-6">
-                <div class="pres-section-title">Vue d'Ensemble Quotidienne</div>
-                <div style="position:relative;height:280px;">
+                <div class="pres-section-title">Vue d'Ensemble · Heures & Retards</div>
+                <div class="chart-container" style="height:300px;">
                     <canvas id="chartOverview"></canvas>
                 </div>
             </div>
+            @endif
 
             {{-- GROUP STATS --}}
             <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
@@ -1467,14 +1506,28 @@
                 });
             }
 
+            /* ══════════════════════════════════════════════════════════
+               GRAPHIQUE 1 — Courbes : Présence, Retards, Absences
+               Axe gauche : nombre de personnes
+               Axe droit  : minutes / heures
+            ══════════════════════════════════════════════════════════ */
             const ctx = document.getElementById('chartGlobal');
             if (ctx && labels.length > 0) {
                 const g = ctx.getContext('2d');
-                const createGradient = (c1, c2) => {
-                    const grad = g.createLinearGradient(0, 0, 0, 280);
-                    grad.addColorStop(0, c1);
-                    grad.addColorStop(1, c2);
+                const mkGrad = (top, bottom) => {
+                    const grad = g.createLinearGradient(0, 0, 0, 300);
+                    grad.addColorStop(0, top);
+                    grad.addColorStop(1, bottom);
                     return grad;
+                };
+                const tooltipStyle = {
+                    backgroundColor: isDark ? '#1c2333' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    titleColor: isDark ? '#fff' : '#0f172a',
+                    bodyColor: isDark ? '#d1d5db' : '#475569',
+                    padding: 12,
+                    cornerRadius: 10,
                 };
 
                 new Chart(ctx, {
@@ -1482,66 +1535,98 @@
                     data: {
                         labels,
                         datasets: [{
-                                label: 'Présence',
+                                label: 'Présents',
                                 data: present,
                                 borderColor: '#10b981',
-                                backgroundColor: createGradient('rgba(16,185,129,0.3)', 'rgba(16,185,129,0.02)'),
+                                backgroundColor: mkGrad('rgba(16,185,129,0.22)', 'rgba(16,185,129,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 3,
-                                pointRadius: 5,
+                                pointRadius: present.map(v => v ? 5 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#10b981',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
                                 label: "À l'heure",
                                 data: onTime,
                                 borderColor: '#3b82f6',
-                                backgroundColor: createGradient('rgba(59,130,246,0.25)', 'rgba(59,130,246,0.02)'),
+                                backgroundColor: mkGrad('rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: onTime.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Jours retard',
+                                label: 'En retard',
                                 data: lateDays,
                                 borderColor: '#f59e0b',
-                                backgroundColor: createGradient('rgba(245,158,11,0.2)', 'rgba(245,158,11,0.02)'),
+                                backgroundColor: mkGrad('rgba(245,158,11,0.16)', 'rgba(245,158,11,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: lateDays.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#f59e0b',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Absences',
+                                label: 'Absents',
                                 data: absences,
                                 borderColor: '#f43f5e',
-                                backgroundColor: createGradient('rgba(244,63,94,0.2)', 'rgba(244,63,94,0.02)'),
+                                backgroundColor: mkGrad('rgba(244,63,94,0.16)', 'rgba(244,63,94,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: absences.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#f43f5e',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Minutes retard',
+                                label: 'Retard (min)',
                                 data: lateMinutes,
                                 borderColor: '#f97316',
+                                backgroundColor: 'transparent',
                                 fill: false,
-                                tension: 0.3,
+                                tension: 0.35,
+                                borderWidth: 2,
                                 borderDash: [6, 4],
-                                pointRadius: 5,
+                                pointRadius: lateMinutes.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#f97316',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             },
                             {
                                 label: 'Heures travaillées',
                                 data: workedHours,
                                 borderColor: '#8b5cf6',
+                                backgroundColor: 'transparent',
                                 fill: false,
                                 tension: 0.4,
-                                pointRadius: 4,
+                                borderWidth: 2,
+                                pointRadius: workedHours.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             }
                         ]
@@ -1549,15 +1634,28 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: {
+                            duration: 900,
+                            easing: 'easeOutQuart'
+                        },
                         interaction: {
                             mode: 'index',
                             intersect: false
                         },
                         plugins: {
                             legend: {
-                                position: 'top',
-                                labels: {
-                                    color: textColor
+                                display: false
+                            },
+                            tooltip: {
+                                ...tooltipStyle,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        const lbl = ctx.dataset.label;
+                                        if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
+                                        if (lbl === 'Heures travaillées') return `${lbl}: ${v}h`;
+                                        return `${lbl}: ${v}`;
+                                    }
                                 }
                             }
                         },
@@ -1567,7 +1665,12 @@
                                     color: gridColor
                                 },
                                 ticks: {
-                                    color: mutedColor
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    maxTicksLimit: 20
                                 }
                             },
                             yCount: {
@@ -1577,10 +1680,16 @@
                                 title: {
                                     display: true,
                                     text: 'Nombre de personnes',
-                                    color: mutedColor
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 ticks: {
-                                    color: '#10b981'
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 grid: {
                                     color: gridColor
@@ -1595,10 +1704,16 @@
                                 title: {
                                     display: true,
                                     text: 'Minutes / Heures',
-                                    color: mutedColor
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 ticks: {
-                                    color: '#f97316'
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
                                 }
                             }
                         }
@@ -1606,6 +1721,9 @@
                 });
             }
 
+            /* ══════════════════════════════════════════════════════════
+               GRAPHIQUE 2 — Barres : Heures travaillées + Retard (min)
+            ══════════════════════════════════════════════════════════ */
             const ctxOv = document.getElementById('chartOverview');
             if (ctxOv && labels.length > 0) {
                 new Chart(ctxOv, {
@@ -1613,60 +1731,28 @@
                     data: {
                         labels,
                         datasets: [{
-                                label: 'Présents',
-                                data: present,
-                                backgroundColor: '#10b981',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: "À l'heure",
-                                data: onTime,
-                                backgroundColor: '#3b82f6',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Jours retard',
-                                data: lateDays,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Absences',
-                                data: absences,
-                                backgroundColor: '#f43f5e',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Min retard',
-                                data: lateMinutes,
-                                backgroundColor: '#f97316',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
-                            },
-                            {
-                                label: 'Heures',
+                                label: 'Heures travaillées',
                                 data: workedHours,
-                                backgroundColor: '#8b5cf6',
+                                backgroundColor: 'rgba(59,130,246,0.75)',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
                                 borderRadius: 5,
                                 borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
+                                barPercentage: 0.65,
+                                categoryPercentage: 0.75,
+                                yAxisID: 'yHours'
+                            },
+                            {
+                                label: 'Retard (min)',
+                                data: lateMinutes,
+                                backgroundColor: 'rgba(245,158,11,0.7)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 1,
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.65,
+                                categoryPercentage: 0.75,
+                                yAxisID: 'yMin'
                             }
                         ]
                     },
@@ -1677,15 +1763,19 @@
                             duration: 800,
                             easing: 'easeOutQuart'
                         },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         plugins: {
                             legend: {
                                 position: 'top',
                                 labels: {
                                     color: textColor,
                                     usePointStyle: true,
-                                    padding: 10,
+                                    padding: 14,
                                     font: {
-                                        size: 11
+                                        size: 12
                                     }
                                 }
                             },
@@ -1695,8 +1785,16 @@
                                 borderWidth: 1,
                                 titleColor: isDark ? '#fff' : '#0f172a',
                                 bodyColor: isDark ? '#d1d5db' : '#475569',
-                                padding: 10,
-                                cornerRadius: 8
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        return ctx.dataset.label === 'Heures travaillées'
+                                            ? `Heures: ${v}h`
+                                            : `Retard: ${v} min`;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -1709,37 +1807,54 @@
                                     font: {
                                         size: 10
                                     },
-                                    maxRotation: 45
+                                    maxRotation: 45,
+                                    maxTicksLimit: 20
                                 }
                             },
-                            y: {
-                                beginAtZero: true,
-                                max: 1.25,
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: v => v === 1 ? '1 ▲' : (v === 0 ? '0' : ''),
-                                    color: mutedColor,
+                            yHours: {
+                                type: 'linear',
+                                position: 'left',
+                                min: 0,
+                                title: {
+                                    display: true,
+                                    text: 'Heures',
+                                    color: '#3b82f6',
                                     font: {
-                                        size: 10,
-                                        weight: 'bold'
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    callback: v => v + 'h',
+                                    color: '#3b82f6',
+                                    font: {
+                                        size: 10
                                     }
                                 },
                                 grid: {
                                     color: gridColor
                                 }
                             },
-                            yMinutes: {
+                            yMin: {
                                 type: 'linear',
                                 position: 'right',
-                                display: true,
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                ticks: {
-                                    color: '#f97316',
+                                min: 0,
+                                title: {
+                                    display: true,
+                                    text: 'Retard (min)',
+                                    color: '#f59e0b',
                                     font: {
                                         size: 10
                                     }
+                                },
+                                ticks: {
+                                    callback: v => v + ' min',
+                                    color: '#f59e0b',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
                                 }
                             }
                         }
