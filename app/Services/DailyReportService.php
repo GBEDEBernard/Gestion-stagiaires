@@ -17,7 +17,8 @@ class DailyReportService
 {
     public function __construct(
         private UserProfileLinkService $profileLinkService,
-        private NotificationService $notificationService
+        private NotificationService $notificationService,
+        private EmailNotificationService $emailNotificationService,
     ) {}
 
     public function resolveActiveStageForUser(User $user): ?Stage
@@ -196,5 +197,8 @@ class DailyReportService
                     'blue'
                 );
             });
+
+        // Notification email aux superviseurs/admins
+        $this->emailNotificationService->notifyReportSubmitted($task);
     }
 }

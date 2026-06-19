@@ -22,7 +22,7 @@ class AttestationController extends Controller
     {
         $stage->load([
             'etudiant.personnel',
-            'service',
+            'domaine',
             'typestage',
             'attestation.signataires.user.personnel',
         ]);
@@ -243,7 +243,7 @@ class AttestationController extends Controller
     {
         $stage->load([
             'etudiant.personnel',
-            'service',
+            'domaine',
             'typestage',
             'attestation.signataires'
         ]);

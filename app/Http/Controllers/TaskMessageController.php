@@ -9,6 +9,7 @@ use App\Models\TaskMessage;
 use App\Models\TaskRead;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\EmailNotificationService;
 use App\Services\TaskThreadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ class TaskMessageController extends Controller
 {
     public function __construct(
         protected NotificationService $notifications,
+        protected EmailNotificationService $emailService,
         protected TaskThreadService $thread
     ) {}
 
@@ -72,6 +74,8 @@ class TaskMessageController extends Controller
 
         // L'auteur a « lu » son propre message.
         $this->touchRead($task, $user->id, $message->id);
+
+        $this->emailService->notifyNewMessage($task, $user, $data['body']);
 
         $this->notifyOtherParty($task, $user, $data['body']);
 
