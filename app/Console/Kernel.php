@@ -12,14 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Rappel départ à 18h30
+        // Rappel départ à 18h30 (email + in-app)
         $schedule->command('attendance:auto-checkout --notify-only')
             ->dailyAt('18:30')
             ->withoutOverlapping();
 
-        // Auto check-out à 19h00
+        // Auto check-out à 19h30 (email + in-app)
         $schedule->command('attendance:auto-checkout')
-            ->dailyAt('19:00')
+            ->dailyAt('19:30')
             ->withoutOverlapping();
     }
 
