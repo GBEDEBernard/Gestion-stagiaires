@@ -307,6 +307,30 @@
                                     </template>
 
                                     <span x-text="message.comment" class="block"></span>
+
+                                    <template x-if="message.attachment_url">
+                                        <div class="mt-2">
+                                            <template x-if="message.attachment_type === 'image'">
+                                                <a :href="message.attachment_url" target="_blank"
+                                                   class="block rounded-lg overflow-hidden border border-black/10 hover:opacity-90 transition">
+                                                    <img :src="message.attachment_url"
+                                                         :alt="message.attachment_name || 'Image'"
+                                                         class="max-w-full h-auto max-h-48 object-cover rounded-lg">
+                                                </a>
+                                            </template>
+                                            <template x-if="message.attachment_type === 'file'">
+                                                <a :href="message.attachment_url" target="_blank"
+                                                   class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 transition text-xs font-medium">
+                                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                    </svg>
+                                                    <span class="truncate" x-text="message.attachment_name || 'Fichier'"></span>
+                                                </a>
+                                            </template>
+                                        </div>
+                                    </template>
+
                                     <template x-if="message.edited_at">
                                         <span class="text-[10px] opacity-60 ml-1">(modifié)</span>
                                     </template>
@@ -364,6 +388,29 @@
         {{-- ── Zone de saisie ── --}}
         @if(!$task->isCompleted() && $canComment)
         <div class="chat-footer border-t border-black/5 bg-white px-3 py-3 flex-shrink-0 safe-area-bottom">
+
+            <template x-if="attachedFile">
+                <div class="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-gray-100 rounded-lg text-xs text-gray-700">
+                    <template x-if="attachedPreview">
+                        <img :src="attachedPreview"
+                             class="w-8 h-8 rounded object-cover flex-shrink-0 shadow-sm">
+                    </template>
+                    <template x-if="!attachedPreview">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
+                        </svg>
+                    </template>
+                    <span class="truncate flex-1" x-text="attachedFile.name"></span>
+                    <button type="button" @click="removeAttachment()"
+                            class="p-0.5 rounded hover:bg-black/10 text-gray-500 hover:text-red-500 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+
             <form class="flex items-end gap-2"
                   id="chat-form-{{ $report->id }}"
                   @submit.prevent="submitMessage">
@@ -371,6 +418,7 @@
 
                 {{-- Bouton pièce jointe --}}
                 <button type="button"
+                        @click="$refs.fileInput.click()"
                         class="chat-attach-btn flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200
                                transition flex items-center justify-center text-gray-500 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,6 +426,22 @@
                               d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
                     </svg>
                 </button>
+
+                <input type="file"
+                       id="chat-file-{{ $report->id }}"
+                       name="attachment"
+                       x-ref="fileInput"
+                       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.zip"
+                       class="hidden"
+                       @change="
+                           attachedFile = $event.target.files[0];
+                           attachedPreview = null;
+                           if (attachedFile && attachedFile.type.startsWith('image/')) {
+                               const reader = new FileReader();
+                               reader.onload = e => attachedPreview = e.target.result;
+                               reader.readAsDataURL(attachedFile);
+                           }
+                       ">
 
                 {{-- Textarea saisie — classe chat-input-area pour le dark mode ── --}}
                 <textarea name="comment"
@@ -427,9 +491,18 @@ document.addEventListener('alpine:init', () => {
         messages: initialMessages,
         editingId: null,
         editContent: '',
+        attachedFile: null,
+        attachedPreview: null,
         storeUrl:         config.storeUrl,
         updateUrlPattern: config.updateUrlPattern,
         deleteUrlPattern: config.deleteUrlPattern,
+
+        removeAttachment() {
+            this.attachedFile = null;
+            this.attachedPreview = null;
+            const input = document.getElementById('chat-file-{{ $report->id }}');
+            if (input) input.value = '';
+        },
 
         getAvatarColor(name) {
             const n = name || 'S';
@@ -485,6 +558,11 @@ document.addEventListener('alpine:init', () => {
             formData.append('comment', comment);
             formData.append('_token', form.querySelector('[name="_token"]').value);
 
+            const fileInput = document.getElementById('chat-file-{{ $report->id }}');
+            if (fileInput && fileInput.files[0]) {
+                formData.append('attachment', fileInput.files[0]);
+            }
+
             try {
                 const response = await fetch(this.storeUrl, {
                     method: 'POST',
@@ -497,6 +575,9 @@ document.addEventListener('alpine:init', () => {
                     this.messages.push(result.review);
                     textarea.value       = '';
                     textarea.style.height = '42px';
+                    this.attachedFile = null;
+                    this.attachedPreview = null;
+                    if (fileInput) fileInput.value = '';
                     this.$nextTick(() => { this.scrollToBottom(); });
                 } else {
                     const err = await response.json().catch(() => ({}));

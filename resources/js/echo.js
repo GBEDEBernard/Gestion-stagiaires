@@ -16,8 +16,15 @@ let Echo = null;
 window.Echo = null;
 
 async function initEcho() {
+    const wsHost = import.meta.env.VITE_PUSHER_HOST;
+    if (!wsHost) {
+        console.log('[Echo] Skipped — VITE_PUSHER_HOST not configured');
+        Echo = null;
+        window.Echo = null;
+        return;
+    }
+
     try {
-        // Attempt to import dependencies lazily so Vite can target older browsers.
         const [{ default: EchoLib }, Pusher] = await Promise.all([
             import('laravel-echo'),
             import('pusher-js'),
@@ -29,7 +36,7 @@ async function initEcho() {
             broadcaster: 'pusher',
             key: import.meta.env.VITE_PUSHER_APP_KEY || 'gestion-stagiaires-key',
             cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt',
-            wsHost: import.meta.env.VITE_PUSHER_HOST || window.location.hostname,
+            wsHost,
             wsPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '6001', 10),
             wssPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '443', 10),
             scheme: import.meta.env.VITE_PUSHER_SCHEME || 'http',

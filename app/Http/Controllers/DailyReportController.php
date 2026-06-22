@@ -233,15 +233,37 @@ class DailyReportController extends Controller
         }
 
         $data = $request->validate([
-            'comment' => 'required|string|max:5000',
+            'comment'   => 'required|string|max:5000',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,zip|max:20480',
         ]);
 
+        $attachmentType = null;
+        $attachmentPath = null;
+        $attachmentName = null;
+        $attachmentMime = null;
+        $attachmentSize = null;
+
+        if ($request->hasFile('attachment')) {
+            $file           = $request->file('attachment');
+            $extension      = strtolower($file->getClientOriginalExtension());
+            $attachmentType = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']) ? 'image' : 'file';
+            $attachmentPath = $file->store('chat-attachments', 'public');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentMime = $file->getClientMimeType();
+            $attachmentSize = $file->getSize();
+        }
+
         $review = DailyReportReview::create([
-            'daily_report_id' => $report->id,
-            'reviewer_id'     => $user->id,
-            'comment'         => $data['comment'],
-            'reviewed_at'     => now(),
-            'action'          => $user->hasAnyRole(['admin', 'superviseur']) ? 'comment' : 'author_reply',
+            'daily_report_id'  => $report->id,
+            'reviewer_id'      => $user->id,
+            'comment'          => $data['comment'],
+            'reviewed_at'      => now(),
+            'action'           => $user->hasAnyRole(['admin', 'superviseur']) ? 'comment' : 'author_reply',
+            'attachment_type'  => $attachmentType,
+            'attachment_path'  => $attachmentPath,
+            'attachment_name'  => $attachmentName,
+            'attachment_mime'  => $attachmentMime,
+            'attachment_size'  => $attachmentSize,
         ]);
 
         // Marquer le rapport comme relu si c'est un superviseur/admin.
