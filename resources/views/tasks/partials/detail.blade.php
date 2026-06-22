@@ -37,54 +37,220 @@
     };
 @endphp
 
-{{-- Animations --}}
 <style>
-@keyframes d-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+/* ── Animations ── */
+@keyframes d-in    { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @keyframes d-pulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:0;transform:scale(2.2)} }
-@keyframes bubble-right { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
-@keyframes bubble-left  { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
 .d-in   { animation: d-in .36s cubic-bezier(.16,1,.3,1) both; }
 .d-in-2 { animation: d-in .36s .06s cubic-bezier(.16,1,.3,1) both; }
 .d-in-3 { animation: d-in .36s .12s cubic-bezier(.16,1,.3,1) both; }
 .d-pulse{ animation: d-pulse 2s ease-in-out infinite; }
 
+/* ── Dark overrides généraux ── */
 .ws-root.dark .bg-white,
-.ws-root.dark .d-in>.bg-white { background: #18181b; }
-.ws-root.dark .text-black { color: #fff; }
+.ws-root.dark .d-in>.bg-white        { background: #18181b; }
+.ws-root.dark .text-black             { color: #fff; }
 .ws-root.dark .text-black\/70,
 .ws-root.dark .text-black\/60,
 .ws-root.dark .text-black\/45,
 .ws-root.dark .text-black\/50,
-.ws-root.dark .text-black\/40 { color: rgba(255,255,255,.6); }
+.ws-root.dark .text-black\/40         { color: rgba(255,255,255,.70); }
 .ws-root.dark .border-black\/7,
 .ws-root.dark .border-black\/8,
 .ws-root.dark .border-black\/6,
 .ws-root.dark .border-black\/5,
-.ws-root.dark .divide-black\/5 > * { border-color: rgba(255,255,255,.08); }
+.ws-root.dark .divide-black\/5 > *    { border-color: rgba(255,255,255,.08); }
 .ws-root.dark .bg-black\/4,
 .ws-root.dark .bg-black\/2\.5,
 .ws-root.dark .bg-black\/5,
 .ws-root.dark .bg-black\/3,
 .ws-root.dark .bg-black\/6,
-.ws-root.dark .bg-black\/7 { background: rgba(255,255,255,.05); }
-.ws-root.dark .bg-black { background: #fff; color: #0a0a0a; }
-.ws-root.dark .bg-slate-50 { background: rgba(255,255,255,.04); }
-.ws-root.dark .bg-slate-50 svg { opacity: .5; }
-.ws-root.dark .d-section-label { color: rgba(255,255,255,.5); }
-.ws-root.dark .d-input { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.09); color: #fff; }
-.ws-root.dark .d-input:focus { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.2); }
+.ws-root.dark .bg-black\/7            { background: rgba(255,255,255,.05); }
+.ws-root.dark .bg-black               { background: #fff; color: #0a0a0a; }
+.ws-root.dark .bg-slate-50            { background: rgba(255,255,255,.04); }
+.ws-root.dark .bg-slate-50 svg        { opacity: .5; }
+.ws-root.dark .d-section-label        { color: rgba(255,255,255,.55); }
+.ws-root.dark .shadow-sm              { box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.25); }
+.ws-root.dark .d-ring-track           { stroke: rgba(255,255,255,.12); }
+.ws-root.dark .d-ring-fill            { stroke: #fff; }
+.ws-root.dark .text-emerald-700       { color: #34d399; }
+.ws-root.dark .bg-emerald-50          { background: rgba(5,150,105,.15); }
+.ws-root.dark .border-emerald-200     { border-color: rgba(5,150,105,.25); }
+
+/* ── d-input light ── */
+.d-input {
+    display: block;
+    width: 100%;
+    background: rgba(0,0,0,.03);
+    border: 1.5px solid rgba(0,0,0,.09);
+    border-radius: .75rem;
+    padding: .625rem .875rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    color: #0a0a0a;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.d-input::placeholder { color: rgba(0,0,0,.32); }
+.d-input:focus {
+    background: #fff;
+    border-color: rgba(0,0,0,.22);
+    box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+    outline: none;
+}
+
+/* ── d-input dark ── */
+.ws-root.dark .d-input {
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.12);
+    color: #ffffff;
+}
+.ws-root.dark .d-input::placeholder { color: rgba(255,255,255,.35); }
+.ws-root.dark .d-input:focus {
+    background: rgba(255,255,255,.09);
+    border-color: rgba(255,255,255,.25);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+    color: #ffffff;
+}
+
+/* ── d-range ── */
+.d-range { accent-color: #0a0a0a; width: 100%; }
 .ws-root.dark .d-range { accent-color: #fff; }
+.ws-root.dark input[type="range"].d-range { background: rgba(255,255,255,.1); }
+
+/* ── Boutons ── */
+.d-btn-dark {
+    display: inline-flex; align-items: center; gap: .5rem;
+    height: 2.5rem; padding: 0 1.125rem;
+    background: #0a0a0a; color: #fff;
+    font-size: .875rem; font-weight: 500;
+    border: none; border-radius: .75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15), 0 4px 16px rgba(0,0,0,.10);
+    transition: background .18s, transform .18s, box-shadow .18s;
+    cursor: pointer;
+}
+.d-btn-dark:hover { background: #222; transform: translateY(-1px); }
 .ws-root.dark .d-btn-dark { background: #fff; color: #0a0a0a; }
 .ws-root.dark .d-btn-dark:hover { background: #e5e5e5; }
-.ws-root.dark .d-btn-ghost { color: rgba(255,255,255,.4); }
-.ws-root.dark .d-btn-ghost:hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
-.ws-root.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.25); }
-.ws-root.dark input[type="range"].d-range { background: rgba(255,255,255,.1); }
-.ws-root.dark .d-ring-track { stroke: rgba(255,255,255,.12); }
-.ws-root.dark .d-ring-fill { stroke: #fff; }
-.ws-root.dark .text-emerald-700 { color: #34d399; }
-.ws-root.dark .bg-emerald-50 { background: rgba(5,150,105,.15); }
-.ws-root.dark .border-emerald-200 { border-color: rgba(5,150,105,.25); }
+
+.d-btn-ghost {
+    display: inline-flex; align-items: center; gap: .375rem;
+    padding: .375rem .75rem;
+    background: transparent; color: var(--ws-text-muted);
+    font-size: .8125rem; font-weight: 500;
+    border: none; border-radius: .625rem;
+    cursor: pointer; transition: background .15s, color .15s;
+}
+.d-btn-ghost:hover { background: rgba(0,0,0,.05); }
+.ws-root.dark .d-btn-ghost { color: rgba(255,255,255,.50); }
+.ws-root.dark .d-btn-ghost:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); }
+
+.d-btn-green {
+    display: inline-flex; align-items: center; gap: .375rem;
+    height: 2rem; padding: 0 .875rem;
+    background: #059669; color: #fff;
+    font-size: .8125rem; font-weight: 500;
+    border: none; border-radius: .625rem;
+    cursor: pointer; transition: background .15s;
+}
+.d-btn-green:hover { background: #047857; }
+
+.d-btn-amber {
+    display: inline-flex; align-items: center; gap: .375rem;
+    height: 2rem; padding: 0 .875rem;
+    background: #d97706; color: #fff;
+    font-size: .8125rem; font-weight: 500;
+    border: none; border-radius: .625rem;
+    cursor: pointer; transition: background .15s;
+}
+.d-btn-amber:hover { background: #b45309; }
+
+/* ── Labels de section ── */
+.d-section-label {
+    display: block;
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: rgba(0,0,0,.45);
+    margin-bottom: .375rem;
+}
+
+/* ── Formulaire rapport : champs avec label flottant ── */
+.d-field { position: relative; }
+.d-field-label {
+    display: block;
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: rgba(0,0,0,.50);
+    margin-bottom: .375rem;
+}
+.ws-root.dark .d-field-label { color: rgba(255,255,255,.65); }
+
+/* ── Zone progression ── */
+.d-progress-shell {
+    background: rgba(0,0,0,.03);
+    border: 1.5px solid rgba(0,0,0,.08);
+    border-radius: .875rem;
+    padding: 1rem 1.125rem;
+}
+.ws-root.dark .d-progress-shell {
+    background: rgba(255,255,255,.04);
+    border-color: rgba(255,255,255,.10);
+}
+.d-progress-track {
+    height: 6px;
+    background: rgba(0,0,0,.08);
+    border-radius: 99px;
+    overflow: hidden;
+    margin: .625rem 0 .5rem;
+}
+.ws-root.dark .d-progress-track { background: rgba(255,255,255,.12); }
+.d-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #6366f1, #3b82f6);
+    transition: width .3s ease;
+}
+
+/* ── Badge pct ── */
+.d-pct-badge {
+    display: inline-flex; align-items: center;
+    height: 1.625rem; padding: 0 .625rem;
+    background: #0a0a0a; color: #fff;
+    font-size: .75rem; font-family: 'DM Mono', monospace; font-weight: 500;
+    border-radius: .5rem;
+}
+.ws-root.dark .d-pct-badge { background: #fff; color: #0a0a0a; }
+
+/* ── Carte rapport déposé ── */
+.d-report-done {
+    background: rgba(5,150,105,.06);
+    border: 1.5px solid rgba(5,150,105,.18);
+    border-radius: .875rem;
+    padding: 1rem 1.25rem;
+}
+.ws-root.dark .d-report-done {
+    background: rgba(5,150,105,.12);
+    border-color: rgba(5,150,105,.28);
+}
+
+/* ── Divider ── */
+.d-divider { height:1px; background: rgba(0,0,0,.06); }
+.ws-root.dark .d-divider { background: rgba(255,255,255,.08); }
+
+/* ── Rapport form wrapper ── */
+.d-form-section {
+    background: rgba(99,102,241,.03);
+    border: 1.5px solid rgba(99,102,241,.10);
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+.ws-root.dark .d-form-section {
+    background: rgba(99,102,241,.06);
+    border-color: rgba(99,102,241,.18);
+}
 </style>
 
 <div class="space-y-0 d-in">
@@ -93,7 +259,7 @@
         {{-- Barre priorité --}}
         <div class="h-[3px]" style="background:{{ $priorityBarGradient }};"></div>
 
-        {{-- EN-TÊTE TÂCHE --}}
+        {{-- ── EN-TÊTE TÂCHE ── --}}
         <div class="px-6 pt-5 pb-5">
             <div class="flex items-start justify-between gap-4">
                 <div class="flex items-start gap-4 min-w-0">
@@ -115,11 +281,13 @@
                     <div class="min-w-0 flex-1">
                         <h2 class="text-xl font-semibold tracking-tight text-black">{{ $task->title }}</h2>
                         <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold" style="background:{{ $stateMeta['bg'] }};color:{{ $stateMeta['color'] }};">
+                            <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold"
+                                  style="background:{{ $stateMeta['bg'] }};color:{{ $stateMeta['color'] }};">
                                 <span class="d-pulse inline-block h-1.5 w-1.5 rounded-full" style="background:{{ $stateMeta['color'] }};"></span>
                                 {{ $stateMeta['label'] }}
                             </span>
-                            <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold" style="background:{{ $priorityMeta['bg'] }};color:{{ $priorityMeta['color'] }};">
+                            <span class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold"
+                                  style="background:{{ $priorityMeta['bg'] }};color:{{ $priorityMeta['color'] }};">
                                 {{ $priorityMeta['label'] }}
                             </span>
                             @if($task->isOverdue())
@@ -150,17 +318,26 @@
                     @if($isAdmin)
                         @if($task->isCompleted())
                         <form method="POST" action="{{ encrypted_route('tasks.reopen', $task) }}">@csrf
-                            <button class="d-btn-amber"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75M3.75 10.5h12A1.5 1.5 0 0 1 17.25 12v6a1.5 1.5 0 0 1-1.5 1.5h-12a1.5 1.5 0 0 1-1.5-1.5v-6a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>Rouvrir</button>
+                            <button class="d-btn-amber">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75M3.75 10.5h12A1.5 1.5 0 0 1 17.25 12v6a1.5 1.5 0 0 1-1.5 1.5h-12a1.5 1.5 0 0 1-1.5-1.5v-6a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
+                                Rouvrir
+                            </button>
                         </form>
                         @else
                         <form method="POST" action="{{ encrypted_route('tasks.complete', $task) }}" onsubmit="return confirm('Clôturer cette tâche ?')">@csrf
-                            <button class="d-btn-green"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>Terminer</button>
+                            <button class="d-btn-green">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
+                                Terminer
+                            </button>
                         </form>
                         @endif
                     @elseif($isReviewer && !$task->isCompleted())
                     <form method="POST" action="{{ encrypted_route('tasks.review', $task) }}">@csrf
                         <input type="hidden" name="action" value="request_changes">
-                        <button class="d-btn-amber"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>Corrections</button>
+                        <button class="d-btn-amber">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                            Corrections
+                        </button>
                     </form>
                     @endif
 
@@ -168,7 +345,9 @@
                     <div class="relative" x-data="{open:false}" @keydown.escape.window="open=false">
                         <button type="button" @click="open=!open" @click.outside="open=false"
                                 class="d-btn-ghost h-9 w-9 p-0 justify-center rounded-xl">
-                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"/></svg>
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 7.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"/>
+                            </svg>
                         </button>
                         <div x-show="open" x-cloak x-transition.origin.top.right
                              class="absolute right-0 z-30 mt-1.5 w-44 rounded-xl border border-black/8 p-1.5 bg-white shadow-lg">
@@ -225,9 +404,9 @@
             @endif
         </div>
 
-        <div class="border-t border-black/7"></div>
+        <div class="d-divider"></div>
 
-        {{-- SECTION RAPPORTS --}}
+        {{-- ── SECTION RAPPORTS ── --}}
         <div class="flex items-center justify-between px-6 py-4">
             <div>
                 <h3 class="text-sm font-semibold text-black">Rapports d'activité académiques</h3>
@@ -330,72 +509,199 @@
         </div>
         @endif
 
-        {{-- FORMULAIRE RAPPORT DU JOUR --}}
+        {{-- ── FORMULAIRE RAPPORT DU JOUR ── --}}
         @if($isOwner && !$task->isCompleted())
-        <div class="border-t border-black/7"></div>
+        <div class="d-divider"></div>
+
         <div class="px-6 py-5" x-data="{ open: {{ $isFirstReport ? 'true' : 'false' }}, prog: {{ (int) $task->last_progress_percent }} }">
-            <button type="button" @click="open = !open" class="w-full flex items-center justify-between gap-4 text-left group">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-700">{{ $isFirstReport ? 'Premier rapport' : 'Rapport du jour' }}</span>
-                    <p class="text-sm font-semibold mt-0.5 text-black">{{ $todayReport ? "Rapport déposé aujourd'hui — Modifier ↗" : "Déposer un rapport d'activité" }}</p>
+
+            {{-- Toggle header --}}
+            <button type="button" @click="open = !open"
+                    class="w-full flex items-center justify-between gap-4 text-left group">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-xl shrink-0"
+                         :style="open
+                            ? 'background: linear-gradient(135deg,#6366f1,#3b82f6); color:#fff;'
+                            : 'background:rgba(99,102,241,.10); color:#6366f1;'">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.1 2.1 0 1 1 2.97 2.97L6.75 20.54l-4 1 1-4 13.112-13.053Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-[.15em]"
+                              style="color:#6366f1;">{{ $isFirstReport ? 'Premier rapport' : 'Rapport du jour' }}</span>
+                        <p class="text-sm font-semibold mt-0.5 text-black">
+                            {{ $todayReport ? "Rapport déposé aujourd'hui — Modifier ↗" : "Déposer un rapport d'activité" }}
+                        </p>
+                    </div>
                 </div>
-                <span class="flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition-all bg-black/5 text-black/50"
-                                             :style="open ? 'background:var(--ws-text);color:var(--ws-bg);transform:rotate(180deg)' : 'background:var(--ws-text-dim);color:var(--ws-text-soft)'">
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition-all"
+                      :style="open
+                        ? 'background:rgba(99,102,241,.12);color:#6366f1;transform:rotate(180deg)'
+                        : 'background:rgba(0,0,0,.05);color:rgba(0,0,0,.40)'">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/>
                     </svg>
                 </span>
             </button>
+
+            {{-- Corps collapsible --}}
             <div x-show="open" x-collapse>
-                <div class="mt-4">
+                <div class="mt-5">
+
+                    {{-- ── Rapport déjà déposé aujourd'hui ── --}}
                     @if($todayReport)
-                    <div class="rounded-xl p-4 mb-3 bg-emerald-50 border border-emerald-200">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-sm font-semibold text-emerald-700">✓ Aujourd'hui · {{ (int)$todayReport->task_progress_percent }}%</span>
-                            <a href="{{ route('reports.edit', $todayReport->id) }}" class="text-xs font-medium text-black/50 hover:underline">Modifier →</a>
-                        </div>
-                        @if($todayReport->introduction)<div class="mb-2"><span class="d-section-label">Introduction</span><p class="text-sm text-black/70">{{ $todayReport->introduction }}</p></div>@endif
-                        <div class="mb-2"><span class="d-section-label">Travail réalisé</span><p class="text-sm text-black/70">{{ $todayReport->summary }}</p></div>
-                        @if($todayReport->blockers)<div class="mb-2"><span class="d-section-label text-red-500/50">Difficultés</span><p class="text-sm text-red-700/80">{{ $todayReport->blockers }}</p></div>@endif
-                        @if($todayReport->next_steps)<div><span class="d-section-label text-indigo-500/50">Prochaines étapes</span><p class="text-sm text-indigo-900/80">{{ $todayReport->next_steps }}</p></div>@endif
-                    </div>
-                    @else
-                    <form method="POST" action="{{ route('reports.store') }}" class="space-y-4">
-                        @csrf
-                        <input type="hidden" name="status_action" value="submit">
-                        <input type="hidden" name="task_id" value="{{ $task->id }}">
-                        <div><label class="d-section-label">Introduction</label>
-                            <textarea name="introduction" rows="2" class="d-input resize-none" placeholder="Contexte, objectifs du jour..."></textarea></div>
-                        <div><label class="d-section-label">Travail réalisé <span class="text-red-500">*</span></label>
-                            <textarea name="summary" rows="4" required class="d-input resize-none" placeholder="Ce que tu as accompli aujourd'hui…"></textarea></div>
-                        <div class="rounded-xl px-4 py-3 bg-black/3 border border-black/6">
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="d-section-label mb-0">Progression</label>
-                                <span class="font-mono text-sm font-bold px-2 py-0.5 rounded-lg bg-black text-white" x-text="prog+'%'"></span>
+                    <div class="d-report-done">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15">
+                                    <svg class="h-3.5 w-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </span>
+                                <span class="text-sm font-semibold text-emerald-700">Rapport soumis · {{ (int)$todayReport->task_progress_percent }}%</span>
                             </div>
-                            <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="d-range w-full">
+                            <a href="{{ route('reports.edit', $todayReport->id) }}"
+                               class="text-xs font-medium text-black/50 hover:text-black/80 transition hover:underline">
+                                Modifier →
+                            </a>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div><label class="d-section-label">Difficultés</label><input type="text" name="blockers" placeholder="Optionnel" class="d-input"></div>
-                            <div><label class="d-section-label">Heures déclarées</label><input type="number" name="hours_declared" min="0" max="24" step="0.5" placeholder="ex : 7.5" class="d-input"></div>
+                        <div class="space-y-3">
+                            @if($todayReport->introduction)
+                            <div>
+                                <span class="d-section-label">Introduction</span>
+                                <p class="text-sm text-black/70 leading-relaxed">{{ $todayReport->introduction }}</p>
+                            </div>
+                            @endif
+                            <div>
+                                <span class="d-section-label">Travail réalisé</span>
+                                <p class="text-sm text-black/70 leading-relaxed">{{ $todayReport->summary }}</p>
+                            </div>
+                            @if($todayReport->blockers)
+                            <div>
+                                <span class="d-section-label" style="color:rgba(239,68,68,.55);">Difficultés</span>
+                                <p class="text-sm leading-relaxed" style="color:rgba(185,28,28,.75);">{{ $todayReport->blockers }}</p>
+                            </div>
+                            @endif
+                            @if($todayReport->next_steps)
+                            <div>
+                                <span class="d-section-label" style="color:rgba(99,102,241,.6);">Prochaines étapes</span>
+                                <p class="text-sm leading-relaxed" style="color:rgba(55,48,163,.75);">{{ $todayReport->next_steps }}</p>
+                            </div>
+                            @endif
                         </div>
-                        <div><label class="d-section-label">Prochaines étapes</label>
-                            <textarea name="next_steps" rows="2" class="d-input resize-none" placeholder="Prochaines actions prévues..."></textarea></div>
-                        <div class="flex justify-end pt-1">
-                            <button type="submit" class="d-btn-dark">
-                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/></svg>
-                                {{ $isFirstReport ? 'Soumettre le premier rapport' : 'Soumettre le rapport' }}
-                            </button>
+                    </div>
+
+                    {{-- ── Formulaire nouveau rapport ── --}}
+                    @else
+                    <div class="d-form-section">
+
+                        {{-- En-tête formulaire --}}
+                        <div class="flex items-center gap-2 mb-5 pb-4" style="border-bottom:1.5px solid rgba(99,102,241,.12);">
+                            <svg class="h-4 w-4 shrink-0" style="color:#6366f1;" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/>
+                            </svg>
+                            <p class="text-[11px] font-semibold uppercase tracking-[.14em]" style="color:#6366f1;">
+                                Nouveau rapport — {{ now()->isoFormat('dddd D MMMM') }}
+                            </p>
                         </div>
-                    </form>
+
+                        <form method="POST" action="{{ route('reports.store') }}" class="space-y-5">
+                            @csrf
+                            <input type="hidden" name="status_action" value="submit">
+                            <input type="hidden" name="task_id" value="{{ $task->id }}">
+
+                            {{-- Introduction --}}
+                            <div class="d-field">
+                                <label class="d-field-label">Introduction <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                <textarea name="introduction" rows="2"
+                                          class="d-input resize-none"
+                                          placeholder="Contexte du jour, objectifs fixés…"></textarea>
+                            </div>
+
+                            {{-- Travail réalisé --}}
+                            <div class="d-field">
+                                <label class="d-field-label">
+                                    Travail réalisé
+                                    <span style="color:#ef4444;">*</span>
+                                </label>
+                                <textarea name="summary" rows="4" required
+                                          class="d-input resize-none"
+                                          placeholder="Décris précisément ce que tu as accompli aujourd'hui…"></textarea>
+                            </div>
+
+                            {{-- Progression --}}
+                            <div class="d-field">
+                                <div class="d-progress-shell">
+                                    <div class="flex items-center justify-between">
+                                        <label class="d-field-label mb-0">Progression de la tâche</label>
+                                        <span class="d-pct-badge" x-text="prog + '%'"></span>
+                                    </div>
+                                    <div class="d-progress-track">
+                                        <div class="d-progress-fill" :style="`width:${prog}%`"></div>
+                                    </div>
+                                    <input type="range" name="task_progress_percent"
+                                           min="0" max="100" step="5"
+                                           x-model="prog"
+                                           class="d-range">
+                                    <div class="flex justify-between mt-1.5">
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">0%</span>
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">50%</span>
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">100%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Difficultés + Heures --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="d-field">
+                                    <label class="d-field-label">Difficultés rencontrées <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                    <input type="text" name="blockers"
+                                           class="d-input"
+                                           placeholder="Ex : accès API indisponible…">
+                                </div>
+                                <div class="d-field">
+                                    <label class="d-field-label">Heures travaillées</label>
+                                    <input type="number" name="hours_declared"
+                                           min="0" max="24" step="0.5"
+                                           class="d-input"
+                                           placeholder="Ex : 7.5">
+                                </div>
+                            </div>
+
+                            {{-- Prochaines étapes --}}
+                            <div class="d-field">
+                                <label class="d-field-label">Prochaines étapes <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                <textarea name="next_steps" rows="2"
+                                          class="d-input resize-none"
+                                          placeholder="Ce que tu prévois pour la prochaine session…"></textarea>
+                            </div>
+
+                            {{-- Footer formulaire --}}
+                            <div class="flex items-center justify-between pt-1" style="border-top:1.5px solid rgba(99,102,241,.10);">
+                                <p class="text-xs" style="color:rgba(0,0,0,.35);">
+                                    <svg class="inline h-3 w-3 mr-1 opacity-60" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                                    Un seul rapport par jour
+                                </p>
+                                <button type="submit" class="d-btn-dark">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
+                                    </svg>
+                                    {{ $isFirstReport ? 'Soumettre le premier rapport' : 'Soumettre le rapport' }}
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
                     @endif
+
                 </div>
             </div>
         </div>
         @endif
+
     </div>
 </div>
-
 
 @push('scripts')
 <script>
