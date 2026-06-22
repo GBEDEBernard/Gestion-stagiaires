@@ -21,9 +21,7 @@ return new class extends Migration
                   ->cascadeOnUpdate();
             $table->foreignId('service_id')
                   ->nullable()
-                  ->constrained('services')
-                  ->nullOnDelete()
-                  ->cascadeOnUpdate();
+                  ->index();
             $table->foreignId('badge_id')
                   ->nullable()
                   ->constrained('badges')

@@ -97,6 +97,13 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
                         @endif
                     </a>
+                    {{-- Résumés IA --}}
+                    <a href="{{ route('summaries.index') }}" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 {{ request()->routeIs('summaries.*') ? 'bg-amber-500/20 text-amber-100' : 'text-white/80 hover:bg-white/5 hover:text-white' }}">
+                        <div class="p-2 rounded-xl bg-amber-500/10"><svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg></div>
+                        <span>Résumés IA</span>
+                    </a>
                 </div>
             </div>
             @endrole
@@ -161,12 +168,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @endrole
                    
                          @role('admin|superviseur')
-                        <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
-                            <span>Espace de travail</span>
-                        </a>
-                        @endrole
-                        @role('admin|superviseur')
+                         <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                             <span>Espace de travail</span>
+                         </a>
+                         @endrole
+                         @role('admin|superviseur')
+                         <a href="{{ route('admin.summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400"></div>
+                             <span>Résumés IA</span>
+                         </a>
+                         @endrole
+                         @role('admin|superviseur')
                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Statistiques Globales</span>
@@ -191,15 +204,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                             @endif
                         </a>
                       <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-2 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                           <div class="p-1 rounded-xl bg-teal-500/10">
-                            <svg class="w-3 h-3 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                          </div>
-                            <span class="relative z-10">Espace de travail</span>
-                        </a>
-                        
-                        @endif
+                            <div class="p-1 rounded-xl bg-teal-500/10">
+                             <svg class="w-3 h-3 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                             </svg>
+                           </div>
+                             <span class="relative z-10">Espace de travail</span>
+                         </a>
+                         <a href="{{ route('summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                             <span>Résumés IA</span>
+                         </a>
+                         @endif
                     </div>
                 </div>
 

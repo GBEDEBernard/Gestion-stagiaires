@@ -18,13 +18,13 @@
     $priorityBarGradient = match($task->priority) {
         'urgent' => 'linear-gradient(90deg,#ef4444,#f97316)',
         'high'   => 'linear-gradient(90deg,#f59e0b,#ef4444)',
-        'low'    => 'linear-gradient(90deg,rgba(0,0,0,.1),rgba(0,0,0,.18))',
+        'low'    => 'linear-gradient(90deg,rgba(128,128,128,.2),rgba(128,128,128,.35))',
         default  => 'linear-gradient(90deg,#6366f1,#3b82f6)',
     };
     $priorityMeta = match($task->priority) {
         'urgent' => ['label' => 'Urgente', 'color' => '#ef4444', 'bg' => 'rgba(239,68,68,.08)'],
         'high'   => ['label' => 'Haute',   'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,.08)'],
-        'low'    => ['label' => 'Basse',   'color' => 'rgba(0,0,0,.35)', 'bg' => 'rgba(0,0,0,.04)'],
+        'low'    => ['label' => 'Basse',   'color' => 'var(--ws-text-faint)', 'bg' => 'rgba(128,128,128,.1)'],
         default  => ['label' => 'Normale', 'color' => '#6366f1', 'bg' => 'rgba(99,102,241,.08)'],
     };
     $stateMeta = match($task->status) {
@@ -33,7 +33,7 @@
         'blocked'             => ['label' => 'Bloquée',               'color' => '#ef4444', 'bg' => 'rgba(239,68,68,.08)'],
         'in_progress'         => ['label' => 'En cours',              'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,.08)'],
         'changes_requested'   => ['label' => 'Corrections demandées', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,.08)'],
-        default               => ['label' => 'À faire',               'color' => 'rgba(0,0,0,.4)', 'bg' => 'rgba(0,0,0,.04)'],
+        default               => ['label' => 'À faire',               'color' => 'var(--ws-text-muted)', 'bg' => 'rgba(128,128,128,.1)'],
     };
 @endphp
 
@@ -47,6 +47,44 @@
 .d-in-2 { animation: d-in .36s .06s cubic-bezier(.16,1,.3,1) both; }
 .d-in-3 { animation: d-in .36s .12s cubic-bezier(.16,1,.3,1) both; }
 .d-pulse{ animation: d-pulse 2s ease-in-out infinite; }
+
+.ws-root.dark .bg-white,
+.ws-root.dark .d-in>.bg-white { background: #18181b; }
+.ws-root.dark .text-black { color: #fff; }
+.ws-root.dark .text-black\/70,
+.ws-root.dark .text-black\/60,
+.ws-root.dark .text-black\/45,
+.ws-root.dark .text-black\/50,
+.ws-root.dark .text-black\/40 { color: rgba(255,255,255,.6); }
+.ws-root.dark .border-black\/7,
+.ws-root.dark .border-black\/8,
+.ws-root.dark .border-black\/6,
+.ws-root.dark .border-black\/5,
+.ws-root.dark .divide-black\/5 > * { border-color: rgba(255,255,255,.08); }
+.ws-root.dark .bg-black\/4,
+.ws-root.dark .bg-black\/2\.5,
+.ws-root.dark .bg-black\/5,
+.ws-root.dark .bg-black\/3,
+.ws-root.dark .bg-black\/6,
+.ws-root.dark .bg-black\/7 { background: rgba(255,255,255,.05); }
+.ws-root.dark .bg-black { background: #fff; color: #0a0a0a; }
+.ws-root.dark .bg-slate-50 { background: rgba(255,255,255,.04); }
+.ws-root.dark .bg-slate-50 svg { opacity: .5; }
+.ws-root.dark .d-section-label { color: rgba(255,255,255,.5); }
+.ws-root.dark .d-input { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.09); color: #fff; }
+.ws-root.dark .d-input:focus { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.2); }
+.ws-root.dark .d-range { accent-color: #fff; }
+.ws-root.dark .d-btn-dark { background: #fff; color: #0a0a0a; }
+.ws-root.dark .d-btn-dark:hover { background: #e5e5e5; }
+.ws-root.dark .d-btn-ghost { color: rgba(255,255,255,.4); }
+.ws-root.dark .d-btn-ghost:hover { background: rgba(255,255,255,.05); color: rgba(255,255,255,.8); }
+.ws-root.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 8px 32px rgba(0,0,0,.25); }
+.ws-root.dark input[type="range"].d-range { background: rgba(255,255,255,.1); }
+.ws-root.dark .d-ring-track { stroke: rgba(255,255,255,.12); }
+.ws-root.dark .d-ring-fill { stroke: #fff; }
+.ws-root.dark .text-emerald-700 { color: #34d399; }
+.ws-root.dark .bg-emerald-50 { background: rgba(5,150,105,.15); }
+.ws-root.dark .border-emerald-200 { border-color: rgba(5,150,105,.25); }
 </style>
 
 <div class="space-y-0 d-in">
@@ -62,8 +100,8 @@
                     {{-- Ring progression --}}
                     <div class="hidden sm:flex shrink-0 relative w-14 h-14">
                         <svg class="-rotate-90 w-14 h-14" viewBox="0 0 56 56">
-                            <circle cx="28" cy="28" r="{{ $ringR }}" fill="none" stroke-width="4" stroke="rgba(0,0,0,.07)"/>
-                            <circle cx="28" cy="28" r="{{ $ringR }}" fill="none" stroke-width="4" stroke-linecap="round"
+                            <circle class="d-ring-track" cx="28" cy="28" r="{{ $ringR }}" fill="none" stroke-width="4" stroke="rgba(0,0,0,.07)"/>
+                            <circle class="d-ring-fill" cx="28" cy="28" r="{{ $ringR }}" fill="none" stroke-width="4" stroke-linecap="round"
                                     stroke="#0f0f0f"
                                     stroke-dasharray="{{ round($ringC,2) }}"
                                     stroke-dashoffset="{{ round($ringOff,2) }}"
@@ -302,7 +340,7 @@
                     <p class="text-sm font-semibold mt-0.5 text-black">{{ $todayReport ? "Rapport déposé aujourd'hui — Modifier ↗" : "Déposer un rapport d'activité" }}</p>
                 </div>
                 <span class="flex h-8 w-8 items-center justify-center rounded-xl shrink-0 transition-all bg-black/5 text-black/50"
-                      :style="open ? 'background:#0a0a0a;color:#fff;transform:rotate(180deg)' : 'background:rgba(0,0,0,.05);color:rgba(0,0,0,.5)'">
+                                             :style="open ? 'background:var(--ws-text);color:var(--ws-bg);transform:rotate(180deg)' : 'background:var(--ws-text-dim);color:var(--ws-text-soft)'">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/>
                     </svg>

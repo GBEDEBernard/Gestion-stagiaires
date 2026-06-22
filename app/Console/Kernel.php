@@ -21,6 +21,23 @@ class Kernel extends ConsoleKernel
         $schedule->command('attendance:auto-checkout')
             ->dailyAt('19:30')
             ->withoutOverlapping();
+
+        // Résumé IA hebdomadaire chaque vendredi à 20h00
+        $schedule->command('summaries:generate weekly')
+            ->weekly()
+            ->fridays()
+            ->at('20:00')
+            ->withoutOverlapping();
+
+        // Résumé IA mensuel le 1er de chaque mois à 20h00
+        $schedule->command('summaries:generate monthly')
+            ->monthlyOn(1, '20:00')
+            ->withoutOverlapping();
+
+        // Résumé IA annuel le 1er janvier à 20h00
+        $schedule->command('summaries:generate yearly')
+            ->yearlyOn(1, 1, '20:00')
+            ->withoutOverlapping();
     }
 
     /**

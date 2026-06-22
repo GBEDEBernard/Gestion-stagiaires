@@ -379,3 +379,18 @@ Route::middleware(['auth', 'verified'])->prefix('reports')->group(function () {
     Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])->name('reports.comments.update');
     Route::delete('comments/{review}', [DailyReportController::class, 'destroyComment'])->name('reports.comments.destroy');
 });
+
+// ---------------- Résumés IA des Rapports ----------------
+Route::middleware(['auth', 'verified'])->prefix('summaries')->group(function () {
+    Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'index'])->name('summaries.index');
+    Route::get('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'show'])->name('summaries.show');
+    Route::post('generate', [App\Http\Controllers\ReportSummaryController::class, 'generate'])->name('summaries.generate');
+});
+
+// ---------------- Résumés IA (Admin) ----------------
+Route::middleware(['auth', 'verified', 'role:admin|superviseur'])
+    ->prefix('admin/summaries')
+    ->name('admin.summaries.')
+    ->group(function () {
+        Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'adminIndex'])->name('index');
+    });
