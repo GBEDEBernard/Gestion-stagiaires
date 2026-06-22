@@ -113,6 +113,9 @@
                             class="hidden"
                             placeholder="Observation (obligatoire en cas de retard)"></textarea>
 
+                        {{-- Champ caché pour permission départ anticipé --}}
+                        <input type="hidden" id="early_departure_permission" name="early_departure_permission" value="{{ isset($has_approved_permission) && $has_approved_permission ? '1' : '0' }}">
+
                         <button type="submit" id="submitBtn"
                             class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center relative"
                             {{ isset($is_late) && $is_late ? 'disabled' : '' }}>
@@ -156,11 +159,29 @@
         </div>
     </div>
 
-    {{-- Champ caché pour permission départ anticipé --}}
-    <input type="hidden" id="early_departure_permission" name="early_departure_permission" value="0">
+    {{-- BANNIÈRE PERMISSION APPROUVÉE (pas de modale) --}}
+    @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && isset($has_approved_permission) && $has_approved_permission)
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-emerald-800">Permission de départ anticipé approuvée</p>
+            <p class="text-xs text-emerald-700 mt-0.5">
+                @if($approved_departure_time)
+                Départ autorisé à <strong>{{ $approved_departure_time }}</strong>. Vous pouvez pointer votre départ.
+                @else
+                Votre demande de départ anticipé a été approuvée. Vous pouvez pointer votre départ.
+                @endif
+            </p>
+        </div>
+    </div>
+    @endif
 
-    {{-- MODALE POUR DÉPART ANTICIPÉ (avant 18h) --}}
-    @if(isset($is_early_departure) && $is_early_departure && $type === 'départ')
+    {{-- MODALE POUR DÉPART ANTICIPÉ (avant 18h) — seulement si pas de permission déjà approuvée --}}
+    @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && (!isset($has_approved_permission) || !$has_approved_permission))
     <div id="earlyDepartureModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300" style="display: flex;">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
             <div class="p-6">
@@ -316,7 +337,7 @@
             @endif
 
             // --- Gestion de la modale départ anticipé ---
-            @if(isset($is_early_departure) && $is_early_departure && $type === 'départ')
+            @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && (!isset($has_approved_permission) || !$has_approved_permission))
             const earlyModal = document.getElementById('earlyDepartureModal');
             const earlyCheckbox = document.getElementById('earlyPermissionCheckbox');
             const earlyConfirmBtn = document.getElementById('confirmEarlyDeparture');

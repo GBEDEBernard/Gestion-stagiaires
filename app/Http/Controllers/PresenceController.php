@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\PermissionRequest;
+use App\Models\PermissionType;
 use App\Services\AdminPresenceService;
 use App\Services\PresenceService;
 use App\Services\UserProfileLinkService;
@@ -188,6 +190,25 @@ class PresenceController extends Controller
 
         $isEarlyDeparture = now()->lt(today()->setTime(18, 0));
 
+        $hasApprovedPermission = false;
+        $approvedDepartureTime = null;
+
+        if ($isEarlyDeparture) {
+            $departAnticipe = PermissionType::where('slug', 'depart-anticipe')->first();
+            if ($departAnticipe) {
+                $approved = PermissionRequest::where('user_id', $user->id)
+                    ->where('permission_type_id', $departAnticipe->id)
+                    ->where('status', 'approved')
+                    ->whereDate('created_at', today())
+                    ->first();
+
+                if ($approved) {
+                    $hasApprovedPermission = true;
+                    $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
+                }
+            }
+        }
+
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
@@ -212,6 +233,8 @@ class PresenceController extends Controller
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
                 'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ];
 
             // Calculer distance si geofence disponible
@@ -241,6 +264,8 @@ class PresenceController extends Controller
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
                 'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -266,6 +291,8 @@ class PresenceController extends Controller
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
                 'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ];
 
             // No geofence for employee preview (calculated later in service)
@@ -283,6 +310,8 @@ class PresenceController extends Controller
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
                 'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -377,7 +406,7 @@ class PresenceController extends Controller
             ]);
 
             // ✅ Départ anticipé avant 18h : permission requise
-            if ($isEarlyDeparture && $pending['type'] === 'check_out') {
+            if ($isEarlyDeparture && $pending['type'] === 'check_out' && empty($pending['has_approved_permission'])) {
                 $request->validate([
                     'early_departure_permission' => 'required|accepted',
                 ], [
