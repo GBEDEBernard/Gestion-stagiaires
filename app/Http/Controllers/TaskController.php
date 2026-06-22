@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Task;
+use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\UserProfileLinkService;
 use App\Services\EmailNotificationService;
@@ -55,8 +56,34 @@ class TaskController extends Controller
             'description' => "Tache {$task->title} creee",
         ]);
 
-        // Notification email
+        // Notification email + DB
         $this->emailService->notifyTaskCreated($task);
+
+        $url = encrypted_route('tasks.show', $task);
+        $recipients = collect();
+
+        if ($task->stage && $task->stage->supervisor_id) {
+            $recipients->push($task->stage->supervisor_id);
+        } else {
+            $supervisor = $task->owner?->profil()?->supervisor;
+            if ($supervisor) {
+                $recipients->push($supervisor->id);
+            }
+        }
+
+        User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
+
+        $recipients->unique()
+            ->reject(fn($id) => (int) $id === (int) $user->id)
+            ->each(fn($id) => $this->notifications->push(
+                (int) $id,
+                'task_created',
+                '📋 Nouvelle tâche',
+                $user->name . ' a créé « ' . Str::limit($task->title, 40) . ' »',
+                $url,
+                'clipboard-list',
+                'blue'
+            ));
 
         return redirect()
             ->to(encrypted_route('tasks.show', $task))

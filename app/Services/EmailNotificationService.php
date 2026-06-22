@@ -24,7 +24,7 @@ class EmailNotificationService
             $url = $this->urlService->forRecipient($task, $recipient);
 
             Mail::to($recipient->getEmailForVerification())
-                ->queue(new TaskCreatedMail(
+                ->send(new TaskCreatedMail(
                     $task,
                     $recipient->name,
                     NotificationGreeting::civilityForRecipient($recipient),
@@ -40,7 +40,7 @@ class EmailNotificationService
             $url = $this->urlService->forRecipient($task, $recipient);
 
             Mail::to($recipient->getEmailForVerification())
-                ->queue(new TaskReportSubmittedMail(
+                ->send(new TaskReportSubmittedMail(
                     $task,
                     $recipient->name,
                     NotificationGreeting::civilityForRecipient($recipient),
@@ -58,7 +58,7 @@ class EmailNotificationService
                 $url = $this->urlService->forRecipient($task, $recipient);
 
                 Mail::to($recipient->getEmailForVerification())
-                    ->queue(new TaskNewMessageMail(
+                    ->send(new TaskNewMessageMail(
                         $task,
                         $sender,
                         $messageBody,
@@ -79,7 +79,7 @@ class EmailNotificationService
             $url = $this->urlService->forRecipient($task, $owner);
 
             Mail::to($owner->getEmailForVerification())
-                ->queue(new TaskNewMessageMail(
+                ->send(new TaskNewMessageMail(
                     $task,
                     $sender,
                     $messageBody,
@@ -99,7 +99,7 @@ class EmailNotificationService
             $url = $this->urlService->forRecipient($task, $owner);
 
             Mail::to($owner->getEmailForVerification())
-                ->queue(new TaskReviewedMail(
+                ->send(new TaskReviewedMail(
                     $task,
                     $reviewer,
                     $action,

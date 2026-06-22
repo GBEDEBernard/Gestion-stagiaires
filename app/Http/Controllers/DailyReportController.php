@@ -6,17 +6,21 @@ use App\Http\Requests\DailyReport\StoreDailyReportRequest;
 use App\Models\DailyReport;
 use App\Models\DailyReportReview;
 use App\Models\Task;
+use App\Models\User;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
 use App\Services\EmailNotificationService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class DailyReportController extends Controller
 {
     public function __construct(
         protected DailyReportService $dailyReportService,
         protected UserProfileLinkService $profileLinkService,
-        protected EmailNotificationService $emailService
+        protected EmailNotificationService $emailService,
+        protected NotificationService $notifications
     ) {}
 
     /**
@@ -247,6 +251,58 @@ class DailyReportController extends Controller
                 'reviewed_by' => $user->id,
                 'reviewed_at' => now(),
             ]);
+        }
+
+        // Notification
+        $task = $report->task;
+        $url = $task ? encrypted_route('tasks.show', $task) : null;
+
+        if ($user->hasAnyRole(['admin', 'superviseur'])) {
+            $recipients = collect();
+
+            if ($task && $task->owner_id && (int) $task->owner_id !== (int) $user->id) {
+                $recipients->push((int) $task->owner_id);
+            }
+
+            $recipients->unique()
+                ->reject(fn($id) => (int) $id === (int) $user->id)
+                ->each(fn($id) => $this->notifications->push(
+                    (int) $id,
+                    'report_comment',
+                    '💬 Réponse sur votre rapport',
+                    $user->name . ' : ' . Str::limit($data['comment'], 60),
+                    $url,
+                    'chat',
+                    'indigo'
+                ));
+
+            if ($task && $task->owner) {
+                $this->emailService->notifyNewMessage($task, $user, $data['comment']);
+            }
+        } else {
+            $recipients = collect();
+
+            if ($task && $task->stage && $task->stage->supervisor_id) {
+                $recipients->push($task->stage->supervisor_id);
+            }
+
+            User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
+
+            $recipients->unique()
+                ->reject(fn($id) => (int) $id === (int) $user->id)
+                ->each(fn($id) => $this->notifications->push(
+                    (int) $id,
+                    'report_comment',
+                    '💬 Nouveau commentaire',
+                    $user->name . ' : ' . Str::limit($data['comment'], 60),
+                    $url,
+                    'chat',
+                    'indigo'
+                ));
+
+            if ($task) {
+                $this->emailService->notifyNewMessage($task, $user, $data['comment']);
+            }
         }
 
         if ($request->expectsJson()) {
