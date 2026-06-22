@@ -145,6 +145,16 @@
         border-color: rgba(255,255,255,.07);
         color: rgba(255,255,255,.40);
     }
+
+    /* Mobile : empêcher le scroll du body derrière le chat */
+    .chat-modal {
+        overscroll-behavior: contain;
+    }
+
+    /* Ajustement safe-area pour le footer */
+    .pb-safe {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+    }
 </style>
 
 <div class="relative inline-block w-full" x-data="chatPopupComponent({
@@ -181,8 +191,9 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          class="chat-modal fixed z-50 flex flex-col bg-white overflow-hidden border border-black/5
-                inset-0 rounded-none
-                sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[400px] sm:h-[620px] sm:rounded-2xl sm:shadow-2xl">
+                 inset-0 rounded-none
+                 sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[400px] sm:max-h-[85vh] sm:rounded-2xl sm:shadow-2xl"
+         x-trap.noscroll="chatOpen">
 
         {{-- Header --}}
         <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center justify-between flex-shrink-0">
@@ -337,7 +348,7 @@
                                 </div>
 
                                 {{-- Éditeur inline --}}
-                                <div x-show="editingId === message.id" class="min-w-[200px] mt-1">
+                                <div x-show="editingId === message.id" class="min-w-0 max-w-[90vw] sm:max-w-xs mt-1">
                                     <textarea x-model="editContent"
                                               class="inline-edit-textarea w-full px-3 py-2 rounded-2xl border border-indigo-300
                                                      focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none
@@ -387,10 +398,10 @@
 
         {{-- ── Zone de saisie ── --}}
         @if(!$task->isCompleted() && $canComment)
-        <div class="chat-footer border-t border-black/5 bg-white px-3 py-3 flex-shrink-0 safe-area-bottom">
+        <div class="chat-footer border-t border-black/5 bg-white px-3 pt-3 pb-safe flex-shrink-0 safe-area-bottom">
 
             <template x-if="attachedFile">
-                <div class="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-gray-100 rounded-lg text-xs text-gray-700">
+                <div class="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-gray-100 rounded-lg text-xs text-gray-700 min-w-0">
                     <template x-if="attachedPreview">
                         <img :src="attachedPreview"
                              class="w-8 h-8 rounded object-cover flex-shrink-0 shadow-sm">
@@ -419,7 +430,7 @@
                 {{-- Bouton pièce jointe --}}
                 <button type="button"
                         @click="$refs.fileInput.click()"
-                        class="chat-attach-btn flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200
+                        class="chat-attach-btn flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200
                                transition flex items-center justify-center text-gray-500 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -533,12 +544,16 @@ document.addEventListener('alpine:init', () => {
         openChat() {
             this.chatOpen = true;
             document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
             this.$nextTick(() => { this.scrollToBottom(); });
         },
 
         closeChat() {
             this.chatOpen = false;
             document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
         },
 
         scrollToBottom() {
