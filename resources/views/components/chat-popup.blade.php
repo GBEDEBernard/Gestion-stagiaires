@@ -2,6 +2,11 @@
 
 @php
     $sortedReviews = $report->reviews->sortBy('created_at')->values();
+    $sortedReviews->each(function ($r) {
+        if ($r->reviewer) {
+            $r->reviewer->setAttribute('avatar_url', $r->reviewer->avatar ? \Storage::url($r->reviewer->avatar) : null);
+        }
+    });
     $avatarColors = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
 
     $storeUrl         = route('reports.comments.store', $report->id);
@@ -248,10 +253,17 @@
 
                         {{-- Avatar (autres) --}}
                         <template x-if="message.reviewer_id !== {{ $user->id }}">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 shadow-sm self-end"
-                                 :style="`background: ${getAvatarColor(message.reviewer?.name || 'Système')}`">
-                                <span x-text="(message.reviewer?.name || 'S').substring(0, 2).toUpperCase()"></span>
-                            </div>
+                            <template x-if="message.reviewer?.avatar_url">
+                                <img :src="message.reviewer.avatar_url"
+                                     :alt="message.reviewer?.name || 'S'"
+                                     class="w-7 h-7 rounded-full object-cover flex-shrink-0 shadow-sm self-end">
+                            </template>
+                            <template x-if="!message.reviewer?.avatar_url">
+                                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 shadow-sm self-end"
+                                     :style="`background: ${getAvatarColor(message.reviewer?.name || 'Système')}`">
+                                    <span x-text="(message.reviewer?.name || 'S').substring(0, 2).toUpperCase()"></span>
+                                </div>
+                            </template>
                         </template>
 
                         <div class="flex flex-col min-w-0"

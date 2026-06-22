@@ -12,6 +12,7 @@ use Spatie\Permission\Traits\HasRoles;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -212,6 +213,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getPhoneAttribute()
     {
         return $this->personnel?->telephone;
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        return $this->avatar ? Storage::url($this->avatar) : null;
     }
 
     // =========================================================================

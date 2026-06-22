@@ -254,7 +254,7 @@
                     {{-- Meta chips --}}
                     <div class="flex flex-wrap gap-2 mb-5">
                         <div class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm" style="background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);">
-                            <x-avatar :name="$task->owner?->name ?? '?'" size="xs" />
+                            <x-avatar :name="$task->owner?->name ?? '?'" :src="$task->owner?->avatar_url" size="xs" />
                             <span style="color:rgba(0,0,0,.7);">{{ $task->owner?->name ?? '—' }}</span>
                         </div>
                         <div class="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm" style="background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);color:rgba(0,0,0,.6);">

@@ -296,7 +296,7 @@
                         </div>
                         <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-black/45">
                             <span class="inline-flex items-center gap-1.5">
-                                <x-avatar :name="$task->owner?->name ?? '?'" size="xs" />
+                                <x-avatar :name="$task->owner?->name ?? '?'" :src="$task->owner?->avatar_url" size="xs" />
                                 {{ $task->owner?->name ?? 'Sans propriétaire' }}
                             </span>
                             @if($task->due_date)
@@ -428,7 +428,9 @@
         <div class="divide-y divide-black/5">
             @foreach($task->dailyReports as $report)
             @php
-                $authorName = $report->etudiant?->user?->name ?? $report->user?->name ?? 'Producteur';
+                $authorUser = $report->etudiant?->user ?? $report->user;
+                $authorName = $authorUser?->name ?? 'Producteur';
+                $authorAvatarUrl = $authorUser?->avatar_url;
                 $initials   = strtoupper(substr($authorName, 0, 2));
             @endphp
 
@@ -436,7 +438,11 @@
                 {{-- En-tête rapport --}}
                 <div class="flex items-center justify-between gap-4 mb-5">
                     <div class="flex items-center gap-3">
+                        @if($authorAvatarUrl)
+                        <img src="{{ $authorAvatarUrl }}" alt="{{ $authorName }}" class="inline-flex h-9 w-9 rounded-full object-cover shrink-0">
+                        @else
                         <span class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white shrink-0 bg-black">{{ $initials }}</span>
+                        @endif
                         <div>
                             <p class="text-sm font-semibold text-black">{{ $authorName }}</p>
                             <time class="text-xs text-black/40">{{ $report->report_date->format('l j F Y') }}</time>
