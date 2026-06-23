@@ -142,7 +142,7 @@
                                 Notifié
                             </span>
                             @else
-                            <span class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                            <span class="text-xs text-gray-900 font-bold dark:text-white">Notifié</span>
                             @endif
                         </td>
 
