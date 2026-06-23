@@ -268,21 +268,21 @@ class DashboardController extends Controller
             $badgesTrash->count();
 
         // ==================== SUIVI DES POINTAGES ====================
-        $todayAttendance = AttendanceDay::whereDate('attendance_date', $today)
+        $todayAttendance = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->with(['etudiant.user', 'stage.site'])
             ->count();
 
-        $todayPresent = AttendanceDay::whereDate('attendance_date', $today)
+        $todayPresent = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->whereNotNull('first_check_in_at')
             ->count();
 
-        $todayLate = AttendanceDay::whereDate('attendance_date', $today)
+        $todayLate = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->where('arrival_status', 'late')
             ->count();
 
         $weekStart = now()->startOfWeek();
         $weekEnd = now()->endOfWeek();
-        $weekLateMinutes = AttendanceDay::whereBetween('attendance_date', [$weekStart, $weekEnd])
+        $weekLateMinutes = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$weekStart, $weekEnd])
             ->sum('late_minutes');
 
         // ==================== Retour à la Vue ====================

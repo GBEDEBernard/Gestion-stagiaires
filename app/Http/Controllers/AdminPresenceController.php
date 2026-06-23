@@ -34,7 +34,7 @@ class AdminPresenceController extends Controller
         $overview = $this->presenceService->getTodayOverview();
         $globalStats = $this->presenceService->getGlobalStats($period, $dateFrom, $dateTo);
         $groupStats = $this->presenceService->getStatsByGroup($group, $period, $dateFrom, $dateTo);
-        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->get();
+        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->forActiveUsers()->get();
         $absenceData = $this->presenceService->getAbsencesWithDetails($period, $dateFrom, $dateTo);
         $absences = $absenceData['counts'];
         $absenceDays = $absenceData['details'];
@@ -111,7 +111,7 @@ class AdminPresenceController extends Controller
 
         $globalStats = $this->presenceService->getGlobalStats($period, $dateFrom, $dateTo);
         $groupStats = $this->presenceService->getStatsByGroup($group, $period, $dateFrom, $dateTo);
-        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->get();
+        $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->forActiveUsers()->get();
         $absences = $this->presenceService->getAbsences($period, $dateFrom, $dateTo);
 
         if ($request->wantsJson()) {

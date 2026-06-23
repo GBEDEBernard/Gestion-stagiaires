@@ -108,6 +108,19 @@ class AttendanceDay extends Model
         return $this->lateAnomaly?->payload['message_observation'] ?? null;
     }
 
+    /**
+     * Restreint aux utilisateurs actifs (status = 'actif').
+     * Exclut les enregistrements dont l'utilisateur (employé via user_id
+     * ou étudiant via etudiant_id -> etudiant.user) est désactivé.
+     */
+    public function scopeForActiveUsers($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereHas('user', fn ($q) => $q->where('status', 'actif'))
+              ->orWhereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'));
+        });
+    }
+
     // ========== SCOPES ==========
 
     /**

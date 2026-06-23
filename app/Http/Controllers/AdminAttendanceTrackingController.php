@@ -79,7 +79,7 @@ class AdminAttendanceTrackingController extends Controller
      */
     protected function getDailyData(Carbon $date): array
     {
-        $studentDays = AttendanceDay::whereDate('attendance_date', $date)
+        $studentDays = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -91,7 +91,7 @@ class AdminAttendanceTrackingController extends Controller
             ->orderBy('etudiant_id')
             ->get();
 
-        $employeeDays = AttendanceDay::whereDate('attendance_date', $date)
+        $employeeDays = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
@@ -105,15 +105,15 @@ class AdminAttendanceTrackingController extends Controller
             ->orderBy('user_id')
             ->get();
 
-        // Calcul des totaux réels (base attendue) - Étudiants en stage complet
+        // Calcul des totaux réels (base attendue) - Étudiants en stage complet avec compte actif
         $activeEtudiantsIds = Etudiant::whereHas('stages', function ($q) use ($date) {
             $q->where('date_debut', '<=', $date)
                 ->where('date_fin', '>=', $date);
-        })->pluck('id');
+        })->whereHas('user', fn ($q) => $q->where('status', 'actif'))->pluck('id');
 
         $studentTotal = $activeEtudiantsIds->count();
 
-        $studentPresentIds = AttendanceDay::whereDate('attendance_date', $date)
+        $studentPresentIds = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereIn('etudiant_id', $activeEtudiantsIds)
             ->whereNotNull('first_check_in_at')
             ->distinct('etudiant_id')
@@ -130,7 +130,7 @@ class AdminAttendanceTrackingController extends Controller
 
         $employeeTotal = $employeeUsersIds->count();
 
-        $employeePresentIds = AttendanceDay::whereDate('attendance_date', $date)
+        $employeePresentIds = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNull('etudiant_id')
             ->whereIn('user_id', $employeeUsersIds)
             ->whereNotNull('first_check_in_at')
@@ -164,7 +164,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfWeek = $date->clone()->startOfWeek();
         $endOfWeek = $date->clone()->endOfWeek();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -175,7 +175,7 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
@@ -228,7 +228,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfMonth = $date->clone()->startOfMonth();
         $endOfMonth = $date->clone()->endOfMonth();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -238,7 +238,7 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())
@@ -292,7 +292,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfYear = $date->clone()->startOfYear();
         $endOfYear = $date->clone()->endOfYear();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -303,7 +303,7 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->where('user_id', '!=', Auth::id())

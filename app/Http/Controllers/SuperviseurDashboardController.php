@@ -31,7 +31,7 @@ class SuperviseurDashboardController extends Controller
             ->active() // assume scope for active stages
             ->get();
 
-        $todayAttendanceDays = AttendanceDay::whereIn('stage_id', $supervisedStages->pluck('id'))
+        $todayAttendanceDays = AttendanceDay::forActiveUsers()->whereIn('stage_id', $supervisedStages->pluck('id'))
             ->whereDate('attendance_date', today())
             ->get();
 

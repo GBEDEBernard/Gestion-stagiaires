@@ -55,8 +55,8 @@ class AdminPresenceService
             'total_checkins'   => AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->where('status', 'approved')->count(),
             'total_checkouts'  => AttendanceEvent::where('event_type', 'check_out')->whereDate('occurred_at', $today)->where('status', 'approved')->count(),
             'open_anomalies'   => AttendanceAnomaly::where('status', 'open')->whereDate('detected_at', $today)->count(),
-            'late_arrivals'    => AttendanceDay::whereDate('attendance_date', $today)->where('late_minutes', '>', 0)->count(),
-            'early_departures' => AttendanceDay::whereDate('attendance_date', $today)->where('early_departure_minutes', '>', 0)->count(),
+            'late_arrivals'    => AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)->where('late_minutes', '>', 0)->count(),
+            'early_departures' => AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)->where('early_departure_minutes', '>', 0)->count(),
         ];
     }
 
@@ -66,7 +66,7 @@ class AdminPresenceService
 
     public function listAttendanceDays(array $filters = [], int $perPage = 50): Builder
     {
-        $query = AttendanceDay::with([
+        $query = AttendanceDay::forActiveUsers()->with([
             'stage.etudiant.user',
             'stage.site',
             'checkInEvent.trustedDevice',
@@ -104,6 +104,10 @@ class AdminPresenceService
             'user.personnel',
             'anomalies',
         ])->whereBetween('attendance_date', [$start, $end]);
+
+        if (!$userId) {
+            $query->forActiveUsers();
+        }
 
         if (DB::connection()->getDriverName() === 'sqlite') {
             $query->whereRaw("CAST(strftime('%w', attendance_date) AS INTEGER) BETWEEN 1 AND 5");
@@ -226,7 +230,8 @@ class AdminPresenceService
         $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
 
         // ── Données pointage réelles (jours ouvrés uniquement) ───────────────
-        $dailyStats = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
+        $dailyStats = AttendanceDay::forActiveUsers()
+            ->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
             ->selectRaw('
                 DATE(attendance_date) as date,
@@ -278,9 +283,10 @@ class AdminPresenceService
 
             $isHoliday = isset($holidays[$dateKey]);
 
-            // ── Compter les stagiaires attendus ce jour ────────────────────────
+            // ── Compter les stagiaires attendus ce jour (uniquement actifs) ────
             $studentsCount = Stage::whereDate('date_debut', '<=', $dateKey)
                 ->whereDate('date_fin', '>=', $dateKey)
+                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
                 ->distinct('etudiant_id')
                 ->count('etudiant_id');
 
@@ -369,7 +375,7 @@ class AdminPresenceService
             }
         }
 
-        $etudiantsStats = AttendanceDay::whereNotNull('etudiant_id')
+        $etudiantsStats = AttendanceDay::forActiveUsers()->whereNotNull('etudiant_id')
             ->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
             ->selectRaw('
@@ -381,7 +387,7 @@ class AdminPresenceService
                 SUM(late_minutes) as late_minutes
             ')->first();
 
-        $employesStats = AttendanceDay::whereNotNull('user_id')
+        $employesStats = AttendanceDay::forActiveUsers()->whereNotNull('user_id')
             ->whereNull('etudiant_id')
             ->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
@@ -395,12 +401,12 @@ class AdminPresenceService
             ')->first();
 
         $etudiantsChart = $this->generateChartData(
-            AttendanceDay::whereNotNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
+            AttendanceDay::forActiveUsers()->whereNotNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
             $startDate,
             $endDate
         );
         $employesChart = $this->generateChartData(
-            AttendanceDay::whereNotNull('user_id')->whereNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
+            AttendanceDay::forActiveUsers()->whereNotNull('user_id')->whereNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
             $startDate,
             $endDate
         );
@@ -677,7 +683,7 @@ class AdminPresenceService
 
     public function getTopLateUsers(int $limit = 10, string $period = 'month', ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        return AttendanceDay::topLate($limit, $period, $dateFrom, $dateTo)->get()->toArray();
+        return AttendanceDay::topLate($limit, $period, $dateFrom, $dateTo)->forActiveUsers()->get()->toArray();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -730,7 +736,7 @@ class AdminPresenceService
         $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
         $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
 
-        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
+        $attendanceDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
             ->select(['attendance_date', 'etudiant_id', 'user_id', 'first_check_in_at'])
             ->get()
@@ -756,6 +762,7 @@ class AdminPresenceService
 
             $activeStageEtudiantIds = Stage::whereDate('date_debut', '<=', $dateKey)
                 ->whereDate('date_fin', '>=', $dateKey)
+                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
                 ->distinct('etudiant_id')->pluck('etudiant_id')->values()->all();
 
             $absentEtudiantIds = array_values(array_diff($activeStageEtudiantIds, $presentEtudiantIds));
@@ -860,7 +867,7 @@ class AdminPresenceService
         $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
         $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
 
-        $attendanceDays = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
+        $attendanceDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
             ->select(['attendance_date', 'etudiant_id', 'user_id', 'first_check_in_at'])
             ->get()
@@ -889,6 +896,7 @@ class AdminPresenceService
             // Stagiaires actifs ce jour
             $activeStageEtudiantIds = Stage::whereDate('date_debut', '<=', $dateKey)
                 ->whereDate('date_fin', '>=', $dateKey)
+                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
                 ->distinct('etudiant_id')->pluck('etudiant_id')->values()->all();
 
             $absentEtudiantIds = array_values(array_diff($activeStageEtudiantIds, $presentEtudiantIds));
