@@ -206,7 +206,7 @@
                 <div class="us-kpi-top">
                     <div class="us-kpi-icon">⚠️</div>
                 </div>
-                <div class="us-kpi-value">{{ $userStats['total_late_minutes'] }}<span style="font-size:1rem;font-weight:500;color:var(--muted);">min</span></div>
+                <div class="us-kpi-value">{{ $userStats['total_late_minutes'] ? formatMinutes($userStats['total_late_minutes']) : '0min' }}</div>
                 <div class="us-kpi-label">Retards Cumulés</div>
                 <div class="us-kpi-sub">{{ $userStats['open_anomalies'] }} anomalies ouvertes</div>
             </div>
@@ -279,6 +279,15 @@
         const late   = @json($userStats['chart_data']['late_minutes']);
         const holidays = @json($userStats['chart_data']['holidays'] ?? []);
 
+        /* Helper : minutes → Xh Ymin */
+        const fmtMin = (m) => {
+            if (!m || m <= 0) return '0min';
+            const h = Math.floor(m / 60), mins = m % 60;
+            if (h === 0) return mins + 'min';
+            if (mins === 0) return h + 'h';
+            return h + 'h ' + mins + 'min';
+        };
+
         /* Plugin : bandes verticales pour jours fériés */
         const holidayPlugin = {
             id: 'holidayBands',
@@ -346,7 +355,7 @@
                     borderRadius:5, borderSkipped:false,
                 }]
             },
-            options:{ ...commonOpts, plugins:{...commonOpts.plugins, tooltip:{...commonOpts.plugins.tooltip, callbacks:{ label:ctx=>`${ctx.parsed.y} min` }}} }
+            options:{ ...commonOpts, plugins:{...commonOpts.plugins, tooltip:{...commonOpts.plugins.tooltip, callbacks:{ label:ctx=>`Retard: ${fmtMin(ctx.parsed.y)}` }}} }
         });
     });
     </script>

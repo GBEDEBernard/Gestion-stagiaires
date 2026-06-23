@@ -149,15 +149,16 @@
                 @php
                     $statutPonctualite = '';
                     $badgeClass = '';
-                    if ($checkIn) {
-                        $heureArrivee = $checkIn->occurred_at;
+                    $arriveeTime = $checkIn?->occurred_at ?? $day->first_check_in_at;
+                    if ($arriveeTime) {
+                        $heureArrivee = $arriveeTime instanceof \Carbon\Carbon ? $arriveeTime : \Carbon\Carbon::parse($arriveeTime);
                         $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
                         if ($heureArrivee <= $heureReference) {
                             $statutPonctualite = 'À l\'heure';
                             $badgeClass = 'approved';
                         } else {
-                            $minutesRetard = $heureArrivee->diffInMinutes($heureReference);
-                            $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
+                            $minutesRetard = (int) $heureArrivee->diffInMinutes($heureReference);
+                            $statutPonctualite = "En retard (-" . formatMinutes($minutesRetard) . ")";
                             $badgeClass = 'rejected';
                         }
                     } else {

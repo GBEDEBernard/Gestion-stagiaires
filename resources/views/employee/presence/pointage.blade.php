@@ -71,7 +71,7 @@
                         {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--:--' }}
                     </p>
                     @if($attendanceDay?->first_check_in_at && $attendanceDay->arrival_status === 'late')
-                    <p class="text-xs text-amber-500 mt-1">{{ $attendanceDay->late_minutes }} min de retard</p>
+                    <p class="text-xs text-amber-500 mt-1">{{ formatMinutes($attendanceDay->late_minutes) }} de retard</p>
                     @endif
                 </div>
                 <div class="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>

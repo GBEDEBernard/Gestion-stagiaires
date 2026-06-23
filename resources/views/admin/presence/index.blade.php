@@ -1145,7 +1145,7 @@
                     </div>
                     <div class="pres-kpi-value">{{ round(($globalStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
                     <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ number_format($globalStats['total_late_minutes'] ?? 0) }} min au total</div>
+                    <div class="pres-kpi-sub">{{ ($globalStats['total_late_minutes'] ?? 0) ? formatMinutes($globalStats['total_late_minutes']) : '0min' }} au total</div>
                 </div>
 
                 <div class="pres-kpi kpi-blue">
@@ -1441,6 +1441,15 @@
             Chart.defaults.font.family = "'DM Sans', sans-serif";
             Chart.defaults.color = textColor;
 
+            /* Helper JS : minutes → Xh Ymin */
+            const fmtMin = (m) => {
+                if (!m || m <= 0) return '0min';
+                const h = Math.floor(m / 60), mins = m % 60;
+                if (h === 0) return mins + 'min';
+                if (mins === 0) return h + 'h';
+                return h + 'h ' + mins + 'min';
+            };
+
             const labels = @json($globalStats['chart_data']['labels'] ?? []);
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
@@ -1674,7 +1683,7 @@
                                     label(ctx) {
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
-                                        if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
+                                        if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
                                         if (lbl === 'Heures travaillées') return `${lbl}: ${v}h`;
                                         return `${lbl}: ${v}`;
                                     }
@@ -1732,6 +1741,7 @@
                                     }
                                 },
                                 ticks: {
+                                    callback: (v) => fmtMin(v),
                                     color: '#f97316',
                                     font: {
                                         size: 10
@@ -1815,7 +1825,7 @@
                                         const v = ctx.parsed.y;
                                         return ctx.dataset.label === 'Heures travaillées'
                                             ? `Heures: ${v}h`
-                                            : `Retard: ${v} min`;
+                                            : `Retard: ${fmtMin(v)}`;
                                     }
                                 }
                             }

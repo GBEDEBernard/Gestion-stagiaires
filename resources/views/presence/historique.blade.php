@@ -741,7 +741,7 @@
                     </div>
                     <div class="pres-kpi-value">{{ round(($userStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
                     <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ number_format($userStats['total_late_minutes'] ?? 0) }} min au total</div>
+                    <div class="pres-kpi-sub">{{ ($userStats['total_late_minutes'] ?? 0) ? formatMinutes($userStats['total_late_minutes']) : '0min' }} au total</div>
                 </div>
 
                 <div class="pres-kpi kpi-blue">
@@ -835,7 +835,7 @@
                                 <td style="font-family:var(--mono);">{{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1).'h' : '—' }}</td>
                                 <td>
                                     @if($day->late_minutes > 0)
-                                    <span class="pres-tag tag-amber">{{ $day->late_minutes }} min</span>
+                                    <span class="pres-tag tag-amber">{{ formatMinutes($day->late_minutes) }}</span>
                                     @else
                                     <span style="color:var(--muted);">—</span>
                                     @endif
@@ -975,6 +975,14 @@
             const lateMinutes = cd.late_minutes ?? [];
             const workedHours = cd.worked_hours ?? [];
 
+            const fmtMin = (m) => {
+                if (!m || m <= 0) return '0min';
+                const h = Math.floor(m / 60), mins = m % 60;
+                if (h === 0) return mins + 'min';
+                if (mins === 0) return h + 'h';
+                return h + 'h ' + mins + 'min';
+            };
+
             if (!labels.length) return; // pas de données → pas de graphique
 
             /* ── Helpers ──────────────────────────────────────────────── */
@@ -1110,7 +1118,7 @@
                                     label(ctx) {
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
-                                        if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
+                                        if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
                                         return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
                                     },
                                 },
@@ -1249,7 +1257,7 @@
                                         const v = ctx.parsed.y;
                                         return ctx.dataset.label === 'Heures travaillées' ?
                                             `Heures: ${v}h` :
-                                            `Retard: ${v} min`;
+                                            `Retard: ${fmtMin(v)}`;
                                     },
                                 },
                             },

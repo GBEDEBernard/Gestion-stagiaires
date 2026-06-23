@@ -149,13 +149,17 @@
                             </td>
                             <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
                                 <div class="flex flex-col gap-0.5">
-                                    @if($checkIn)
-                                    <span class="text-emerald-600">Arrivée : {{ $checkIn->occurred_at->format('d/m H:i') }}</span>
+                                    @php
+                                        $arrivalTime = $checkIn?->occurred_at ?? $day->first_check_in_at;
+                                        $departureTime = $checkOut?->occurred_at ?? $day->last_check_out_at;
+                                    @endphp
+                                    @if($arrivalTime)
+                                    <span class="text-emerald-600">Arrivée : {{ $arrivalTime instanceof \Carbon\Carbon ? $arrivalTime->format('d/m H:i') : \Carbon\Carbon::parse($arrivalTime)->format('d/m H:i') }}</span>
                                     @else
                                     <span class="text-gray-400">Arrivée : —</span>
                                     @endif
-                                    @if($checkOut)
-                                    <span class="text-blue-600">Départ : {{ $checkOut->occurred_at->format('d/m H:i') }}</span>
+                                    @if($departureTime)
+                                    <span class="text-blue-600">Départ : {{ $departureTime instanceof \Carbon\Carbon ? $departureTime->format('d/m H:i') : \Carbon\Carbon::parse($departureTime)->format('d/m H:i') }}</span>
                                     @else
                                     <span class="text-gray-400">Départ : —</span>
                                     @endif
@@ -187,20 +191,20 @@
         {{ $displayValue }}
     </span>
 </td>
-                           <td class="px-6 py-4">
+                            <td class="px-6 py-4">
                                 @php
                                 $statutPonctualite = '';
                                 $badgeClass = '';
-                                $minutesRetard = 0;
-                                if ($checkIn) {
-                                    $heureArrivee = $checkIn->occurred_at;
+                                $arriveeTime = $checkIn?->occurred_at ?? $day->first_check_in_at;
+                                if ($arriveeTime) {
+                                    $heureArrivee = $arriveeTime instanceof \Carbon\Carbon ? $arriveeTime : \Carbon\Carbon::parse($arriveeTime);
                                     $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
                                     if ($heureArrivee <= $heureReference) {
                                         $statutPonctualite = 'À l\'heure';
                                         $badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
                                     } else {
-                                        $minutesRetard = $heureArrivee->diffInMinutes($heureReference); // déjà entier
-                                        $statutPonctualite = "En retard (" . intval($minutesRetard) . " min)";
+                                        $minutesRetard = (int) $heureArrivee->diffInMinutes($heureReference);
+                                        $statutPonctualite = "En retard (-" . formatMinutes($minutesRetard) . ")";
                                         $badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
                                     }
                                 } else {
@@ -236,7 +240,6 @@
 
                             </div>
                         </td>
-                 </div>
              </tr>
             @empty
             <tr>

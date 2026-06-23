@@ -1,7 +1,7 @@
 @component('mail::message')
 # Bonjour {{ $user->name }},
 
-Vous avez pointé votre arrivée à **{{ $arrivalTime }}** ({{ $lateMinutes > 0 ? $lateMinutes . ' min de retard' : 'à l\'heure' }}), mais vous **n'avez pas encore pointé votre départ**.
+Vous avez pointé votre arrivée à **{{ $arrivalTime }}** ({{ $lateMinutes > 0 ? formatMinutes($lateMinutes) . ' de retard' : 'à l\'heure' }}), mais vous **n'avez pas encore pointé votre départ**.
 
 @component('mail::button', ['url' => url('/pointage'), 'color' => 'warning'])
 Pointer mon départ

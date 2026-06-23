@@ -44,15 +44,47 @@ class AutoCheckout extends Command
         return Command::SUCCESS;
     }
 
+    protected function resolveUserId(AttendanceDay $day): ?int
+    {
+        if ($day->user_id) {
+            return $day->user_id;
+        }
+
+        // Stagiaire : résoudre via etudiant -> personnel -> user
+        if ($day->etudiant_id) {
+            $etudiant = $day->etudiant;
+            if ($etudiant) {
+                return $etudiant->user?->id;
+            }
+        }
+
+        // Dernier recours : chercher un user lié au même etudiant_id dans les events
+        $event = AttendanceEvent::where('etudiant_id', $day->etudiant_id)
+            ->where('event_type', 'check_in')
+            ->whereDate('occurred_at', $day->attendance_date)
+            ->first();
+
+        return $event?->user_id;
+    }
+
     protected function sendReminders($days): void
     {
         $count = 0;
+        $skipped = 0;
         foreach ($days as $day) {
-            $userId = $day->user_id ?? $day->etudiant?->user?->id;
-            if (!$userId) continue;
+            $userId = $this->resolveUserId($day);
+            if (!$userId) {
+                $skipped++;
+                Log::warning("AutoCheckout: userId introuvable pour AttendanceDay #{$day->id} (user_id={$day->user_id}, etudiant_id={$day->etudiant_id})");
+                continue;
+            }
 
             $user = User::find($userId);
-            if (!$user) continue;
+            if (!$user) {
+                $skipped++;
+                Log::warning("AutoCheckout: utilisateur #{$userId} introuvable pour AttendanceDay #{$day->id}");
+                continue;
+            }
 
             $existing = AppNotification::where('user_id', $userId)
                 ->where('type', 'rappel_depart')
@@ -85,70 +117,84 @@ class AutoCheckout extends Command
             $count++;
         }
 
-        $this->info("{$count} notification(s) de rappel envoyée(s) par email et in-app.");
+        $this->info("{$count} notification(s) de rappel envoyée(s) par email et in-app." . ($skipped ? " ({$skipped} ignoré(s))" : ''));
     }
 
     protected function autoCheckout($days): void
     {
         $autoTime = today()->setTime(19, 30, 0);
         $count = 0;
+        $skipped = 0;
 
         foreach ($days as $day) {
-            $userId = $day->user_id ?? $day->etudiant?->user?->id;
-            if (!$userId) continue;
-
-            $user = User::find($userId);
-            if (!$user) continue;
-
-            $event = AttendanceEvent::create([
-                'stage_id'         => $day->stage_id,
-                'etudiant_id'      => $day->etudiant_id,
-                'user_id'          => $day->user_id,
-                'event_type'       => 'check_out',
-                'status'           => 'approved',
-                'occurred_at'      => $autoTime,
-                'reason_code'      => 'auto_checkout',
-                'meta'             => [
-                    'auto_checkout' => true,
-                    'auto_checkout_at' => now()->toDateTimeString(),
-                ],
-            ]);
-
-            $workedMinutes = $day->first_check_in_at
-                ? max(0, $day->first_check_in_at->diffInMinutes($autoTime))
-                : 0;
-
-            $day->check_out_event_id = $event->id;
-            $day->last_check_out_at  = $autoTime;
-            $day->worked_minutes     = $workedMinutes;
-            $day->day_status         = $day->day_status === 'present' ? 'completed' : $day->day_status;
-            $day->save();
-
-            AppNotification::create([
-                'unique_id' => 'depart_automatique_' . (string) Str::uuid(),
-                'user_id'   => $userId,
-                'type'      => 'depart_automatique',
-                'title'     => 'Départ enregistré automatiquement',
-                'message'   => "Votre départ a été automatiquement enregistré à 19h30 car vous n'avez pas pointé votre départ.",
-                'icon'      => 'logout',
-                'color'     => 'blue',
-                'url'       => '/historique',
-            ]);
-
-            try {
-                Mail::to($user->email)->send(new DepartAutomatiqueMail(
-                    $user,
-                    $day->first_check_in_at?->format('H:i') ?? '--:--',
-                    $autoTime->format('H:i'),
-                    round($workedMinutes / 60, 1) . 'h',
-                ));
-            } catch (\Exception $e) {
-                Log::error("Échec envoi email départ auto à {$user->email}: " . $e->getMessage());
+            $userId = $this->resolveUserId($day);
+            if (!$userId) {
+                $skipped++;
+                Log::warning("AutoCheckout: userId introuvable pour AttendanceDay #{$day->id} (user_id={$day->user_id}, etudiant_id={$day->etudiant_id})");
+                continue;
             }
 
-            $count++;
+            $user = User::find($userId);
+            if (!$user) {
+                $skipped++;
+                Log::warning("AutoCheckout: utilisateur #{$userId} introuvable pour AttendanceDay #{$day->id}");
+                continue;
+            }
+
+            try {
+                $event = AttendanceEvent::create([
+                    'stage_id'         => $day->stage_id,
+                    'etudiant_id'      => $day->etudiant_id,
+                    'user_id'          => $userId,
+                    'event_type'       => 'check_out',
+                    'status'           => 'approved',
+                    'occurred_at'      => $autoTime,
+                    'reason_code'      => 'auto_checkout',
+                    'meta'             => [
+                        'auto_checkout' => true,
+                        'auto_checkout_at' => now()->toDateTimeString(),
+                    ],
+                ]);
+
+                $workedMinutes = $day->first_check_in_at
+                    ? max(0, $day->first_check_in_at->diffInMinutes($autoTime))
+                    : 0;
+
+                $day->check_out_event_id = $event->id;
+                $day->last_check_out_at  = $autoTime;
+                $day->worked_minutes     = $workedMinutes;
+                $day->day_status         = $day->day_status === 'present' ? 'completed' : $day->day_status;
+                $day->save();
+
+                AppNotification::create([
+                    'unique_id' => 'depart_automatique_' . (string) Str::uuid(),
+                    'user_id'   => $userId,
+                    'type'      => 'depart_automatique',
+                    'title'     => 'Départ enregistré automatiquement',
+                    'message'   => "Votre départ a été automatiquement enregistré à 19h30 car vous n'avez pas pointé votre départ.",
+                    'icon'      => 'logout',
+                    'color'     => 'blue',
+                    'url'       => '/historique',
+                ]);
+
+                try {
+                    Mail::to($user->email)->send(new DepartAutomatiqueMail(
+                        $user,
+                        $day->first_check_in_at?->format('H:i') ?? '--:--',
+                        $autoTime->format('H:i'),
+                        round($workedMinutes / 60, 1) . 'h',
+                    ));
+                } catch (\Exception $e) {
+                    Log::error("Échec envoi email départ auto à {$user->email}: " . $e->getMessage());
+                }
+
+                $count++;
+            } catch (\Exception $e) {
+                $skipped++;
+                Log::error("AutoCheckout: erreur pour AttendanceDay #{$day->id} (user={$userId}): " . $e->getMessage());
+            }
         }
 
-        $this->info("{$count} départ(s) automatique(s) enregistré(s) à 19h30.");
+        $this->info("{$count} départ(s) automatique(s) enregistré(s) à 19h30." . ($skipped ? " ({$skipped} échec(s))" : ''));
     }
 }
