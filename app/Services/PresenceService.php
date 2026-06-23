@@ -7,6 +7,7 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Domaine;
 use App\Models\Etudiant;
+use App\Models\Holiday;
 use App\Models\SiteGeofence;
 use App\Models\Stage;
 use App\Models\TrustedDevice;
@@ -28,10 +29,24 @@ class PresenceService
     // ==========================================================================
 
     /**
+     * Vérifie si aujourd'hui est un jour férié actif et bloque le pointage
+     * si l'utilisateur n'a pas la permission de contournement.
+     */
+    protected function checkHolidayRestriction(User $user): void
+    {
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+            throw ValidationException::withMessages([
+                'presence' => "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé sauf pour le personnel d'urgence.",
+            ]);
+        }
+    }
+
+    /**
      * Enregistre l'arrivée (check-in) d'un stagiaire.
      */
     public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 
@@ -40,6 +55,7 @@ class PresenceService
      */
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
         return $this->registerEvent($stage, $user, $payload, 'check_out');
     }
 
@@ -52,6 +68,7 @@ class PresenceService
      */
     public function registerEmployeeCheckIn(User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
         return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }
 
@@ -60,6 +77,7 @@ class PresenceService
      */
     public function registerEmployeeCheckOut(User $user, array $payload): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 

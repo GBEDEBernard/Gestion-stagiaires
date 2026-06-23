@@ -23,4 +23,5 @@ return [
     'daily_reports'        => 'Rapports journaliers',
     'attendance_anomalies' => 'Anomalies de présence',
     'jour_stage'           => 'Jours de stage',
+    'holidays'             => 'Jours fériés',
 ];

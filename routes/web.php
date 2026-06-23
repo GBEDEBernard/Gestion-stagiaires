@@ -36,6 +36,7 @@ use App\Http\Controllers\SiteGeofenceController;
 use App\Http\Controllers\TacheController;
 use App\Http\Controllers\TacheController as ControllersTacheController;
 use App\Http\Controllers\AttestationSignatureController;
+use App\Http\Controllers\Admin\AdminHolidayController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{jour}', [JourController::class, 'update'])->name('jours.update')->middleware('permission:jour_stage.edit');
         Route::delete('{jour}', [JourController::class, 'destroy'])->name('jours.destroy')->middleware('permission:jour_stage.delete');
     });
+
+    // ---------------- Jours Feriés ----------------
+    Route::prefix('admin/holidays')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [AdminHolidayController::class, 'index'])->name('admin.holidays.index')->middleware('permission:holidays.view');
+        Route::get('create', [AdminHolidayController::class, 'create'])->name('admin.holidays.create')->middleware('permission:holidays.create');
+        Route::post('/', [AdminHolidayController::class, 'store'])->name('admin.holidays.store')->middleware('permission:holidays.create');
+        Route::get('{holiday}/edit', [AdminHolidayController::class, 'edit'])->name('admin.holidays.edit')->middleware('permission:holidays.edit');
+        Route::put('{holiday}', [AdminHolidayController::class, 'update'])->name('admin.holidays.update')->middleware('permission:holidays.edit');
+        Route::delete('{holiday}', [AdminHolidayController::class, 'destroy'])->name('admin.holidays.destroy')->middleware('permission:holidays.delete');
+        Route::post('{holiday}/toggle', [AdminHolidayController::class, 'toggle'])->name('admin.holidays.toggle')->middleware('permission:holidays.toggle');
+        Route::get('{holiday}/notify', [AdminHolidayController::class, 'notify'])->name('admin.holidays.notify')->middleware('permission:holidays.toggle');
+        Route::post('{holiday}/emergency-call', [AdminHolidayController::class, 'emergencyCall'])->name('admin.holidays.emergency-call')->middleware('permission:holidays.toggle');
+    });
+
+    // ---------------- API: Users list for holiday emergency call ----------------
+    Route::get('/api/holiday-users', [AdminHolidayController::class, 'usersList'])->name('admin.holidays.users-list')->middleware('permission:holidays.toggle');
 
     // ---------------- Étudiants ----------------
     Route::prefix('admin/etudiants')->group(function () {

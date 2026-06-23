@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\Holiday;
 use App\Models\PermissionRequest;
 use App\Models\PermissionType;
 use App\Services\AdminPresenceService;
@@ -29,6 +30,9 @@ class PresenceController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
+        $todayHoliday = Holiday::whereDate('date', today())->where('is_active', true)->first();
+        $canBypassHoliday = $user->can('holidays.bypass');
+
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
@@ -42,7 +46,7 @@ class PresenceController extends Controller
                 ->first();
 
             if (!$activeStage) {
-                return view('presence.pointage', compact('activeStage'));
+                return view('presence.pointage', compact('activeStage', 'todayHoliday', 'canBypassHoliday'));
             }
 
             // Statut du jour
@@ -50,7 +54,7 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('presence.pointage', compact('activeStage', 'attendanceDay'));
+            return view('presence.pointage', compact('activeStage', 'attendanceDay', 'todayHoliday', 'canBypassHoliday'));
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
             $domaine = $user->domaine;
@@ -64,7 +68,7 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('employee.presence.pointage', compact('attendanceDay', 'user'));
+            return view('employee.presence.pointage', compact('attendanceDay', 'user', 'todayHoliday', 'canBypassHoliday'));
         }
     }
 
@@ -74,6 +78,12 @@ class PresenceController extends Controller
     public function prepareCheckIn(Request $request)
     {
         $user = $request->user();
+
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
+        }
+
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 
@@ -186,6 +196,12 @@ class PresenceController extends Controller
     public function prepareCheckOut(Request $request)
     {
         $user = $request->user();
+
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
+        }
+
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
         $isEarlyDeparture = now()->lt(today()->setTime(18, 0));

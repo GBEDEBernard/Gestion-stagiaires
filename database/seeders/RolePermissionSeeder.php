@@ -38,6 +38,7 @@ class RolePermissionSeeder extends Seeder
             'personnels',
             // Ajout des permissions pour les demandes
             'permissions',
+            'holidays',
         ];
 
         $actions = [
@@ -72,6 +73,7 @@ class RolePermissionSeeder extends Seeder
                 if ($entity === 'presence_stats' && !in_array($action, ['view'])) continue;
                 // Permissions : on garde view, create, cancel pour les utilisateurs, review/approve pour superviseurs
                 if ($entity === 'permissions' && !in_array($action, ['view', 'create', 'cancel', 'review', 'approve'])) continue;
+                if ($entity === 'holidays' && !in_array($action, ['view', 'create', 'edit', 'delete', 'toggle', 'bypass'])) continue;
 
                 Permission::firstOrCreate(['name' => "$entity.$action"]);
             }

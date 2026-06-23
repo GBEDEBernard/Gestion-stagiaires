@@ -127,7 +127,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcan
 
                 <!-- 2. Suivi & Présence - AVEC PERSISTANCE -->
-                <div class="mb-4" x-data="{ openPresence: {{ request()->routeIs('attendance.tracking.index') || request()->routeIs('admin.presence.*') || request()->routeIs('reports.*') || request()->routeIs('permissions.*') || request()->routeIs('presence.*')  || request()->routeIs('tasks.index') ? 'true' : 'false' }} }">
+                <div class="mb-4" x-data="{ openPresence: {{ request()->routeIs('attendance.tracking.index') || request()->routeIs('admin.presence.*') || request()->routeIs('admin.holidays.*') || request()->routeIs('reports.*') || request()->routeIs('permissions.*') || request()->routeIs('presence.*')  || request()->routeIs('tasks.index') ? 'true' : 'false' }} }">
                     <button @click="openPresence = !openPresence" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPresence ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
@@ -179,12 +179,18 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                              <span>Résumés IA</span>
                          </a>
                          @endrole
-                         @role('admin|superviseur')
-                        <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                            <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
-                            <span>Statistiques Globales</span>
-                        </a>
-                        @endrole
+                          @role('admin|superviseur')
+                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
+                             <span>Statistiques Globales</span>
+                         </a>
+                         @endrole
+                         @can('holidays.view')
+                         <a href="{{ route('admin.holidays.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:bg-purple-400"></div>
+                             <span>Jours fériés</span>
+                         </a>
+                         @endcan
                         @else
                         {{-- Employé simple --}}
                         <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">

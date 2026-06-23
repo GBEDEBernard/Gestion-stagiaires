@@ -54,6 +54,7 @@ class RolePermissionPresetService
             ],
             'superviseur' => [
                 'dashboard.view',
+                'holidays.view',
                 'etudiants.view',
                 'stages.view',
                 'attestation.view',

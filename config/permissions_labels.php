@@ -96,4 +96,11 @@ return [
     'personnels.delete' => 'Supprimer du personnel',
     
     'daily_reports.view' => 'Voir les rapports journaliers',
+
+    'holidays.view' => 'Voir les jours fériés',
+    'holidays.create' => 'Créer des jours fériés',
+    'holidays.edit' => 'Modifier des jours fériés',
+    'holidays.delete' => 'Supprimer des jours fériés',
+    'holidays.toggle' => 'Activer/désactiver un jour férié',
+    'holidays.bypass' => 'Pointer les jours fériés (exception)',
 ];
