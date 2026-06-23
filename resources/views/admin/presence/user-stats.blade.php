@@ -235,7 +235,7 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Type</th>
+                            <th>Problème</th>
                             <th>Sévérité</th>
                             <th style="text-align:right;">Action</th>
                         </tr>
@@ -247,14 +247,18 @@
                                 {{ $anomaly->detected_at->format('d/m/Y H:i') }}
                             </td>
                             <td>
-                                <span class="us-tag type-tag">{{ ucfirst(str_replace('_',' ',$anomaly->anomaly_type)) }}</span>
+                                <div style="font-weight:500;color:#fff;font-size:.84rem;margin-bottom:2px;">{{ $anomaly->type_label }}</div>
+                                <div style="font-size:.75rem;color:var(--muted);line-height:1.3;">{{ $anomaly->type_description }}</div>
                             </td>
                             <td>
                                 @php $sc=['low'=>'sev-low','medium'=>'sev-medium','high'=>'sev-high'][$anomaly->severity??'low']??'sev-low' @endphp
                                 <span class="us-tag {{ $sc }}">{{ ucfirst($anomaly->severity??'low') }}</span>
                             </td>
                             <td style="text-align:right;">
-                                <a href="#" style="font-size:.82rem;font-weight:600;color:var(--emerald);text-decoration:none;">Résoudre →</a>
+                                <a href="{{ route('admin.presence.anomalies') }}"
+                                   style="font-size:.82rem;font-weight:600;color:var(--emerald);text-decoration:none;">
+                                   Voir les anomalies →
+                                </a>
                             </td>
                         </tr>
                         @endforeach

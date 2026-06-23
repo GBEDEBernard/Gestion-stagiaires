@@ -172,8 +172,18 @@ class AdminPresenceController extends Controller
             return response()->json($anomalies);
         }
 
-        // Correction : utiliser Blade au lieu d'Inertia
-        return view('admin.presence.anomalies', compact('anomalies'));
+        $anomaliesJson = $anomalies->map(fn($a) => [
+            'id'          => $a->id,
+            'user'        => $a->attendanceEvent->stage?->etudiant?->nom ?? $a->user?->name ?? 'Inconnu',
+            'type'        => $a->type_label,
+            'severity'    => ucfirst($a->severity),
+            'date'        => $a->detected_at->format('d/m/Y H:i'),
+            'description' => $a->type_description,
+            'solution'    => $a->type_solution,
+            'observation' => $a->payload['message_observation'] ?? null,
+        ])->values();
+
+        return view('admin.presence.anomalies', compact('anomalies', 'anomaliesJson'));
     }
 
     /**

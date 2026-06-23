@@ -33,7 +33,7 @@ class AuthServiceProvider extends ServiceProvider
         // Gate pour review anomalies (déjà protégé middleware mais cohérent)
         Gate::define('reviewAdminAnomalies', function (User $user) {
             return $user->hasRole('admin') ||
-                $user->hasPermissionTo('presence.admin.anomalies.review');
+                $user->hasPermissionTo('attendance_anomalies.review');
         });
     }
 }
