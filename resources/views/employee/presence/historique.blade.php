@@ -959,6 +959,7 @@
             const absences = cd.absences ?? [];
             const lateMinutes = cd.late_minutes ?? [];
             const workedHours = cd.worked_hours ?? [];
+            const workedMinutes = workedHours.map(v => Math.round(v * 60));
 
             const fmtMin = (m) => {
                 if (!m || m <= 0) return '0min';
@@ -1070,6 +1071,21 @@
                                 pointBorderColor: '#fff',
                                 pointBorderWidth: 1,
                                 yAxisID: 'yMin'
+                            },
+                            {
+                                label: 'Heures travaillées',
+                                data: workedMinutes,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
+                                yAxisID: 'yMin'
                             }
                         ]
                     },
@@ -1095,6 +1111,7 @@
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
                                         if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
+                                        if (lbl === 'Heures travaillées') return `Heures: ${fmtMin(v)}`;
                                         return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
                                     }
                                 }
@@ -1142,17 +1159,17 @@
                                 type: 'linear',
                                 position: 'right',
                                 min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Minutes',
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + ' min',
-                                    color: '#f97316',
+                            title: {
+                                display: true,
+                                text: 'Minutes / Heures',
+                                color: '#8b5cf6',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            ticks: {
+                                callback: v => fmtMin(v),
+                                color: '#8b5cf6',
                                     font: {
                                         size: 10
                                     }
