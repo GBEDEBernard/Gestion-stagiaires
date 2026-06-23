@@ -1456,6 +1456,7 @@
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absent'] ?? []);
             const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
+            const workedMinutes = workedHours.map(v => Math.round(v * 60));
             const holidays = @json($globalStats['chart_data']['holidays'] ?? []);
             const absenceItems = @json($absenceItems ?? []);
 
@@ -1647,13 +1648,13 @@
                             },
                             {
                                 label: 'Heures travaillées',
-                                data: workedHours,
+                                data: workedMinutes,
                                 borderColor: '#8b5cf6',
                                 backgroundColor: 'transparent',
                                 fill: false,
                                 tension: 0.4,
                                 borderWidth: 2,
-                                pointRadius: workedHours.map(v => v > 0 ? 4 : 0),
+                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
                                 pointHoverRadius: 6,
                                 pointBackgroundColor: '#8b5cf6',
                                 pointBorderColor: '#fff',
@@ -1684,7 +1685,7 @@
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
                                         if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
-                                        if (lbl === 'Heures travaillées') return `${lbl}: ${v}h`;
+                                        if (lbl === 'Heures travaillées') return `${lbl}: ${fmtMin(v)}`;
                                         return `${lbl}: ${v}`;
                                     }
                                 }

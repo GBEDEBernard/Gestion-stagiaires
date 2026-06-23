@@ -767,7 +767,8 @@
          var onTime = Array.isArray(chartData.on_time) ? chartData.on_time : [];
          var lateDays = Array.isArray(chartData.late_days) ? chartData.late_days : [];
          var absences = Array.isArray(chartData.absences) ? chartData.absences : [];
-         var workedHours = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+         var workedHoursRaw = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+         var workedHours = workedHoursRaw.map(function(v) { return Math.round(v * 60); });
          var lateMinutes = Array.isArray(chartData.late_minutes) ? chartData.late_minutes : [];
 
          var canvas = document.getElementById('presenceChart');
@@ -922,8 +923,8 @@
                                  label: function(context) {
                                      var val = context.parsed.y;
                                      var label = context.dataset.label;
-                                     if (label.includes('Minutes')) return label + ': ' + val + ' min';
-                                     if (label.includes('Heures')) return label + ': ' + val + 'h';
+                                      if (label.includes('Minutes')) return label + ': ' + val + ' min';
+                                      if (label.includes('Heures')) { var h = Math.floor(val / 60), m = val % 60; return label + ': ' + h + 'h' + (m ? ' ' + m + 'min' : ''); }
                                      if (val === 1) return label + ': OUI';
                                      if (val === 0) return label + ': non';
                                      return label + ': ' + val;
