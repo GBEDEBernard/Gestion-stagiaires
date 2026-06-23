@@ -20,13 +20,15 @@
 
         {{-- Bannière jour férié --}}
         @if($todayHoliday ?? false)
-        <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl text-purple-700 dark:text-purple-400 flex items-center gap-3">
+        <div class="mb-6 p-4 {{ ($canBypassHoliday ?? false) || ($isEmergencyExempted ?? false) ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400' }} border rounded-xl flex items-center gap-3">
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <div>
                 <strong class="font-semibold">Jour férié : {{ $todayHoliday->label }}</strong>
-                @if($canBypassHoliday ?? false)
+                @if($isEmergencyExempted ?? false)
+                <p class="text-sm mt-1">Vous avez été appelé(e) en urgence. Vous pouvez pointer normalement.</p>
+                @elseif($canBypassHoliday ?? false)
                 <p class="text-sm mt-1">Vous avez une permission spéciale pour pointer aujourd'hui.</p>
                 @else
                 <p class="text-sm mt-1">Le pointage est désactivé aujourd'hui. En cas d'urgence, votre responsable peut vous contacter.</p>

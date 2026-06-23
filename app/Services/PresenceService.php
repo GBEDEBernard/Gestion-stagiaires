@@ -8,6 +8,7 @@ use App\Models\AttendanceEvent;
 use App\Models\Domaine;
 use App\Models\Etudiant;
 use App\Models\Holiday;
+use App\Models\HolidayEmergencyExemption;
 use App\Models\SiteGeofence;
 use App\Models\Stage;
 use App\Models\TrustedDevice;
@@ -34,11 +35,20 @@ class PresenceService
      */
     protected function checkHolidayRestriction(User $user): void
     {
-        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$this->isEmergencyExempted($user)) {
             throw ValidationException::withMessages([
                 'presence' => "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé sauf pour le personnel d'urgence.",
             ]);
         }
+    }
+
+    protected function isEmergencyExempted(User $user): bool
+    {
+        return HolidayEmergencyExemption::where('user_id', $user->id)
+            ->whereHas('holiday', function ($q) {
+                $q->whereDate('date', today())->where('is_active', true);
+            })
+            ->exists();
     }
 
     /**
@@ -116,7 +126,15 @@ class PresenceService
             }
 
             // Évaluation de la validité du pointage (distance, précision, doublons...)
-            $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance, $hasCoordinates);
+            if ($this->isEmergencyExempted($user)) {
+                $decision = [
+                    'status'      => 'approved',
+                    'reason_code' => 'emergency_exemption',
+                    'message'     => 'Pointage urgence : toutes les contraintes sont levées.',
+                ];
+            } else {
+                $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance, $hasCoordinates);
+            }
 
             // Création de l'événement de pointage
             $event = AttendanceEvent::create([
@@ -436,7 +454,16 @@ class PresenceService
                 : null;
 
             $isLate   = $payload['is_late'] ?? false;
-            $decision = $this->evaluateEvent($stage, $eventType, $payload, $geofence, $distance);
+
+            if ($this->isEmergencyExempted($user)) {
+                $decision = [
+                    'status'      => 'approved',
+                    'reason_code' => 'emergency_exemption',
+                    'message'     => 'Pointage urgence : toutes les contraintes sont levées.',
+                ];
+            } else {
+                $decision = $this->evaluateEvent($stage, $eventType, $payload, $geofence, $distance);
+            }
 
             $event = AttendanceEvent::create([
                 'stage_id'               => $stage->id,

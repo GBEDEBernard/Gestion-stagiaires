@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Holiday;
+use App\Models\HolidayEmergencyExemption;
 use App\Models\PermissionRequest;
 use App\Models\PermissionType;
 use App\Services\AdminPresenceService;
@@ -32,6 +33,7 @@ class PresenceController extends Controller
 
         $todayHoliday = Holiday::whereDate('date', today())->where('is_active', true)->first();
         $canBypassHoliday = $user->can('holidays.bypass');
+        $isEmergencyExempted = HolidayEmergencyExemption::isExempted($user);
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
@@ -46,7 +48,7 @@ class PresenceController extends Controller
                 ->first();
 
             if (!$activeStage) {
-                return view('presence.pointage', compact('activeStage', 'todayHoliday', 'canBypassHoliday'));
+                return view('presence.pointage', compact('activeStage', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
             }
 
             // Statut du jour
@@ -54,7 +56,7 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('presence.pointage', compact('activeStage', 'attendanceDay', 'todayHoliday', 'canBypassHoliday'));
+            return view('presence.pointage', compact('activeStage', 'attendanceDay', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
             $domaine = $user->domaine;
@@ -68,7 +70,7 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('employee.presence.pointage', compact('attendanceDay', 'user', 'todayHoliday', 'canBypassHoliday'));
+            return view('employee.presence.pointage', compact('attendanceDay', 'user', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
         }
     }
 
@@ -79,7 +81,8 @@ class PresenceController extends Controller
     {
         $user = $request->user();
 
-        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+        $isExempted = HolidayEmergencyExemption::isExempted($user);
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$isExempted) {
             return redirect()->route('presence.pointage')
                 ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
         }
@@ -197,7 +200,8 @@ class PresenceController extends Controller
     {
         $user = $request->user();
 
-        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass')) {
+        $isExempted = HolidayEmergencyExemption::isExempted($user);
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$isExempted) {
             return redirect()->route('presence.pointage')
                 ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
         }

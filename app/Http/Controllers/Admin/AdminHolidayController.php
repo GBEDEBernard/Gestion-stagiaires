@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EmergencyCallMail;
 use App\Models\Holiday;
+use App\Models\HolidayEmergencyExemption;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class AdminHolidayController extends Controller
 {
@@ -112,6 +115,15 @@ class AdminHolidayController extends Controller
         $customMsg = $validated['message'] ?? 'Veuillez vous présenter pour une intervention urgente.';
 
         foreach ($users as $user) {
+            HolidayEmergencyExemption::firstOrCreate([
+                'holiday_id' => $holiday->id,
+                'user_id' => $user->id,
+            ], [
+                'message' => $customMsg,
+                'called_by' => $request->user()->id,
+            ]);
+
+            // In-app notification
             $this->notificationService->push(
                 userId: $user->id,
                 type: 'urgence_jour_ferie',
@@ -131,11 +143,15 @@ class AdminHolidayController extends Controller
                 icon: 'lock-open',
                 color: 'amber'
             );
+
+            // Email notification
+            Mail::to($user->getEmailForVerification())
+                ->send(new EmergencyCallMail($user, $holiday, $customMsg));
         }
 
         $count = $users->count();
         return redirect()->route('admin.holidays.index')
-            ->with('success', "Notification d'urgence envoyée à {$count} personne(s).");
+            ->with('success', "Appel d'urgence envoyé à {$count} personne(s) avec notification par email et exemption de pointage.");
     }
 
     public function usersList(Request $request)
