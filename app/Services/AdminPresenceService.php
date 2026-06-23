@@ -7,6 +7,7 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Etudiant;
 use App\Models\Employe;
+use App\Models\Holiday;
 use App\Models\Stage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -27,6 +28,20 @@ class AdminPresenceService
         return $firstUser
             ? Carbon::parse($firstUser->created_at)->startOfDay()
             : Carbon::parse('2026-04-27')->startOfDay();
+    }
+
+    /**
+     * Retourne un tableau [date => true] pour les jours fériés actifs dans un intervalle.
+     */
+    private function getActiveHolidaysInRange(Carbon $start, Carbon $end): array
+    {
+        return Holiday::active()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->pluck('is_active', 'date')
+            ->keys()
+            ->flip()
+            ->map(fn() => true)
+            ->toArray();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -207,6 +222,9 @@ class AdminPresenceService
         // ✅ Date d'activation du système — aucun absent compté avant
         $systemStart = $this->systemStartDate();
 
+        // ✅ Jours fériés actifs dans la plage
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
         // ── Données pointage réelles (jours ouvrés uniquement) ───────────────
         $dailyStats = AttendanceDay::whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
@@ -238,6 +256,7 @@ class AdminPresenceService
         $lateDaysData  = [];
         $absentData    = [];
         $workedHoursData = [];
+        $holidayFlags  = [];
 
         $currentDate = $startDate->copy();
         while ($currentDate <= $endDate) {
@@ -257,7 +276,9 @@ class AdminPresenceService
             $dateKey   = $currentDate->format('Y-m-d');
             $dateLabel = $currentDate->format('d/m');
 
-            // Nombre de stagiaires attendus ce jour
+            $isHoliday = isset($holidays[$dateKey]);
+
+            // ── Compter les stagiaires attendus ce jour ────────────────────────
             $studentsCount = Stage::whereDate('date_debut', '<=', $dateKey)
                 ->whereDate('date_fin', '>=', $dateKey)
                 ->distinct('etudiant_id')
@@ -267,6 +288,7 @@ class AdminPresenceService
 
             $isBeforeSystemStart = $currentDate->lt($systemStart);
             $allDates[]          = $dateLabel;
+            $holidayFlags[]      = $isHoliday;
             $dayStats            = $dailyStats->get($dateKey);
 
             if ($dayStats) {
@@ -274,13 +296,13 @@ class AdminPresenceService
                 $lateMinutesData[] = (int) $dayStats->late_minutes;
                 $lateDaysData[]    = (int) $dayStats->late_days;
                 $workedHoursData[] = round((int) $dayStats->worked_minutes / 60, 1);
-                $absentData[]      = $isBeforeSystemStart ? 0 : max(0, $expectedTotal - (int) $dayStats->present);
+                $absentData[]      = $isHoliday ? 0 : ($isBeforeSystemStart ? 0 : max(0, $expectedTotal - (int) $dayStats->present));
             } else {
                 $presentData[]     = 0;
                 $lateMinutesData[] = 0;
                 $lateDaysData[]    = 0;
                 $workedHoursData[] = 0;
-                $absentData[]      = $isBeforeSystemStart ? 0 : $expectedTotal;
+                $absentData[]      = $isHoliday ? 0 : ($isBeforeSystemStart ? 0 : $expectedTotal);
             }
 
             $currentDate->addDay();
@@ -316,6 +338,7 @@ class AdminPresenceService
                 'late_days'    => $lateDaysData,
                 'absent'       => $absentData,
                 'worked_hours' => $workedHoursData,
+                'holidays'     => $holidayFlags,
             ],
         ];
     }
@@ -426,7 +449,9 @@ class AdminPresenceService
             ->get()
             ->keyBy('date');
 
-        $labels = $present = $late = $absent = $lateMinutes = $workedHours = [];
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
+        $labels = $present = $late = $absent = $lateMinutes = $workedHours = $isHoliday = [];
 
         $currentDate = $startDate->copy()->startOfDay();
         while ($currentDate <= $endDate) {
@@ -438,26 +463,35 @@ class AdminPresenceService
 
             $dateKey  = $currentDate->toDateString();
             $labels[] = $currentDate->isoFormat('D MMM');
-            $stats    = $dailyStats->get($dateKey);
+            $isHoliday[] = isset($holidays[$dateKey]);
 
-            if ($stats) {
-                $present[]     = (int) $stats->present;
-                $late[]        = (int) $stats->late;
-                $absent[]      = (int) $stats->absent;
-                $lateMinutes[] = (int) $stats->late_minutes;
-                $workedHours[] = round($stats->worked_minutes / 60, 1);
-            } else {
+            if (isset($holidays[$dateKey])) {
                 $present[]     = 0;
                 $late[]        = 0;
                 $absent[]      = 0;
                 $lateMinutes[] = 0;
                 $workedHours[] = 0;
+            } else {
+                $stats = $dailyStats->get($dateKey);
+                if ($stats) {
+                    $present[]     = (int) $stats->present;
+                    $late[]        = (int) $stats->late;
+                    $absent[]      = (int) $stats->absent;
+                    $lateMinutes[] = (int) $stats->late_minutes;
+                    $workedHours[] = round($stats->worked_minutes / 60, 1);
+                } else {
+                    $present[]     = 0;
+                    $late[]        = 0;
+                    $absent[]      = 0;
+                    $lateMinutes[] = 0;
+                    $workedHours[] = 0;
+                }
             }
 
             $currentDate->addDay();
         }
 
-        return compact('labels', 'present', 'late', 'absent', 'lateMinutes', 'workedHours');
+        return compact('labels', 'present', 'late', 'absent', 'lateMinutes', 'workedHours', 'isHoliday');
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -512,6 +546,9 @@ class AdminPresenceService
         $systemStart    = $this->systemStartDate();
         $activationDate = $activationDate->max($systemStart);
 
+        // ✅ Jours fériés actifs dans la plage
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
         // ── Récupérer les pointages ───────────────────────────────────────────
         $query = AttendanceDay::weekdays();
         if ($isEtudiant) $query->where('etudiant_id', $user->etudiant->id);
@@ -525,7 +562,7 @@ class AdminPresenceService
 
         $today = today()->startOfDay();
 
-        $labels = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = [];
+        $labels = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = $isHoliday = [];
 
         $currentDate = $startDate->copy()->startOfDay();
         while ($currentDate->lte($endDate->copy()->startOfDay())) {
@@ -539,9 +576,18 @@ class AdminPresenceService
             $dateKey          = $currentDate->toDateString();
             $labels[]         = $currentDate->isoFormat('D MMM');
             $isBeforeActivation = $currentDate->lt($activationDate);
-            $day              = $days->get($dateKey);
+            $isCurrentHoliday   = isset($holidays[$dateKey]);
+            $isHoliday[]        = $isCurrentHoliday;
+            $day                = $days->get($dateKey);
 
-            if ($day) {
+            if ($isCurrentHoliday) {
+                $present[]     = 0;
+                $onTime[]      = 0;
+                $lateDays[]    = 0;
+                $absences[]    = 0;
+                $lateMinutes[] = 0;
+                $workedHours[] = 0;
+            } elseif ($day) {
                 $hasCheckIn = !is_null($day->first_check_in_at);
                 $isLate     = $hasCheckIn && ($day->arrival_status === 'late');
                 $isOnTime   = $hasCheckIn && !$isLate;
@@ -580,8 +626,9 @@ class AdminPresenceService
 
             $isActive = $checkDate->gte($activationDate);
             $isFuture = $checkDate->gt($today);
+            $isHolidayCheck = isset($holidays[$checkDate->toDateString()]);
 
-            if ($isActive && !$isFuture) {
+            if ($isActive && !$isFuture && !$isHolidayCheck) {
                 $totalExpectedDays++;
                 $day = $days->get($checkDate->toDateString());
                 if ($day && !is_null($day->first_check_in_at)) {
@@ -619,6 +666,7 @@ class AdminPresenceService
                 'absences'     => $absences,
                 'late_minutes' => $lateMinutes,
                 'worked_hours' => $workedHours,
+                'holidays'     => $isHoliday,
             ],
         ];
     }
@@ -665,6 +713,8 @@ class AdminPresenceService
 
         $today = today()->endOfDay();
 
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
         $absentCountByUserName = [];
         $absentDaysByUserName = [];
 
@@ -688,7 +738,7 @@ class AdminPresenceService
 
         $days = $startDate->copy();
         while ($days->lte($endDate)) {
-            if ($days->isWeekend() || $days->gt($today)) {
+            if ($days->isWeekend() || $days->gt($today) || isset($holidays[$days->format('Y-m-d')])) {
                 $days->addDay();
                 continue;
             }
@@ -795,6 +845,8 @@ class AdminPresenceService
 
         $today = today()->endOfDay();
 
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
         $absentCountByUserName = [];
         $employeeIds = User::whereHas('personnel', function ($query) {
             $query->where('personnable_type', Employe::class);
@@ -817,8 +869,8 @@ class AdminPresenceService
         $days = $startDate->copy();
         while ($days->lte($endDate)) {
 
-            // ✅ Ignorer week-ends et jours futurs
-            if ($days->isWeekend() || $days->gt($today)) {
+            // ✅ Ignorer week-ends, jours futurs et jours fériés
+            if ($days->isWeekend() || $days->gt($today) || isset($holidays[$days->format('Y-m-d')])) {
                 $days->addDay();
                 continue;
             }

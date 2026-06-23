@@ -1215,6 +1215,7 @@
                         <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absents</div>
                         <div class="legend-item"><span class="legend-dot" style="background:#f97316;border-radius:2px;"></span>Retard (min) →</div>
                         <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;border-radius:2px;"></span>Heures travaillées →</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:rgba(139,92,246,0.3);"></span>Jour férié</div>
                     </div>
                     <div class="chart-container" style="height:300px;">
                         <canvas id="chartGlobal"></canvas>
@@ -1446,9 +1447,29 @@
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absent'] ?? []);
             const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
+            const holidays = @json($globalStats['chart_data']['holidays'] ?? []);
             const absenceItems = @json($absenceItems ?? []);
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
+
+            /* Plugin : bandes verticales pour jours fériés */
+            const holidayPlugin = {
+                id: 'holidayBands',
+                beforeDraw(chart) {
+                    const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
+                    if (!x || !holidays.length) return;
+                    const gap = labels.length > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : 0;
+                    holidays.forEach((isHoliday, i) => {
+                        if (isHoliday) {
+                            const xPos = x.getPixelForValue(i) - gap / 2;
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(139,92,246,0.07)';
+                            ctx.fillRect(xPos, top, gap, bottom - top);
+                            ctx.restore();
+                        }
+                    });
+                }
+            };
 
             const absenceModalBackdrop = document.getElementById('absenceModalBackdrop');
             const absenceModalClose = document.getElementById('absenceModalClose');
@@ -1532,6 +1553,7 @@
 
                 new Chart(ctx, {
                     type: 'line',
+                    plugins: [holidayPlugin],
                     data: {
                         labels,
                         datasets: [{
@@ -1728,6 +1750,7 @@
             if (ctxOv && labels.length > 0) {
                 new Chart(ctxOv, {
                     type: 'bar',
+                    plugins: [holidayPlugin],
                     data: {
                         labels,
                         datasets: [{

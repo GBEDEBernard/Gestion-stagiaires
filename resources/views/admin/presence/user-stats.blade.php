@@ -277,6 +277,26 @@
         const labels = @json($userStats['chart_data']['labels']);
         const worked = @json($userStats['chart_data']['worked_hours']);
         const late   = @json($userStats['chart_data']['late_minutes']);
+        const holidays = @json($userStats['chart_data']['holidays'] ?? []);
+
+        /* Plugin : bandes verticales pour jours fériés */
+        const holidayPlugin = {
+            id: 'holidayBands',
+            beforeDraw(chart) {
+                const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
+                if (!x || !holidays.length) return;
+                const gap = labels.length > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : 0;
+                holidays.forEach((isHoliday, i) => {
+                    if (isHoliday) {
+                        const xPos = x.getPixelForValue(i) - gap / 2;
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(139,92,246,0.07)';
+                        ctx.fillRect(xPos, top, gap, bottom - top);
+                        ctx.restore();
+                    }
+                });
+            }
+        };
 
         const grid = { color:'rgba(255,255,255,0.05)', drawBorder:false };
         const commonOpts = {
@@ -302,6 +322,7 @@
         gradW.addColorStop(1,'rgba(59,130,246,0)');
         new Chart(ctxW, {
             type:'line',
+            plugins:[holidayPlugin],
             data:{
                 labels,
                 datasets:[{
@@ -317,6 +338,7 @@
         const ctxL = document.getElementById('lateChart').getContext('2d');
         new Chart(ctxL, {
             type:'bar',
+            plugins:[holidayPlugin],
             data:{
                 labels,
                 datasets:[{
