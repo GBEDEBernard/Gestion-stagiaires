@@ -22,26 +22,35 @@ class AutoCheckout extends Command
 
     public function handle(): int
     {
-        $notifyOnly = $this->option('notify-only');
-        $today = today()->toDateString();
+        try {
+            $notifyOnly = $this->option('notify-only');
+            $today = today()->toDateString();
 
-        $usersWithoutCheckout = AttendanceDay::whereDate('attendance_date', $today)
-            ->whereNotNull('first_check_in_at')
-            ->whereNull('last_check_out_at')
-            ->get();
+            $usersWithoutCheckout = AttendanceDay::whereDate('attendance_date', $today)
+                ->whereNotNull('first_check_in_at')
+                ->whereNull('last_check_out_at')
+                ->get();
 
-        if ($usersWithoutCheckout->isEmpty()) {
-            $this->info('Aucun utilisateur sans pointage de départ.');
+            if ($usersWithoutCheckout->isEmpty()) {
+                $this->info('Aucun utilisateur sans pointage de départ.');
+                return Command::SUCCESS;
+            }
+
+            if ($notifyOnly) {
+                $this->sendReminders($usersWithoutCheckout);
+            } else {
+                $this->autoCheckout($usersWithoutCheckout);
+            }
+
             return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            Log::error('AutoCheckout: échec général — ' . $e->getMessage(), [
+                'notify-only' => $this->option('notify-only'),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $this->error('Erreur : ' . $e->getMessage());
+            return Command::FAILURE;
         }
-
-        if ($notifyOnly) {
-            $this->sendReminders($usersWithoutCheckout);
-            return Command::SUCCESS;
-        }
-
-        $this->autoCheckout($usersWithoutCheckout);
-        return Command::SUCCESS;
     }
 
     protected function resolveUserId(AttendanceDay $day): ?int
