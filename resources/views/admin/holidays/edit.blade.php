@@ -1,4 +1,5 @@
 <x-app-layout>
+ <div class="max-w-2xl mx-auto">
     <div class="mb-8 ml-4">
         <div class="flex items-center gap-4 mb-6">
             <a href="{{ route('admin.holidays.index') }}" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition">
@@ -59,4 +60,5 @@
             </form>
         </div>
     </div>
+</div>
 </x-app-layout>

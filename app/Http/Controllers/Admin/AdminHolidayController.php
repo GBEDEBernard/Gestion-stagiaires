@@ -79,8 +79,10 @@ class AdminHolidayController extends Controller
         if ($holiday->is_active) {
             $this->notifyEmployees($holiday);
             $holiday->notified = true;
-            $holiday->save();
+        } else {
+            $holiday->notified = false;
         }
+        $holiday->save();
 
         $status = $holiday->is_active ? 'activé' : 'désactivé';
         return redirect()->route('admin.holidays.index')

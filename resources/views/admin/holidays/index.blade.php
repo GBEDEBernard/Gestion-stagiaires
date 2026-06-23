@@ -85,12 +85,41 @@
                             @can('holidays.toggle')
                             <form method="POST" action="{{ route('admin.holidays.toggle', $holiday) }}" class="inline-flex justify-center">
                                 @csrf
-                                <button type="submit" title="{{ $holiday->is_active ? 'Désactiver' : 'Activer' }}"
-                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500
-                                               {{ $holiday->is_active ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600' }}">
+                                <button type="submit" 
+                                        title="{{ $holiday->is_active ? 'Désactiver' : 'Activer' }}"
+                                        class="relative group/toggle inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 
+                                               focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2
+                                               {{ $holiday->is_active 
+                                                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-md shadow-purple-500/30' 
+                                                  : 'bg-gray-300 dark:bg-gray-600' }}
+                                               hover:scale-105 active:scale-95">
+                                    
+                                    {{-- Effet de glow --}}
+                                    <span class="absolute inset-0 rounded-full opacity-0 group-hover/toggle:opacity-100 transition-opacity duration-300
+                                                 {{ $holiday->is_active ? 'bg-purple-400/20 blur-md' : 'bg-gray-400/20 blur-md' }}">
+                                    </span>
+                                    
                                     <span class="sr-only">{{ $holiday->is_active ? 'Désactiver' : 'Activer' }}</span>
-                                    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200
-                                                 {{ $holiday->is_active ? 'translate-x-6' : 'translate-x-1' }}"></span>
+                                    
+                                    {{-- Cercle mobile --}}
+                                    <span class="relative inline-block h-5 w-5 transform rounded-full bg-white shadow-lg 
+                                                 transition-all duration-300 ease-in-out
+                                                 {{ $holiday->is_active ? 'translate-x-6' : 'translate-x-1' }}
+                                                 group-hover/toggle:scale-110">
+                                        
+                                        {{-- Icône à l'intérieur du cercle --}}
+                                        <span class="absolute inset-0 flex items-center justify-center text-[10px] font-bold
+                                                     {{ $holiday->is_active ? 'text-purple-600' : 'text-gray-400' }}">
+                                            {{ $holiday->is_active ? '✓' : '✕' }}
+                                        </span>
+                                    </span>
+                                    
+                                    {{-- Indicateur de statut - version améliorée avec animation --}}
+                                    <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-semibold 
+                                                 transition-all duration-300 opacity-0 group-hover/toggle:opacity-100
+                                                 {{ $holiday->is_active ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500' }}">
+                                        {{ $holiday->is_active ? 'ACTIF' : 'INACTIF' }}
+                                    </span>
                                 </button>
                             </form>
                             @else
@@ -207,11 +236,29 @@
                         <form method="POST" action="{{ route('admin.holidays.toggle', $holiday) }}">
                             @csrf
                             <button type="submit"
-                                    class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors
-                                           {{ $holiday->is_active ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600' }}">
+                                    class="relative group/toggle inline-flex h-6 w-11 items-center rounded-full transition-all duration-300
+                                           {{ $holiday->is_active 
+                                              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 shadow-md shadow-purple-500/30' 
+                                              : 'bg-gray-300 dark:bg-gray-600' }}
+                                           hover:scale-105 active:scale-95">
+                                
                                 <span class="sr-only">Toggle</span>
-                                <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform
-                                             {{ $holiday->is_active ? 'translate-x-4' : 'translate-x-0.5' }}"></span>
+                                
+                                {{-- Effet de glow --}}
+                                <span class="absolute inset-0 rounded-full opacity-0 group-hover/toggle:opacity-100 transition-opacity duration-300
+                                             {{ $holiday->is_active ? 'bg-purple-400/20 blur-md' : 'bg-gray-400/20 blur-md' }}">
+                                </span>
+                                
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-all duration-300 ease-in-out
+                                             {{ $holiday->is_active ? 'translate-x-5' : 'translate-x-0.5' }}
+                                             group-hover/toggle:scale-110">
+                                    
+                                    {{-- Icône à l'intérieur du cercle --}}
+                                    <span class="absolute inset-0 flex items-center justify-center text-[8px] font-bold
+                                                 {{ $holiday->is_active ? 'text-purple-600' : 'text-gray-400' }}">
+                                        {{ $holiday->is_active ? '✓' : '✕' }}
+                                    </span>
+                                </span>
                             </button>
                         </form>
                         @endcan
@@ -297,8 +344,6 @@
             </div>
             @endforelse
         </div>
-
-        {{-- ── État vide partagé desktop (déjà inline dans tbody) ── --}}
 
         {{-- ── Pagination ───────────────────────── --}}
         @if($holidays->hasPages())
