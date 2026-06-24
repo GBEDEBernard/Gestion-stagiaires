@@ -146,7 +146,7 @@ class AttestationController extends Controller
 
         $numero = str_pad($numero, 2, '0', STR_PAD_LEFT);
 
-        return "ATS {$numero}_{$currentMonth}/{$currentYear} / TFG / DG / DT-ISI / SD";
+        return "ATS {$numero}/{$currentMonth}-{$currentYear} / TFG / DG / DT-ISI / SD";
     }
 
     /**
