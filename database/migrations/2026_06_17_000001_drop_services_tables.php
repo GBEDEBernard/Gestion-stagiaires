@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('stages', function (Blueprint $table) {
             if (Schema::hasColumn('stages', 'service_id')) {
+                $table->dropForeign(['service_id']);
                 $table->dropColumn('service_id');
             }
         });
