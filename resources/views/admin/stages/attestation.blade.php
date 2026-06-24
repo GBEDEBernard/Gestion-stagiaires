@@ -40,7 +40,7 @@
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.50;
+            opacity: 0.60;
             z-index: 0;
             pointer-events: none;
         }
