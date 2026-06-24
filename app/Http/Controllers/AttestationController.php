@@ -128,13 +128,17 @@ class AttestationController extends Controller
     protected function generateReference()
     {
         $currentYear = date('y');
+        $currentMonth = date('m');
 
         $lastAttestation = Attestation::whereYear('created_at', Carbon::now()->year)
             ->orderBy('id', 'desc')
             ->first();
 
         if ($lastAttestation) {
-            preg_match('/ATS (\d+)_\d{2}/', $lastAttestation->reference, $matches);
+            preg_match('/ATS (\d+)_\d{2}\/\d{2}/', $lastAttestation->reference, $matches);
+            if (!$matches) {
+                preg_match('/ATS (\d+)_\d{2}/', $lastAttestation->reference, $matches);
+            }
             $numero = isset($matches[1]) ? intval($matches[1]) + 1 : 1;
         } else {
             $numero = 1;
@@ -142,7 +146,7 @@ class AttestationController extends Controller
 
         $numero = str_pad($numero, 2, '0', STR_PAD_LEFT);
 
-        return "ATS {$numero}_{$currentYear} / TFG / DG / DT-ISI / SD";
+        return "ATS {$numero}_{$currentMonth}/{$currentYear} / TFG / DG / DT-ISI / SD";
     }
 
     /**
