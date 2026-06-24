@@ -455,17 +455,8 @@
                                 </svg>
                                 {{ $attestation->date_delivrance?->format('d/m/Y') ?? '—' }}
                             </p>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs {{ $attestation->download_count >= 3 ? 'text-red-500' : 'text-gray-400' }}">
-                                    {{ $attestation->download_count }}/3
-                                </span>
-                                @if($attestation->download_count < 3)
-                                <a href="{{ encrypted_route('stages.attestation.download', $attestation->stage) }}"
-                                    class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">Télécharger</a>
-                                @else
-                                <span class="text-xs text-red-500 font-medium">Limite atteinte</span>
-                                @endif
-                            </div>
+                            <a href="{{ encrypted_route('stages.attestation.show', $attestation->stage) }}"
+                                class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">Voir</a>
                         </div>
                     </div>
                     @endforeach

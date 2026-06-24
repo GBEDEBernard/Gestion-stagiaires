@@ -266,8 +266,8 @@ class AttestationController extends Controller
             'date_delivrance' => now(),
         ]);
 
-        if ($type === 'download' && $attestation->download_count >= 3) {
-            abort(403, 'Limite de téléchargement atteinte (3 maximum).');
+        if ($type === 'download' && $attestation->download_count >= 6) {
+            abort(403, 'Limite de téléchargement atteinte (6 maximum).');
         }
 
         $reference  = $attestation->reference;
@@ -308,6 +308,9 @@ class AttestationController extends Controller
 
         // Désactiver le saut de page automatique
         $mpdf->SetAutoPageBreak(false);
+
+        ini_set('pcre.backtrack_limit', '4000000');
+        ini_set('pcre.jit', '0');
 
         $mpdf->WriteHTML($html);
 
