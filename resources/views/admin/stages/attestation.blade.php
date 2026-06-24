@@ -17,7 +17,7 @@
 
         .a4-container {
             width: 210mm;
-            height: 297mm;
+            @if(!isset($isPdf)) height: 297mm; @endif
             background: #ffffff;
             padding: 15mm;
             position: relative;
@@ -194,9 +194,10 @@
             right: 15mm;
             border-top: 4px solid #030303d3;
             text-align: justify;
-            font-size: 12px;
-            padding-top: 5px;
-            font-weight: 600;
+            font-size: 10px;
+            padding-top: 2px;
+            font-weight: 700;
+            font-style: italic;
         }
 
         .buttons-container {
@@ -275,10 +276,12 @@
             }
         }
 
+        @if(!isset($isPdf))
         @page {
             margin: 0;
             size: A4;
         }
+        @endif
     </style>
 </head>
 
@@ -321,8 +324,9 @@
 
         // Genre et civilité
         $genre = strtolower($stage->etudiant->personnel->genre ?? 'masculin');
-        $civilite = $genre === 'feminin' ? 'Madame' : 'Monsieur';
-        $pronom = $genre === 'feminin' ? 'elle' : 'il';
+        $estFemme = in_array($genre, ['feminin', 'femme', 'f', 'féminin']);
+        $civilite = $estFemme ? 'Madame' : 'Monsieur';
+        $pronom = $estFemme ? 'elle' : 'il';
 
         // Thème complet
         $texteTheme = $stage->theme ?: 'a effectué son stage avec sérieux et diligence.';
@@ -373,11 +377,11 @@
 
             <div class="content">
                 <p>
-                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group SARL (TFG SARL)</b>,
+                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>TECHNOLOGY FOREVER GROUP (TFG) SARL</b>,
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
-                    dans notre entreprise au sein de la {{ $prepositionService }} {{ $serviceDisplay }} durant la période du
-                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
+                    dans notre entreprise au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
+                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> à <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.
                 </p>
                 <p>
