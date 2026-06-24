@@ -35,7 +35,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 500px;
-            height: 600px;
+            height: 500px;
             background-image: url('{{ asset("images/TFGLOGO.png") }}');
             background-position: center center;
             background-repeat: no-repeat;
@@ -266,7 +266,7 @@
 
             .a4-container::before,
             .watermark {
-                opacity: 0.50 !important;
+                opacity: 0.60 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -380,7 +380,7 @@
                     Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>TECHNOLOGY FOREVER GROUP (TFG) SARL</b>,
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
-                    dans notre entreprise , au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
+                    dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
                     <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> à <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.
                 </p>
