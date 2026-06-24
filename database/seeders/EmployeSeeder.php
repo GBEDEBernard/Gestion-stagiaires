@@ -68,6 +68,7 @@ class EmployeSeeder extends Seeder
                 'must_change_password' => true,
                 'temporary_password_created_at' => now(),
                 'email_verified_at' => now(),
+                'domaine_id' => $data['domaine_id'],
             ];
 
             if (Schema::hasColumn('users', 'name')) {

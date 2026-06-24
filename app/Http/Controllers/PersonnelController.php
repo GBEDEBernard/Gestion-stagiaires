@@ -252,6 +252,12 @@ class PersonnelController extends Controller
                 'supervisor_id' => $data['supervisor_id'] ?? null,
                 // pas de matricule
             ]);
+
+            if ($personnel->user) {
+                $personnel->user->update([
+                    'domaine_id' => $data['domaine_id'] ?? $personnel->personnable->domaine_id,
+                ]);
+            }
         }
 
         return redirect()->route('personnels.index')->with('success', 'Personnel mis à jour.');

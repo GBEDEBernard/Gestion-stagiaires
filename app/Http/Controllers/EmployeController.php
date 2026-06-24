@@ -186,6 +186,12 @@ class EmployeController extends Controller
             'poste'      => $data['poste'],
         ]);
 
+        if ($personnel->user) {
+            $personnel->user->update([
+                'domaine_id' => $data['domaine_id'],
+            ]);
+        }
+
         return redirect()->route('employes.index')->with('success', 'Employé mis à jour.');
     }
 
