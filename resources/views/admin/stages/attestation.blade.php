@@ -31,11 +31,11 @@
         .a4-container::before {
             content: "";
             position: absolute;
-            top: 53%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 500px;
-            height: 500px;
+            height: 600px;
             background-image: url('{{ asset("images/TFGLOGO.png") }}');
             background-position: center center;
             background-repeat: no-repeat;
@@ -362,7 +362,7 @@
             @endisset
 
             <div class="header">
-                <img src="{{ $logoDataUri ?? asset('images/TFGLOGO.png') }}" alt="Logo">
+                <img src="{{ $logoDataUri ?? asset('images/TFGLOGO3.png') }}" alt="Logo">
                 <div class="text-header">
                     <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
                     <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
