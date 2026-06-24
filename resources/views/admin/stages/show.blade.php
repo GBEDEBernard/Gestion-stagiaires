@@ -96,7 +96,7 @@
                         <label for="parordre_{{ $user->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                             <input type="checkbox" name="signataires[{{ $user->id }}][par_ordre]" value="1" id="parordre_{{ $user->id }}"
                                 class="parordre-checkbox rounded border-gray-300 text-violet-600 focus:ring-violet-500" style="opacity: 0.5;" disabled>
-                            <span>P.O</span>
+                            <span>P.O.</span>
                         </label>
                     </div>
                     @endif
