@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -10,7 +11,12 @@ return new class extends Migration
     {
         Schema::table('stages', function (Blueprint $table) {
             if (Schema::hasColumn('stages', 'service_id')) {
-                $table->dropForeign(['service_id']);
+                $foreignKey = 'stages_service_id_foreign';
+                $hasForeignKey = collect(DB::select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [DB::getDatabaseName(), 'stages', $foreignKey]))->isNotEmpty();
+
+                if ($hasForeignKey) {
+                    $table->dropForeign(['service_id']);
+                }
                 $table->dropColumn('service_id');
             }
         });
