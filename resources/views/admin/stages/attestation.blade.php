@@ -27,6 +27,7 @@
             overflow: hidden;
         }
 
+        @if(!isset($isPdf))
         .a4-container::before {
             content: "";
             position: absolute;
@@ -35,7 +36,7 @@
             transform: translate(-50%, -50%);
             width: 500px;
             height: 500px;
-            background-image: url('{{ secure_asset("images/TFGLOGO.png") }}');
+            background-image: url('{{ asset("images/TFGLOGO.png") }}');
             background-position: center center;
             background-repeat: no-repeat;
             background-size: contain;
@@ -43,10 +44,29 @@
             z-index: 0;
             pointer-events: none;
         }
+        @endif
 
         .a4-container>* {
             position: relative;
             z-index: 1;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 500px;
+            height: 500px;
+            margin-top: -250px;
+            margin-left: -250px;
+            opacity: 0.35;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .watermark img {
+            width: 100%;
+            height: 100%;
         }
 
         .header {
@@ -243,7 +263,8 @@
                 border: none;
             }
 
-            .a4-container::before {
+            .a4-container::before,
+            .watermark {
                 opacity: 0.50 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -330,9 +351,14 @@
         @endphp
 
         <div class="a4-container">
+            @isset($isPdf)
+            <div class="watermark">
+                <img src="{{ $logoDataUri }}" alt="">
+            </div>
+            @endisset
 
             <div class="header">
-                <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo">
+                <img src="{{ $logoDataUri ?? asset('images/TFGLOGO.png') }}" alt="Logo">
                 <div class="text-header">
                     <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
                     <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
@@ -347,7 +373,7 @@
 
             <div class="content">
                 <p>
-                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever SARL (TFG SARL)</b>,
+                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>Technology Forever Group SARL (TFG SARL)</b>,
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
                     dans notre entreprise au sein de la {{ $prepositionService }} {{ $serviceDisplay }} durant la période du
@@ -366,25 +392,25 @@
             <div class="signatures">
                 @if(count($signataires) == 1)
                 <div class="sign director">
-                    <p><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                    <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
                     @php $parOrdre = $signataires[0]->pivot->par_ordre ?? false; @endphp
                     @if($parOrdre)
-                    <p style="margin-top:8px;"><b>Le Directeur Général et P.O</b></p>
+                    <p style="margin:4px 0;"><b>Le Directeur Général et P.O.</b></p>
                     @endif
-                    <p style="margin-top:8px;"><b>{{ $signataires[0]->poste }}</b></p>
-                    <p style="margin-top:90px;"><u><b>{{ $signataires[0]->nom }}</b></u></p>
+                    <p style="margin:4px 0;"><b>{{ $signataires[0]->poste }}</b></p>
+                    <p style="margin-top:70px;"><u><b>{{ $signataires[0]->nom }}</b></u></p>
                 </div>
                 @else
                 <div class="sign-row">
                     @foreach($signataires as $signataire)
                     <div class="sign-item">
-                        <p><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                        <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
                         @php $parOrdre = $signataire->pivot->par_ordre ?? false; @endphp
                         @if($parOrdre)
-                        <p><b>Le Directeur Général et P.O</b></p>
+                        <p style="margin:4px 0;"><b>Le Directeur Général et P.O</b></p>
                         @endif
-                        <p><b>{{ $signataire->poste }}</b></p>
-                        <p style="margin-top:70px;"><u><b>{{ $signataire->nom }}</b></u></p>
+                        <p style="margin:4px 0;"><b>{{ $signataire->poste }}</b></p>
+                        <p style="margin-top:60px;"><u><b>{{ $signataire->nom }}</b></u></p>
                     </div>
                     @endforeach
                 </div>
@@ -399,10 +425,12 @@
             </div>
         </div>
 
+        @if(!isset($isPdf))
         <div class="buttons-container">
             <a href="{{ encrypted_route('stages.show', $stage->id) }}" class="back">Retour</a>
             <button type="button" class="print" onclick="window.print()">Imprimer</button>
         </div>
+        @endif
 
 </body>
 

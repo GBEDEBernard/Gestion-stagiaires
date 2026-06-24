@@ -254,6 +254,10 @@ class AttestationController extends Controller
             'date_delivrance' => now(),
         ]);
 
+        if ($type === 'download' && $attestation->download_count >= 3) {
+            abort(403, 'Limite de téléchargement atteinte (3 maximum).');
+        }
+
         $reference = $attestation->reference;
         $signataires = $attestation->signataires()->orderBy('pivot_ordre')->get();
 
@@ -267,8 +271,12 @@ class AttestationController extends Controller
             }
         }
 
+        $logoPath = public_path('images/TFGLOGO.png');
+        $logoBase64 = base64_encode(file_get_contents($logoPath));
+        $logoDataUri = 'data:image/png;base64,' . $logoBase64;
+        $isPdf = true;
 
-        $html = view('admin.stages.attestation_pdf', compact('stage', 'signataires', 'reference'))->render();
+        $html = view('admin.stages.attestation', compact('stage', 'signataires', 'reference', 'logoPath', 'logoDataUri', 'isPdf'))->render();
 
 
         $mpdf = new Mpdf(['format' => 'A4']);
@@ -279,6 +287,8 @@ class AttestationController extends Controller
         if ($type === 'print') {
             return $mpdf->Output($fileName, \Mpdf\Output\Destination::INLINE);
         }
+
+        $attestation->increment('download_count');
 
         return $mpdf->Output($fileName, \Mpdf\Output\Destination::DOWNLOAD);
     }

@@ -32,6 +32,7 @@
             </a>
             @endif
 
+            @if($statutEnCours === 'Termine')
             <button onclick="document.getElementById('modalAttestation').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,6 +40,15 @@
                 </svg>
                 Attestation
             </button>
+            @else
+            <button onclick="document.getElementById('modalAttestationEnCours').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Attestation
+            </button>
+            @endif
 
             <a href="{{ encrypted_route('stages.edit', $stage) }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition shadow-sm">
@@ -101,6 +111,27 @@
                         class="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:from-violet-700 hover:to-purple-700 transition shadow-lg shadow-violet-600/20">Valider</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- Modal Stage en cours --}}
+    <div id="modalAttestationEnCours" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-8 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Stage en cours</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    Le stage est encore en cours. L'attestation sera disponible au téléchargement uniquement à la fin du stage.
+                </p>
+                <button type="button" onclick="document.getElementById('modalAttestationEnCours').classList.add('hidden')"
+                    class="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:from-violet-700 hover:to-purple-700 transition shadow-lg shadow-violet-600/20">
+                    Compris
+                </button>
+            </div>
         </div>
     </div>
 
@@ -424,8 +455,17 @@
                                 </svg>
                                 {{ $attestation->date_delivrance?->format('d/m/Y') ?? '—' }}
                             </p>
-                            <a href="{{ encrypted_route('stages.attestation.show', $attestation->stage) }}"
-                                class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">Voir →</a>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs {{ $attestation->download_count >= 3 ? 'text-red-500' : 'text-gray-400' }}">
+                                    {{ $attestation->download_count }}/3
+                                </span>
+                                @if($attestation->download_count < 3)
+                                <a href="{{ encrypted_route('stages.attestation.download', $attestation->stage) }}"
+                                    class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">Télécharger</a>
+                                @else
+                                <span class="text-xs text-red-500 font-medium">Limite atteinte</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @endforeach
