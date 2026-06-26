@@ -135,9 +135,9 @@ class AttestationController extends Controller
             ->first();
 
         if ($lastAttestation) {
-            preg_match('/ATS (\d+)_\d{2}\/\d{2}/', $lastAttestation->reference, $matches);
+            preg_match('/ATS (\d+)\/\d{2}-\d{2}/', $lastAttestation->reference, $matches);
             if (!$matches) {
-                preg_match('/ATS (\d+)_\d{2}/', $lastAttestation->reference, $matches);
+                preg_match('/ATS (\d+)/', $lastAttestation->reference, $matches);
             }
             $numero = isset($matches[1]) ? intval($matches[1]) + 1 : 1;
         } else {
