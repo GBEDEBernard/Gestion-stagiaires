@@ -3,7 +3,7 @@
 
         <!-- Header avec logo rond -->
         <div class="bg-blue-600 py-6 flex justify-center">
-            <img src="{{ asset('images/TGFpdf.jpg') }}"
+            <img src="{{ asset('images/TFGLOGO.png') }}"
                 alt="Logo Stage TFG"
                 class="h-32 w-32 object-cover rounded-full border-4 border-white shadow-md">
         </div>
