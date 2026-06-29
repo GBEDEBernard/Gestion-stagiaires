@@ -33,35 +33,37 @@
 
     {{-- ── Stats ── --}}
     @php
-        $roleColors = [
-            'admin'      => ['bg' => 'bg-blue-50 dark:bg-blue-900/20',    'border' => 'border-blue-200 dark:border-blue-800',    'text' => 'text-blue-700 dark:text-blue-300',    'dot' => 'bg-blue-500'],
-            'superviseur'=> ['bg' => 'bg-purple-50 dark:bg-purple-900/20','border' => 'border-purple-200 dark:border-purple-800','text' => 'text-purple-700 dark:text-purple-300','dot' => 'bg-purple-500'],
-            'employe'    => ['bg' => 'bg-amber-50 dark:bg-amber-900/20',  'border' => 'border-amber-200 dark:border-amber-800',  'text' => 'text-amber-700 dark:text-amber-300',  'dot' => 'bg-amber-500'],
-            'etudiant'   => ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20','border' => 'border-emerald-200 dark:border-emerald-800','text' => 'text-emerald-700 dark:text-emerald-300','dot' => 'bg-emerald-500'],
+        $palette = [
+            ['bg' => 'bg-blue-50 dark:bg-blue-900/20',    'border' => 'border-blue-200 dark:border-blue-800',    'text' => 'text-blue-700 dark:text-blue-300',    'dot' => 'bg-blue-500'],
+            ['bg' => 'bg-purple-50 dark:bg-purple-900/20','border' => 'border-purple-200 dark:border-purple-800','text' => 'text-purple-700 dark:text-purple-300','dot' => 'bg-purple-500'],
+            ['bg' => 'bg-amber-50 dark:bg-amber-900/20',  'border' => 'border-amber-200 dark:border-amber-800',  'text' => 'text-amber-700 dark:text-amber-300',  'dot' => 'bg-amber-500'],
+            ['bg' => 'bg-emerald-50 dark:bg-emerald-900/20','border' => 'border-emerald-200 dark:border-emerald-800','text' => 'text-emerald-700 dark:text-emerald-300','dot' => 'bg-emerald-500'],
+            ['bg' => 'bg-rose-50 dark:bg-rose-900/20',    'border' => 'border-rose-200 dark:border-rose-800',    'text' => 'text-rose-700 dark:text-rose-300',    'dot' => 'bg-rose-500'],
+            ['bg' => 'bg-cyan-50 dark:bg-cyan-900/20',    'border' => 'border-cyan-200 dark:border-cyan-800',    'text' => 'text-cyan-700 dark:text-cyan-300',    'dot' => 'bg-cyan-500'],
+            ['bg' => 'bg-orange-50 dark:bg-orange-900/20','border' => 'border-orange-200 dark:border-orange-800','text' => 'text-orange-700 dark:text-orange-300','dot' => 'bg-orange-500'],
+            ['bg' => 'bg-teal-50 dark:bg-teal-900/20',    'border' => 'border-teal-200 dark:border-teal-800',    'text' => 'text-teal-700 dark:text-teal-300',    'dot' => 'bg-teal-500'],
         ];
-        $defaultColor = ['bg' => 'bg-gray-50 dark:bg-gray-800','border' => 'border-gray-200 dark:border-gray-700','text' => 'text-gray-700 dark:text-gray-300','dot' => 'bg-gray-400'];
-        $mainRoles    = ['admin', 'superviseur', 'employe', 'etudiant'];
+        $roleColorMap = [];
+        foreach ($allRoles as $i => $r) {
+            $roleColorMap[$r->name] = $palette[$i % count($palette)];
+        }
     @endphp
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         <div class="col-span-2 sm:col-span-1 bg-indigo-600 rounded-2xl p-4 text-white shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-indigo-200 mb-1">Total rôles</p>
-            <p class="text-3xl font-bold">{{ $roles->total() }}</p>
+            <p class="text-3xl font-bold">{{ $allRoles->count() }}</p>
             <p class="text-xs text-indigo-200 mt-1">dans le système</p>
         </div>
-        @foreach($mainRoles as $rName)
-        @php
-            $r     = $roles->firstWhere('name', $rName);
-            $count = $r ? ($r->users_count ?? 0) : 0;
-            $c     = $roleColors[$rName] ?? $defaultColor;
-        @endphp
+        @foreach($allRoles as $r)
+        @php $c = $roleColorMap[$r->name]; @endphp
         <div class="rounded-2xl border {{ $c['border'] }} {{ $c['bg'] }} p-4">
             <div class="flex items-center justify-between mb-1">
-                <p class="text-xs font-semibold uppercase tracking-wider {{ $c['text'] }}">{{ ucfirst($rName) }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wider {{ $c['text'] }}">{{ $r->name }}</p>
                 <span class="w-2 h-2 rounded-full {{ $c['dot'] }}"></span>
             </div>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $count }}</p>
-            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">utilisateur{{ $count > 1 ? 's' : '' }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $r->users_count ?? 0 }}</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">utilisateur{{ ($r->users_count ?? 0) > 1 ? 's' : '' }}</p>
         </div>
         @endforeach
     </div>
@@ -83,7 +85,7 @@
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($roles as $role)
                     @php
-                        $c          = $roleColors[$role->name] ?? $defaultColor;
+                        $c          = $roleColorMap[$role->name] ?? ['bg' => 'bg-gray-50 dark:bg-gray-800','border' => 'border-gray-200 dark:border-gray-700','text' => 'text-gray-700 dark:text-gray-300','dot' => 'bg-gray-400'];
                         $initials   = mb_strtoupper(mb_substr($role->name, 0, 2));
                         $permCount  = $role->permissions->count();
                         $usersCount = $role->users_count ?? 0;

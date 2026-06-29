@@ -21,7 +21,11 @@ class RoleController extends Controller
             ->orderBy('name')
             ->paginate(10);
 
-        return view('admin.roles.index', compact('roles'));
+        $allRoles = Role::withCount('users')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.roles.index', compact('roles', 'allRoles'));
     }
 
     /**
