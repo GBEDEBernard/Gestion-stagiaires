@@ -31,7 +31,7 @@ class PermissionLabelService
                 'force-delete'  => 'Supprimer définitivement',
                 'restore'       => 'Restaurer',
                 'approve'       => 'Approuver',
-                'audit'         => 'Auditer',
+                'audit'         => 'Auditeur',
                 'checkin'       => 'Pointer arrivée',
                 'checkout'      => 'Pointer départ',
                 'download'      => 'Télécharger',
@@ -43,7 +43,7 @@ class PermissionLabelService
             $groupLabel = Config::get("permissions_groups.{$groupKey}", Str::replace(['-', '_'], ' ', ucfirst($groupKey)));
             $actionFr   = $actionMap[$action] ?? Str::replace(['-', '_'], ' ', ucfirst($action));
 
-            return "{$groupLabel} : {$actionFr}";
+            return "{$actionFr} — {$groupLabel}";
         }
 
         // Fallback ultime

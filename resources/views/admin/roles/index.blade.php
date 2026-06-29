@@ -1,4 +1,5 @@
 <x-app-layout>
+@php $labelService = app(\App\Services\PermissionLabelService::class); @endphp
 <div class="mb-8 ml-4">
 
     {{-- ── En-tête ── --}}
@@ -140,7 +141,7 @@
                             @if($permCount > 0)
                             <div class="flex flex-wrap gap-1">
                                 @foreach($permGroups->keys()->take(4) as $group)
-                                <span class="inline-flex px-1.5 py-0.5 rounded text-xs {{ $c['bg'] }} {{ $c['text'] }}">{{ $group }}</span>
+                                <span class="inline-flex px-1.5 py-0.5 rounded text-xs {{ $c['bg'] }} {{ $c['text'] }}">{{ $labelService->getGroupLabel($group) }}</span>
                                 @endforeach
                                 @if($permGroups->count() > 4)
                                 <span class="inline-flex px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">+{{ $permGroups->count() - 4 }}</span>

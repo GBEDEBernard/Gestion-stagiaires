@@ -24,4 +24,6 @@ return [
     'attendance_anomalies' => 'Anomalies de présence',
     'jour_stage'           => 'Jours de stage',
     'holidays'             => 'Jours fériés',
+    'signer_attestation'   => 'Signer les attestations',
+    'permissions'          => 'Permissions',
 ];
