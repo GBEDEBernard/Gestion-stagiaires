@@ -127,6 +127,13 @@
                     </div>
                 </div>
 
+                @php
+                    $oldDebut = $stage->date_debut->format('d/m/Y');
+                    $oldFin = $stage->date_fin->format('d/m/Y');
+                    $oldDiff = $stage->date_debut->diffInDays($stage->date_fin);
+                    $oldMois = max(1, ceil($oldDiff / 30));
+                @endphp
+
                 <div class="pt-6 border-t border-gray-100 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -136,20 +143,42 @@
                         </div>
                         Période du stage
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {{-- Ancienne période (lecture seule) --}}
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ancienne période</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            <div><span class="font-medium">Début :</span> {{ $oldDebut }}</div>
+                            <div><span class="font-medium">Durée :</span> {{ $oldMois }} mois</div>
+                            <div><span class="font-medium">Fin :</span> {{ $oldFin }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Nouvelle période (modifiable) --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label for="date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début <span class="text-red-500">*</span></label>
+                            <label for="date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début *</label>
                             <input type="date" name="date_debut" id="date_debut" value="{{ old('date_debut', $stage->date_debut->format('Y-m-d')) }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                onchange="calculerFin()">
                             @error('date_debut')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin <span class="text-red-500">*</span></label>
+                            <label for="nombre_mois" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de mois *</label>
+                            <input type="number" name="nombre_mois" id="nombre_mois" min="1" max="24" value="{{ old('nombre_mois', $oldMois) }}" required
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                placeholder="Ex: 3"
+                                oninput="calculerFin()">
+                        </div>
+
+                        <div>
+                            <label for="date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
                             <input type="date" name="date_fin" id="date_fin" value="{{ old('date_fin', $stage->date_fin->format('Y-m-d')) }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                placeholder="Calculée automatiquement">
                             @error('date_fin')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
@@ -199,6 +228,18 @@
         </div>
     </div>
     <script>
+        function calculerFin() {
+            const debut = document.getElementById('date_debut');
+            const mois = document.getElementById('nombre_mois');
+            const fin = document.getElementById('date_fin');
+            if (debut.value && mois.value && parseInt(mois.value) > 0) {
+                const d = new Date(debut.value);
+                d.setMonth(d.getMonth() + parseInt(mois.value));
+                d.setDate(d.getDate() - 1);
+                fin.value = d.toISOString().split('T')[0];
+            }
+        }
+
         function validateJoursSimple(form, errorElementId) {
             const checkboxes = form.querySelectorAll('input[name="jours_id[]"]');
             let found = false;
@@ -227,6 +268,10 @@
                         });
                     }
                 });
+            }
+
+            if (document.getElementById('date_debut') && document.getElementById('nombre_mois')) {
+                calculerFin();
             }
         });
     </script>

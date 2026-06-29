@@ -193,7 +193,7 @@ class StageController extends Controller
             }
         }
 
-        $stage = Stage::create($request->only([
+        $stage = Stage::create(array_merge($request->only([
             'etudiant_id',
             'typestage_id',
             'domaine_id',
@@ -203,7 +203,7 @@ class StageController extends Controller
             'theme',
             'date_debut',
             'date_fin',
-        ]));
+        ]), ['duree_mois' => $request->nombre_mois]));
 
         $stage->jours()->sync($request->jours_id);
 
@@ -395,7 +395,7 @@ class StageController extends Controller
             }
         }
 
-        $stage->update($request->only([
+        $stage->update(array_merge($request->only([
             'etudiant_id',
             'typestage_id',
             'domaine_id',
@@ -405,7 +405,7 @@ class StageController extends Controller
             'theme',
             'date_debut',
             'date_fin',
-        ]));
+        ]), ['duree_mois' => $request->nombre_mois]));
 
         $stage->jours()->sync($request->jours_id ?? []);
 

@@ -21,6 +21,7 @@ class Stage extends Model
         'theme',
         'date_debut',
         'date_fin',
+        'duree_mois',
         'expected_check_in_time',
         'expected_check_out_time',
         'allowed_late_minutes',

@@ -313,7 +313,7 @@
         };
 
         // Calcul de la durée en mois avec format "un (01) mois" ou "deux (02) mois"
-        $mois = ceil($diffDays / 30);
+        $mois = $stage->duree_mois ?? round($diffDays / 30);
         $moisEnLettres = $numberToFrench($mois);
         $moisAvecZero = str_pad($mois, 2, '0', STR_PAD_LEFT);
         $dureeTexte = "$moisEnLettres ($moisAvecZero) " . ($mois > 1 ? 'mois' : 'mois');
@@ -379,7 +379,7 @@
                 <p>
                     Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>TECHNOLOGY FOREVER GROUP (TFG) SARL</b>,
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
-                    a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
+                  a effectué un stage {{ $typeStageLower }} de  {{ $dureeTexte }}  
                     dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
                     <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.

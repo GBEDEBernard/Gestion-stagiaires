@@ -96,20 +96,31 @@
                                 placeholder="Ex: Développement web...">
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="date_debut_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Date de début <span class="text-red-500">*</span>
                                 </label>
                                 <input type="date" name="date_debut" id="date_debut_modal" required
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                    onchange="calculerFinModal()">
+                            </div>
+                            <div>
+                                <label for="nombre_mois_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Nombre de mois <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" name="nombre_mois" id="nombre_mois_modal" min="1" max="24" required
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                    placeholder="Ex: 3"
+                                    oninput="calculerFinModal()">
                             </div>
                             <div>
                                 <label for="date_fin_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Date de fin <span class="text-red-500">*</span>
                                 </label>
                                 <input type="date" name="date_fin" id="date_fin_modal" required
-                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                    class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                    placeholder="Calculée automatiquement">
                             </div>
                         </div>
 
@@ -264,16 +275,25 @@
 
                 <div class="pt-6 border-t border-gray-100 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Période du stage</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début *</label>
                             <input type="date" name="date_debut" id="date_debut" value="{{ old('date_debut') }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                onchange="calculerFin()">
+                        </div>
+                        <div>
+                            <label for="nombre_mois" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de mois *</label>
+                            <input type="number" name="nombre_mois" id="nombre_mois" min="1" max="24" value="{{ old('nombre_mois') }}" required
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                placeholder="Ex: 3"
+                                oninput="calculerFin()">
                         </div>
                         <div>
                             <label for="date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
                             <input type="date" name="date_fin" id="date_fin" value="{{ old('date_fin') }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl"
+                                placeholder="Calculée automatiquement">
                         </div>
                     </div>
                 </div>
@@ -311,6 +331,30 @@
     </div>
 
     <script>
+        function calculerFin() {
+            const debut = document.getElementById('date_debut');
+            const mois = document.getElementById('nombre_mois');
+            const fin = document.getElementById('date_fin');
+            if (debut.value && mois.value && parseInt(mois.value) > 0) {
+                const d = new Date(debut.value);
+                d.setMonth(d.getMonth() + parseInt(mois.value));
+                d.setDate(d.getDate() - 1);
+                fin.value = d.toISOString().split('T')[0];
+            }
+        }
+
+        function calculerFinModal() {
+            const debut = document.getElementById('date_debut_modal');
+            const mois = document.getElementById('nombre_mois_modal');
+            const fin = document.getElementById('date_fin_modal');
+            if (debut.value && mois.value && parseInt(mois.value) > 0) {
+                const d = new Date(debut.value);
+                d.setMonth(d.getMonth() + parseInt(mois.value));
+                d.setDate(d.getDate() - 1);
+                fin.value = d.toISOString().split('T')[0];
+            }
+        }
+
         function closeModal() {
             const modal = document.getElementById('stageModal');
             if (modal) {
@@ -382,6 +426,14 @@
                 if (etudiantSelectModal.value) {
                     handleEtudiantChange(etudiantSelectModal);
                 }
+            }
+
+            // Auto-calculer la date de fin au chargement si des valeurs existent
+            if (document.getElementById('date_debut') && document.getElementById('nombre_mois')) {
+                calculerFin();
+            }
+            if (document.getElementById('date_debut_modal') && document.getElementById('nombre_mois_modal')) {
+                calculerFinModal();
             }
 
             try {
