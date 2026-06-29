@@ -49,7 +49,7 @@
                             <div>
                                 <label for="badge_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Badge</label>
                                 <select name="badge_id" id="badge_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                    <option value="">Sélectionner</option>
+                                    <option value="">Générer automatiquement</option>
                                     @foreach($badges as $badge)
                                     <option value="{{ $badge->id }}">{{ $badge->badge }}</option>
                                     @endforeach
@@ -209,7 +209,7 @@
                             <label for="badge_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Badge</label>
                             <select name="badge_id" id="badge_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un badge</option>
+                                <option value="">Générer automatiquement</option>
                                 @foreach($badges as $badge)
                                 <option value="{{ $badge->id }}" {{ old('badge_id') == $badge->id ? 'selected' : '' }}>{{ $badge->badge }}</option>
                                 @endforeach

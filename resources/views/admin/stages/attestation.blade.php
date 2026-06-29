@@ -381,7 +381,7 @@
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }}
                     dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
-                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> à <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
+                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.
                 </p>
                 <p>

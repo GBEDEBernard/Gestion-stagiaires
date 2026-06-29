@@ -20,9 +20,10 @@
 
                 <div>
                     <label for="badge" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Numéro de badge <span class="text-red-500">*</span></label>
-                    <input type="text" name="badge" id="badge" value="{{ old('badge') }}" required
+                    <input type="text" name="badge" id="badge" value="{{ old('badge', $nextBadgeNumber) }}"
                         class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                        placeholder="Ex: Badge #001">
+                        placeholder="Généré automatiquement">
+                    <p class="mt-1 text-xs text-gray-400">Laissez vide pour générer automatiquement ({{ $nextBadgeNumber }})</p>
                     @error('badge')
                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror

@@ -66,19 +66,23 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 10px;
+    align-items: center;
+    padding: 0 20px;
+    text-align: center;
 }
 .infos h2 {
     font-size: 20px; /* Augmenté */
     font-weight: bold;
     margin-bottom: 6px;
     color: #1F2937;
+    text-align: center;
 }
 .badge-number {
     font-size: 24px; /* Augmenté */
     font-weight: 800;
     color: #B91C1C;
     margin-bottom: 8px;
+    text-align: center;
 }
 .infos p {
     font-size: 14px; /* Augmenté */
@@ -173,7 +177,8 @@ button {
         <div class="infos">
             <h2>Stagiaire</h2>
             <div class="badge-number">{{ str_pad($stage->badge->badge ?? '000000', 6, '0', STR_PAD_LEFT) }}</div>
-            <p><b>Nom :</b> {{ $stage->etudiant->nom ?? '—' }} {{ $stage->etudiant->prenom ?? '—' }}</p>
+            <p><b>Nom :</b> {{ $stage->etudiant->nom ?? '—' }}</p>
+            <p><b>Prénom :</b> {{ $stage->etudiant->prenom ?? '—' }}</p>
             <p><b>École :</b> {{ $stage->etudiant->ecole ?? '—' }}</p>
             <p><b>Type :</b> {{ $stage->typestage->libelle ?? '—' }}</p>
             <p><b>Tél :</b> {{ $stage->etudiant->telephone ?? '—' }}</p>

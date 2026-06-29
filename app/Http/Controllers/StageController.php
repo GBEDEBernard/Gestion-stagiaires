@@ -140,7 +140,15 @@ class StageController extends Controller
         }
 
         $etudiant  = Etudiant::findOrFail($request->etudiant_id);
-        $badge     = $request->filled('badge_id') ? Badge::findOrFail($request->badge_id) : null;
+        $badge     = null;
+
+        if ($request->filled('badge_id')) {
+            $badge = Badge::findOrFail($request->badge_id);
+        } else {
+            $badge = Badge::firstOrCreate(['badge' => Badge::getNextBadgeNumber()]);
+            $request->merge(['badge_id' => $badge->id]);
+        }
+
         $dateDebut = $request->date_debut;
         $dateFin   = $request->date_fin;
 
