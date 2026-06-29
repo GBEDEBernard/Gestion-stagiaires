@@ -56,21 +56,22 @@
     .btn-primary:hover { background: var(--brand-dark); }
     .btn-primary:active { transform: scale(.97); }
 
+    /* ── Filtres ── */
     .si-filters {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-md);
         padding: 1.25rem 1.5rem;
         box-shadow: var(--shadow-card);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
     .si-filters-grid {
         display: grid; gap: .9rem;
         grid-template-columns: 1fr;
     }
     @media (min-width: 640px)  { .si-filters-grid { grid-template-columns: repeat(2,1fr); } }
-    @media (min-width: 900px)  { .si-filters-grid { grid-template-columns: repeat(3,1fr); } }
-    @media (min-width: 1200px) { .si-filters-grid { grid-template-columns: repeat(5,1fr); } }
+    @media (min-width: 900px)  { .si-filters-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (min-width: 1200px) { .si-filters-grid { grid-template-columns: repeat(4,1fr); } }
 
     .fi-label {
         display: block; font-size: .73rem; font-weight: 700;
@@ -105,6 +106,43 @@
     .fi-search-wrap .fi-input { padding-left: 2.3rem; }
     .si-count { font-size: .78rem; color: var(--muted); margin-top: .75rem; }
 
+    /* ── Onglets années académiques ── */
+    .si-year-tabs {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        padding: .4rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-card);
+    }
+    .si-year-tab {
+        padding: .5rem 1.1rem;
+        font-size: .8rem;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: background .15s, color .15s, box-shadow .15s;
+        white-space: nowrap;
+        line-height: 1;
+    }
+    .si-year-tab:hover {
+        background: var(--surface-alt);
+        color: var(--text);
+    }
+    .si-year-tab.active {
+        background: var(--brand);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(15,111,255,.28);
+    }
+
+    /* ── Sections par année ── */
     .si-annee-header {
         display: flex; align-items: center; justify-content: space-between;
         padding: .9rem 1.25rem; margin-bottom: 0;
@@ -114,9 +152,9 @@
     .si-annee-header h2 {
         font-size: 1.1rem; font-weight: 800; color: var(--text); margin: 0;
     }
-    .si-annee-header .si-annee-actions { display: flex; gap: .5rem; }
     .si-annee-section { margin-bottom: 1.5rem; }
 
+    /* ── Table card ── */
     .si-table-card {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -146,6 +184,7 @@
     table.si-table tbody tr:hover { background: var(--surface-alt); }
     table.si-table td { padding: .9rem 1.25rem; vertical-align: middle; }
 
+    /* ── Avatars ── */
     .si-avatar {
         width: 40px; height: 40px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
@@ -164,6 +203,7 @@
     .si-person-name { font-size: .875rem; font-weight: 600; color: var(--text); }
     .si-person-sub  { font-size: .78rem; color: var(--muted); margin-top: 1px; }
 
+    /* ── Pills ── */
     .pill {
         display: inline-flex; align-items: center; gap: .35rem;
         padding: .28rem .7rem; border-radius: 20px;
@@ -185,6 +225,7 @@
         0%,100% { opacity: 1; } 50% { opacity: .4; }
     }
 
+    /* ── Période ── */
     .si-period { font-size: .82rem; }
     .si-period-start { color: var(--text); font-weight: 500; }
     .si-period-end   { color: var(--muted); margin-top: 1px; }
@@ -192,9 +233,9 @@
 
     .si-org-main { font-size: .85rem; font-weight: 600; color: var(--text); }
     .si-org-sub  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-
     .si-jours { font-size: .78rem; color: var(--muted); max-width: 140px; line-height: 1.4; }
 
+    /* ── Actions ── */
     .si-actions { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
     .act-btn {
         display: inline-flex; align-items: center; justify-content: center;
@@ -213,6 +254,7 @@
     .dark .act-delete { background: #3b0e0e; color: #f87171; }
     .dark .act-delete:hover { background: #4c1414; }
 
+    /* ── Empty state ── */
     .si-empty { padding: 4rem 1.5rem; text-align: center; }
     .si-empty-icon {
         width: 60px; height: 60px; background: var(--surface-alt);
@@ -223,19 +265,7 @@
     .si-empty h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 0 0 .35rem; }
     .si-empty p  { font-size: .875rem; color: var(--muted); margin: 0; }
 
-    .aa-tabs { display:flex;flex-wrap:wrap;gap:.4rem; }
-    .aa-tab {
-        display:inline-flex;align-items:center;padding:.45rem 1rem;
-        font-size:.8rem;font-weight:600;border-radius:var(--radius-sm);
-        background:var(--surface-alt);color:var(--muted);border:1px solid var(--border);
-        text-decoration:none;cursor:pointer;transition:all .15s;
-    }
-    .aa-tab:hover { color:var(--text);border-color:var(--muted); }
-    .aa-tab-active {
-        background:var(--brand);color:#fff;border-color:var(--brand);
-    }
-    .aa-tab-active:hover { background:var(--brand-dark);color:#fff; }
-
+    /* ── Responsive colonnes ── */
     @media (max-width: 900px)  { .col-jours  { display: none; } }
     @media (max-width: 768px)  { .col-suivi  { display: none; } }
     @media (max-width: 640px)  { .col-org    { display: none; } }
@@ -243,6 +273,7 @@
 
 <div class="si-wrap">
 
+    {{-- ── En-tête ── --}}
     <div class="si-header">
         <div>
             <p class="si-eyebrow">GST · Gestion des stages</p>
@@ -261,7 +292,11 @@
         </div>
     </div>
 
+    {{-- ── Filtres (sans le filtre année — piloté par les onglets) ── --}}
     <form id="filters-form" method="GET" action="{{ route('stages.index') }}" class="si-filters">
+        {{-- Champ caché pour l'année, piloté par les onglets --}}
+        <input type="hidden" name="annee_academique" id="annee-academique-input" value="{{ request('annee_academique') }}">
+
         <div class="si-filters-grid">
             <div>
                 <label class="fi-label">Statut</label>
@@ -295,48 +330,46 @@
                     <input type="text" name="ecole" value="{{ request('ecole') }}" placeholder="Rechercher par école…" class="fi-input search-input">
                 </div>
             </div>
-            <div style="grid-column: 1 / -1;">
-                <label class="fi-label">Année académique</label>
-                @php
-                    $nowAA = \Carbon\Carbon::now();
-                    $currentAA = $nowAA->month >= 9 ? $nowAA->year . '-' . ($nowAA->year + 1) : ($nowAA->year - 1) . '-' . $nowAA->year;
-                    $selectedAA = request('annee_academique', $currentAA);
-                @endphp
-                <div class="aa-tabs" style="display:flex;flex-wrap:wrap;gap:.4rem;">
-                    <a href="{{ route('stages.index', array_merge(request()->except('annee_academique', 'page'), ['annee_academique' => 'all'])) }}"
-                       class="aa-tab {{ request('annee_academique') === 'all' ? 'aa-tab-active' : '' }}"
-                       data-value="all" onclick="return filterAnnee(this)">Toutes</a>
-                    @foreach($anneesAcademiques as $aa)
-                    <a href="{{ route('stages.index', array_merge(request()->except('annee_academique', 'page'), ['annee_academique' => $aa])) }}"
-                       class="aa-tab {{ $selectedAA === $aa && request('annee_academique') !== 'all' ? 'aa-tab-active' : '' }}"
-                       data-value="{{ $aa }}" onclick="return filterAnnee(this)">{{ $aa }}</a>
-                    @endforeach
-                </div>
-            </div>
         </div>
-        <p id="result-count" class="si-count">{{ $stages->count() }} stage(s) trouvé(s)</p>
+        <p id="result-count" class="si-count">
+            @if($stagesParAnnee !== null)
+                {{ $stages->count() }} stage(s) trouvé(s)
+            @else
+                {{ $stages->total() }} stage(s) trouvé(s)
+            @endif
+        </p>
     </form>
 
+    {{-- ── Onglets années académiques ── --}}
+    <div class="si-year-tabs" id="year-tabs">
+        <button type="button"
+            class="si-year-tab {{ !request('annee_academique') ? 'active' : '' }}"
+            data-year="">
+            Toutes les années
+        </button>
+        @foreach($anneesAcademiques as $aa)
+        <button type="button"
+            class="si-year-tab {{ request('annee_academique') == $aa ? 'active' : '' }}"
+            data-year="{{ $aa }}">
+            {{ $aa }}
+        </button>
+        @endforeach
+    </div>
+
+    {{-- ── Contenu du tableau ── --}}
     <div id="stages-table-container">
+
         @if($stagesParAnnee !== null)
-            {{-- Mode groupé par année académique --}}
+            {{-- ══ Mode "Toutes les années" : groupé par année ══ --}}
             @forelse($stagesParAnnee as $annee => $stagesAnnee)
             <div class="si-annee-section">
                 <div class="si-annee-header">
                     <h2>
                         Année académique {{ $annee }}
-                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">({{ $stagesAnnee->count() }} stage{{ $stagesAnnee->count() > 1 ? 's' : '' }})</span>
+                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">
+                            ({{ $stagesAnnee->count() }} stage{{ $stagesAnnee->count() > 1 ? 's' : '' }})
+                        </span>
                     </h2>
-                    <div class="si-annee-actions">
-                        <a href="{{ route('stages.trash') }}" class="btn-ghost" style="padding:.35rem .75rem;font-size:.75rem;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                            Corbeille
-                        </a>
-                        <a href="{{ route('stages.create') }}" class="btn-primary" style="padding:.35rem .75rem;font-size:.75rem;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                            Nouveau stage
-                        </a>
-                    </div>
                 </div>
                 <div class="si-table-card" style="border-top-left-radius:0;border-top-right-radius:0;">
                     <div class="si-table-scroll">
@@ -356,16 +389,16 @@
                             <tbody>
                                 @foreach($stagesAnnee as $stage)
                                 @php
-                                    $status   = $stage->statut;
-                                    $etudiant = $stage->etudiant;
+                                    $status    = $stage->statut;
+                                    $etudiant  = $stage->etudiant;
                                     $personnel = $etudiant?->personnel;
-                                    $prenom   = $personnel?->prenom ?? '';
-                                    $nom      = $personnel?->nom     ?? '';
-                                    $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
+                                    $prenom    = $personnel?->prenom ?? '';
+                                    $nom       = $personnel?->nom     ?? '';
+                                    $initials  = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
                                     $gradClass = 'grad-' . ($stage->id % 5);
-                                    $user = $personnel?->user ?? null;
+                                    $user      = $personnel?->user ?? null;
                                     $avatarPath = $user?->avatar ?? null;
-                                    $hasPhoto   = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
+                                    $hasPhoto  = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
                                 @endphp
                                 <tr>
                                     <td>
@@ -458,24 +491,17 @@
                 </div>
             </div>
             @endforelse
+
         @else
-            {{-- Mode année spécifique (paginated) --}}
+            {{-- ══ Mode année spécifique : tableau paginé ══ --}}
             <div class="si-table-card">
-                <div class="si-annee-header" style="border-bottom:2px solid var(--brand);border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                <div class="si-annee-header" style="border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
                     <h2>
-                        Année académique {{ $selectedAA }}
-                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">({{ $stages->total() }} stage{{ $stages->total() > 1 ? 's' : '' }})</span>
+                        Année académique {{ request('annee_academique') }}
+                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">
+                            ({{ $stages->total() }} stage{{ $stages->total() > 1 ? 's' : '' }})
+                        </span>
                     </h2>
-                    <!-- <div class="si-annee-actions">
-                        <a href="{{ route('stages.trash') }}" class="btn-ghost" style="padding:.35rem .75rem;font-size:.75rem;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                            Corbeille
-                        </a>
-                        <a href="{{ route('stages.create') }}" class="btn-primary" style="padding:.35rem .75rem;font-size:.75rem;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                            Nouveau stage
-                        </a>
-                    </div> -->
                 </div>
                 <div class="si-table-scroll">
                     <table class="si-table">
@@ -494,16 +520,16 @@
                         <tbody>
                             @forelse($stages as $stage)
                             @php
-                                $status   = $stage->statut;
-                                $etudiant = $stage->etudiant;
+                                $status    = $stage->statut;
+                                $etudiant  = $stage->etudiant;
                                 $personnel = $etudiant?->personnel;
-                                $prenom   = $personnel?->prenom ?? '';
-                                $nom      = $personnel?->nom     ?? '';
-                                $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
+                                $prenom    = $personnel?->prenom ?? '';
+                                $nom       = $personnel?->nom     ?? '';
+                                $initials  = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
                                 $gradClass = 'grad-' . ($stage->id % 5);
-                                $user = $personnel?->user ?? null;
+                                $user      = $personnel?->user ?? null;
                                 $avatarPath = $user?->avatar ?? null;
-                                $hasPhoto   = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
+                                $hasPhoto  = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
                             @endphp
                             <tr>
                                 <td>
@@ -602,62 +628,98 @@
                 @endif
             </div>
         @endif
-    </div>
 
-</div>
+    </div>{{-- #stages-table-container --}}
+
+</div>{{-- .si-wrap --}}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const form      = document.getElementById('filters-form');
     const container = document.getElementById('stages-table-container');
+    const yearInput = document.getElementById('annee-academique-input');
+    const yearTabs  = document.getElementById('year-tabs');
     if (!form || !container) return;
 
     let timer;
 
-    function refresh() {
-        const url = new URL(form.action);
+    /* ── Construit l'URL à partir du formulaire ── */
+    function buildUrl(base) {
+        const url  = new URL(base ?? form.action, window.location.origin);
         const data = new FormData(form);
+        url.search = '';
         for (const [k, v] of data.entries()) {
-            v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
+            if (v !== '') url.searchParams.set(k, v);
         }
-        url.searchParams.delete('page');
-        fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        return url;
+    }
+
+    /* ── Requête AJAX et injection du résultat ── */
+    function fetchAndReplace(url) {
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.text())
             .then(html => {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                const newCont = doc.getElementById('stages-table-container');
+                const doc      = new DOMParser().parseFromString(html, 'text/html');
+                const newCont  = doc.getElementById('stages-table-container');
                 if (newCont) container.innerHTML = newCont.innerHTML;
+
                 const newCount = doc.getElementById('result-count');
                 const oldCount = document.getElementById('result-count');
                 if (newCount && oldCount) oldCount.innerText = newCount.innerText;
-                const newTabs = doc.querySelector('.aa-tabs');
-                const oldTabs = document.querySelector('.aa-tabs');
-                if (newTabs && oldTabs) oldTabs.outerHTML = newTabs.outerHTML;
+
+                window.history.replaceState({}, '', url.toString());
+                attachPaginationLinks();
             })
             .catch(console.error);
     }
 
+    function refresh() {
+        fetchAndReplace(buildUrl());
+    }
+
+    /* ── Onglets années ── */
+    if (yearTabs) {
+        yearTabs.querySelectorAll('.si-year-tab').forEach(btn => {
+            btn.addEventListener('click', function () {
+                yearTabs.querySelectorAll('.si-year-tab').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                yearInput.value = this.dataset.year;
+                refresh();
+            });
+        });
+    }
+
+    /* ── Filtres texte avec debounce ── */
     form.querySelectorAll('.search-input').forEach(el =>
         el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(refresh, 380); })
     );
+
+    /* ── Filtres select ── */
     form.querySelectorAll('.filter-select').forEach(el =>
         el.addEventListener('change', refresh)
     );
-    form.addEventListener('submit', e => { e.preventDefault(); refresh(); });
-});
 
-function filterAnnee(el) {
-    const form = document.getElementById('filters-form');
-    let input = form.querySelector('input[name="annee_academique"]');
-    if (!input) {
-        input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'annee_academique';
-        form.appendChild(input);
+    /* ── Soumission classique désactivée ── */
+    form.addEventListener('submit', e => { e.preventDefault(); refresh(); });
+
+    /* ── Pagination AJAX (liens injectés dynamiquement) ── */
+    function attachPaginationLinks() {
+        container.querySelectorAll('.si-pagination a[href]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                // On prend la page depuis le lien de pagination puis on fusionne les filtres courants
+                const pageUrl    = new URL(this.href, window.location.origin);
+                const mergedUrl  = buildUrl();
+                // Le paramètre "page" vient du lien de pagination
+                if (pageUrl.searchParams.has('page')) {
+                    mergedUrl.searchParams.set('page', pageUrl.searchParams.get('page'));
+                }
+                fetchAndReplace(mergedUrl);
+            });
+        });
     }
-    input.value = el.dataset.value;
-    form.requestSubmit();
-    return false;
-}
+
+    attachPaginationLinks();
+});
 </script>
 </x-app-layout>
