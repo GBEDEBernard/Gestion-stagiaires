@@ -22,6 +22,7 @@ class Stage extends Model
         'date_debut',
         'date_fin',
         'duree_mois',
+        'annee_academique',
         'expected_check_in_time',
         'expected_check_out_time',
         'allowed_late_minutes',
@@ -29,6 +30,19 @@ class Stage extends Model
         'presence_mode',
         'follow_up_status',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($stage) {
+            if ($stage->date_debut) {
+                $mois = (int) $stage->date_debut->format('n');
+                $annee = (int) $stage->date_debut->format('Y');
+                $stage->annee_academique = $mois >= 9
+                    ? $annee . '-' . ($annee + 1)
+                    : ($annee - 1) . '-' . $annee;
+            }
+        });
+    }
 
     protected $casts = [
         'date_debut' => 'datetime',

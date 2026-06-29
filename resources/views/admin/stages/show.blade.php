@@ -73,6 +73,15 @@
             </div>
             <form method="POST" action="{{ encrypted_route('stages.attestation.store', $stage) }}" class="p-6 space-y-4">
                 @csrf
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 mb-4">
+                    <svg class="w-5 h-5 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div class="flex-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Année académique</span>
+                        <span class="text-sm font-bold text-gray-900 dark:text-white ml-2">{{ $stage->annee_academique }}</span>
+                    </div>
+                </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Sélectionnez les signataires pour cette attestation :</p>
                 @forelse($eligibleUsers as $user)
                 <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">

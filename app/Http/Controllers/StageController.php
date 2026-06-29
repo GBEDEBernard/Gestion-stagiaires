@@ -51,10 +51,23 @@ class StageController extends Controller
             });
         }
 
-        $stages = $query->paginate(5)->withQueryString();
-        $typestages = TypeStage::all();
+        $now = now();
+        $currentYear = $now->month >= 9 ? $now->year . '-' . ($now->year + 1) : ($now->year - 1) . '-' . $now->year;
 
-        return view('admin.stages.index', compact('stages', 'typestages'));
+        if ($request->annee_academique === 'all') {
+            $stages = $query->orderBy('annee_academique', 'desc')->orderBy('date_debut', 'desc')->get();
+            $stagesParAnnee = $stages->groupBy('annee_academique');
+        } else {
+            $anneeCible = $request->filled('annee_academique') ? $request->annee_academique : $currentYear;
+            $query->where('annee_academique', $anneeCible);
+            $stages = $query->orderBy('date_debut', 'desc')->paginate(5)->withQueryString();
+            $stagesParAnnee = null;
+        }
+
+        $typestages = TypeStage::all();
+        $anneesAcademiques = Stage::distinct()->whereNotNull('annee_academique')->orderBy('annee_academique', 'desc')->pluck('annee_academique');
+
+        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques'));
     }
 
     public function create()

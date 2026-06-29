@@ -319,8 +319,10 @@
         $dureeTexte = "$moisEnLettres ($moisAvecZero) " . ($mois > 1 ? 'mois' : 'mois');
 
         // Année académique
-        $year = $now->year;
-        $academicYear = ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
+        $academicYear = $stage->annee_academique ?? (function() use ($now) {
+            $year = $now->year;
+            return ($now->month >= 9) ? "$year-" . ($year + 1) : ($year - 1) . "-$year";
+        })();
 
         // Genre et civilité
         $genre = strtolower($stage->etudiant->personnel->genre ?? 'masculin');

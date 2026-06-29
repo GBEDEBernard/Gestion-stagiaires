@@ -23,10 +23,8 @@
         --muted:       #7a8aaa;
     }
 
-    /* ── Wrapper ── */
     .si-wrap { max-width: 1280px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
-    /* ── Header ── */
     .si-header {
         display: flex; align-items: flex-start; justify-content: space-between;
         gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem;
@@ -39,7 +37,6 @@
     .si-header p  { font-size: .875rem; color: var(--muted); margin: 0; }
     .si-header-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
 
-    /* ── Buttons ── */
     .btn-ghost {
         display: inline-flex; align-items: center; gap: .45rem;
         padding: .6rem 1.1rem; font-size: .82rem; font-weight: 600;
@@ -59,7 +56,6 @@
     .btn-primary:hover { background: var(--brand-dark); }
     .btn-primary:active { transform: scale(.97); }
 
-    /* ── Filters card ── */
     .si-filters {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -73,7 +69,8 @@
         grid-template-columns: 1fr;
     }
     @media (min-width: 640px)  { .si-filters-grid { grid-template-columns: repeat(2,1fr); } }
-    @media (min-width: 1024px) { .si-filters-grid { grid-template-columns: repeat(4,1fr); } }
+    @media (min-width: 900px)  { .si-filters-grid { grid-template-columns: repeat(3,1fr); } }
+    @media (min-width: 1200px) { .si-filters-grid { grid-template-columns: repeat(5,1fr); } }
 
     .fi-label {
         display: block; font-size: .73rem; font-weight: 700;
@@ -108,7 +105,18 @@
     .fi-search-wrap .fi-input { padding-left: 2.3rem; }
     .si-count { font-size: .78rem; color: var(--muted); margin-top: .75rem; }
 
-    /* ── Table card ── */
+    .si-annee-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: .9rem 1.25rem; margin-bottom: 0;
+        background: var(--surface); border-bottom: 2px solid var(--brand);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .si-annee-header h2 {
+        font-size: 1.1rem; font-weight: 800; color: var(--text); margin: 0;
+    }
+    .si-annee-header .si-annee-actions { display: flex; gap: .5rem; }
+    .si-annee-section { margin-bottom: 1.5rem; }
+
     .si-table-card {
         background: var(--surface);
         border: 1px solid var(--border);
@@ -138,7 +146,6 @@
     table.si-table tbody tr:hover { background: var(--surface-alt); }
     table.si-table td { padding: .9rem 1.25rem; vertical-align: middle; }
 
-    /* ── Avatar ── */
     .si-avatar {
         width: 40px; height: 40px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
@@ -153,12 +160,10 @@
     .si-avatar.grad-3 { background: linear-gradient(135deg,#8b5cf6,#ec4899); }
     .si-avatar.grad-4 { background: linear-gradient(135deg,#0f6fff,#06b6d4); }
 
-    /* ── Stagiaire cell ── */
     .si-person { display: flex; align-items: center; gap: .75rem; min-width: 160px; }
     .si-person-name { font-size: .875rem; font-weight: 600; color: var(--text); }
     .si-person-sub  { font-size: .78rem; color: var(--muted); margin-top: 1px; }
 
-    /* ── Badges / pills ── */
     .pill {
         display: inline-flex; align-items: center; gap: .35rem;
         padding: .28rem .7rem; border-radius: 20px;
@@ -180,20 +185,16 @@
         0%,100% { opacity: 1; } 50% { opacity: .4; }
     }
 
-    /* ── Période ── */
     .si-period { font-size: .82rem; }
     .si-period-start { color: var(--text); font-weight: 500; }
     .si-period-end   { color: var(--muted); margin-top: 1px; }
     .si-period-arrow { color: var(--muted); margin: 0 2px; }
 
-    /* ── Organisation ── */
     .si-org-main { font-size: .85rem; font-weight: 600; color: var(--text); }
     .si-org-sub  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
 
-    /* ── Jours ── */
     .si-jours { font-size: .78rem; color: var(--muted); max-width: 140px; line-height: 1.4; }
 
-    /* ── Action buttons ── */
     .si-actions { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
     .act-btn {
         display: inline-flex; align-items: center; justify-content: center;
@@ -212,7 +213,6 @@
     .dark .act-delete { background: #3b0e0e; color: #f87171; }
     .dark .act-delete:hover { background: #4c1414; }
 
-    /* ── Empty state ── */
     .si-empty { padding: 4rem 1.5rem; text-align: center; }
     .si-empty-icon {
         width: 60px; height: 60px; background: var(--surface-alt);
@@ -223,10 +223,19 @@
     .si-empty h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 0 0 .35rem; }
     .si-empty p  { font-size: .875rem; color: var(--muted); margin: 0; }
 
-    /* ── Pagination wrapper ── */
-    .si-pagination { padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+    .aa-tabs { display:flex;flex-wrap:wrap;gap:.4rem; }
+    .aa-tab {
+        display:inline-flex;align-items:center;padding:.45rem 1rem;
+        font-size:.8rem;font-weight:600;border-radius:var(--radius-sm);
+        background:var(--surface-alt);color:var(--muted);border:1px solid var(--border);
+        text-decoration:none;cursor:pointer;transition:all .15s;
+    }
+    .aa-tab:hover { color:var(--text);border-color:var(--muted); }
+    .aa-tab-active {
+        background:var(--brand);color:#fff;border-color:var(--brand);
+    }
+    .aa-tab-active:hover { background:var(--brand-dark);color:#fff; }
 
-    /* ── Responsive: hide less important cols on small ── */
     @media (max-width: 900px)  { .col-jours  { display: none; } }
     @media (max-width: 768px)  { .col-suivi  { display: none; } }
     @media (max-width: 640px)  { .col-org    { display: none; } }
@@ -234,7 +243,6 @@
 
 <div class="si-wrap">
 
-    {{-- ── Header ── --}}
     <div class="si-header">
         <div>
             <p class="si-eyebrow">GST · Gestion des stages</p>
@@ -253,7 +261,6 @@
         </div>
     </div>
 
-    {{-- ── Filtres ── --}}
     <form id="filters-form" method="GET" action="{{ route('stages.index') }}" class="si-filters">
         <div class="si-filters-grid">
             <div>
@@ -288,148 +295,313 @@
                     <input type="text" name="ecole" value="{{ request('ecole') }}" placeholder="Rechercher par école…" class="fi-input search-input">
                 </div>
             </div>
+            <div style="grid-column: 1 / -1;">
+                <label class="fi-label">Année académique</label>
+                @php
+                    $nowAA = \Carbon\Carbon::now();
+                    $currentAA = $nowAA->month >= 9 ? $nowAA->year . '-' . ($nowAA->year + 1) : ($nowAA->year - 1) . '-' . $nowAA->year;
+                    $selectedAA = request('annee_academique', $currentAA);
+                @endphp
+                <div class="aa-tabs" style="display:flex;flex-wrap:wrap;gap:.4rem;">
+                    <a href="{{ route('stages.index', array_merge(request()->except('annee_academique', 'page'), ['annee_academique' => 'all'])) }}"
+                       class="aa-tab {{ request('annee_academique') === 'all' ? 'aa-tab-active' : '' }}"
+                       data-value="all" onclick="return filterAnnee(this)">Toutes</a>
+                    @foreach($anneesAcademiques as $aa)
+                    <a href="{{ route('stages.index', array_merge(request()->except('annee_academique', 'page'), ['annee_academique' => $aa])) }}"
+                       class="aa-tab {{ $selectedAA === $aa && request('annee_academique') !== 'all' ? 'aa-tab-active' : '' }}"
+                       data-value="{{ $aa }}" onclick="return filterAnnee(this)">{{ $aa }}</a>
+                    @endforeach
+                </div>
+            </div>
         </div>
-        <p id="result-count" class="si-count">{{ $stages->total() }} stage(s) trouvé(s)</p>
+        <p id="result-count" class="si-count">{{ $stages->count() }} stage(s) trouvé(s)</p>
     </form>
 
-    {{-- ── Tableau ── --}}
-    <div id="stages-table-container" class="si-table-card">
-        <div class="si-table-scroll">
-            <table class="si-table">
-                <thead>
-                    <tr>
-                        <th>Stagiaire</th>
-                        <th>Type</th>
-                        <th class="col-org">Organisation</th>
-                        <th class="col-suivi">Thème &amp; Suivi</th>
-                        <th>Période</th>
-                        <th class="col-jours">Jours</th>
-                        <th class="th-center">Statut</th>
-                        <th class="th-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($stages as $stage)
-                    @php
-                        $status   = $stage->statut;
-                        $etudiant = $stage->etudiant;
-                        $personnel = $etudiant?->personnel;
-                        $prenom   = $personnel?->prenom ?? '';
-                        $nom      = $personnel?->nom     ?? '';
-                        $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
-                        $gradClass = 'grad-' . ($stage->id % 5);
-
-                        // Photo : depuis le user lié au personnel
-                        $user = $personnel?->user ?? null;
-                        $avatarPath = $user?->avatar ?? null;
-                        $hasPhoto   = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
-                    @endphp
-                    <tr>
-                        {{-- Stagiaire --}}
-                        <td>
-                            <div class="si-person">
-                                <div class="si-avatar {{ $hasPhoto ? '' : $gradClass }}">
-                                    @if($hasPhoto)
-                                        <img src="{{ asset('storage/' . $avatarPath) }}" alt="{{ $nom }}">
-                                    @else
-                                        {{ $initials }}
-                                    @endif
-                                </div>
-                                <div>
-                                    <p class="si-person-name">{{ $nom }} {{ $prenom }}</p>
-                                    <p class="si-person-sub">{{ $etudiant?->ecole ?? '—' }}</p>
-                                </div>
-                            </div>
-                        </td>
-
-                        {{-- Type --}}
-                        <td>
-                            <span class="pill pill-blue">{{ $stage->typestage?->libelle ?? '—' }}</span>
-                        </td>
-
-                        {{-- Organisation --}}
-                        <td class="col-org">
-                            <p class="si-org-main">{{ $stage->domaine?->nom ?? 'Domaine non défini' }}</p>
-                            <p class="si-org-sub">{{ $stage->site?->name ?? 'Site non défini' }}</p>
-                        </td>
-
-                        {{-- Thème & Suivi --}}
-                        <td class="col-suivi">
-                            <p class="si-org-main">{{ $stage->theme ?? '—' }}</p>
+    <div id="stages-table-container">
+        @if($stagesParAnnee !== null)
+            {{-- Mode groupé par année académique --}}
+            @forelse($stagesParAnnee as $annee => $stagesAnnee)
+            <div class="si-annee-section">
+                <div class="si-annee-header">
+                    <h2>
+                        Année académique {{ $annee }}
+                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">({{ $stagesAnnee->count() }} stage{{ $stagesAnnee->count() > 1 ? 's' : '' }})</span>
+                    </h2>
+                    <div class="si-annee-actions">
+                        <a href="{{ route('stages.trash') }}" class="btn-ghost" style="padding:.35rem .75rem;font-size:.75rem;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            Corbeille
+                        </a>
+                        <a href="{{ route('stages.create') }}" class="btn-primary" style="padding:.35rem .75rem;font-size:.75rem;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                            Nouveau stage
+                        </a>
+                    </div>
+                </div>
+                <div class="si-table-card" style="border-top-left-radius:0;border-top-right-radius:0;">
+                    <div class="si-table-scroll">
+                        <table class="si-table">
+                            <thead>
+                                <tr>
+                                    <th>Stagiaire</th>
+                                    <th>Type</th>
+                                    <th class="col-org">Organisation</th>
+                                    <th class="col-suivi">Thème &amp; Suivi</th>
+                                    <th>Période</th>
+                                    <th class="col-jours">Jours</th>
+                                    <th class="th-center">Statut</th>
+                                    <th class="th-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($stagesAnnee as $stage)
+                                @php
+                                    $status   = $stage->statut;
+                                    $etudiant = $stage->etudiant;
+                                    $personnel = $etudiant?->personnel;
+                                    $prenom   = $personnel?->prenom ?? '';
+                                    $nom      = $personnel?->nom     ?? '';
+                                    $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
+                                    $gradClass = 'grad-' . ($stage->id % 5);
+                                    $user = $personnel?->user ?? null;
+                                    $avatarPath = $user?->avatar ?? null;
+                                    $hasPhoto   = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="si-person">
+                                            <div class="si-avatar {{ $hasPhoto ? '' : $gradClass }}">
+                                                @if($hasPhoto)
+                                                    <img src="{{ asset('storage/' . $avatarPath) }}" alt="{{ $nom }}">
+                                                @else
+                                                    {{ $initials }}
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <p class="si-person-name">{{ $nom }} {{ $prenom }}</p>
+                                                <p class="si-person-sub">{{ $etudiant?->ecole ?? '—' }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="pill pill-blue">{{ $stage->typestage?->libelle ?? '—' }}</span>
+                                    </td>
+                                    <td class="col-org">
+                                        <p class="si-org-main">{{ $stage->domaine?->nom ?? 'Domaine non défini' }}</p>
+                                        <p class="si-org-sub">{{ $stage->site?->name ?? 'Site non défini' }}</p>
+                                    </td>
+                                    <td class="col-suivi">
+                                        <p class="si-org-main">{{ $stage->theme ?? '—' }}</p>
+                                        @php
+                                            $supPerso = $stage->supervisor?->personnel;
+                                            $supNom   = trim(($supPerso?->nom ?? '') . ' ' . ($supPerso?->prenom ?? ''));
+                                        @endphp
+                                        <p class="si-org-sub">{{ $supNom ?: 'Sans superviseur' }}</p>
+                                    </td>
+                                    <td>
+                                        <div class="si-period">
+                                            <div class="si-period-start">{{ $stage->date_debut?->format('d/m/Y') ?? '—' }}</div>
+                                            <div class="si-period-end">
+                                                <span class="si-period-arrow">→</span>{{ $stage->date_fin?->format('d/m/Y') ?? '—' }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="col-jours">
+                                        <span class="si-jours">
+                                            @if($stage->jours->count())
+                                                {{ $stage->jours->pluck('jour')->implode(', ') }}
+                                            @else
+                                                <span style="color:var(--muted)">—</span>
+                                            @endif
+                                        </span>
+                                    </td>
+                                    <td style="text-align:center">
+                                        @if($status === 'En cours')
+                                            <span class="pill pill-green"><span class="dot dot-green"></span>En cours</span>
+                                        @elseif(in_array($status, ['A venir','À venir'], true))
+                                            <span class="pill pill-blue"><span class="dot dot-blue"></span>À venir</span>
+                                        @else
+                                            <span class="pill pill-gray"><span class="dot dot-gray"></span>Terminé</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="si-actions">
+                                            <a href="{{ encrypted_route('stages.show', $stage) }}" class="act-btn act-view" title="Voir">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </a>
+                                            <a href="{{ encrypted_route('stages.edit', $stage) }}" class="act-btn act-edit" title="Modifier">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            </a>
+                                            <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" style="display:inline" data-confirm-delete>
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="act-btn act-delete" title="Supprimer">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="si-table-card">
+                <div class="si-empty">
+                    <div class="si-empty-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <h3>Aucun stage trouvé</h3>
+                    <p>Modifiez les filtres ou créez un nouveau stage.</p>
+                </div>
+            </div>
+            @endforelse
+        @else
+            {{-- Mode année spécifique (paginated) --}}
+            <div class="si-table-card">
+                <div class="si-annee-header" style="border-bottom:2px solid var(--brand);border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                    <h2>
+                        Année académique {{ $selectedAA }}
+                        <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">({{ $stages->total() }} stage{{ $stages->total() > 1 ? 's' : '' }})</span>
+                    </h2>
+                    <!-- <div class="si-annee-actions">
+                        <a href="{{ route('stages.trash') }}" class="btn-ghost" style="padding:.35rem .75rem;font-size:.75rem;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                            Corbeille
+                        </a>
+                        <a href="{{ route('stages.create') }}" class="btn-primary" style="padding:.35rem .75rem;font-size:.75rem;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                            Nouveau stage
+                        </a>
+                    </div> -->
+                </div>
+                <div class="si-table-scroll">
+                    <table class="si-table">
+                        <thead>
+                            <tr>
+                                <th>Stagiaire</th>
+                                <th>Type</th>
+                                <th class="col-org">Organisation</th>
+                                <th class="col-suivi">Thème &amp; Suivi</th>
+                                <th>Période</th>
+                                <th class="col-jours">Jours</th>
+                                <th class="th-center">Statut</th>
+                                <th class="th-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($stages as $stage)
                             @php
-                                $supPerso = $stage->supervisor?->personnel;
-                                $supNom   = trim(($supPerso?->nom ?? '') . ' ' . ($supPerso?->prenom ?? ''));
+                                $status   = $stage->statut;
+                                $etudiant = $stage->etudiant;
+                                $personnel = $etudiant?->personnel;
+                                $prenom   = $personnel?->prenom ?? '';
+                                $nom      = $personnel?->nom     ?? '';
+                                $initials = mb_strtoupper(mb_substr($prenom, 0, 1) . mb_substr($nom, 0, 1)) ?: 'ST';
+                                $gradClass = 'grad-' . ($stage->id % 5);
+                                $user = $personnel?->user ?? null;
+                                $avatarPath = $user?->avatar ?? null;
+                                $hasPhoto   = $avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath);
                             @endphp
-                            <p class="si-org-sub">{{ $supNom ?: 'Sans superviseur' }}</p>
-                        </td>
-
-                        {{-- Période --}}
-                        <td>
-                            <div class="si-period">
-                                <div class="si-period-start">{{ $stage->date_debut?->format('d/m/Y') ?? '—' }}</div>
-                                <div class="si-period-end">
-                                    <span class="si-period-arrow">→</span>{{ $stage->date_fin?->format('d/m/Y') ?? '—' }}
-                                </div>
-                            </div>
-                        </td>
-
-                        {{-- Jours --}}
-                        <td class="col-jours">
-                            <span class="si-jours">
-                                @if($stage->jours->count())
-                                    {{ $stage->jours->pluck('jour')->implode(', ') }}
-                                @else
-                                    <span style="color:var(--muted)">—</span>
-                                @endif
-                            </span>
-                        </td>
-
-                        {{-- Statut --}}
-                        <td style="text-align:center">
-                            @if($status === 'En cours')
-                                <span class="pill pill-green"><span class="dot dot-green"></span>En cours</span>
-                            @elseif(in_array($status, ['A venir','À venir'], true))
-                                <span class="pill pill-blue"><span class="dot dot-blue"></span>À venir</span>
-                            @else
-                                <span class="pill pill-gray"><span class="dot dot-gray"></span>Terminé</span>
-                            @endif
-                        </td>
-
-                        {{-- Actions --}}
-                        <td>
-                            <div class="si-actions">
-                                <a href="{{ encrypted_route('stages.show', $stage) }}" class="act-btn act-view" title="Voir">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                </a>
-                                <a href="{{ encrypted_route('stages.edit', $stage) }}" class="act-btn act-edit" title="Modifier">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                </a>
-                                <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" style="display:inline" data-confirm-delete>
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="act-btn act-delete" title="Supprimer">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8">
-                            <div class="si-empty">
-                                <div class="si-empty-icon">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                </div>
-                                <h3>Aucun stage trouvé</h3>
-                                <p>Modifiez les filtres ou créez un nouveau stage.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="si-pagination">{{ $stages->links() }}</div>
+                            <tr>
+                                <td>
+                                    <div class="si-person">
+                                        <div class="si-avatar {{ $hasPhoto ? '' : $gradClass }}">
+                                            @if($hasPhoto)
+                                                <img src="{{ asset('storage/' . $avatarPath) }}" alt="{{ $nom }}">
+                                            @else
+                                                {{ $initials }}
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="si-person-name">{{ $nom }} {{ $prenom }}</p>
+                                            <p class="si-person-sub">{{ $etudiant?->ecole ?? '—' }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="pill pill-blue">{{ $stage->typestage?->libelle ?? '—' }}</span>
+                                </td>
+                                <td class="col-org">
+                                    <p class="si-org-main">{{ $stage->domaine?->nom ?? 'Domaine non défini' }}</p>
+                                    <p class="si-org-sub">{{ $stage->site?->name ?? 'Site non défini' }}</p>
+                                </td>
+                                <td class="col-suivi">
+                                    <p class="si-org-main">{{ $stage->theme ?? '—' }}</p>
+                                    @php
+                                        $supPerso = $stage->supervisor?->personnel;
+                                        $supNom   = trim(($supPerso?->nom ?? '') . ' ' . ($supPerso?->prenom ?? ''));
+                                    @endphp
+                                    <p class="si-org-sub">{{ $supNom ?: 'Sans superviseur' }}</p>
+                                </td>
+                                <td>
+                                    <div class="si-period">
+                                        <div class="si-period-start">{{ $stage->date_debut?->format('d/m/Y') ?? '—' }}</div>
+                                        <div class="si-period-end">
+                                            <span class="si-period-arrow">→</span>{{ $stage->date_fin?->format('d/m/Y') ?? '—' }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="col-jours">
+                                    <span class="si-jours">
+                                        @if($stage->jours->count())
+                                            {{ $stage->jours->pluck('jour')->implode(', ') }}
+                                        @else
+                                            <span style="color:var(--muted)">—</span>
+                                        @endif
+                                    </span>
+                                </td>
+                                <td style="text-align:center">
+                                    @if($status === 'En cours')
+                                        <span class="pill pill-green"><span class="dot dot-green"></span>En cours</span>
+                                    @elseif(in_array($status, ['A venir','À venir'], true))
+                                        <span class="pill pill-blue"><span class="dot dot-blue"></span>À venir</span>
+                                    @else
+                                        <span class="pill pill-gray"><span class="dot dot-gray"></span>Terminé</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="si-actions">
+                                        <a href="{{ encrypted_route('stages.show', $stage) }}" class="act-btn act-view" title="Voir">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        </a>
+                                        <a href="{{ encrypted_route('stages.edit', $stage) }}" class="act-btn act-edit" title="Modifier">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </a>
+                                        <form action="{{ encrypted_route('stages.destroy', $stage) }}" method="POST" style="display:inline" data-confirm-delete>
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="act-btn act-delete" title="Supprimer">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="8">
+                                    <div class="si-empty">
+                                        <div class="si-empty-icon">
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                        </div>
+                                        <h3>Aucun stage trouvé</h3>
+                                        <p>Modifiez les filtres ou créez un nouveau stage.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if($stages->hasPages())
+                <div class="si-pagination" style="padding:1rem 1.5rem;border-top:1px solid var(--border);">
+                    {{ $stages->links() }}
+                </div>
+                @endif
+            </div>
+        @endif
     </div>
 
 </div>
@@ -448,7 +620,8 @@ document.addEventListener('DOMContentLoaded', function () {
         for (const [k, v] of data.entries()) {
             v ? url.searchParams.set(k, v) : url.searchParams.delete(k);
         }
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        url.searchParams.delete('page');
+        fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(r => r.text())
             .then(html => {
                 const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -457,6 +630,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const newCount = doc.getElementById('result-count');
                 const oldCount = document.getElementById('result-count');
                 if (newCount && oldCount) oldCount.innerText = newCount.innerText;
+                const newTabs = doc.querySelector('.aa-tabs');
+                const oldTabs = document.querySelector('.aa-tabs');
+                if (newTabs && oldTabs) oldTabs.outerHTML = newTabs.outerHTML;
             })
             .catch(console.error);
     }
@@ -469,5 +645,19 @@ document.addEventListener('DOMContentLoaded', function () {
     );
     form.addEventListener('submit', e => { e.preventDefault(); refresh(); });
 });
+
+function filterAnnee(el) {
+    const form = document.getElementById('filters-form');
+    let input = form.querySelector('input[name="annee_academique"]');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'annee_academique';
+        form.appendChild(input);
+    }
+    input.value = el.dataset.value;
+    form.requestSubmit();
+    return false;
+}
 </script>
 </x-app-layout>
