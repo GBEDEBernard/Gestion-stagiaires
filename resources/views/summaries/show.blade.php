@@ -54,19 +54,50 @@
                 </div>
             </div>
 
-            <div class="mt-6 flex justify-center">
-                <form action="{{ route('summaries.generate') }}" method="POST">
+            {{-- Actions --}}
+            <div class="mt-6 flex items-center justify-center gap-3">
+                <form action="{{ route('summaries.generate') }}" method="POST" class="generate-form">
                     @csrf
                     <input type="hidden" name="period" value="{{ $summary->period_type }}">
                     <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="generate-btn inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                        <svg class="generate-icon w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
-                        Regénérer
+                        <span class="generate-text">Regénérer</span>
+                        <span class="generate-spinner hidden">
+                            <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                        </span>
+                    </button>
+                </form>
+
+                <form action="{{ route('summaries.destroy', $summary) }}" method="POST"
+                      onsubmit="return confirm('Supprimer ce résumé ?')">
+                    @csrf @method('DELETE')
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Supprimer
                     </button>
                 </form>
             </div>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.generate-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('.generate-btn');
+                btn.disabled = true;
+                btn.querySelector('.generate-icon').classList.add('hidden');
+                btn.querySelector('.generate-text').classList.add('hidden');
+                btn.querySelector('.generate-spinner').classList.remove('hidden');
+            });
+        });
+    </script>
 </x-app-layout>

@@ -79,4 +79,14 @@ class ReportSummaryController extends Controller
 
         return view('admin.summaries.index', compact('summaries', 'users'));
     }
+
+    public function destroy(ReportSummary $summary)
+    {
+        $this->authorize('view', $summary);
+
+        $summary->delete();
+
+        return redirect()->route('summaries.index')
+            ->with('success', 'Résumé supprimé avec succès.');
+    }
 }

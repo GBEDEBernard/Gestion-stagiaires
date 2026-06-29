@@ -402,6 +402,7 @@ Route::middleware(['auth', 'verified'])->prefix('summaries')->group(function () 
     Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'index'])->name('summaries.index');
     Route::get('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'show'])->name('summaries.show');
     Route::post('generate', [App\Http\Controllers\ReportSummaryController::class, 'generate'])->name('summaries.generate');
+    Route::delete('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'destroy'])->name('summaries.destroy');
 });
 
 // ---------------- Résumés IA (Admin) ----------------

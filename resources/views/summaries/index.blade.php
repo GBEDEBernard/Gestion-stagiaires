@@ -420,6 +420,13 @@
                 0% { background-position: 200% 0; }
                 100% { background-position: -200% 0; }
             }
+
+            @keyframes sp-spin {
+                to { transform: rotate(360deg); }
+            }
+            .animate-spin {
+                animation: sp-spin 1s linear infinite;
+            }
         </style>
 
         <script>
@@ -447,36 +454,45 @@
                 </div>
 
                 <div class="sp-header-right sp-btn-group">
-                    <form action="{{ route('summaries.generate') }}" method="POST" class="inline">
+                    <form action="{{ route('summaries.generate') }}" method="POST" class="generate-form inline">
                         @csrf
                         <input type="hidden" name="period" value="weekly">
-                        <button type="submit" class="sp-btn sp-btn-primary sp-btn-sm">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                            Cette semaine
+                        <button type="submit" class="generate-btn sp-btn sp-btn-primary sp-btn-sm">
+                            <span class="generate-text">Cette semaine</span>
+                            <span class="generate-spinner hidden">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            </span>
                         </button>
                     </form>
 
-                    <form action="{{ route('summaries.generate') }}" method="POST" class="inline">
+                    <form action="{{ route('summaries.generate') }}" method="POST" class="generate-form inline">
                         @csrf
                         <input type="hidden" name="period" value="monthly">
-                        <button type="submit" class="sp-btn sp-btn-purple sp-btn-sm">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            Ce mois
+                        <button type="submit" class="generate-btn sp-btn sp-btn-purple sp-btn-sm">
+                            <span class="generate-text">Ce mois</span>
+                            <span class="generate-spinner hidden">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            </span>
                         </button>
                     </form>
 
-                    <form action="{{ route('summaries.generate') }}" method="POST" class="inline">
+                    <form action="{{ route('summaries.generate') }}" method="POST" class="generate-form inline">
                         @csrf
                         <input type="hidden" name="period" value="yearly">
-                        <button type="submit" class="sp-btn sp-btn-emerald sp-btn-sm">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Cette année
+                        <button type="submit" class="generate-btn sp-btn sp-btn-emerald sp-btn-sm">
+                            <span class="generate-text">Cette année</span>
+                            <span class="generate-spinner hidden">
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            </span>
                         </button>
                     </form>
                 </div>
@@ -494,14 +510,17 @@
                             <h3>Aucun résumé pour le moment</h3>
                             <p>Génère un résumé IA de tes rapports pour faire le point sur ton activité.</p>
                             <div class="sp-btn-group mt-6">
-                                <form action="{{ route('summaries.generate') }}" method="POST">
+                                <form action="{{ route('summaries.generate') }}" method="POST" class="generate-form">
                                     @csrf
                                     <input type="hidden" name="period" value="weekly">
-                                    <button type="submit" class="sp-btn sp-btn-primary">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                        </svg>
-                                        Générer un résumé
+                                    <button type="submit" class="generate-btn sp-btn sp-btn-primary">
+                                        <span class="generate-text">Générer un résumé</span>
+                                        <span class="generate-spinner hidden">
+                                            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                            </svg>
+                                        </span>
                                     </button>
                                 </form>
                             </div>
@@ -566,4 +585,15 @@
 
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.generate-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const btn = this.querySelector('.generate-btn');
+                btn.disabled = true;
+                btn.querySelector('.generate-text')?.classList.add('hidden');
+                btn.querySelector('.generate-spinner')?.classList.remove('hidden');
+            });
+        });
+    </script>
 </x-app-layout>
