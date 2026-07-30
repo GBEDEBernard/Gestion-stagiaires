@@ -202,6 +202,10 @@ class AdminPresenceController extends Controller
         $dateFrom = $dateTo = $dateCarbon->format('Y-m-d');
 
         switch ($period) {
+            case 'custom':
+                $dateFrom = $request->get('date_from', $dateFrom);
+                $dateTo = $request->get('date_to', $dateTo);
+                break;
             case 'week':
                 $dateFrom = $dateCarbon->copy()->startOfWeek()->format('Y-m-d');
                 $dateTo = $dateCarbon->copy()->endOfWeek()->format('Y-m-d');
@@ -212,6 +216,7 @@ class AdminPresenceController extends Controller
                 break;
         }
 
+        // ── Pointages ──
         $filters = [
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
@@ -226,7 +231,6 @@ class AdminPresenceController extends Controller
 
         $days = $query->paginate(10);
 
-        // Propriété virtuelle resolved_site_name
         $days->getCollection()->transform(function ($day) {
             $day->resolved_site_name = $day->checkInEvent?->site?->name
                 ?? $day->checkInEvent?->geofence?->site?->name
@@ -235,7 +239,24 @@ class AdminPresenceController extends Controller
             return $day;
         });
 
-        // Stats
+        // ── Absences ──
+        $absenceQuery = AttendanceDay::whereBetween('attendance_date', [$dateFrom, $dateTo])
+            ->whereNull('first_check_in_at')
+            ->with(['user', 'etudiant.user', 'stage.site']);
+
+        if ($userId) {
+            $absenceQuery->where('user_id', $userId);
+        }
+        if ($siteId) {
+            $absenceQuery->where('site_id', $siteId);
+        }
+        if ($schoolFilter) {
+            $absenceQuery->whereHas('etudiant', fn($q) => $q->where('ecole', $schoolFilter));
+        }
+
+        $absences = $absenceQuery->orderByDesc('attendance_date')->paginate(10, ['*'], 'absences_page');
+
+        // ── Stats ──
         $today = today();
         $todayCount = AttendanceEvent::whereDate('occurred_at', $today)->count();
         $checkinsToday = AttendanceEvent::where('event_type', 'check_in')->whereDate('occurred_at', $today)->count();
@@ -246,17 +267,19 @@ class AdminPresenceController extends Controller
         $avgAccuracy = AttendanceEvent::whereDate('occurred_at', $today)->avg('accuracy_meters') ?? 0;
         $periodDays = Carbon::parse($dateFrom)->diffInDays(Carbon::parse($dateTo)) + 1;
 
-        // Listes filtres
-        $users = User::with('personnel')
-            ->whereHas('attendanceDays')
-            ->get()
-            ->sortBy('name')
-            ->take(50);
+        // ── Listes filtres ──
+        $users = User::where(function ($q) {
+                $q->whereHas('personnel.personnable', fn($sq) => $sq)
+                  ->orWhereHas('etudiant');
+            })
+            ->orderBy('name')
+            ->get();
         $sites = Site::where('is_active', true)->orderBy('name')->get();
         $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
 
         return view('admin.presence.pointage-suivi', compact(
             'days',
+            'absences',
             'todayCount',
             'checkinsToday',
             'checkoutsToday',
@@ -267,6 +290,8 @@ class AdminPresenceController extends Controller
             'schools',
             'date',
             'period',
+            'dateFrom',
+            'dateTo',
             'userId',
             'siteId',
             'schoolFilter',
@@ -287,6 +312,10 @@ class AdminPresenceController extends Controller
         $dateFrom = $dateTo = $dateCarbon->format('Y-m-d');
 
         switch ($period) {
+            case 'custom':
+                $dateFrom = $request->get('date_from', $dateFrom);
+                $dateTo = $request->get('date_to', $dateTo);
+                break;
             case 'week':
                 $dateFrom = $dateCarbon->copy()->startOfWeek()->format('Y-m-d');
                 $dateTo = $dateCarbon->copy()->endOfWeek()->format('Y-m-d');
