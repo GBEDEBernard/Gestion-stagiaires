@@ -966,27 +966,25 @@
     </div>
 
     {{-- Modal Observation --}}
-    <template x-teleport="body">
-        <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
-                        <p class="text-sm text-slate-500" x-text="'du ' + obsDate"></p>
-                    </div>
-                    <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+    <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
+        <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
+                    <p class="text-sm text-slate-500" x-text="'du ' + obsDate"></p>
                 </div>
-                <div class="mt-4">
-                    <p class="text-base font-medium text-slate-900" x-text="obsText"></p>
-                </div>
-                <div class="mt-6 flex justify-end">
-                    <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Fermer</button>
-                </div>
+                <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="mt-4">
+                <p class="text-base font-medium text-slate-900" x-text="obsText"></p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Fermer</button>
             </div>
         </div>
-    </template>
+    </div>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
