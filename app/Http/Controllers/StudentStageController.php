@@ -15,6 +15,25 @@ class StudentStageController extends Controller
     ) {
     }
 
+    public function updateTheme(Request $request)
+    {
+        $validated = $request->validate([
+            'theme' => 'nullable|string|max:255',
+        ]);
+
+        $user = $request->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+
+        abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
+        $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
+        abort_if(!$activeStage, 404, "Aucun stage actif trouve.");
+
+        $activeStage->update(['theme' => $validated['theme']]);
+
+        return back()->with('success', 'Theme du stage mis a jour avec succes.');
+    }
+
     public function show(Request $request)
     {
         $user = $request->user();

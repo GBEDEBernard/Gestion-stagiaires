@@ -43,7 +43,19 @@
 
                     <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
                         <p class="text-sm text-slate-500">Statut du jour</p>
-                        <p class="text-lg font-semibold text-slate-900">{{ $attendanceDay?->day_status ?: 'pending' }}</p>
+                        @php
+    $statusMap = [
+        'late' => 'En retard',
+        'present' => 'Présent',
+        'absent' => 'Absent',
+        'incomplete' => 'Incomplet',
+        'pending' => 'En attente',
+        'completed' => 'Terminé',
+    ];
+    $statusKey = $attendanceDay?->day_status;
+    $statusFr = $statusMap[$statusKey] ?? ($statusKey ? ucfirst($statusKey) : 'En attente');
+@endphp
+<p class="text-lg font-semibold text-slate-900">{{ $statusFr }}</p>
                         <p class="text-sm text-slate-600 mt-1">
                             Arrivee: {{ $attendanceDay?->first_check_in_at?->format('H:i') ?: '--:--' }}
                             |

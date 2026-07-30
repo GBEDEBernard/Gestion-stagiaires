@@ -247,6 +247,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Espace stagiaire ----------------
     Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
+    Route::put('/mon-stage/theme', [StudentStageController::class, 'updateTheme'])->name('student.theme.update');
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
