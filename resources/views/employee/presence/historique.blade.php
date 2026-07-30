@@ -881,7 +881,7 @@
                                     @if($day->arrival_status === 'late')
                                     @php $obs = $day->late_observation; @endphp
                                     @if($obs)
-                                    <span class="pres-tag tag-amber obs-clickable" @click="obsText = {{ json_encode($obs) }}; obsDate = '{{ $day->date->format('d/m/Y') }}'; obsModal = true" style="cursor:pointer; white-space:normal; display:inline-block; max-width:220px;">
+                                    <span class="pres-tag tag-amber obs-clickable" @click="obsText = {{ json_encode($obs) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer; white-space:normal; display:inline-block; max-width:220px;">
                                         {{ Str::limit($obs, 60) }}
                                     </span>
                                     @else
@@ -945,7 +945,7 @@
                             <span class="mobile-label">Observation</span>
                             @php $obsMobile = $day->late_observation; @endphp
                             @if($obsMobile)
-                            <span class="mobile-value obs-clickable" @click="obsText = {{ json_encode($obsMobile) }}; obsDate = '{{ $day->date->format('d/m/Y') }}'; obsModal = true" style="cursor:pointer;">
+                            <span class="mobile-value obs-clickable" @click="obsText = {{ json_encode($obsMobile) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer;">
                                 {{ Str::limit($obsMobile, 50) }}
                             </span>
                             @else
