@@ -13,9 +13,9 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon-rounded.svg') }}">
-    <link rel="shortcut icon" href="{{ asset('images/favicon-rounded.svg') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/favicon-rounded.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon-rounded.svg') }}?v={{ filemtime(public_path('images/favicon-rounded.svg')) }}">
+    <link rel="shortcut icon" href="{{ asset('images/favicon-rounded.svg') }}?v={{ filemtime(public_path('images/favicon-rounded.svg')) }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/favicon-rounded.svg') }}?v={{ filemtime(public_path('images/favicon-rounded.svg')) }}">
     
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
