@@ -4,16 +4,12 @@ namespace App\Mail;
 
 use App\Models\Task;
 use App\Models\User;
-use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
 class TaskReviewedMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public Task $task,
         public User $reviewer,

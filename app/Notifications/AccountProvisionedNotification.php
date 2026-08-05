@@ -2,14 +2,11 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class AccountProvisionedNotification extends Notification
 {
-    use Queueable;
-
     protected $token;
     protected ?string $email;
 

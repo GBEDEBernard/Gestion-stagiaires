@@ -3,14 +3,10 @@
 namespace App\Mail;
 
 use App\Models\PermissionRequest;
-use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Queue\SerializesModels;
 
 class PermissionDecisionMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public PermissionRequest $request,
         public string $decision,
