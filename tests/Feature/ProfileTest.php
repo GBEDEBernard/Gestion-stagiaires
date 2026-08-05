@@ -3,6 +3,17 @@
 use App\Models\User;
 use App\Models\Personnel;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+
+test('public storage files can be served through the web route', function () {
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAIAAgAABAAE0tR4AAAAAElFTkSuQmCC');
+    Storage::disk('public')->put('avatars/test-avatar.png', $png);
+
+    $response = $this->get('/storage/avatars/test-avatar.png');
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'image/png');
+});
 
 test('profile page is displayed', function () {
     $personnel = Personnel::create([

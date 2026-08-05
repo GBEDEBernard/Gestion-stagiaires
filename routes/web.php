@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\TypeStageController;
@@ -47,6 +48,18 @@ use App\Http\Controllers\Admin\AdminHolidayController;
 Route::get('/', fn() => redirect()->route('login'));
 
 require __DIR__ . '/auth.php';
+
+Route::get('/storage/{path}', function (string $path) {
+    $fullPath = Storage::disk('public')->path($path);
+
+    if (!is_file($fullPath)) {
+        abort(404);
+    }
+
+    return response()->file($fullPath, [
+        'Content-Type' => mime_content_type($fullPath),
+    ]);
+})->where('path', '.*');
 
 // Route d'accès par email (URL signée temporaire)
 Route::get('/email-access', [App\Http\Controllers\EmailAccessController::class, 'handle'])
