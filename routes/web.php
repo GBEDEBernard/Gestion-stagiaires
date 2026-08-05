@@ -38,6 +38,7 @@ use App\Http\Controllers\TacheController;
 use App\Http\Controllers\TacheController as ControllersTacheController;
 use App\Http\Controllers\AttestationSignatureController;
 use App\Http\Controllers\Admin\AdminHolidayController;
+use App\Http\Controllers\Admin\AdminLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -257,6 +258,9 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
 
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
+
+    // ---------------- Logs admin ----------------
+    Route::get('/admin/logs', [AdminLogController::class, 'index'])->name('admin.logs.index')->middleware('role:admin');
 
     // ---------------- Espace stagiaire ----------------
     Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
