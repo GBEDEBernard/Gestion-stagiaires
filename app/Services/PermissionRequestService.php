@@ -46,7 +46,7 @@ class PermissionRequestService
                 // Send email if signataire has an email
                 if ($signataire->email) {
                     Mail::to($signataire->email)
-                        ->queue(new PermissionRequestNotificationMail($request->load('type', 'user'), $signataire));
+                        ->send(new PermissionRequestNotificationMail($request->load('type', 'user'), $signataire));
                 }
             }
 
@@ -145,7 +145,7 @@ class PermissionRequestService
 
             // Send decision email to user
             Mail::to($request->user->email)
-                ->queue(new PermissionDecisionMail($request->load('type', 'decider'), $status));
+                ->send(new PermissionDecisionMail($request->load('type', 'decider'), $status));
 
             return $request->fresh();
         });
