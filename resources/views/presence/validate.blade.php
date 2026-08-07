@@ -113,9 +113,6 @@
                             class="hidden"
                             placeholder="Observation (obligatoire en cas de retard)"></textarea>
 
-                        {{-- Champ caché pour permission départ anticipé --}}
-                        <input type="hidden" id="early_departure_permission" name="early_departure_permission" value="{{ isset($has_approved_permission) && $has_approved_permission ? '1' : '0' }}">
-
                         <button type="submit" id="submitBtn"
                             class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 flex items-center justify-center relative"
                             {{ isset($is_late) && $is_late ? 'disabled' : '' }}>
@@ -176,35 +173,6 @@
                 Votre demande de départ anticipé a été approuvée. Vous pouvez pointer votre départ.
                 @endif
             </p>
-        </div>
-    </div>
-    @endif
-
-    {{-- MODALE POUR DÉPART ANTICIPÉ (avant 18h) — seulement si pas de permission déjà approuvée --}}
-    @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && (!isset($has_approved_permission) || !$has_approved_permission))
-    <div id="earlyDepartureModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300" style="display: flex;">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
-            <div class="p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Départ anticipé</h3>
-                </div>
-                <p class="text-slate-600 dark:text-slate-300 mb-4">
-                    Vous pointé votre départ avant <strong>18h00</strong>. Avez-vous une permission de départ anticipé ?
-                </p>
-                <label class="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition mb-5">
-                    <input type="checkbox" id="earlyPermissionCheckbox" class="w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
-                    <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">Oui, j'ai une permission de départ anticipé</span>
-                </label>
-                <div class="flex gap-3">
-                    <a href="{{ route('presence.pointage') }}" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition text-center">Annuler</a>
-                    <button type="button" id="confirmEarlyDeparture" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Confirmer</button>
-                </div>
-            </div>
         </div>
     </div>
     @endif
@@ -333,27 +301,6 @@
             });
 
             // Bloquer le scroll de la page tant que la modale est ouverte
-            document.body.style.overflow = 'hidden';
-            @endif
-
-            // --- Gestion de la modale départ anticipé ---
-            @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && (!isset($has_approved_permission) || !$has_approved_permission))
-            const earlyModal = document.getElementById('earlyDepartureModal');
-            const earlyCheckbox = document.getElementById('earlyPermissionCheckbox');
-            const earlyConfirmBtn = document.getElementById('confirmEarlyDeparture');
-            const earlyPermissionField = document.getElementById('early_departure_permission');
-
-            earlyCheckbox.addEventListener('change', function() {
-                earlyConfirmBtn.disabled = !this.checked;
-            });
-
-            earlyConfirmBtn.addEventListener('click', function() {
-                if (!earlyCheckbox.checked) return;
-                earlyPermissionField.value = '1';
-                earlyModal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            });
-
             document.body.style.overflow = 'hidden';
             @endif
 

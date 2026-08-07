@@ -8,6 +8,7 @@ use App\Models\Holiday;
 use App\Models\HolidayEmergencyExemption;
 use App\Models\PermissionRequest;
 use App\Models\PermissionType;
+use App\Models\User;
 use App\Services\AdminPresenceService;
 use App\Services\PresenceService;
 use App\Services\UserProfileLinkService;
@@ -56,7 +57,23 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('presence.pointage', compact('activeStage', 'attendanceDay', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
+            // Permission départ anticipé pour aujourd'hui (départ avant 18h)
+            $isBefore18 = now()->lt(today()->setTime(18, 0));
+            $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+            $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+            $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+            return view('presence.pointage', [
+                'activeStage'            => $activeStage,
+                'attendanceDay'          => $attendanceDay,
+                'todayHoliday'           => $todayHoliday,
+                'canBypassHoliday'       => $canBypassHoliday,
+                'isEmergencyExempted'    => $isEmergencyExempted,
+                'isBefore18h'            => $isBefore18,
+                'earlyDeparturePermission' => $earlyDeparturePermission,
+                'hasCheckedIn'           => $hasCheckedIn,
+                'hasCheckedOut'          => $hasCheckedOut,
+            ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
             $domaine = $user->domaine;
@@ -70,7 +87,23 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('employee.presence.pointage', compact('attendanceDay', 'user', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
+            // Permission départ anticipé pour aujourd'hui (départ avant 18h)
+            $isBefore18 = now()->lt(today()->setTime(18, 0));
+            $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+            $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+            $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+            return view('employee.presence.pointage', [
+                'attendanceDay'            => $attendanceDay,
+                'user'                     => $user,
+                'todayHoliday'             => $todayHoliday,
+                'canBypassHoliday'         => $canBypassHoliday,
+                'isEmergencyExempted'      => $isEmergencyExempted,
+                'isBefore18h'              => $isBefore18,
+                'earlyDeparturePermission' => $earlyDeparturePermission,
+                'hasCheckedIn'             => $hasCheckedIn,
+                'hasCheckedOut'            => $hasCheckedOut,
+            ]);
         }
     }
 
@@ -213,19 +246,19 @@ class PresenceController extends Controller
         $hasApprovedPermission = false;
         $approvedDepartureTime = null;
 
+        // Départ anticipé (avant 18h00) : une permission approuvée POUR AUJOURD'HUI est obligatoire
         if ($isEarlyDeparture) {
-            $departAnticipe = PermissionType::where('slug', 'depart-anticipe')->first();
-            if ($departAnticipe) {
-                $approved = PermissionRequest::where('user_id', $user->id)
-                    ->where('permission_type_id', $departAnticipe->id)
-                    ->where('status', 'approved')
-                    ->whereDate('created_at', today())
-                    ->first();
+            $approved = $this->getApprovedEarlyDeparturePermission($user);
 
-                if ($approved) {
-                    $hasApprovedPermission = true;
-                    $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
-                }
+            if ($approved) {
+                $hasApprovedPermission = true;
+                $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
+            } else {
+                // Refus du pointage : pas de permission valable pour aujourd'hui
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Il n'est pas encore l'heure de pointer votre départ (18h00). "
+                        . "Une permission de départ anticipé approuvée pour aujourd'hui (" . today()->format('d/m/Y') . ") est requise. "
+                        . "Faites votre demande de permission puis réessayez.");
             }
         }
 
@@ -425,14 +458,16 @@ class PresenceController extends Controller
                 'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',
             ]);
 
-            // ✅ Départ anticipé avant 18h : permission requise
-            if ($isEarlyDeparture && $pending['type'] === 'check_out' && empty($pending['has_approved_permission'])) {
-                $request->validate([
-                    'early_departure_permission' => 'required|accepted',
-                ], [
-                    'early_departure_permission.required' => 'Vous devez confirmer avoir une permission pour un départ avant 18h00.',
-                    'early_departure_permission.accepted' => 'Vous devez accepter la permission de départ anticipé.',
-                ]);
+            // ✅ Départ anticipé avant 18h : permission approuvée requise VÉRIFIÉE côté serveur
+            if ($isEarlyDeparture && $pending['type'] === 'check_out') {
+                if (!$this->getApprovedEarlyDeparturePermission($user)) {
+                    request()->session()->forget('pending_pointage');
+
+                    return redirect()->route('presence.pointage')
+                        ->with('error', "Pointage refusé : aucune permission de départ anticipé approuvée "
+                            . "pour aujourd'hui (" . today()->format('d/m/Y') . "). "
+                            . "Il n'est pas encore l'heure de pointer (18h00) ou demandez une permission.");
+                }
             }
 
             $data = $pending;
@@ -588,7 +623,40 @@ class PresenceController extends Controller
             ->whereDate('attendance_date', today())
             ->first();
 
-        return view('employee.presence.pointage', compact('attendanceDay', 'user'));
+        $isBefore18 = now()->lt(today()->setTime(18, 0));
+        $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+        $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+        $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+        return view('employee.presence.pointage', [
+            'attendanceDay'            => $attendanceDay,
+            'user'                     => $user,
+            'isBefore18h'              => $isBefore18,
+            'earlyDeparturePermission' => $earlyDeparturePermission,
+            'hasCheckedIn'             => $hasCheckedIn,
+            'hasCheckedOut'            => $hasCheckedOut,
+        ]);
+    }
+
+    /**
+     * Recherche la permission "départ anticipé" approuvée pour le jour même.
+     * La permission n'est valable QUE si la date demandée (fields_data.date) est aujourd'hui.
+     */
+    private function getApprovedEarlyDeparturePermission(User $user): ?PermissionRequest
+    {
+        $departAnticipe = PermissionType::where('slug', 'depart-anticipe')->first();
+        if (!$departAnticipe) {
+            return null;
+        }
+
+        $approved = PermissionRequest::where('user_id', $user->id)
+            ->where('permission_type_id', $departAnticipe->id)
+            ->where('status', 'approved')
+            ->latest()
+            ->get()
+            ->first(fn ($permission) => ($permission->fields_data['date'] ?? null) === today()->toDateString());
+
+        return $approved;
     }
 
     /**
