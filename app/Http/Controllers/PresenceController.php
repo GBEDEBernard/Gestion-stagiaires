@@ -122,12 +122,19 @@ class PresenceController extends Controller
                 ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
         }
 
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+$etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
+            // ✅ Le pointage d'arrivée des stagiaires est ouvert à partir de 07h30 uniquement
+            if (now()->format('H:i') < '07:30') {
+                return redirect()->route('presence.pointage')
+                    ->with('points_avant_7h30', true)
+                    ->with('error', "Le pointage d'arrivée sera ouvert à partir de 07h30.");
+            }
 
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',

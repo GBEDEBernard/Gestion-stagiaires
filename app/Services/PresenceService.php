@@ -46,11 +46,24 @@ class PresenceService
      * Vérifie si aujourd'hui est un jour de présence pour le stage concerné.
      * Bloque le pointage si le stage n'a pas les jours de présence eux-mêmes configurés.
      */
-    protected function checkWorkDayRestriction(Stage $stage): void
+protected function checkWorkDayRestriction(Stage $stage): void
     {
         if (!$stage->isWorkDay()) {
             throw ValidationException::withMessages([
                 'presence' => "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.",
+            ]);
+        }
+    }
+
+    /**
+     * Vérifie que le pointage d'arrivée (check-in) des stagiaires n'a lieu
+     * qu'à partir de 07h30. En-deçà, le pointage est refusé.
+     */
+    protected function checkCheckInOpeningTime(): void
+    {
+        if (now()->format('H:i') < '07:30') {
+            throw ValidationException::withMessages([
+                'presence' => "Le pointage d'arrivée sera ouvert à partir de 07h30.",
             ]);
         }
     }
@@ -67,10 +80,11 @@ class PresenceService
     /**
      * Enregistre l'arrivée (check-in) d'un stagiaire.
      */
-    public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
+public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
+        $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 

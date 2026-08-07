@@ -285,7 +285,7 @@
                     Il n'est pas encore l'heure de pointer votre départ (18h00). Vous devez avoir une permission de départ anticipé
                     <strong>approuvée pour aujourd'hui ({{ now()->format('d/m/Y') }})</strong>.
                 </p>
-                <div class="flex gap-3">
+<div class="flex gap-3">
                     <button type="button" id="earlyRefusedClose"
                         class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition text-center">
                         Fermer
@@ -295,6 +295,33 @@
                         Faire une demande de permission
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- MODALE POINTAGE AVANT 07h30 (stagiaires uniquement) --}}
+    @if(now()->format('H:i') < '07:30' && !($hasCheckIn ?? false))
+    <div id="before7h30Modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Pointage non ouvert</h3>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 mb-4">
+                    La plateforme de pointage sera ouverte à partir de
+                    <strong class="text-slate-900 dark:text-white">07h30</strong>.
+                    Vous pourrez pointer votre arrivée à ce moment-là. Merci de votre patience.
+                </p>
+                <button type="button" id="before7h30Close"
+                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition text-center">
+                    Compris
+                </button>
             </div>
         </div>
     </div>
@@ -511,7 +538,14 @@
                 const form = document.getElementById(formId);
                 if (!btn || btn.disabled) return;
 
-                btn.addEventListener('click', async () => {
+btn.addEventListener('click', async () => {
+                    // Pointage d'arrivée avant 07h30 → modale de blocage
+                    if (formId === 'form-checkin' && {{ now()->format('H:i') < '07:30' ? 'true' : 'false' }} && document.getElementById('before7h30Modal')) {
+                        document.getElementById('before7h30Modal').classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                        return;
+                    }
+
                     // Départ anticipé avant 18h sans permission approuvée → modale de refus
                     if (formId === 'form-checkout' && {{ $earlyDepartureRefused ?? false ? 'true' : 'false' }} && document.getElementById('earlyRefusedModal')) {
                         document.getElementById('earlyRefusedModal').classList.remove('hidden');
@@ -574,14 +608,25 @@
                 });
             }
 
-            // ─────────────────────────────────────────────────────────────────
-            // 8b. FERMETURE DE LA MODALE DÉPART ANTICIPÉ REFUSÉ
+// ─────────────────────────────────────────────────────────────────
+            // 8b. FERMETURE DES MODALES
             // ─────────────────────────────────────────────────────────────────
             @if($earlyDepartureRefused ?? false)
             const earlyRefusedClose = document.getElementById('earlyRefusedClose');
             if (earlyRefusedClose) {
                 earlyRefusedClose.addEventListener('click', () => {
                     document.getElementById('earlyRefusedModal').classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            @endif
+
+            @if(now()->format('H:i') < '07:30' && !($hasCheckIn ?? false))
+            // Fermeture de la modale "pointage avant 07h30"
+            const before7h30Close = document.getElementById('before7h30Close');
+            if (before7h30Close) {
+                before7h30Close.addEventListener('click', () => {
+                    document.getElementById('before7h30Modal').classList.add('hidden');
                     document.body.style.overflow = 'auto';
                 });
             }
