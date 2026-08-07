@@ -33,7 +33,7 @@
                  <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
                      <select id="userFilter" name="user_id"
                          class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                         <option value="">Tous les utilisateurs</option>
+                         <option value="">Tout les utilisateurs</option>
                          @foreach($allUsers as $user)
                          <option value="{{ $user['id'] }}" {{ request('user_id') == $user['id'] ? 'selected' : '' }}>
                              {{ $user['name'] }}
@@ -52,7 +52,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                  <div class="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-sm">
-                     <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Étudiants</h3>
+                     <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Stagiaires</h3>
                      <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences des stagiaires.</p>
                      <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
                          <div class="rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-950/60 p-3 sm:p-4">
@@ -84,7 +84,7 @@
              {{-- Tableau Étudiants - Version responsive --}}
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Stagiaires</h3>
                  </div>
 
                  {{-- Version mobile : cartes --}}
@@ -127,7 +127,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</div>
+                     <div class="p-8 text-center text-slate-500">Aucun pointage des  Stagiaires pour cette date</div>
                      @endforelse
                  </div>
 
@@ -228,7 +228,7 @@
                                      </tr>
                                      @empty
                                      <tr>
-                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</td>
+                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage des Stagiaires pour cette date</td>
                                      </tr>
                                      @endforelse
                          </tbody>
@@ -279,7 +279,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucun pointage employé pour cette date.</div>
+                     <div class="p-8 text-center text-slate-500">Aucun pointage des employé pour cette date</div>
                      @endforelse
                  </div>
 
@@ -374,7 +374,7 @@
                                      </tr>
                                      @empty
                                      <tr>
-                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage employé pour cette date.</td>
+                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage des employés pour cette date</td>
                                      </tr>
                                      @endforelse
                          </tbody>
