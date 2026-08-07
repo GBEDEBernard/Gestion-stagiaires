@@ -181,314 +181,317 @@
               x-text="messages.length"></span>
     </button>
 
-    {{-- ── Fenêtre chat ── --}}
-    <div x-show="chatOpen"
-         @keydown.escape.window="closeChat()"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="chat-modal fixed z-50 flex flex-col bg-white overflow-hidden border border-black/5
-                 inset-0 rounded-none
-                 sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[400px] sm:max-h-[85vh] sm:rounded-2xl sm:shadow-2xl"
-         x-trap.noscroll="chatOpen">
+    {{-- ── Fenêtre chat ── téléportée en dehors des ancêtres animés (évite les soucis de position: fixed) --}}
+    <template x-teleport="body">
+        <div x-show="chatOpen"
+             @keydown.escape.window="closeChat()"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="chat-modal fixed z-50 flex flex-col bg-white overflow-hidden border border-black/5
+                     inset-0 rounded-none
+                     sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[400px] sm:max-h-[85vh] sm:rounded-2xl sm:shadow-2xl"
+             x-trap.noscroll="chatOpen">
 
-        {{-- Header --}}
-        <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center justify-between flex-shrink-0">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                    </svg>
-                </div>
-                <div class="text-left min-w-0">
-                    <h3 class="font-semibold text-white text-sm">Discussion</h3>
-                    <p class="text-white/70 text-xs"
-                       x-text="`${messages.length} message${messages.length !== 1 ? 's' : ''}`"></p>
-                </div>
-            </div>
-            <button @click="closeChat()"
-                    class="text-white/70 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 active:scale-95 flex-shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-
-        {{-- ── Zone messages ── --}}
-        <div class="chat-messages-area flex-1 overflow-y-auto overflow-x-hidden px-4 py-4
-                    bg-gradient-to-b from-gray-50/50 to-white/80 min-h-0"
-             id="messages-{{ $report->id }}"
-             style="scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent; -webkit-overflow-scrolling: touch;">
-            <style>
-                #messages-{{ $report->id }}::-webkit-scrollbar { width: 4px; }
-                #messages-{{ $report->id }}::-webkit-scrollbar-track { background: transparent; }
-                #messages-{{ $report->id }}::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
-            </style>
-
-            {{-- Vide --}}
-            <template x-if="messages.length === 0">
-                <div class="flex flex-col items-center justify-center h-full text-center py-16">
-                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center mb-3">
-                        <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
                     </div>
-                    <p class="text-xs font-medium text-black/50">
-                        Aucun message<br>
-                        <span class="text-black/35">Soyez le premier à commenter</span>
-                    </p>
-                </div>
-            </template>
-
-            {{-- Liste messages --}}
-            <template x-for="(message, idx) in messages" :key="message.id">
-                <div>
-                    {{-- Séparateur de jour --}}
-                    <template x-if="idx === 0 || !isSameDay(messages[idx-1], message)">
-                        <div class="flex items-center gap-2 my-3">
-                            <div class="day-sep-line flex-1 h-px bg-black/8"></div>
-                            <span class="day-sep-label text-[9px] font-semibold text-black/35 whitespace-nowrap px-1"
-                                  x-text="formatDate(message.created_at)"></span>
-                            <div class="day-sep-line flex-1 h-px bg-black/8"></div>
-                        </div>
-                    </template>
-
-                    {{-- Ligne message --}}
-                    <div class="flex items-end gap-2 mb-4"
-                         :class="message.reviewer_id === {{ $user->id }} ? 'flex-row-reverse' : 'flex-row'">
-
-                        {{-- Avatar (autres) --}}
-                        <template x-if="message.reviewer_id !== {{ $user->id }}">
-                            <template x-if="message.reviewer?.avatar_url">
-                                <img :src="message.reviewer.avatar_url"
-                                     :alt="message.reviewer?.name || 'S'"
-                                     class="w-7 h-7 rounded-full object-cover flex-shrink-0 shadow-sm self-end">
-                            </template>
-                            <template x-if="!message.reviewer?.avatar_url">
-                                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 shadow-sm self-end"
-                                     :style="`background: ${getAvatarColor(message.reviewer?.name || 'Système')}`">
-                                    <span x-text="(message.reviewer?.name || 'S').substring(0, 2).toUpperCase()"></span>
-                                </div>
-                            </template>
-                        </template>
-
-                        <div class="flex flex-col min-w-0"
-                             :class="message.reviewer_id === {{ $user->id }} ? 'items-end' : 'items-start'"
-                             style="max-width: calc(100% - 44px);">
-
-                            {{-- Nom expéditeur --}}
-                            <template x-if="message.reviewer_id !== {{ $user->id }}">
-                                <span class="sender-name text-[8px] font-bold text-black/40 px-1 mb-0.5"
-                                      x-text="message.reviewer?.name || 'Système'"></span>
-                            </template>
-
-                            {{-- Bulle --}}
-                            <div class="relative">
-                                <div x-show="!editingId || editingId !== message.id"
-                                     class="px-3 py-2 rounded-2xl shadow-sm text-sm leading-relaxed break-words"
-                                     style="max-width: 100%; word-break: break-word; overflow-wrap: anywhere;"
-                                     :class="message.reviewer_id === {{ $user->id }}
-                                        ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-br-sm'
-                                        : 'bubble-other bg-gray-200 text-gray-900 rounded-bl-sm'">
-
-                                    {{-- Badge statut approuvé --}}
-                                    <template x-if="message.action === 'approved'">
-                                        <div class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-1"
-                                             :class="message.reviewer_id === {{ $user->id }} ? 'bg-white/20 text-white' : 'bg-emerald-300/60 text-emerald-800'">
-                                            <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                            </svg>
-                                            Approuvé
-                                        </div>
-                                    </template>
-                                    {{-- Badge statut correction --}}
-                                    <template x-else-if="message.action === 'rejected'">
-                                        <div class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-1"
-                                             :class="message.reviewer_id === {{ $user->id }} ? 'bg-white/20 text-white' : 'bg-amber-300/60 text-amber-800'">
-                                            <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                            </svg>
-                                            Correction
-                                        </div>
-                                    </template>
-
-                                    <span x-text="message.comment" class="block"></span>
-
-                                    <template x-if="message.attachment_url">
-                                        <div class="mt-2">
-                                            <template x-if="message.attachment_type === 'image'">
-                                                <a :href="message.attachment_url" target="_blank"
-                                                   class="block rounded-lg overflow-hidden border border-black/10 hover:opacity-90 transition">
-                                                    <img :src="message.attachment_url"
-                                                         :alt="message.attachment_name || 'Image'"
-                                                         class="max-w-full h-auto max-h-48 object-cover rounded-lg">
-                                                </a>
-                                            </template>
-                                            <template x-if="message.attachment_type === 'file'">
-                                                <a :href="message.attachment_url" target="_blank"
-                                                   class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 transition text-xs font-medium">
-                                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                    </svg>
-                                                    <span class="truncate" x-text="message.attachment_name || 'Fichier'"></span>
-                                                </a>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    <template x-if="message.edited_at">
-                                        <span class="text-[10px] opacity-60 ml-1">(modifié)</span>
-                                    </template>
-                                </div>
-
-                                {{-- Éditeur inline --}}
-                                <div x-show="editingId === message.id" class="min-w-0 max-w-[90vw] sm:max-w-xs mt-1">
-                                    <textarea x-model="editContent"
-                                              class="inline-edit-textarea w-full px-3 py-2 rounded-2xl border border-indigo-300
-                                                     focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none
-                                                     bg-white text-gray-900"
-                                              rows="2"
-                                              @keydown.enter.prevent="saveEdit(message.id)"></textarea>
-                                    <div class="flex justify-end gap-2 mt-1">
-                                        <button @click="cancelEdit"
-                                                class="inline-edit-cancel text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
-                                            Annuler
-                                        </button>
-                                        <button @click="saveEdit(message.id)"
-                                                class="text-xs px-2 py-1 rounded bg-indigo-600 text-white">
-                                            Enregistrer
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Boutons modifier / supprimer --}}
-                            <div x-show="message.reviewer_id === {{ $user->id }} && (!editingId || editingId !== message.id)"
-                                 class="flex items-center gap-1 mt-1"
-                                 :class="message.reviewer_id === {{ $user->id }} ? 'justify-end' : 'justify-start'">
-                                <button @click="startEdit(message)"
-                                        class="p-1 rounded-md hover:bg-black/5 text-black/50 transition" title="Modifier">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                    </svg>
-                                </button>
-                                <button @click="deleteMessage(message.id)"
-                                        class="p-1 rounded-md hover:bg-red-50 text-red-400 transition" title="Supprimer">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <span class="msg-time text-[9px] text-black/30 px-1 mt-0.5"
-                                  x-text="formatTime(message.created_at)"></span>
-                        </div>
+                    <div class="text-left min-w-0">
+                        <h3 class="font-semibold text-white text-sm">Discussion</h3>
+                        <p class="text-white/70 text-xs"
+                           x-text="`${messages.length} message${messages.length !== 1 ? 's' : ''}`"></p>
                     </div>
                 </div>
-            </template>
-        </div>
+                <button @click="closeChat()"
+                        class="text-white/70 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/10 active:scale-95 flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
 
-        {{-- ── Zone de saisie ── --}}
-        @if(!$task->isCompleted() && $canComment)
-        <div class="chat-footer border-t border-black/5 bg-white px-3 pt-3 pb-safe flex-shrink-0 safe-area-bottom">
+            {{-- ── Zone messages ── --}}
+            <div class="chat-messages-area flex-1 overflow-y-auto overflow-x-hidden px-4 py-4
+                        bg-gradient-to-b from-gray-50/50 to-white/80 min-h-0"
+                 id="messages-{{ $report->id }}"
+                 style="scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent; -webkit-overflow-scrolling: touch;">
+                <style>
+                    #messages-{{ $report->id }}::-webkit-scrollbar { width: 4px; }
+                    #messages-{{ $report->id }}::-webkit-scrollbar-track { background: transparent; }
+                    #messages-{{ $report->id }}::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+                </style>
 
-            <template x-if="attachedFile">
-                <div class="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-gray-100 rounded-lg text-xs text-gray-700 min-w-0">
-                    <template x-if="attachedPreview">
-                        <img :src="attachedPreview"
-                             class="w-8 h-8 rounded object-cover flex-shrink-0 shadow-sm">
-                    </template>
-                    <template x-if="!attachedPreview">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Vide --}}
+                <template x-if="messages.length === 0">
+                    <div class="flex flex-col items-center justify-center h-full text-center py-16">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center mb-3">
+                            <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                        </div>
+                        <p class="text-xs font-medium text-black/50">
+                            Aucun message<br>
+                            <span class="text-black/35">Soyez le premier à commenter</span>
+                        </p>
+                    </div>
+                </template>
+
+                {{-- Liste messages --}}
+                <template x-for="(message, idx) in messages" :key="message.id">
+                    <div>
+                        {{-- Séparateur de jour --}}
+                        <template x-if="idx === 0 || !isSameDay(messages[idx-1], message)">
+                            <div class="flex items-center gap-2 my-3">
+                                <div class="day-sep-line flex-1 h-px bg-black/8"></div>
+                                <span class="day-sep-label text-[9px] font-semibold text-black/35 whitespace-nowrap px-1"
+                                      x-text="formatDate(message.created_at)"></span>
+                                <div class="day-sep-line flex-1 h-px bg-black/8"></div>
+                            </div>
+                        </template>
+
+                        {{-- Ligne message --}}
+                        <div class="flex items-end gap-2 mb-4"
+                             :class="message.reviewer_id === {{ $user->id }} ? 'flex-row-reverse' : 'flex-row'">
+
+                            {{-- Avatar (autres) --}}
+                            <template x-if="message.reviewer_id !== {{ $user->id }}">
+                                <template x-if="message.reviewer?.avatar_url">
+                                    <img :src="message.reviewer.avatar_url"
+                                         :alt="message.reviewer?.name || 'S'"
+                                         class="w-7 h-7 rounded-full object-cover flex-shrink-0 shadow-sm self-end">
+                                </template>
+                                <template x-if="!message.reviewer?.avatar_url">
+                                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 shadow-sm self-end"
+                                         :style="`background: ${getAvatarColor(message.reviewer?.name || 'Système')}`">
+                                        <span x-text="(message.reviewer?.name || 'S').substring(0, 2).toUpperCase()"></span>
+                                    </div>
+                                </template>
+                            </template>
+
+                            <div class="flex flex-col min-w-0"
+                                 :class="message.reviewer_id === {{ $user->id }} ? 'items-end' : 'items-start'"
+                                 style="max-width: calc(100% - 44px);">
+
+                                {{-- Nom expéditeur --}}
+                                <template x-if="message.reviewer_id !== {{ $user->id }}">
+                                    <span class="sender-name text-[8px] font-bold text-black/40 px-1 mb-0.5"
+                                          x-text="message.reviewer?.name || 'Système'"></span>
+                                </template>
+
+                                {{-- Bulle --}}
+                                <div class="relative">
+                                    <div x-show="!editingId || editingId !== message.id"
+                                         class="px-3 py-2 rounded-2xl shadow-sm text-sm leading-relaxed break-words"
+                                         style="max-width: 100%; word-break: break-word; overflow-wrap: anywhere;"
+                                         :class="message.reviewer_id === {{ $user->id }}
+                                            ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-br-sm'
+                                            : 'bubble-other bg-gray-200 text-gray-900 rounded-bl-sm'">
+
+                                        {{-- Badge statut approuvé --}}
+                                        <template x-if="message.action === 'approved'">
+                                            <div class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-1"
+                                                 :class="message.reviewer_id === {{ $user->id }} ? 'bg-white/20 text-white' : 'bg-emerald-300/60 text-emerald-800'">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                                </svg>
+                                                Approuvé
+                                            </div>
+                                        </template>
+                                        {{-- Badge statut correction --}}
+                                        <template x-else-if="message.action === 'rejected'">
+                                            <div class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-1"
+                                                 :class="message.reviewer_id === {{ $user->id }} ? 'bg-white/20 text-white' : 'bg-amber-300/60 text-amber-800'">
+                                                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                </svg>
+                                                Correction
+                                            </div>
+                                        </template>
+
+                                        <span x-text="message.comment" class="block"></span>
+
+                                        <template x-if="message.attachment_url">
+                                            <div class="mt-2">
+                                                <template x-if="message.attachment_type === 'image'">
+                                                    <a :href="message.attachment_url" target="_blank"
+                                                       class="block rounded-lg overflow-hidden border border-black/10 hover:opacity-90 transition">
+                                                        <img :src="message.attachment_url"
+                                                             :alt="message.attachment_name || 'Image'"
+                                                             class="max-w-full h-auto max-h-48 object-cover rounded-lg">
+                                                    </a>
+                                                </template>
+                                                <template x-if="message.attachment_type === 'file'">
+                                                    <a :href="message.attachment_url" target="_blank"
+                                                       class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 transition text-xs font-medium">
+                                                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                        </svg>
+                                                        <span class="truncate" x-text="message.attachment_name || 'Fichier'"></span>
+                                                    </a>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="message.edited_at">
+                                            <span class="text-[10px] opacity-60 ml-1">(modifié)</span>
+                                        </template>
+                                    </div>
+
+                                    {{-- Éditeur inline --}}
+                                    <div x-show="editingId === message.id" class="min-w-0 max-w-[90vw] sm:max-w-xs mt-1">
+                                        <textarea x-model="editContent"
+                                                  class="inline-edit-textarea w-full px-3 py-2 rounded-2xl border border-indigo-300
+                                                         focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none
+                                                         bg-white text-gray-900"
+                                                  rows="2"
+                                                  @keydown.enter.prevent="saveEdit(message.id)"></textarea>
+                                        <div class="flex justify-end gap-2 mt-1">
+                                            <button @click="cancelEdit"
+                                                    class="inline-edit-cancel text-xs px-2 py-1 rounded bg-gray-200 text-gray-700">
+                                                Annuler
+                                            </button>
+                                            <button @click="saveEdit(message.id)"
+                                                    class="text-xs px-2 py-1 rounded bg-indigo-600 text-white">
+                                                Enregistrer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Boutons modifier / supprimer --}}
+                                <div x-show="message.reviewer_id === {{ $user->id }} && (!editingId || editingId !== message.id)"
+                                     class="flex items-center gap-1 mt-1"
+                                     :class="message.reviewer_id === {{ $user->id }} ? 'justify-end' : 'justify-start'">
+                                    <button @click="startEdit(message)"
+                                            class="p-1 rounded-md hover:bg-black/5 text-black/50 transition" title="Modifier">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                        </svg>
+                                    </button>
+                                    <button @click="deleteMessage(message.id)"
+                                            class="p-1 rounded-md hover:bg-red-50 text-red-400 transition" title="Supprimer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <span class="msg-time text-[9px] text-black/30 px-1 mt-0.5"
+                                      x-text="formatTime(message.created_at)"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            {{-- ── Zone de saisie ── --}}
+            @if(!$task->isCompleted() && $canComment)
+            <div class="chat-footer border-t border-black/5 bg-white px-3 pt-3 pb-safe flex-shrink-0 safe-area-bottom">
+
+                <template x-if="attachedFile">
+                    <div class="flex items-center gap-2 px-2.5 py-1.5 mb-2 bg-gray-100 rounded-lg text-xs text-gray-700 min-w-0">
+                        <template x-if="attachedPreview">
+                            <img :src="attachedPreview"
+                                 class="w-8 h-8 rounded object-cover flex-shrink-0 shadow-sm">
+                        </template>
+                        <template x-if="!attachedPreview">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
+                            </svg>
+                        </template>
+                        <span class="truncate flex-1" x-text="attachedFile.name"></span>
+                        <button type="button" @click="removeAttachment()"
+                                class="p-0.5 rounded hover:bg-black/10 text-gray-500 hover:text-red-500 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+
+                <form class="flex items-end gap-2"
+                      id="chat-form-{{ $report->id }}"
+                      @submit.prevent="submitMessage">
+                    @csrf
+
+                    {{-- Bouton pièce jointe --}}
+                    <button type="button"
+                            @click="$refs.fileInput.click()"
+                            class="chat-attach-btn flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200
+                                   transition flex items-center justify-center text-gray-500 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
                         </svg>
-                    </template>
-                    <span class="truncate flex-1" x-text="attachedFile.name"></span>
-                    <button type="button" @click="removeAttachment()"
-                            class="p-0.5 rounded hover:bg-black/10 text-gray-500 hover:text-red-500 transition">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </button>
+
+                    <input type="file"
+                           id="chat-file-{{ $report->id }}"
+                           name="attachment"
+                           x-ref="fileInput"
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.zip"
+                           class="hidden"
+                           @change="
+                               attachedFile = $event.target.files[0];
+                               attachedPreview = null;
+                               if (attachedFile && attachedFile.type.startsWith('image/')) {
+                                   const reader = new FileReader();
+                                   reader.onload = e => attachedPreview = e.target.result;
+                                   reader.readAsDataURL(attachedFile);
+                               }
+                           ">
+
+                    {{-- Textarea saisie — classe chat-input-area pour le dark mode ── --}}
+                    <textarea name="comment"
+                              required
+                              rows="1"
+                              placeholder="Écris ton message…"
+                              class="chat-input-area flex-1 rounded-2xl py-2.5 px-4 text-sm leading-relaxed
+                                     resize-none font-medium"
+                              style="min-height: 42px; max-height: 100px; overflow-y: auto;"
+                              oninput="this.style.height='42px'; this.style.height=Math.min(this.scrollHeight,100)+'px';"
+                              onkeydown="if(event.key==='Enter'&&!event.shiftKey){
+                                  event.preventDefault();
+                                  this.closest('form').dispatchEvent(new Event('submit'));
+                              }">
+                    </textarea>
+
+                    {{-- Bouton envoyer --}}
+                    <button type="submit"
+                            class="flex-shrink-0 w-10 h-10 rounded-full
+                                   bg-gradient-to-r from-indigo-500 to-blue-600
+                                   hover:from-indigo-600 hover:to-blue-700
+                                   transition shadow-md flex items-center justify-center text-white active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/>
                         </svg>
                     </button>
-                </div>
-            </template>
+                </form>
+            </div>
+            @else
+            <div class="chat-closed-notice border-t border-black/5 bg-gray-50 px-4 py-3 text-center
+                        text-xs text-black/40 font-medium flex-shrink-0">
+                Cette tâche est terminée
+            </div>
+            @endif
 
-            <form class="flex items-end gap-2"
-                  id="chat-form-{{ $report->id }}"
-                  @submit.prevent="submitMessage">
-                @csrf
-
-                {{-- Bouton pièce jointe --}}
-                <button type="button"
-                        @click="$refs.fileInput.click()"
-                        class="chat-attach-btn flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200
-                               transition flex items-center justify-center text-gray-500 active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.485 8.485L7.707 20.707"/>
-                    </svg>
-                </button>
-
-                <input type="file"
-                       id="chat-file-{{ $report->id }}"
-                       name="attachment"
-                       x-ref="fileInput"
-                       accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-                       class="hidden"
-                       @change="
-                           attachedFile = $event.target.files[0];
-                           attachedPreview = null;
-                           if (attachedFile && attachedFile.type.startsWith('image/')) {
-                               const reader = new FileReader();
-                               reader.onload = e => attachedPreview = e.target.result;
-                               reader.readAsDataURL(attachedFile);
-                           }
-                       ">
-
-                {{-- Textarea saisie — classe chat-input-area pour le dark mode ── --}}
-                <textarea name="comment"
-                          required
-                          rows="1"
-                          placeholder="Écris ton message…"
-                          class="chat-input-area flex-1 rounded-2xl py-2.5 px-4 text-sm leading-relaxed
-                                 resize-none font-medium"
-                          style="min-height: 42px; max-height: 100px; overflow-y: auto;"
-                          oninput="this.style.height='42px'; this.style.height=Math.min(this.scrollHeight,100)+'px';"
-                          onkeydown="if(event.key==='Enter'&&!event.shiftKey){
-                              event.preventDefault();
-                              this.closest('form').dispatchEvent(new Event('submit'));
-                          }">
-                </textarea>
-
-                {{-- Bouton envoyer --}}
-                <button type="submit"
-                        class="flex-shrink-0 w-10 h-10 rounded-full
-                               bg-gradient-to-r from-indigo-500 to-blue-600
-                               hover:from-indigo-600 hover:to-blue-700
-                               transition shadow-md flex items-center justify-center text-white active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/>
-                    </svg>
-                </button>
-            </form>
         </div>
-        @else
-        <div class="chat-closed-notice border-t border-black/5 bg-gray-50 px-4 py-3 text-center
-                    text-xs text-black/40 font-medium flex-shrink-0">
-            Cette tâche est terminée
-        </div>
-        @endif
+    </template>
 
-    </div>
 </div>
 
 <script>
