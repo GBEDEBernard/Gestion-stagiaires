@@ -239,22 +239,14 @@ class AdminPresenceController extends Controller
             return $day;
         });
 
-        // ── Absences ──
-        $absenceQuery = AttendanceDay::whereBetween('attendance_date', [$dateFrom, $dateTo])
-            ->whereNull('first_check_in_at')
-            ->with(['user', 'etudiant.user', 'stage.site']);
-
-        if ($userId) {
-            $absenceQuery->where('user_id', $userId);
-        }
-        if ($siteId) {
-            $absenceQuery->where('site_id', $siteId);
-        }
-        if ($schoolFilter) {
-            $absenceQuery->whereHas('etudiant', fn($q) => $q->where('ecole', $schoolFilter));
-        }
-
-        $absences = $absenceQuery->orderByDesc('attendance_date')->paginate(10, ['*'], 'absences_page');
+        // ── Absences (calcul en direct : stagiaires attendus − présents,
+        //    en respectant les jours de présence des stages) ──
+        $absences = $this->presenceService->getAbsenceRows($dateFrom, $dateTo, [
+            'user_id' => $userId,
+            'site_id' => $siteId,
+            'school'  => $schoolFilter,
+            'per_page'=> 10,
+        ]);
 
         // ── Stats ──
         $today = today();

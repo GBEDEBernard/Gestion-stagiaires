@@ -18,7 +18,7 @@
                     <div class="space-y-4">
                         <div>
                             <label for="etudiant_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Étudiant <span class="text-red-500">*</span>
+                                Stagiaires <span class="text-red-500">*</span>
                             </label>
                             <select name="etudiant_id" id="etudiant_id_modal" required
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
@@ -57,7 +57,7 @@
                             </div>
 
                             <div>
-                                <label for="domaine_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                                <label for="domaine_id_modal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Directions/Services</label>
                                 <select name="domaine_id" id="domaine_id_modal" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
                                     <option value="">Sélectionner</option>
                                     @foreach($domaines as $domaine)
@@ -228,7 +228,7 @@
                         </div>
 
                         <div>
-                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Domaine</label>
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Directions/Services</label>
                             <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
                                 <option value="">Sélectionner un domaine</option>

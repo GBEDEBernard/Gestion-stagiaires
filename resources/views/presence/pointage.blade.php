@@ -37,6 +37,22 @@
         </div>
         @endif
 
+        {{-- Bannière jour de repos (hors jours de présence du stage) --}}
+        @if($activeStage && !($isWorkDay ?? true))
+        <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <div>
+                <strong class="font-semibold">Aujourd'hui n'est pas un jour de présence</strong>
+                <p class="text-sm mt-1">
+                    Jours de travail de votre stage : <strong>{{ $workDaysLabel ?? 'Lundi à Vendredi' }}</strong>.
+                    Le pointage est désactivé.
+                </p>
+            </div>
+        </div>
+        @endif
+
         {{-- Messages flash --}}
         @if(session('success'))
         <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
@@ -195,9 +211,9 @@
                 <input type="hidden" name="confidence_score" value="0">
 
                 <button type="button" id="btn-checkin"
-                    {{ $hasCheckIn ? 'disabled' : '' }}
+                    {{ ($hasCheckIn || !($isWorkDay ?? true)) ? 'disabled' : '' }}
                     class="w-full py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-sm transition-all duration-200
-                        {{ $hasCheckIn
+                        {{ ($hasCheckIn || !($isWorkDay ?? true))
                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                             : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-emerald-600/30' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,9 +240,9 @@
                 <input type="hidden" name="confidence_score" value="0">
 
                 <button type="button" id="btn-checkout"
-                    {{ !$hasCheckIn ? 'disabled' : '' }}
+                    {{ (!$hasCheckIn || !($isWorkDay ?? true)) ? 'disabled' : '' }}
                     class="w-full py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 shadow-sm transition-all duration-200
-                        {{ !$hasCheckIn
+                        {{ (!$hasCheckIn || !($isWorkDay ?? true))
                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                             : 'bg-white dark:bg-slate-800 border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white active:scale-95' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -224,7 +224,53 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                          @endif
                     </div>
                 </div>
-
+               <!-- 4. Personnes - AVEC PERSISTANCE -->
+                @if(!auth()->user()->hasRole('etudiant'))
+                @canany(['etudiants.view', 'employes.view', 'personnels.view', 'badges.view'])
+                <div class="mb-4" x-data="{ openPersonnes: {{ request()->routeIs('personnels.*') || request()->routeIs('etudiants.*') || request()->routeIs('employes.*') || request()->routeIs('badges.*') ? 'true' : 'false' }} }">
+                    <button @click="openPersonnes = !openPersonnes" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPersonnes ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
+                        <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="flex items-center gap-3 relative z-10">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="openPersonnes ? 'bg-white/20' : 'bg-slate-700/50'">
+                                <svg class="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
+                                </svg>
+                            </div>
+                            <span class="relative z-10">Gestions <br>personnels</span>
+                        </div>
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="openPersonnes ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
+                        </svg>
+                    </button>
+                    <div x-show="openPersonnes" x-collapse @click.outside="openPersonnes = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
+                        @can('personnels.view')
+                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                            <span>Personnels</span>
+                        </a>
+                        @endcan
+                        <!-- @can('etudiants.view')
+                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span>Étudiants</span>
+                        </a>
+                        @endcan
+                        @role('admin|superviseur')
+                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                            <span>Employés</span>
+                        </a>
+                        @endrole -->
+                        @can('badges.view')
+                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
+                            <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                            <span>Badges</span>
+                        </a>
+                        @endcan
+                    </div>
+                </div>
+                @endcanany
+                @endif
                 <!-- 3. Stages (uniquement pour admin) - AVEC PERSISTANCE -->
                 @role('admin')
                 @canany(['stages.view', 'type_stages.view', 'signataires.view', 'jour_stage.view'])
@@ -279,53 +325,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                 @endcanany
                 @endrole
 
-                <!-- 4. Personnes - AVEC PERSISTANCE -->
-                @if(!auth()->user()->hasRole('etudiant'))
-                @canany(['etudiants.view', 'employes.view', 'personnels.view', 'badges.view'])
-                <div class="mb-4" x-data="{ openPersonnes: {{ request()->routeIs('personnels.*') || request()->routeIs('etudiants.*') || request()->routeIs('employes.*') || request()->routeIs('badges.*') ? 'true' : 'false' }} }">
-                    <button @click="openPersonnes = !openPersonnes" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="openPersonnes ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
-                        <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="openPersonnes ? 'bg-white/20' : 'bg-slate-700/50'">
-                                <svg class="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
-                                </svg>
-                            </div>
-                            <span class="relative z-10">Gestions <br>personnels</span>
-                        </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="openPersonnes ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
-                        </svg>
-                    </button>
-                    <div x-show="openPersonnes" x-collapse @click.outside="openPersonnes = false" class="mt-3 ml-4 space-y-2 overflow-hidden">
-                        @can('personnels.view')
-                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                            <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            <span>Personnels</span>
-                        </a>
-                        @endcan
-                        <!-- @can('etudiants.view')
-                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
-                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                            <span>Étudiants</span>
-                        </a>
-                        @endcan
-                        @role('admin|superviseur')
-                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                            <span>Employés</span>
-                        </a>
-                        @endrole -->
-                        @can('badges.view')
-                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
-                            <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                            <span>Badges</span>
-                        </a>
-                        @endcan
-                    </div>
-                </div>
-                @endcanany
-                @endif
+               
 
                 <!-- 5. Organisation - AVEC PERSISTANCE -->
                 @if(!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe'))
@@ -355,7 +355,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         @can('domaines.view')
                         <a href="{{ route('domaines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                            <span>Domaines</span>
+                            <span>Directions/Services</span>
                         </a>
                         @endcan
                         <!-- @role('admin')

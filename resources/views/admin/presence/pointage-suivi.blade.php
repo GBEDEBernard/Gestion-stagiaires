@@ -296,14 +296,14 @@
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($absences as $absence)
                     @php
-                        $userName = $absence->user?->name ?? $absence->etudiant?->user?->name ?? 'N/A';
+                        $userName = $absence['user']?->name ?? 'N/A';
                     @endphp
                     <tr class="hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
                         <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{{ $userName }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600">{{ $absence->attendance_date->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ $absence['date']->format('d/m/Y') }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 lg:px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full dark:bg-gray-800 dark:text-gray-200">
-                                {{ $absence->stage?->site?->name ?? '—' }}
+                                {{ $absence['stage']?->site?->name ?? '—' }}
                             </span>
                         </td>
                         <td class="px-6 py-4">

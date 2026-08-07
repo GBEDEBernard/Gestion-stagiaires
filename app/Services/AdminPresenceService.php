@@ -12,11 +12,51 @@ use App\Models\Stage;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AdminPresenceService
 {
+    /**
+     * Retourne la requête de base des stages actifs pour une date donnée,
+     * en ne gardant que ceux dont le jour de la semaine est un jour de travail.
+     * - Stages sans jours configurés → considérés travaillés tous les jours ouvrés.
+     * - Stages avec jours → uniquement les jours cochés.
+     */
+    private function activeStagesOnDate(string $dateKey): Builder
+    {
+        $dayName = [
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche',
+        ][Carbon::parse($dateKey)->format('N')] ?? '';
+
+        return Stage::whereDate('date_debut', '<=', $dateKey)
+            ->whereDate('date_fin', '>=', $dateKey)
+            ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            ->where(function (Builder $q) use ($dayName) {
+                // Aucun jour configuré → tous les jours ouvrés
+                $q->whereDoesntHave('jours')
+                  // OU un jour configuré correspondant au jour courant
+                  ->orWhereHas('jours', fn ($j) => $j->whereRaw('LOWER(jour) = ?', [strtolower($dayName)]));
+            });
+    }
+
+    /**
+     * Détermine si un stagiaire a un jour de travail prévu à la date donnée.
+     */
+    private function isStudentWorkDay(int $etudiantId, string $dateKey): bool
+    {
+        return $this->activeStagesOnDate($dateKey)
+            ->where('etudiant_id', $etudiantId)
+            ->exists();
+    }
+
     /**
      * Date à partir de laquelle le système est considéré actif.
      * Aucune absence ne sera comptée avant cette date.
@@ -284,9 +324,7 @@ class AdminPresenceService
             $isHoliday = isset($holidays[$dateKey]);
 
             // ── Compter les stagiaires attendus ce jour (uniquement actifs) ────
-            $studentsCount = Stage::whereDate('date_debut', '<=', $dateKey)
-                ->whereDate('date_fin', '>=', $dateKey)
-                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            $studentsCount = $this->activeStagesOnDate($dateKey)
                 ->distinct('etudiant_id')
                 ->count('etudiant_id');
 
@@ -583,10 +621,11 @@ class AdminPresenceService
             $labels[]         = $currentDate->isoFormat('D MMM');
             $isBeforeActivation = $currentDate->lt($activationDate);
             $isCurrentHoliday   = isset($holidays[$dateKey]);
+            $isStudentRestDay   = $isEtudiant && !$this->isStudentWorkDay($user->etudiant->id, $dateKey);
             $isHoliday[]        = $isCurrentHoliday;
             $day                = $days->get($dateKey);
 
-            if ($isCurrentHoliday) {
+            if ($isCurrentHoliday || $isStudentRestDay) {
                 $present[]     = 0;
                 $onTime[]      = 0;
                 $lateDays[]    = 0;
@@ -633,8 +672,9 @@ class AdminPresenceService
             $isActive = $checkDate->gte($activationDate);
             $isFuture = $checkDate->gt($today);
             $isHolidayCheck = isset($holidays[$checkDate->toDateString()]);
+            $isStudentRestDay = $isEtudiant && !$this->isStudentWorkDay($user->etudiant->id, $checkDate->toDateString());
 
-            if ($isActive && !$isFuture && !$isHolidayCheck) {
+            if ($isActive && !$isFuture && !$isHolidayCheck && !$isStudentRestDay) {
                 $totalExpectedDays++;
                 $day = $days->get($checkDate->toDateString());
                 if ($day && !is_null($day->first_check_in_at)) {
@@ -760,9 +800,7 @@ class AdminPresenceService
                 ->filter(fn($ad) => !empty($ad->first_check_in_at) && !is_null($ad->user_id) && is_null($ad->etudiant_id))
                 ->pluck('user_id')->unique()->values()->all();
 
-            $activeStageEtudiantIds = Stage::whereDate('date_debut', '<=', $dateKey)
-                ->whereDate('date_fin', '>=', $dateKey)
-                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            $activeStageEtudiantIds = $this->activeStagesOnDate($dateKey)
                 ->distinct('etudiant_id')->pluck('etudiant_id')->values()->all();
 
             $absentEtudiantIds = array_values(array_diff($activeStageEtudiantIds, $presentEtudiantIds));
@@ -894,9 +932,7 @@ class AdminPresenceService
                 ->pluck('user_id')->unique()->values()->all();
 
             // Stagiaires actifs ce jour
-            $activeStageEtudiantIds = Stage::whereDate('date_debut', '<=', $dateKey)
-                ->whereDate('date_fin', '>=', $dateKey)
-                ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            $activeStageEtudiantIds = $this->activeStagesOnDate($dateKey)
                 ->distinct('etudiant_id')->pluck('etudiant_id')->values()->all();
 
             $absentEtudiantIds = array_values(array_diff($activeStageEtudiantIds, $presentEtudiantIds));
@@ -928,5 +964,122 @@ class AdminPresenceService
 
         arsort($absentCountByUserName);
         return array_slice($absentCountByUserName, 0, 10, true);
+    }
+
+    /**
+     * Calcule en direct les absences (stagiaires + employés) pour une plage,
+     * en respectant les jours de présence des stages (exclusion jours de repos).
+     * Retourne une pagination de lignes : user, attendance_date, stage/site.
+     */
+    public function getAbsenceRows(string $dateFrom, string $dateTo, array $filters = []): LengthAwarePaginator
+    {
+        $startDate = Carbon::parse($dateFrom)->startOfDay();
+        $endDate   = Carbon::parse($dateTo)->endOfDay();
+
+        $systemStart = $this->systemStartDate();
+        if ($startDate->lt($systemStart)) {
+            $startDate = $systemStart->copy();
+        }
+
+        $today = today()->endOfDay();
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
+        $userId    = $filters['user_id'] ?? null;
+        $siteId    = $filters['site_id'] ?? null;
+        $school    = $filters['school'] ?? null;
+
+        $employeeIds = User::whereHas('personnel', function ($query) {
+            $query->where('personnable_type', Employe::class);
+        })
+            ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        $employees = User::with('personnel')->whereIn('id', $employeeIds)->get();
+
+        $attendanceDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startDate, $endDate])
+            ->weekdays()
+            ->select(['id', 'attendance_date', 'etudiant_id', 'user_id', 'first_check_in_at', 'stage_id'])
+            ->get()
+            ->groupBy(fn($d) => Carbon::parse($d->attendance_date)->format('Y-m-d'));
+
+        $rows = [];
+
+        $days = $startDate->copy();
+        while ($days->lte($endDate)) {
+            if ($days->isWeekend() || $days->gt($today) || isset($holidays[$days->format('Y-m-d')])) {
+                $days->addDay();
+                continue;
+            }
+
+            $dateKey         = $days->format('Y-m-d');
+            $attendanceForDay = $attendanceDays->get($dateKey) ?? collect();
+
+            $presentEtudiantIds = $attendanceForDay
+                ->filter(fn($ad) => !empty($ad->first_check_in_at) && !is_null($ad->etudiant_id))
+                ->pluck('etudiant_id')->unique()->values()->all();
+
+            $presentEmployeeIds = $attendanceForDay
+                ->filter(fn($ad) => !empty($ad->first_check_in_at) && !is_null($ad->user_id) && is_null($ad->etudiant_id))
+                ->pluck('user_id')->unique()->values()->all();
+
+            // ── Stagiaires attendus ce jour (jours de travail du stage respectés) ──
+            $stagesForDay = $this->activeStagesOnDate($dateKey)
+                ->with(['site:id,name', 'etudiant.user'])
+                ->get();
+
+            foreach ($stagesForDay as $stage) {
+                $etudiantId = $stage->etudiant_id;
+                if ($userId && $stage->etudiant->user_id !== $userId) continue;
+                if ($school && ($stage->etudiant->ecole ?? null) !== $school) continue;
+                if ($siteId && ($stage->site?->id ?? null) !== (int) $siteId) continue;
+
+                if (in_array($etudiantId, $presentEtudiantIds)) continue;
+
+                $user = $stage->etudiant?->user;
+                if (!$user || $user->status !== 'actif') continue;
+                if ($days->lt(Carbon::parse($user->created_at)->startOfDay())) continue;
+
+                $rows[] = [
+                    'user'    => $user,
+                    'group'   => 'etudiant',
+                    'date'    => Carbon::parse($dateKey),
+                    'stage'   => $stage,
+                ];
+            }
+
+            // ── Employés actifs ce jour ──
+            foreach ($employees as $employee) {
+                if ($userId && $employee->id !== (int) $userId) continue;
+                if (in_array($employee->id, $presentEmployeeIds)) continue;
+                if ($days->lt(Carbon::parse($employee->created_at)->startOfDay())) continue;
+
+                $rows[] = [
+                    'user'    => $employee,
+                    'group'   => 'employe',
+                    'date'    => Carbon::parse($dateKey),
+                    'stage'   => null,
+                ];
+            }
+
+            $days->addDay();
+        }
+
+        $rows = collect($rows)->sortByDesc('date')->values();
+
+        $page      = LengthAwarePaginator::resolveCurrentPage('absences_page');
+        $perPage   = $filters['per_page'] ?? 10;
+        $items     = $rows->forPage($page, $perPage)->values();
+        $total     = $rows->count();
+
+        return new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query()]
+        );
     }
 }

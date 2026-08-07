@@ -73,6 +73,8 @@ class PresenceController extends Controller
                 'earlyDeparturePermission' => $earlyDeparturePermission,
                 'hasCheckedIn'           => $hasCheckedIn,
                 'hasCheckedOut'          => $hasCheckedOut,
+                'isWorkDay'              => $activeStage->isWorkDay(),
+                'workDaysLabel'          => $activeStage->workDaysLabel(),
             ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
@@ -136,6 +138,11 @@ class PresenceController extends Controller
             ]);
 
             $stage = $etudiant->stages()->findOrFail($request->stage_id);
+
+            if (!$stage->isWorkDay()) {
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.");
+            }
 
             $previewData = [
                 'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
@@ -275,6 +282,11 @@ class PresenceController extends Controller
             ]);
 
             $stage = $etudiant->stages()->findOrFail($request->stage_id);
+
+            if (!$stage->isWorkDay()) {
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.");
+            }
 
             $previewData = [
                 'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,

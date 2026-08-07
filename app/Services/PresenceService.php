@@ -42,6 +42,19 @@ class PresenceService
         }
     }
 
+    /**
+     * Vérifie si aujourd'hui est un jour de présence pour le stage concerné.
+     * Bloque le pointage si le stage n'a pas les jours de présence eux-mêmes configurés.
+     */
+    protected function checkWorkDayRestriction(Stage $stage): void
+    {
+        if (!$stage->isWorkDay()) {
+            throw ValidationException::withMessages([
+                'presence' => "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.",
+            ]);
+        }
+    }
+
     protected function isEmergencyExempted(User $user): bool
     {
         return HolidayEmergencyExemption::where('user_id', $user->id)
@@ -57,6 +70,7 @@ class PresenceService
     public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
+        $this->checkWorkDayRestriction($stage);
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 
@@ -66,6 +80,7 @@ class PresenceService
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
+        $this->checkWorkDayRestriction($stage);
         return $this->registerEvent($stage, $user, $payload, 'check_out');
     }
 

@@ -84,6 +84,45 @@ class Stage extends Model
         return $this->belongsToMany(Jour::class, 'stage_jour');
     }
 
+    /**
+     * Détermine si le stage prévoit une présence à la date donnée.
+     * - Si aucun jour configuré → tous les jours ouvrés sont des jours de travail.
+     * - Sinon → uniquement les jours cochés lors de la création du stage.
+     */
+    public function isWorkDay($date = null): bool
+    {
+        $date = $date ? \Carbon\Carbon::parse($date) : today();
+
+        $jours = $this->jours;
+
+        if ($jours->isEmpty()) {
+            return !$date->isWeekend();
+        }
+
+        $dayName = match ((int) $date->format('N')) {
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche',
+            default => '',
+        };
+
+        return $jours->contains(fn ($jour) => strtolower($jour->jour) === strtolower($dayName));
+    }
+
+    /**
+     * Label lisible des jours de présence du stage (ex. "Lundi, Mardi, Mercredi").
+     */
+    public function workDaysLabel(): string
+    {
+        return $this->jours->isNotEmpty()
+            ? $this->jours->pluck('jour')->implode(', ')
+            : 'Lundi à Vendredi';
+    }
+
     public function attendanceEvents()
     {
         return $this->hasMany(AttendanceEvent::class);
