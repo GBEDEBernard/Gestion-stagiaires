@@ -575,10 +575,6 @@
                 </div>
                 @endif
 
-                {{-- Chat Discussion --}}
-                <div class="mt-5 pl-12">
-                    <x-chat-popup :report="$report" :task="$task" :user="$user" :canComment="$canComment" />
-                </div>
             </div>
             @endforeach
         </div>
@@ -778,6 +774,9 @@
             </div>
         </div>
         @endif
+
+        {{-- ── DISCUSSION D'ÉQUIPE (T-009) : FAB + chat global --}}
+        @include('tasks.partials.team-chat', ['task' => $task, 'user' => $user, 'chat' => $chat ?? null])
 
     </div>
 </div>

@@ -47,6 +47,7 @@ class TaskThreadService
                 'id'                   => $viewer->id,
                 'name'                 => $viewer->name,
                 'initials'             => $this->initials($viewer->name),
+                'avatar_url'           => $viewer->avatar_url,
                 'last_read_message_id' => $myRead?->last_read_message_id,
             ],
         ];
@@ -69,9 +70,10 @@ class TaskThreadService
             'mine'            => $viewer && $m->user_id === $viewer->id,
             'is_owner'        => $m->user_id && $m->user_id === $task->owner_id,
             'user' => [
-                'id'       => $m->user_id,
-                'name'     => $authorName,
-                'initials' => $this->initials($authorName),
+                'id'         => $m->user_id,
+                'name'       => $authorName,
+                'initials'   => $this->initials($authorName),
+                'avatar_url' => $m->user?->avatar_url,
             ],
             'parent' => $m->parent ? [
                 'id'        => $m->parent->id,
@@ -119,8 +121,9 @@ class TaskThreadService
             'voice_url'      => $report->voiceUrl(),
             'voice_duration' => $report->voice_duration,
             'author' => [
-                'name'     => $authorName,
-                'initials' => $this->initials($authorName),
+                'name'       => $authorName,
+                'initials'   => $this->initials($authorName),
+                'avatar_url' => $task->owner?->avatar_url,
             ],
         ];
     }
@@ -143,9 +146,10 @@ class TaskThreadService
             ->unique('id')
             ->reject(fn(User $u) => $u->id === $task->owner_id)
             ->map(fn(User $u) => [
-                'id'       => $u->id,
-                'name'     => $u->name,
-                'initials' => $this->initials($u->name),
+                'id'         => $u->id,
+                'name'       => $u->name,
+                'initials'   => $this->initials($u->name),
+                'avatar_url' => $u->avatar_url,
             ])
             ->values()
             ->all();

@@ -237,8 +237,11 @@ class DailyReportController extends Controller
 
         $data = $request->validate([
             'comment'   => 'required|string|max:5000',
+            'action'    => 'nullable|in:comment,approved,request_changes',
             'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,zip|max:20480',
         ]);
+
+        $action = $data['action'] ?? ($user->hasAnyRole(['admin', 'superviseur']) ? 'comment' : 'author_reply');
 
         $attachmentType = null;
         $attachmentPath = null;
@@ -261,7 +264,7 @@ class DailyReportController extends Controller
             'reviewer_id'      => $user->id,
             'comment'          => $data['comment'],
             'reviewed_at'      => now(),
-            'action'           => $user->hasAnyRole(['admin', 'superviseur']) ? 'comment' : 'author_reply',
+            'action'           => $action,
             'attachment_type'  => $attachmentType,
             'attachment_path'  => $attachmentPath,
             'attachment_name'  => $attachmentName,

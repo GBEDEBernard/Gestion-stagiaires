@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\TaskThreadService;
 use App\Services\UserProfileLinkService;
 use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
@@ -16,7 +17,8 @@ class TaskController extends Controller
     public function __construct(
         protected UserProfileLinkService $profileLink,
         protected NotificationService $notifications,
-        protected EmailNotificationService $emailService
+        protected EmailNotificationService $emailService,
+        protected TaskThreadService $threadService
     ) {}
 
 public function index(Request $request)
@@ -404,7 +406,21 @@ public function index(Request $request)
                 ->values();
         }
 
-        return compact('tasks', 'stats', 'status', 'selected', 'todayReport', 'group');
+        // T-009 — Discussion GLOBALE unique de la tâche (équipe + admin).
+        // Charge utile du fil + URLs du thread pour le widget Alpine.
+        $chat = null;
+        if ($selected) {
+            $chat = [
+                'thread' => $this->threadService->payload($selected, $user),
+                'cfg' => [
+                    'threadUrl' => route('tasks.thread', $selected),
+                    'storeUrl'  => route('tasks.messages.store', $selected),
+                    'readUrl'   => route('tasks.read', $selected),
+                ],
+            ];
+        }
+
+        return compact('tasks', 'stats', 'status', 'selected', 'todayReport', 'group', 'chat');
     }
 
     public function edit(Task $task)
