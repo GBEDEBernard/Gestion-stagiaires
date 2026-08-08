@@ -612,10 +612,14 @@
                             </p>
                         </div>
 
-                        <form method="POST" action="{{ route('reports.store') }}" class="space-y-5">
+<form method="POST" action="{{ route('reports.store') }}" class="space-y-5">
                             @csrf
                             <input type="hidden" name="status_action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
+                            <input type="hidden" name="latitude" id="report-latitude" value="">
+                            <input type="hidden" name="longitude" id="report-longitude" value="">
+                            <input type="hidden" name="accuracy_meters" id="report-accuracy" value="">
+                            <input type="hidden" name="location_method" id="report-location-method" value="">
 
                             {{-- Introduction --}}
                             <div class="d-field">
@@ -714,5 +718,35 @@
     document.addEventListener('alpine:init', () => {
         Alpine.store('canMessage', @js($canComment));
     });
+
+    // ── Capture GPS pour le formulaire de rapport (T-006) ──
+    (function () {
+        function fillReportLocation(position) {
+            const latField = document.getElementById('report-latitude');
+            const lngField = document.getElementById('report-longitude');
+            const accField = document.getElementById('report-accuracy');
+            const locField = document.getElementById('report-location-method');
+            if (!latField || !lngField) return;
+            latField.value = position.coords.latitude;
+            lngField.value = position.coords.longitude;
+            accField.value = Math.round(position.coords.accuracy || 0);
+            locField.value = 'geolocation';
+        }
+
+        function setLocationError() {
+            const locField = document.getElementById('report-location-method');
+            if (locField) locField.value = 'gps-unavailable';
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(fillReportLocation, setLocationError, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0,
+            });
+        } else {
+            setLocationError();
+        }
+    })();
 </script>
 @endpush

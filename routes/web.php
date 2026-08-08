@@ -202,8 +202,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     })->middleware('auth');
 
     // ---------------- Taches ----------------
-    Route::prefix('tasks')->group(function () {
+Route::prefix('tasks')->group(function () {
         Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
+        // Assignation par admin/superviseur (T-006)
+        Route::get('assign/create', [TaskController::class, 'assignForm'])->name('tasks.assign.form')->middleware('permission:tasks.assign');
+        Route::post('assign', [TaskController::class, 'assign'])->name('tasks.assign')->middleware('permission:tasks.assign');
         Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
         Route::get('{task}', [TaskController::class, 'show'])->name('tasks.show')->middleware('permission:tasks.view');
         Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');

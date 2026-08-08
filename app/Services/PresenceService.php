@@ -20,10 +20,10 @@ use Illuminate\Validation\ValidationException;
 class PresenceService
 {
     // ──────────────────────────────────────────────────────────────────────────
-    //  NOUVEAU : distance maximale absolue (en mètres) pour accepter un pointage
-    //  Tout pointage à plus de 100 mètres du site sera rejeté.
+    //  Distance maximale absolue (en mètres) pour accepter un pointage/un rapport.
+    //  Tout pointage ou rapport à plus de 25 mètres du site sera rejeté.
     // ──────────────────────────────────────────────────────────────────────────
-    protected const MAX_ALLOWED_DISTANCE_METERS = 100;
+    public const MAX_ALLOWED_DISTANCE_METERS = 25;
 
     // ==========================================================================
     //  POINTAGE POUR LES STAGIAIRES (check-in / check-out)
@@ -865,9 +865,62 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     }
 
     /**
+     * Vérifie si une position GPS est à moins de MAX_ALLOWED_DISTANCE_METERS
+     * du site (géofence active) fourni.
+     *
+     * @param float $latitude
+     * @param float $longitude
+     * @param \App\Models\Site|null $site
+     * @return array{verified: bool, distance_meters: ?int, message: string, geofence_center_lat: ?float, geofence_center_lng: ?float}
+     */
+    public function verifyLocationOnSite(float $latitude, float $longitude, ?\App\Models\Site $site): array
+    {
+        if (!$site) {
+            return [
+                'verified'     => false,
+                'distance_meters' => null,
+                'message'      => 'Aucun site associé pour vérifier la position.',
+                'geofence_center_lat' => null,
+                'geofence_center_lng' => null,
+            ];
+        }
+
+        $geofence = $site->geofences()->where('is_active', true)->orderByDesc('is_primary')->first();
+
+        if (!$geofence) {
+            return [
+                'verified'     => false,
+                'distance_meters' => null,
+                'message'      => 'Aucune zone de présence (géofence) active configurée pour ce site.',
+                'geofence_center_lat' => null,
+                'geofence_center_lng' => null,
+            ];
+        }
+
+        $distance = $this->calculateDistanceMeters(
+            $latitude,
+            $longitude,
+            (float) $geofence->center_latitude,
+            (float) $geofence->center_longitude
+        );
+
+        $verified = $distance <= self::MAX_ALLOWED_DISTANCE_METERS;
+
+        return [
+            'verified'     => $verified,
+            'distance_meters' => $distance,
+            'message'      => $verified
+                ? "Position validée (à {$distance} m du site)."
+                : "Vous êtes à {$distance} m du site. Maximum autorisé : " . self::MAX_ALLOWED_DISTANCE_METERS . " m.",
+            'geofence_center_lat' => (float) $geofence->center_latitude,
+            'geofence_center_lng' => (float) $geofence->center_longitude,
+        ];
+    }
+
+    /**
      * Calcule la distance en mètres entre deux points GPS (formule de Haversine).
      */
-    protected function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
+    public function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
     {
         $earthRadius = 6371000;
         $latDelta    = deg2rad($latTo - $latFrom);

@@ -30,6 +30,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'domaine_id',
         'is_signer',
+        'remote_work_enabled',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -41,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'temporary_password_created_at' => 'datetime',
         'password_changed_at'           => 'datetime',
         'is_signer'                     => 'boolean',
+        'remote_work_enabled'           => 'boolean',
     ];
 
     // =========================================================================
@@ -284,12 +286,33 @@ class User extends Authenticatable implements MustVerifyEmail
         return 'dashboard';
     }
 
-    /**
+/**
      * Indique si l'utilisateur doit changer son mot de passe temporaire.
      */
     public function requiresPasswordChange(): bool
     {
         return (bool) $this->must_change_password;
     }
-    
+
+    /**
+     * Indique si l'utilisateur est autorisé au télétravail (travail à domicile).
+     * Le flag est activé par l'admin. Combine avec la possession d'une tâche
+     * assignée pour permettre la soumission de rapports après le pointage de départ.
+     */
+    public function canWorkRemotely(): bool
+    {
+        return (bool) $this->remote_work_enabled;
+    }
+
+    /**
+     * Indique si l'utilisateur a au moins une tâche active (non terminée)
+     * qui lui a été assignée par un admin/superviseur.
+     */
+    public function hasAssignedActiveTask(): bool
+    {
+        return $this->ownedTasks()
+            ->where('status', '!=', 'completed')
+            ->exists();
+    }
+
 }

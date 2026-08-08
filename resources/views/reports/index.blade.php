@@ -48,10 +48,16 @@
                                       : route('reports.store') }}"
                             class="space-y-6">
 
-                            @csrf
+@csrf
                             @isset($editReport)
                             @method('PUT')
                             @endisset
+
+                            <!-- Position GPS (T-006) : capture pour vérification -->
+                            <input type="hidden" name="latitude" id="report-index-latitude" value="">
+                            <input type="hidden" name="longitude" id="report-index-longitude" value="">
+                            <input type="hidden" name="accuracy_meters" id="report-index-accuracy" value="">
+                            <input type="hidden" name="location_method" id="report-index-location-method" value="">
 
                             <!-- Tâche concernée + progression -->
                             @if(($activeTasks ?? collect())->isNotEmpty())
@@ -637,7 +643,37 @@
         window.location.href = `/reports/${reportId}/edit`;
     }
 
-    function closeEditReportModal() {
+function closeEditReportModal() {
         document.getElementById('editReportModal').classList.add('hidden');
     }
+
+    // ── Capture GPS pour le formulaire de rapport (T-006) ──
+    (function () {
+        function fillReportLocation(position) {
+            const latField = document.getElementById('report-index-latitude');
+            const lngField = document.getElementById('report-index-longitude');
+            const accField = document.getElementById('report-index-accuracy');
+            const locField = document.getElementById('report-index-location-method');
+            if (!latField || !lngField) return;
+            latField.value = position.coords.latitude;
+            lngField.value = position.coords.longitude;
+            accField.value = Math.round(position.coords.accuracy || 0);
+            locField.value = 'geolocation';
+        }
+
+        function setLocationError() {
+            const locField = document.getElementById('report-index-location-method');
+            if (locField) locField.value = 'gps-unavailable';
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(fillReportLocation, setLocationError, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0,
+            });
+        } else {
+            setLocationError();
+        }
+    })();
 </script>

@@ -92,6 +92,7 @@ class UserController extends Controller
 
         $formData = [
             'user' => null,
+            'remoteWorkEnabledValue' => false,
             'selectedRoles' => $selectedRoles,
             'selectedPermissions' => $selectedPermissions,
             'rolePermissionMap' => $rolePermissionMap,
@@ -118,8 +119,9 @@ class UserController extends Controller
             'roles.*'   => 'exists:roles,name',
             'etudiant_genre'     => 'nullable|string|max:50',
             'etudiant_telephone' => 'nullable|string|max:20',
-            'etudiant_ecole'     => 'nullable|string|max:255',
+'etudiant_ecole'     => 'nullable|string|max:255',
             'domaine_id' => 'nullable|exists:domaines,id',
+            'remote_work_enabled' => 'nullable|boolean',
         ];
 
         $selectedRoles = $request->input('roles', [$request->input('user_type')]);
@@ -142,7 +144,7 @@ class UserController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            $userData = [
+$userData = [
                 'email'                         => $validated['email'],
                 'password'                      => Hash::make($validated['password']),
                 'status'                        => 'actif',
@@ -150,6 +152,7 @@ class UserController extends Controller
                 'temporary_password_created_at' => now(),
                 'personnel_id'                  => $personnel->id,
                 'domaine_id'                    => $validated['domaine_id'] ?? null,
+                'remote_work_enabled'           => $validated['remote_work_enabled'] ?? false,
             ];
 
             if (Schema::hasColumn('users', 'name')) {
@@ -258,6 +261,7 @@ class UserController extends Controller
             'employePoste' => $employePoste,
             'domaineIdValue' => $user->domaine_id ?? ($profil instanceof Employe ? $profil->domaine_id : null),
             'isSignerValue' => (bool)$user->is_signer,
+            'remoteWorkEnabledValue' => (bool)($user->remote_work_enabled ?? false),
             'superviseurs' => $superviseurs,
             'supervisorIdValue' => ($profil instanceof Employe) ? $profil->supervisor_id : null,
             'etudiantSupervisorId' => $etudiantSupervisorId,
@@ -290,6 +294,7 @@ class UserController extends Controller
             'employe_poste' => 'nullable|string|max:255',
             'supervisor_id' => 'nullable|exists:users,id',
             'is_signer' => 'nullable|boolean',
+            'remote_work_enabled' => 'nullable|boolean',
         ]);
 
         DB::transaction(function () use ($validated, $user, $request) {
@@ -310,11 +315,12 @@ class UserController extends Controller
                 }
             }
 
-            $userData = [
+$userData = [
                 'email' => $validated['email'],
                 'status' => $validated['status'],
                 'domaine_id' => $validated['domaine_id'] ?? $user->domaine_id,
                 'is_signer' => $validated['is_signer'] ?? false,
+                'remote_work_enabled' => $validated['remote_work_enabled'] ?? false,
             ];
             if (Schema::hasColumn('users', 'name')) {
                 $userData['name'] = trim($validated['prenom'] . ' ' . $validated['nom']);

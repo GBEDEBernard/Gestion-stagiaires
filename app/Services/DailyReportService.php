@@ -19,6 +19,7 @@ class DailyReportService
         private UserProfileLinkService $profileLinkService,
         private NotificationService $notificationService,
         private EmailNotificationService $emailNotificationService,
+        private PresenceService $presenceService,
     ) {}
 
     public function resolveActiveStageForUser(User $user): ?Stage
@@ -45,7 +46,13 @@ class DailyReportService
             $etudiant = $this->profileLinkService->ensureStudentProfile($user);
             $stage = $this->resolveActiveStageForUser($user);
 
-            if (!$stage && !$user->hasRole('employe')) {
+            // Résolution de la tâche rattachée (doit appartenir au producteur).
+            $task = $this->resolveOwnedTask($payload['task_id'] ?? null, $user);
+
+            // Un stage est requis UNIQUEMENT pour un rapport de présence classique
+            // (sans tâche rattachée) par un non-employé. Quiconque possède une tâche
+            // (admin, superviseur, employé, étudiant) peut rapporter dessus sans stage.
+            if (!$stage && !$user->hasRole('employe') && !$task) {
                 throw ValidationException::withMessages([
                     'stage' => "Aucun stage actif.",
                 ]);
@@ -56,8 +63,8 @@ class DailyReportService
                 ->when(!$stage, fn($q) => $q->where('user_id', $user->id))
                 ->first();
 
-            // Résolution de la tâche rattachée (doit appartenir au producteur).
-            $task = $this->resolveOwnedTask($payload['task_id'] ?? null, $user);
+            // 🔒 Vérification de la position + règle de fermeture après pointage.
+            [$locationVerified, $locationMeta] = $this->verifyReportSubmission($user, $stage, $task, $payload);
 
             // 🔥 ANTI-DOUBLON (T-005) : par TÂCHE/jour si rattaché à une tâche
             // (chaque tâche a son propre fil de rapports), sinon par producteur/jour
@@ -84,7 +91,7 @@ class DailyReportService
             $report->fill([
                 'stage_id' => $stage?->id,
                 'etudiant_id' => $etudiant?->id,
-                'user_id' => $user->hasRole('employe') ? $user->id : null,
+                'user_id' => ($user->hasRole('employe') || $task) ? $user->id : null,
                 'attendance_day_id' => $attendanceDay?->id,
                 'task_id' => $task?->id,
                 'task_progress_percent' => $task ? ($payload['task_progress_percent'] ?? $task->last_progress_percent) : null,
@@ -96,6 +103,13 @@ class DailyReportService
                 'hours_declared' => $payload['hours_declared'] ?? 0,
                 'status' => $status,
                 'submitted_at' => $status === 'submitted' ? now() : null,
+                // 🔒 Données de localisation de la soumission.
+                'latitude' => $payload['latitude'] ?? null,
+                'longitude' => $payload['longitude'] ?? null,
+                'accuracy_meters' => $payload['accuracy_meters'] ?? null,
+                'distance_to_site_meters' => $locationMeta['distance_meters'] ?? null,
+                'location_method' => $payload['location_method'] ?? null,
+                'location_verified' => $locationVerified,
             ]);
 
             $report->save();
@@ -131,7 +145,7 @@ class DailyReportService
      * Applique la progression déclarée à la tâche, journalise (task_update),
      * gère l'auto-complétion à 100 % et notifie superviseur + admins (seulement si le rapport est soumis).
      */
-    public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
+public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
     {
         $progress = (int) ($report->task_progress_percent ?? $task->last_progress_percent);
         $progress = max(0, min(100, $progress));
@@ -200,5 +214,84 @@ class DailyReportService
 
         // Notification email aux superviseurs/admins
         $this->emailNotificationService->notifyReportSubmitted($task);
+    }
+
+    /**
+     * Vérifie la soumission d'un rapport selon deux règles (T-006) :
+     *
+     * 1) POSITION : si l'utilisateur n'est pas en télétravail autorisé, le rapport
+     *    doit être soumis depuis le site (distance ≤ MAX_ALLOWED_DISTANCE_METERS).
+     * 2) FERMETURE : si le check-out du jour est déjà fait ET que l'utilisateur
+     *    n'est pas autorisé au télétravail (flag + tâche active), la soumission
+     *    d'un rapport est refusée.
+     *
+     * @return array{0: bool, 1: array} [locationVerified, meta]
+     */
+    private function verifyReportSubmission(User $user, ?Stage $stage, ?Task $task, array $payload): array
+    {
+        // Propriétaire d'une tâche sans stage (admin, superviseur, employé ou
+        // étudiant hors stage) : pas de pointage ni de site → aucun contrôle de
+        // position n'est applicable, il peut rapporter depuis n'importe où.
+        if (!$stage && $task) {
+            return [false, [
+                'distance_meters' => null,
+                'message' => 'Tâche sans stage : position non vérifiée.',
+            ]];
+        }
+
+        $isRemoteAllowed = $user->canWorkRemotely() && $user->hasAssignedActiveTask();
+
+        // ── Règle 2 : fermeture après pointage de départ ──
+        $attendanceDay = AttendanceDay::whereDate('attendance_date', today())
+            ->when($stage, fn($q) => $q->where('stage_id', $stage->id))
+            ->when(!$stage, fn($q) => $q->where('user_id', $user->id))
+            ->first();
+
+        $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+        if ($hasCheckedOut && !$isRemoteAllowed) {
+            throw ValidationException::withMessages([
+                'presence' => 'Votre journée est terminée (pointage de départ effectué). '
+                    . 'Seuls les utilisateurs autorisés au télétravail avec une tâche active '
+                    . 'peuvent soumettre un rapport après le pointage de départ.',
+            ]);
+        }
+
+        // ── Règle 1 : vérification de la position (sauf télétravail autorisé) ──
+        if ($isRemoteAllowed) {
+            return [false, [
+                'distance_meters' => null,
+                'message' => 'Télétravail autorisé : position non vérifiée.',
+            ]];
+        }
+
+        $latitude  = $payload['latitude'] ?? null;
+        $longitude = $payload['longitude'] ?? null;
+
+        if ($latitude === null || $longitude === null) {
+            throw ValidationException::withMessages([
+                'location' => 'La position GPS est requise pour soumettre un rapport. '
+                    . 'Veuillez activer la géolocalisation et soumettre depuis le site.',
+            ]);
+        }
+
+        $site = $stage?->site;
+
+        $verification = $this->presenceService->verifyLocationOnSite(
+            (float) $latitude,
+            (float) $longitude,
+            $site
+        );
+
+        if (!$verification['verified']) {
+            throw ValidationException::withMessages([
+                'location' => 'Rapport refusé : ' . $verification['message'],
+            ]);
+        }
+
+        return [true, [
+            'distance_meters' => $verification['distance_meters'],
+            'message' => $verification['message'],
+        ]];
     }
 }

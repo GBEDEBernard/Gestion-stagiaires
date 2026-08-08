@@ -19,9 +19,106 @@ class TaskController extends Controller
         protected EmailNotificationService $emailService
     ) {}
 
-    public function index(Request $request)
+public function index(Request $request)
     {
         return view('tasks.workspace', $this->workspaceData($request, null));
+    }
+
+    /**
+     * Formulaire d'assignation d'une tâche par l'admin/superviseur (T-006).
+     * Permet de choisir un producteur (étudiant ou employé) et de créer une
+     * tâche qui lui est assignée (champ assigned_by rempli).
+     */
+    public function assignForm(Request $request)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasAnyRole(['admin', 'superviseur']), 403);
+        abort_unless($user->can('tasks.assign'), 403);
+
+        // Producteurs disponibles : étudiants + employés ayant un compte actif.
+        $producers = User::role(['etudiant', 'employe'])
+            ->with('personnel')
+            ->where('status', 'actif')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn($u) => $u->profil() !== null)
+            ->values();
+
+        // Tâches en cours de chaque producteur (celles que l'admin peut désigner).
+        $tasksByOwner = $producers->mapWithKeys(function ($u) {
+            return [$u->id => Task::where('owner_id', $u->id)
+                ->where('status', '!=', 'completed')
+                ->latest('updated_at')
+                ->get(['id', 'title', 'status', 'priority', 'due_date', 'last_progress_percent'])];
+        });
+
+        return view('tasks.assign', compact('producers', 'tasksByOwner'));
+    }
+
+    /**
+     * Crée et assigne une tâche à un producteur (admin/superviseur).
+     * Le producteur devient le propriétaire (owner_id), l'admin/superviseur
+     * est enregistré dans assigned_by. Le stage/étudiant du producteur est
+     * résolu automatiquement quand cela s'applique.
+     */
+    public function assign(Request $request)
+    {
+        $user = auth()->user();
+
+        abort_unless($user->hasAnyRole(['admin', 'superviseur']), 403);
+        abort_unless($user->can('tasks.assign'), 403);
+
+        $payload = $request->validate([
+            'owner_id' => 'required|integer|exists:users,id',
+            'task_id'  => 'required|integer|exists:tasks,id',
+        ], [
+            'owner_id.required' => 'Veuillez sélectionner un producteur.',
+            'owner_id.exists'   => 'Le producteur sélectionné est introuvable.',
+            'task_id.required'  => 'Veuillez sélectionner une tâche à assigner.',
+            'task_id.exists'    => 'La tâche sélectionnée est introuvable.',
+        ]);
+
+        $owner = User::findOrFail($payload['owner_id']);
+        $task = Task::findOrFail($payload['task_id']);
+
+        // La tâche doit appartenir au producteur choisi et ne pas être terminée.
+        if ((int) $task->owner_id !== (int) $owner->id) {
+            abort(403, 'Cette tâche n\'appartient pas au producteur sélectionné.');
+        }
+
+        if ($task->isCompleted()) {
+            abort(403, 'Impossible d\'assigner une tâche déjà terminée.');
+        }
+
+        // Désignation de la tâche existante (plus de création manuelle).
+        if ((int) $task->assigned_by !== (int) $user->id) {
+            $task->update(['assigned_by' => $user->id]);
+
+            Activity::create([
+                'user_id'     => $user->id,
+                'action'      => 'Assignment tache',
+                'description' => "Tache « {$task->title} » assignee a {$owner->name}",
+            ]);
+
+            // Notification au producteur.
+            $url = encrypted_route('tasks.show', $task);
+            $this->notifications->push(
+                $owner->id,
+                'task_assigned',
+                '📋 Nouvelle tâche assignée',
+                $user->name . ' vous a désigné « ' . Str::limit($task->title, 40) . ' » pour le travail à domicile',
+                $url,
+                'clipboard-list',
+                'blue'
+            );
+
+            $this->emailService->notifyTaskCreated($task);
+        }
+
+        return redirect()
+            ->to(encrypted_route('tasks.show', $task))
+            ->with('success', 'Tâche « ' . $task->title . ' » désignée à ' . $owner->name . '.');
     }
 
     public function store(Request $request)

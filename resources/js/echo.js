@@ -16,9 +16,10 @@ let Echo = null;
 window.Echo = null;
 
 async function initEcho() {
-    const wsHost = import.meta.env.VITE_PUSHER_HOST;
-    if (!wsHost) {
-        console.log('[Echo] Skipped — VITE_PUSHER_HOST not configured');
+    const wsHost = import.meta.env.VITE_REVERB_HOST || import.meta.env.VITE_PUSHER_HOST;
+    const wsKey  = import.meta.env.VITE_REVERB_APP_KEY || import.meta.env.VITE_PUSHER_APP_KEY;
+    if (!wsHost || !wsKey) {
+        console.log('[Echo] Skipped — Reverb host not configured');
         Echo = null;
         window.Echo = null;
         return;
@@ -32,15 +33,16 @@ async function initEcho() {
 
         window.Pusher = Pusher.default;
 
+        const wsScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+        const wsPort   = parseInt(import.meta.env.VITE_REVERB_PORT || '8080', 10);
+
         const echoConfig = {
-            broadcaster: 'pusher',
-            key: import.meta.env.VITE_PUSHER_APP_KEY || 'gestion-stagiaires-key',
-            cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt',
+            broadcaster: 'reverb',
+            key: wsKey,
             wsHost,
-            wsPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '6001', 10),
-            wssPort: parseInt(import.meta.env.VITE_PUSHER_PORT || '443', 10),
-            scheme: import.meta.env.VITE_PUSHER_SCHEME || 'http',
-            encrypted: import.meta.env.VITE_PUSHER_SCHEME === 'https',
+            wsPort,
+            wssPort: wsPort,
+            forceTLS: wsScheme === 'https',
             enabledTransports: ['ws', 'wss'],
             disableStats: true,
             csrfToken: document.querySelector('meta[name="csrf-token"]')?.content,

@@ -66,9 +66,10 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.review',
                 'daily_reports.approve',
-                // T-003 : le superviseur LIT et COMMENTE les tâches (pas de création/assignation)
+// T-003 : le superviseur LIT, COMMENTE et ASSIGNE les tâches
                 'tasks.view',
                 'tasks.review',
+                'tasks.assign',
                 'attendance_anomalies.view',
                 'attendance_anomalies.review',
                 'presence_stats.view',

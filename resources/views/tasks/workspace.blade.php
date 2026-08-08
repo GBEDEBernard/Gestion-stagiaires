@@ -1,8 +1,9 @@
 <x-app-layout title="Tâches">
 
     @php
-        $user = auth()->user();
-        $canCreate = $user->hasAnyRole(['etudiant', 'employe']);
+$user = auth()->user();
+        $canCreate = $user->hasAnyRole(['admin', 'etudiant', 'employe']);
+        $canAssign = $user->hasAnyRole(['admin', 'superviseur']);
         $qs = collect(['status' => $status, 'q' => request('q')])->filter()->all();
         $totalTasks = collect($stats ?? [])->sum();
         $activeTasks = ($stats['pending'] ?? 0) + ($stats['in_progress'] ?? 0) + ($stats['blocked'] ?? 0);
@@ -304,7 +305,7 @@
                                 </div>
                             </div>
 
-                            @if($canCreate)
+@if($canCreate)
                             <button type="button" @click="openCreate = true"
                                 class="ws-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -312,6 +313,24 @@
                                 </svg>
                                 Nouvelle tâche
                             </button>
+                            @endif
+                            @if($canAssign)
+                            <a href="{{ route('tasks.assign.form') }}"
+                               class="ws-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/>
+                                </svg>
+                                Assigner une tâche
+                            </a>
+                            @endif
+                            @if($user->hasAnyRole(['admin', 'superviseur']))
+                            <a href="{{ route('admin.tasks.tracking') }}"
+                               class="ws-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Zm1-4h14M9 5v0m3 0v0"/>
+                                </svg>
+                                Suivi des tâches
+                            </a>
                             @endif
                         </div>
                     </div>
@@ -409,6 +428,12 @@
                                     class="ws-btn-primary mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-medium">
                                     Créer une tâche
                                 </button>
+                                @endif
+                                @if($user->hasAnyRole(['admin', 'superviseur']))
+                                <a href="{{ route('admin.tasks.tracking') }}"
+                                   class="ws-btn-primary mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-medium">
+                                    Suivi des tâches
+                                </a>
                                 @endif
                             </div>
                             @endforelse

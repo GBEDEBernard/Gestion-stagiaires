@@ -32,6 +32,12 @@ class DailyReport extends Model
         'reviewed_by',
         'reviewed_at',
         'supervisor_comment',
+        'latitude',
+        'longitude',
+        'accuracy_meters',
+        'distance_to_site_meters',
+        'location_method',
+        'location_verified',
     ];
 
     protected $casts = [
@@ -41,6 +47,11 @@ class DailyReport extends Model
         'hours_declared' => 'float',
         'completion_rate' => 'integer',
         'task_progress_percent' => 'integer',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'accuracy_meters' => 'integer',
+        'distance_to_site_meters' => 'integer',
+        'location_verified' => 'boolean',
     ];
 
     /* =======================

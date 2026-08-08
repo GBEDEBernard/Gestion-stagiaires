@@ -79,12 +79,26 @@ $userType = $selectedRoles[0] ?? 'admin';
                     <input type="checkbox" name="is_signer" value="1" {{ old('is_signer', $isSignerValue ?? false) ? 'checked' : '' }} class="rounded border-blue-300 text-blue-600">
                     <span class="text-sm font-medium text-gray-900 dark:text-white">Peut signer les attestations</span>
                 </label>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
                 @error('is_signer')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                 @enderror
             </div>
             @endif
+            {{-- Télétravail autorisé --}}
+            <div class="md:col-span-2">
+                <label class="inline-flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-900/50 rounded-xl cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition">
+                    <input type="checkbox" name="remote_work_enabled" value="1" {{ old('remote_work_enabled', $remoteWorkEnabledValue ?? false) ? 'checked' : '' }} class="rounded border-indigo-300 text-indigo-600">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">Télétravail autorisé</span>
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">
+                    Permet au producteur de soumettre des rapports à distance (à domicile), y compris
+                    après son pointage de départ, à condition qu'une tâche lui soit assignée.
+                </p>
+                @error('remote_work_enabled')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
     </div>
     @else
@@ -116,12 +130,26 @@ $userType = $selectedRoles[0] ?? 'admin';
                     <input type="checkbox" name="is_signer" value="1" {{ old('is_signer', $isSignerValue ?? false) ? 'checked' : '' }} class="rounded border-blue-300 text-blue-600">
                     <span class="text-sm font-medium text-gray-900 dark:text-white">Peut signer les attestations</span>
                 </label>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">Vérifiez cette option pour permettre à cet administrateur de signer les attestations de stage</p>
                 @error('is_signer')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                 @enderror
             </div>
             @endif
+            {{-- Télétravail autorisé (création) --}}
+            <div class="md:col-span-2">
+                <label class="inline-flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-900/50 rounded-xl cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition">
+                    <input type="checkbox" name="remote_work_enabled" value="1" {{ old('remote_work_enabled', $remoteWorkEnabledValue ?? false) ? 'checked' : '' }} class="rounded border-indigo-300 text-indigo-600">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">Télétravail autorisé</span>
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">
+                    Permet au producteur de soumettre des rapports à distance (à domicile), y compris
+                    après son pointage de départ, à condition qu'une tâche lui soit assignée.
+                </p>
+                @error('remote_work_enabled')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
     </div>
     @endif

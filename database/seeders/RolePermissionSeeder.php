@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
             'holidays',
         ];
 
-        $actions = [
+$actions = [
             'view',
             'create',
             'edit',
@@ -56,7 +56,8 @@ class RolePermissionSeeder extends Seeder
             'review',
             'approve',
             'audit',
-            'cancel'
+            'cancel',
+            'assign'
         ];
 
         foreach ($entities as $entity) {
@@ -68,7 +69,7 @@ class RolePermissionSeeder extends Seeder
                 if ($entity === 'sites' && !in_array($action, ['view', 'create', 'edit', 'delete'])) continue;
                 if ($entity === 'presence' && !in_array($action, ['view', 'checkin', 'checkout', 'audit'])) continue;
                 if ($entity === 'daily_reports' && !in_array($action, ['view', 'create', 'submit', 'review', 'approve'])) continue;
-                if ($entity === 'tasks' && !in_array($action, ['view', 'create', 'edit', 'delete', 'review'])) continue;
+if ($entity === 'tasks' && !in_array($action, ['view', 'create', 'edit', 'delete', 'review', 'assign'])) continue;
                 if ($entity === 'attendance_anomalies' && !in_array($action, ['view', 'review', 'audit'])) continue;
                 if ($entity === 'presence_stats' && !in_array($action, ['view'])) continue;
                 // Permissions : on garde view, create, cancel pour les utilisateurs, review/approve pour superviseurs
