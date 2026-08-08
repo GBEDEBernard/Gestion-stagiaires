@@ -201,6 +201,14 @@ public function index(Request $request)
         $targets = $targets->filter(fn($u) => $u->profil() !== null)
             ->reject(fn($u) => $u->hasRole('admin'));
 
+        // T-008 : au moment où la tâche passe d'un propriétaire isolé à une
+        // ÉQUIPE, on fige sa progression courante dans base_progress_percent.
+        // Ce % « d'avant » entre ensuite dans le calcul du global :
+        //   global = (base + progression de chaque membre) / (n + 1)
+        if ($task->assignees()->count() === 0 && is_null($task->base_progress_percent)) {
+            $task->update(['base_progress_percent' => max(0, min(100, (int) $task->last_progress_percent))]);
+        }
+
         $created = [];
         $skipped = [];
 

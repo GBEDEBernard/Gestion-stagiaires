@@ -430,7 +430,9 @@
             <div class="flex items-center justify-between mb-3">
                 <div>
                     <h3 class="text-sm font-semibold text-black">Assignée à {{ $group->count() }} personne{{ $group->count() > 1 ? 's' : '' }}</h3>
-                    <p class="text-xs mt-0.5 text-black/40">Travail en équipe sur une même tâche : chacun dépose son rapport, la progression est la moyenne des rapports.</p>
+                    <p class="text-xs mt-0.5 text-black/40">
+                        La progression totale = le % déjà fait avant l'équipe + la progression de chacun, le tout divisé par ({{ $task->base_progress_percent !== null ? $group->count() + 1 : $group->count() }}).
+                    </p>
                 </div>
             </div>
 

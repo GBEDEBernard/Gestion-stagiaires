@@ -207,9 +207,16 @@ public function syncTaskProgress(DailyReport $report, Task $task, User $user, bo
     }
 
     /**
-     * T-008 : moyenne des dernières progressions déclarées par participant
-     * (propriétaire + assignés pivot) sur la tâche. Retombe sur la valeur
-     * actuelle si aucun rapport n'existe encore.
+     * T-008 — Pourcentage GLOBAL d'une tâche partagée :
+     *
+     *   global = (BASE + progression de chaque membre de l'équipe) / (n + 1)
+     *
+     * - BASE   = base_progress_percent : la progression figée AU MOMENT où la
+     *   tâche a été assignée à l'équipe (le travail déjà fait avant) ;
+     * - chaque MÈMBRE = sa dernière progression déclarée (son dernier rapport) ;
+     * - un membre sans rapport compte pour 0 % ;
+     * - si la tâche n'a JAMAIS été assignée à une équipe (pas de base), le
+     *   global est la moyenne des dernières progression déclarées des membres.
      */
     public function aggregateProgress(Task $task): int
     {
@@ -226,8 +233,22 @@ public function syncTaskProgress(DailyReport $report, Task $task, User $user, bo
             ->orderByDesc('id')
             ->get(['user_id', 'task_progress_percent'])
             ->unique('user_id')
-            ->values();
+            ->keyBy('user_id');
 
+        if ($task->base_progress_percent !== null) {
+            // Équipe : base figée au moment de l'assignation + chaque membre.
+            $sum = (int) $task->base_progress_percent;
+            foreach ($participantIds as $id) {
+                $sum += (int) ($latest->get((int) $id)?->task_progress_percent ?? 0);
+            }
+
+            $count = $participantIds->count() + 1;
+
+            return $count > 0 ? (int) round($sum / $count) : 0;
+        }
+
+        // Pas d'équipe (jamais assignée) : moyenne des membres ayant rapporté,
+        // sinon on retombe sur la progression actuelle.
         if ($latest->isEmpty()) {
             return (int) $task->last_progress_percent;
         }

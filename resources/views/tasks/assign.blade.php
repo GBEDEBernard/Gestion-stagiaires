@@ -255,10 +255,12 @@ x-data="{
             </svg>
             <p class="text-sm text-blue-700 leading-relaxed">
                 Une <strong>seule tâche</strong> reste dans les espaces de travail : chaque personne
-                assignée la voit, dépose ses propres rapports et discute dans le même fil. La
-                progression affichée est la <strong>moyenne des rapports</strong> de chacun. La tâche
-                désignée permet au producteur de soumettre des rapports en <strong>télétravail</strong>
-                (flag «&nbsp;Télétravail autorisé&nbsp;» activé sur son compte).
+                assignée la voit, dépose ses propres rapports et discute dans le même fil. Le
+                pourcentage global = la progression <strong>déjà faite avant l'équipe</strong> (figée
+                au moment de l'assignation) + la <strong>progression de chacun</strong>, le tout
+                divisé par (n&nbsp;personnes&nbsp;+&nbsp;1). Une personne sans rapport compte pour
+                0&nbsp;%. La tâche désignée permet au producteur de soumettre des rapports en
+                <strong>télétravail</strong> (flag «&nbsp;Télétravail autorisé&nbsp;» activé sur son compte).
             </p>
         </div>
 

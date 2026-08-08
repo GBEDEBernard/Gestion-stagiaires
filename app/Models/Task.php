@@ -22,6 +22,7 @@ class Task extends Model
         'status',
         'due_date',
         'last_progress_percent',
+        'base_progress_percent',
         'started_at',
         'completed_at',
         'validated_by',
