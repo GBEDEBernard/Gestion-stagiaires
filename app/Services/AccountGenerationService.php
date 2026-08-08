@@ -52,7 +52,7 @@ class AccountGenerationService
 
         $user->assignRole($roleName);
 
-        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel);
+        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel, $tempPassword);
 
         // Journalisation
         try {
@@ -100,12 +100,12 @@ class AccountGenerationService
         return $user->fresh();
     }
 
-    private function sendProvisioningEmail(User $user, Personnel $personnel): bool
+    private function sendProvisioningEmail(User $user, Personnel $personnel, ?string $temporaryPassword = null): bool
     {
         try {
             $token = Password::broker()->createToken($user);
 
-            $user->notify(new AccountProvisionedNotification($token, $personnel->email));
+            $user->notify(new AccountProvisionedNotification($token, $personnel->email, $temporaryPassword));
 
             return true;
         } catch (Throwable $e) {
