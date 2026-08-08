@@ -38,6 +38,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('summaries:generate yearly')
             ->yearlyOn(1, 1, '20:00')
             ->withoutOverlapping();
+
+        // Désactivation automatique des comptes stagiaires dont le stage est terminé
+        $schedule->command('students:deactivate-expired')
+            ->dailyAt('00:05')
+            ->withoutOverlapping();
     }
 
     /**
