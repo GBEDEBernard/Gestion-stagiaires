@@ -1,10 +1,13 @@
 @php
     $user = auth()->user();
-    $isOwner     = $task->owner_id === $user->id;
-    $isAdmin     = $user->hasRole('admin');
-    $isReviewer  = $user->hasAnyRole(['admin', 'superviseur']) && !$isOwner;
-    $canComment  = $isOwner || $isReviewer;
-    $isFirstReport = $task->dailyReports->isEmpty();
+    $isOwner       = $task->owner_id === $user->id;
+    $isAdmin       = $user->hasRole('admin');
+    $isParticipant = $task->isParticipant($user->id);
+    $isReviewer    = $user->hasAnyRole(['admin', 'superviseur']) && !$isParticipant;
+    $canComment    = $isParticipant || $isReviewer;
+
+    $myReports = $task->dailyReports->filter(fn($r) => $r->user_id === (int) $user->id);
+    $isFirstReport = $myReports->isEmpty();
 
     $points = $task->dailyReports->reverse()
         ->filter(fn($r) => !is_null($r->task_progress_percent))
@@ -309,6 +312,12 @@
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/></svg>
                                 {{ $reportCount }} rapport{{ $reportCount !== 1 ? 's' : '' }}
                             </span>
+                            @if(isset($group) && $group->count() > 1)
+                            <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-indigo-50 text-indigo-600">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>
+                                {{ $group->count() }} personne{{ $group->count() > 1 ? 's' : '' }}
+                            </span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -339,6 +348,15 @@
                             Corrections
                         </button>
                     </form>
+                    @endif
+
+                    @if($isAdmin && !$task->isCompleted())
+                    <a href="{{ route('tasks.assign.form', ['task_id' => $task->id]) }}"
+                       title="Transférer ou réassigner cette tâche"
+                       class="d-btn-ghost h-9 px-3 rounded-xl">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>
+                        Réassigner
+                    </a>
                     @endif
 
                     @if($isOwner)
@@ -406,13 +424,62 @@
 
         <div class="d-divider"></div>
 
+        {{-- ── SECTION ASSIGNÉES (T-008) ── --}}
+        @if(isset($group) && $group->count() > 1)
+        <div class="px-6 py-5">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h3 class="text-sm font-semibold text-black">Assignée à {{ $group->count() }} personne{{ $group->count() > 1 ? 's' : '' }}</h3>
+                    <p class="text-xs mt-0.5 text-black/40">Travail en équipe sur une même tâche : chacun dépose son rapport, la progression est la moyenne des rapports.</p>
+                </div>
+            </div>
+
+            <div class="grid gap-2 sm:grid-cols-2">
+                @foreach($group as $memberUser)
+                @php
+                    $memberPct = 0;
+                    $memberLatest = $task->dailyReports
+                        ->filter(fn($r) => $r->user_id === (int) $memberUser->id && $r->task_progress_percent !== null)
+                        ->sortByDesc('id')
+                        ->first();
+                    if ($memberLatest) { $memberPct = (int) $memberLatest->task_progress_percent; }
+                @endphp
+                <div class="rounded-xl border border-black/6 bg-black/2.5 px-4 py-3
+                            {{ (int) $memberUser->id === (int) $user->id ? 'ring-2 ring-black/5' : '' }}">
+                    <div class="flex items-center gap-3">
+                        <x-avatar :name="$memberUser->name ?? '?'" :src="$memberUser?->avatar_url" size="sm" />
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-black truncate">
+                                {{ $memberUser->name ?? 'Inconnu' }}
+                            </p>
+                            <span class="text-[11px] font-semibold rounded-lg px-2 py-0.5
+                                         {{ (int) $memberUser->id === (int) $user->id ? 'bg-indigo-50 text-indigo-600' : 'bg-black/5 text-black/45' }}">
+                                {{ (int) $memberUser->id === (int) $user->id ? 'Vous' : 'Participant' }} · {{ $memberPct }}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-2.5 flex items-center gap-2">
+                        <div class="flex-1 h-1 rounded-full overflow-hidden bg-black/7">
+                            <div class="h-full rounded-full" style="width:{{ $memberPct }}%; background:#0a0a0a;"></div>
+                        </div>
+                        <span class="ws-mono text-[11px] font-bold text-black w-8 text-right">{{ $memberPct }}%</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="d-divider"></div>
+        @endif
+
         {{-- ── SECTION RAPPORTS ── --}}
         <div class="flex items-center justify-between px-6 py-4">
             <div>
                 <h3 class="text-sm font-semibold text-black">Rapports d'activité académiques</h3>
                 <p class="text-xs mt-0.5 text-black/40">{{ $reportCount }} rapport{{ $reportCount !== 1 ? 's' : '' }} déposé{{ $reportCount !== 1 ? 's' : '' }}</p>
             </div>
-            @if($isOwner && !$task->isCompleted() && !$isFirstReport)
+            @if($isParticipant && !$task->isCompleted() && !$isFirstReport)
             <span class="text-xs font-medium px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">↓ Rapport du jour en bas</span>
             @endif
         </div>
@@ -516,7 +583,7 @@
         @endif
 
         {{-- ── FORMULAIRE RAPPORT DU JOUR ── --}}
-        @if($isOwner && !$task->isCompleted())
+        @if($isParticipant && !$task->isCompleted())
         <div class="d-divider"></div>
 
         <div class="px-6 py-5" x-data="{ open: {{ $isFirstReport ? 'true' : 'false' }}, prog: {{ (int) $task->last_progress_percent }} }">

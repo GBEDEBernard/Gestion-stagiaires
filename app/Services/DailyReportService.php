@@ -46,7 +46,8 @@ class DailyReportService
             $etudiant = $this->profileLinkService->ensureStudentProfile($user);
             $stage = $this->resolveActiveStageForUser($user);
 
-            // Résolution de la tâche rattachée (doit appartenir au producteur).
+            // Résolution de la tâche rattachée (doit appartenir au producteur
+            // ou être assignée à lui via la table pivot, T-008).
             $task = $this->resolveOwnedTask($payload['task_id'] ?? null, $user);
 
             // Un stage est requis UNIQUEMENT pour un rapport de présence classique
@@ -66,13 +67,15 @@ class DailyReportService
             // 🔒 Vérification de la position + règle de fermeture après pointage.
             [$locationVerified, $locationMeta] = $this->verifyReportSubmission($user, $stage, $task, $payload);
 
-            // 🔥 ANTI-DOUBLON (T-005) : par TÂCHE/jour si rattaché à une tâche
-            // (chaque tâche a son propre fil de rapports), sinon par producteur/jour
-            // (rapport de présence legacy, hors tâche).
+            // 🔥 ANTI-DOUBLON (T-005 / T-008) : par TÂCHE + PRODUCTEUR/jour si rattaché
+            // à une tâche (chaque personne assignée a SON rapport du jour sur la
+            // tâche partagée), sinon par producteur/jour (rapport de présence
+            // legacy, hors tâche).
             $query = DailyReport::whereDate('report_date', today());
 
             if ($task) {
-                $query->where('task_id', $task->id);
+                $query->where('task_id', $task->id)
+                    ->where('user_id', $user->id);
             } elseif ($user->hasRole('employe')) {
                 $query->where('user_id', $user->id)->whereNull('task_id');
             } else {
@@ -94,7 +97,9 @@ class DailyReportService
                 'user_id' => ($user->hasRole('employe') || $task) ? $user->id : null,
                 'attendance_day_id' => $attendanceDay?->id,
                 'task_id' => $task?->id,
-                'task_progress_percent' => $task ? ($payload['task_progress_percent'] ?? $task->last_progress_percent) : null,
+                'task_progress_percent' => $task
+                    ? ($payload['task_progress_percent'] ?? $this->latestOwnProgress($task, $user))
+                    : null,
                 'title' => 'Rapport du ' . today()->format('d/m/Y'),
                 'introduction' => $payload['introduction'] ?? null,
                 'summary' => $payload['summary'] ?? null,
@@ -124,7 +129,8 @@ class DailyReportService
     }
 
     /**
-     * Retourne la tâche si elle appartient au producteur et n'est pas terminée.
+     * Retourne la tâche si le producteur y participe (propriétaire ou
+     * personne assignée via pivot) et qu'elle n'est pas terminée.
      */
     private function resolveOwnedTask($taskId, User $user): ?Task
     {
@@ -134,11 +140,25 @@ class DailyReportService
 
         $task = Task::find($taskId);
 
-        if (!$task || $task->owner_id !== $user->id || $task->status === 'completed') {
+        if (!$task || !$task->isParticipant($user->id) || $task->status === 'completed') {
             return null;
         }
 
         return $task;
+    }
+
+    /**
+     * Dernière progression déclarée par l'utilisateur sur la tâche
+     * (pour pré-remplir son rapport quand il ne renseigne rien).
+     */
+    private function latestOwnProgress(Task $task, User $user): int
+    {
+        return (int) DailyReport::where('task_id', $task->id)
+            ->where('user_id', $user->id)
+            ->whereNotNull('task_progress_percent')
+            ->orderByDesc('report_date')
+            ->orderByDesc('id')
+            ->value('task_progress_percent');
     }
 
     /**
@@ -147,7 +167,10 @@ class DailyReportService
      */
 public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
     {
-        $progress = (int) ($report->task_progress_percent ?? $task->last_progress_percent);
+        // T-008 : tâche partagée → la progression affichée est l'AGRÉGAT des
+        // dernières progressions déclarées par chaque participant (propriétaire
+        // + personnes assignées), moyenne arrondie.
+        $progress = (int) $this->aggregateProgress($task);
         $progress = max(0, min(100, $progress));
 
         $originalStatus = $task->status;
@@ -181,6 +204,35 @@ public function syncTaskProgress(DailyReport $report, Task $task, User $user, bo
         if ($notify) {
             $this->notifyReviewersOfReport($task, $report, $user);
         }
+    }
+
+    /**
+     * T-008 : moyenne des dernières progressions déclarées par participant
+     * (propriétaire + assignés pivot) sur la tâche. Retombe sur la valeur
+     * actuelle si aucun rapport n'existe encore.
+     */
+    public function aggregateProgress(Task $task): int
+    {
+        $participantIds = collect([$task->owner_id])
+            ->merge($task->assignees()->pluck('users.id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $latest = DailyReport::where('task_id', $task->id)
+            ->whereNotNull('task_progress_percent')
+            ->whereIn('user_id', $participantIds)
+            ->orderByDesc('report_date')
+            ->orderByDesc('id')
+            ->get(['user_id', 'task_progress_percent'])
+            ->unique('user_id')
+            ->values();
+
+        if ($latest->isEmpty()) {
+            return (int) $task->last_progress_percent;
+        }
+
+        return (int) round($latest->avg('task_progress_percent'));
     }
 
     /**

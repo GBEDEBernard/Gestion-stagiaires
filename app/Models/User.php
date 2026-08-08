@@ -306,13 +306,27 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Indique si l'utilisateur a au moins une tâche active (non terminée)
-     * qui lui a été assignée par un admin/superviseur.
+     * qui lui a été assignée par un admin/superviseur — en tant que
+     * propriétaire OU que personne assignée (T-008).
      */
     public function hasAssignedActiveTask(): bool
     {
         return $this->ownedTasks()
             ->where('status', '!=', 'completed')
+            ->exists()
+            || $this->taskAssignments()
+            ->where('status', '!=', 'completed')
             ->exists();
+    }
+
+    /**
+     * T-008 — Tâches où l'utilisateur est assigné via la table pivot
+     * (il participe à une tâche partagée sans la posséder).
+     */
+    public function taskAssignments()
+    {
+        return $this->belongsToMany(Task::class, 'task_assignee', 'user_id', 'task_id')
+            ->withPivot('assigned_at');
     }
 
 }

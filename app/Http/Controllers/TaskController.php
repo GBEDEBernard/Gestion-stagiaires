@@ -25,16 +25,16 @@ public function index(Request $request)
     }
 
     /**
-     * Formulaire d'assignation d'une tâche par l'admin/superviseur (T-006).
-     * Permet de choisir un producteur (étudiant ou employé) et de créer une
-     * tâche qui lui est assignée (champ assigned_by rempli).
+     * Formulaire d'assignation d'une tâche (T-008) — ADMIN UNIQUEMENT.
+     * La même tâche peut être assignée à plusieurs personnes : une seule
+     * occurrence dans le workspace, chaque personne travaille dessus et
+     * dépose ses propres rapports.
      */
     public function assignForm(Request $request)
     {
         $user = auth()->user();
 
-        abort_unless($user->hasAnyRole(['admin', 'superviseur']), 403);
-        abort_unless($user->can('tasks.assign'), 403);
+        $this->authorizeAssign($user);
 
         // Producteurs disponibles : étudiants + employés ayant un compte actif.
         $producers = User::role(['etudiant', 'employe'])
@@ -45,70 +45,186 @@ public function index(Request $request)
             ->filter(fn($u) => $u->profil() !== null)
             ->values();
 
-        // Tâches en cours de chaque producteur (celles que l'admin peut désigner).
-        $tasksByOwner = $producers->mapWithKeys(function ($u) {
-            return [$u->id => Task::where('owner_id', $u->id)
-                ->where('status', '!=', 'completed')
-                ->latest('updated_at')
-                ->get(['id', 'title', 'status', 'priority', 'due_date', 'last_progress_percent'])];
+        // Toutes les tâches en cours (sources assignables).
+        $tasks = Task::with('owner', 'assignees')
+            ->where('status', '!=', 'completed')
+            ->latest('updated_at')
+            ->get(['id', 'title', 'status', 'priority', 'due_date', 'last_progress_percent', 'owner_id']);
+
+        // Destinataires actuels par tâche (propriétaire + assignés pivot).
+        $taskHolders = $tasks->mapWithKeys(function ($task) {
+            $holders = collect([$task->owner_id])->filter()
+                ->merge($task->assignees->pluck('id'))
+                ->map(fn($k) => (int) $k)
+                ->unique()
+                ->values()
+                ->all();
+
+            return [$task->id => $holders];
         });
 
-        return view('tasks.assign', compact('producers', 'tasksByOwner'));
+        return view('tasks.assign', compact('producers', 'tasks', 'taskHolders'));
     }
 
     /**
-     * Crée et assigne une tâche à un producteur (admin/superviseur).
-     * Le producteur devient le propriétaire (owner_id), l'admin/superviseur
-     * est enregistré dans assigned_by. Le stage/étudiant du producteur est
-     * résolu automatiquement quand cela s'applique.
+     * Assignation / transfert d'une tâche (T-008) — ADMIN UNIQUEMENT.
+     *
+     * Mode "assign" (multi-personnes) :
+     *   - task_id + owner_ids[] → chaque personne est ajoutée comme ASSIGNÉE
+     *     (table pivot task_assignee). Une seule tâche reste dans le workspace ;
+     *   - chacun dépose ses propres rapports sur la tâche et discute dans le
+     *     même fil ; la progression affichée est agrégée des rapports de chacun ;
+     *   - notifications à chaque nouveau destinataire.
+     *
+     * Mode "transfer" (réassignation) :
+     *   - déplace une tâche existante d'une personne à une autre (contexte
+     *     stage/étudiant re-résolu, progression/statut conservés).
      */
     public function assign(Request $request)
     {
         $user = auth()->user();
 
-        abort_unless($user->hasAnyRole(['admin', 'superviseur']), 403);
-        abort_unless($user->can('tasks.assign'), 403);
+        $this->authorizeAssign($user);
 
+        $mode = $request->input('mode', 'assign');
+        if (!in_array($mode, ['assign', 'transfer'], true)) {
+            abort(422, 'Mode d\'assignation invalide.');
+        }
+
+        $owner = $task = null;
+
+        if ($mode === 'transfer') {
+            $payload = $request->validate([
+                'owner_id' => 'required|integer|exists:users,id',
+                'task_id'  => 'required|integer|exists:tasks,id',
+            ], [
+                'owner_id.required' => 'Veuillez sélectionner le nouveau propriétaire.',
+                'owner_id.exists'   => 'Le nouveau propriétaire est introuvable.',
+                'task_id.required'  => 'Veuillez sélectionner une tâche à transférer.',
+                'task_id.exists'    => 'La tâche sélectionnée est introuvable.',
+            ]);
+
+            $owner = User::findOrFail($payload['owner_id']);
+            $task = Task::findOrFail($payload['task_id']);
+
+            // La tâche doit être visible (admin : tout ; superviseur : stage supervisé).
+            abort_unless(Task::whereKey($task->getKey())->visibleTo($user)->exists(), 403);
+
+            if ($task->isCompleted()) {
+                abort(403, 'Impossible de transférer une tâche déjà terminée.');
+            }
+
+            $isTransfer = (int) $task->owner_id !== (int) $owner->id;
+            $previousOwnerId = (int) $task->owner_id;
+
+            if ($isTransfer || (int) $task->assigned_by !== (int) $user->id) {
+                // Transfert : l'ancien propriétaire quitte la tâche, la cible devient
+                // propriétaire et reste assignée.
+                $task->assignees()->detach($previousOwnerId);
+
+                [$stageId, $etudiantId] = $this->resolveStudentContext($owner);
+
+                $task->update([
+                    'owner_id'    => $owner->id,
+                    'assigned_by' => $user->id,
+                    'stage_id'    => $stageId,
+                    'etudiant_id' => $etudiantId,
+                ]);
+
+                $task->assignees()->syncWithoutDetaching([$owner->id]);
+
+                Activity::create([
+                    'user_id'     => $user->id,
+                    'action'      => $isTransfer ? 'Transfert tache' : 'Assignment tache',
+                    'description' => $isTransfer
+                        ? "Tache « {$task->title} » transferee a {$owner->name}"
+                        : "Tache « {$task->title} » assignee a {$owner->name}",
+                ]);
+
+                $url = encrypted_route('tasks.show', $task);
+
+                // Notification au nouveau propriétaire.
+                $this->notifications->push(
+                    $owner->id,
+                    'task_assigned',
+                    '📋 Nouvelle tâche assignée',
+                    $user->name . ' vous a ' . ($isTransfer ? 'transféré' : 'désigné') . ' « ' . Str::limit($task->title, 40) . ' » pour le travail à domicile',
+                    $url,
+                    'clipboard-list',
+                    'blue'
+                );
+
+                $this->emailService->notifyTaskCreated($task);
+
+                // Notification à l'ancien propriétaire (s'il existe et diffère).
+                if ($isTransfer && $previousOwnerId) {
+                    $this->notifications->push(
+                        $previousOwnerId,
+                        'task_unassigned',
+                        '↔️ Tâche réassignée',
+                        'La tâche « ' . Str::limit($task->title, 40) . ' » ne vous est plus attribuée',
+                        $url,
+                        'arrows-right-left',
+                        'amber'
+                    );
+                }
+            }
+
+            return redirect()
+                ->to(encrypted_route('tasks.show', $task))
+                ->with('success', 'Tâche « ' . $task->title . ' » ' . ($isTransfer ? 'transférée à ' : 'désignée à ') . $owner->name . '.');
+        }
+
+        // ── Mode "assign" : une tâche → plusieurs personnes (pivot) ──
         $payload = $request->validate([
-            'owner_id' => 'required|integer|exists:users,id',
-            'task_id'  => 'required|integer|exists:tasks,id',
+            'task_id'    => 'required|integer|exists:tasks,id',
+            'owner_ids'  => 'required|array|min:1',
+            'owner_ids.*' => 'required|integer|exists:users,id',
         ], [
-            'owner_id.required' => 'Veuillez sélectionner un producteur.',
-            'owner_id.exists'   => 'Le producteur sélectionné est introuvable.',
-            'task_id.required'  => 'Veuillez sélectionner une tâche à assigner.',
-            'task_id.exists'    => 'La tâche sélectionnée est introuvable.',
+            'task_id.required'   => 'Veuillez sélectionner une tâche à assigner.',
+            'task_id.exists'     => 'La tâche sélectionnée est introuvable.',
+            'owner_ids.required' => 'Sélectionnez au moins une personne.',
+            'owner_ids.min'      => 'Sélectionnez au moins une personne.',
+            'owner_ids.*.exists' => 'Une des personnes sélectionnées est introuvable.',
         ]);
 
-        $owner = User::findOrFail($payload['owner_id']);
         $task = Task::findOrFail($payload['task_id']);
-
-        // La tâche doit appartenir au producteur choisi et ne pas être terminée.
-        if ((int) $task->owner_id !== (int) $owner->id) {
-            abort(403, 'Cette tâche n\'appartient pas au producteur sélectionné.');
-        }
 
         if ($task->isCompleted()) {
             abort(403, 'Impossible d\'assigner une tâche déjà terminée.');
         }
 
-        // Désignation de la tâche existante (plus de création manuelle).
-        if ((int) $task->assigned_by !== (int) $user->id) {
-            $task->update(['assigned_by' => $user->id]);
+        $targets = User::whereIn('id', array_values(array_unique($payload['owner_ids'])))
+            ->get();
+
+        // Seuls les producteurs (étudiants/employés) ayant un profil sont reçus.
+        $targets = $targets->filter(fn($u) => $u->profil() !== null)
+            ->reject(fn($u) => $u->hasRole('admin'));
+
+        $created = [];
+        $skipped = [];
+
+        foreach ($targets as $target) {
+            if ($task->alreadyReceivedBy($target->id)) {
+                $skipped[] = $target->name;
+                continue;
+            }
+
+            $task->assignees()->attach($target->id, ['assigned_at' => now()]);
+            $created[] = $target->name;
 
             Activity::create([
                 'user_id'     => $user->id,
                 'action'      => 'Assignment tache',
-                'description' => "Tache « {$task->title} » assignee a {$owner->name}",
+                'description' => "Tache « {$task->title} » assignee a {$target->name}",
             ]);
 
-            // Notification au producteur.
-            $url = encrypted_route('tasks.show', $task);
             $this->notifications->push(
-                $owner->id,
+                $target->id,
                 'task_assigned',
                 '📋 Nouvelle tâche assignée',
-                $user->name . ' vous a désigné « ' . Str::limit($task->title, 40) . ' » pour le travail à domicile',
-                $url,
+                $user->name . ' vous a assigné « ' . Str::limit($task->title, 40) . ' » pour le travail à domicile',
+                encrypted_route('tasks.show', $task),
                 'clipboard-list',
                 'blue'
             );
@@ -116,9 +232,26 @@ public function index(Request $request)
             $this->emailService->notifyTaskCreated($task);
         }
 
+        $msg = '';
+        if (!empty($created)) {
+            $msg .= 'Tâche « ' . $task->title . ' » assignée à : ' . implode(', ', $created) . '.';
+        }
+        if (!empty($skipped)) {
+            $msg .= ($msg ? ' ' : '') . count($skipped) . ' personne(s) possède(nt) déjà cette tâche.';
+        }
+
         return redirect()
             ->to(encrypted_route('tasks.show', $task))
-            ->with('success', 'Tâche « ' . $task->title . ' » désignée à ' . $owner->name . '.');
+            ->with('success', $msg ?: 'Aucune nouvelle assignation.');
+    }
+
+    /**
+     * L'assignation de tâches est réservée à l'ADMIN (T-007).
+     */
+    protected function authorizeAssign(User $user): void
+    {
+        abort_unless($user->hasRole('admin'), 403);
+        abort_unless($user->can('tasks.assign'), 403);
     }
 
     public function store(Request $request)
@@ -245,13 +378,25 @@ public function index(Request $request)
 
         $todayReport = null;
         if ($selected) {
-            if ($selected->owner_id === $user->id) {
-                $todayReport = $selected->dailyReports
-                    ->first(fn($r) => $r->report_date->isToday());
-            }
+            // T-008 : chaque participant voit SON rapport du jour sur la tâche
+            // partagée (le rapport est rattaché à user_id).
+            $todayReport = $selected->dailyReports
+                ->first(fn($r) => $r->user_id === $user->id && $r->report_date->isToday());
         }
 
-        return compact('tasks', 'stats', 'status', 'selected', 'todayReport');
+        // T-008 — Groupe d'assignation : propriétaire + personnes assignées
+        // via la table pivot.
+        $group = collect();
+        if ($selected) {
+            $group = collect([$selected->owner])
+                ->filter()
+                ->merge($selected->assignees)
+                ->unique('id')
+                ->sortBy(fn($u) => $u->name)
+                ->values();
+        }
+
+        return compact('tasks', 'stats', 'status', 'selected', 'todayReport', 'group');
     }
 
     public function edit(Task $task)
@@ -360,18 +505,17 @@ public function index(Request $request)
             $message = $user->name . ' a validé « ' . Str::limit($task->title, 40) . ' »';
         }
 
-        if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
-            $this->notifications->push(
-                (int) $task->owner_id,
-                'task_review',
-                $title,
-                $message,
-                encrypted_route('tasks.show', $task),
-                'clipboard-check',
-                $data['action'] === 'request_changes' ? 'amber' : 'green'
-            );
+        $this->notifyParticipants(
+            $task,
+            'task_review',
+            $title,
+            $message,
+            'clipboard-check',
+            $data['action'] === 'request_changes' ? 'amber' : 'green'
+        );
 
-            // Notification email
+        // Notification email
+        if ($task->owner && (int) $task->owner->id !== (int) $user->id) {
             $this->emailService->notifyTaskReviewed($task, $user, $data['action'], $data['comment'] ?? null);
         }
 
@@ -414,17 +558,14 @@ public function index(Request $request)
                     . (!empty($data['comment']) ? ' — ' . $data['comment'] : ''),
             ]);
 
-            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
-                $this->notifications->push(
-                    (int) $task->owner_id,
-                    'task_completed',
-                    '✅ Tâche validée',
-                    $user->name . ' a clôturé « ' . Str::limit($task->title, 40) . ' »',
-                    encrypted_route('tasks.show', $task),
-                    'check-circle',
-                    'green'
-                );
-            }
+            $this->notifyParticipants(
+                $task,
+                'task_completed',
+                '✅ Tâche validée',
+                $user->name . ' a clôturé « ' . Str::limit($task->title, 40) . ' »',
+                'check-circle',
+                'green'
+            );
         }
 
         return back()->with('success', 'Tâche clôturée.');
@@ -459,17 +600,14 @@ public function index(Request $request)
                 'description' => '🔓 Tâche « ' . Str::limit($task->title, 40) . ' » rouverte par ' . $user->name . '.',
             ]);
 
-            if ($task->owner_id && (int) $task->owner_id !== (int) $user->id) {
-                $this->notifications->push(
-                    (int) $task->owner_id,
-                    'task_reopened',
-                    '🔓 Tâche rouverte',
-                    $user->name . ' a rouvert « ' . Str::limit($task->title, 40) . ' »',
-                    encrypted_route('tasks.show', $task),
-                    'lock-open',
-                    'amber'
-                );
-            }
+            $this->notifyParticipants(
+                $task,
+                'task_reopened',
+                '🔓 Tâche rouverte',
+                $user->name . ' a rouvert « ' . Str::limit($task->title, 40) . ' »',
+                'lock-open',
+                'amber'
+            );
         }
 
         return back()->with('success', 'Discussion rouverte.');
@@ -483,6 +621,37 @@ public function index(Request $request)
     protected function authorizeOwner(Task $task): void
     {
         abort_unless($task->owner_id === auth()->id(), 403);
+    }
+
+    /**
+     * T-008 — Notifie TOUS les participants de la tâche (propriétaire +
+     * assignés pivot), sauf l'auteur de l'action.
+     */
+    protected function notifyParticipants(
+        Task $task,
+        string $type,
+        string $title,
+        string $message,
+        string $icon,
+        string $color
+    ): void {
+        $recipients = collect([$task->owner_id])
+            ->merge($task->assignees->pluck('id'))
+            ->filter()
+            ->unique()
+            ->reject(fn($id) => (int) $id === (int) auth()->id());
+
+        $url = encrypted_route('tasks.show', $task);
+
+        $recipients->each(fn($id) => $this->notifications->push(
+            (int) $id,
+            $type,
+            $title,
+            $message,
+            $url,
+            $icon,
+            $color
+        ));
     }
 
     protected function resolveStudentContext($user): array

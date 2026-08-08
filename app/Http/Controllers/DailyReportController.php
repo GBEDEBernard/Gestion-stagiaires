@@ -38,8 +38,10 @@ class DailyReportController extends Controller
             ? $this->dailyReportService->resolveActiveStageForUser($user)
             : null;
 
-        // Tâches actives du producteur (pour sélecteur dans le formulaire).
-        $activeTasks = Task::where('owner_id', $user->id)
+        // Tâches actives du producteur (pour sélecteur dans le formulaire) :
+        // propriétaire OU assigné (T-008).
+        $activeTasks = Task::query()
+            ->visibleTo($user)
             ->where('status', '!=', 'completed')
             ->latest()
             ->get(['id', 'title', 'last_progress_percent']);
@@ -137,7 +139,8 @@ class DailyReportController extends Controller
 
         $report->load(['task', 'reviews']);
 
-        $activeTasks = Task::where('owner_id', $user->id)
+        $activeTasks = Task::query()
+            ->visibleTo($user)
             ->where(fn($q) => $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id))
             ->latest()
             ->get(['id', 'title', 'last_progress_percent']);
@@ -198,7 +201,7 @@ class DailyReportController extends Controller
         // Répercuter la progression sur la tâche si rattachée.
         if (!empty($data['task_id'])) {
             $task = Task::find($data['task_id']);
-            if ($task && $task->owner_id === $user->id && $task->status !== 'completed') {
+            if ($task && $task->isParticipant($user->id) && $task->status !== 'completed') {
                 $report->forceFill([
                     'task_id'              => $task->id,
                     'task_progress_percent'=> $data['task_progress_percent'] ?? $task->last_progress_percent,
@@ -280,13 +283,17 @@ class DailyReportController extends Controller
         $url = $task ? encrypted_route('tasks.show', $task) : null;
 
         if ($user->hasAnyRole(['admin', 'superviseur'])) {
-            $recipients = collect();
+            // T-008 : notifier l'auteur du rapport + tous les participants
+            // de la tâche partagée (sauf le commentateur).
+            $recipients = collect([$report->user_id, $report->etudiant_id]);
 
-            if ($task && $task->owner_id && (int) $task->owner_id !== (int) $user->id) {
-                $recipients->push((int) $task->owner_id);
+            if ($task) {
+                $recipients = $recipients->merge([$task->owner_id])
+                    ->merge($task->assignees->pluck('id'));
             }
 
-            $recipients->unique()
+            $recipients->filter()
+                ->unique()
                 ->reject(fn($id) => (int) $id === (int) $user->id)
                 ->each(fn($id) => $this->notifications->push(
                     (int) $id,

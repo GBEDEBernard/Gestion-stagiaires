@@ -64,6 +64,13 @@ class Task extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /** T-008 : toutes les personnes assignées à cette tâche (N ↦ N). */
+    public function assignees()
+    {
+        return $this->belongsToMany(User::class, 'task_assignee', 'task_id', 'user_id')
+            ->withPivot('assigned_at');
+    }
+
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');
@@ -125,6 +132,25 @@ class Task extends Model
     }
 
     /**
+     * T-008 — Un utilisateur est-il participant de la tâche ?
+     * (propriétaire ou assigné via la table pivot).
+     */
+    public function isParticipant(int $userId): bool
+    {
+        return (int) $this->owner_id === $userId
+            || $this->assignees()->whereKey($userId)->exists();
+    }
+
+    /**
+     * Un utilisateur reçoit-il déjà cette tâche (propriétaire ou assigné) ?
+     * Utilisé pour dédupliquer les assignations multi-personnes.
+     */
+    public function alreadyReceivedBy(int $userId): bool
+    {
+        return $this->isParticipant($userId);
+    }
+
+    /**
      * État de la discussion (T-005) :
      *  - 'locked' : tâche créée mais aucun rapport encore → discussion pas ouverte.
      *  - 'closed' : tâche clôturée par l'admin → lecture seule (réouvrable).
@@ -168,7 +194,11 @@ class Task extends Model
             });
         }
 
-        // 👨‍🎓 / 👨‍🔧 PRODUCTEUR (étudiant ou employé) : uniquement ses tâches.
-        return $query->where('owner_id', $user->id);
+        // 👨‍🎓 / 👨‍🔧 PRODUCTEUR (étudiant ou employé) : uniquement ses tâches,
+        //    en tant que propriétaire OU que personne assignée (T-008).
+        return $query->where(function ($q) use ($user) {
+            $q->where('owner_id', $user->id)
+                ->orWhereHas('assignees', fn($a) => $a->whereKey($user->id));
+        });
     }
 }

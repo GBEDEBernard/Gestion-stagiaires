@@ -140,7 +140,18 @@ class DailyReport extends Model
         }
 
         if ($user->hasRole('etudiant')) {
-            return $query->where('etudiant_id', optional($user->etudiant)->id);
+            // T-008 : ses propres rapports (par son profil étudiant), plus ceux
+            // qu'il a déposés sur une tâche où il est assigné (user_id renseigné).
+            $etudiantId = optional($user->etudiant)->id;
+
+            return $query->where(function ($q) use ($user, $etudiantId) {
+                $q->where('etudiant_id', $etudiantId);
+                if ($etudiantId) {
+                    $q->orWhere(
+                        fn($r) => $r->where('user_id', $user->id)->whereNotNull('task_id')
+                    );
+                }
+            });
         }
 
         return $query->where('user_id', $user->id);

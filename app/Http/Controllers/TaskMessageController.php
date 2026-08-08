@@ -162,31 +162,54 @@ class TaskMessageController extends Controller
     }
 
     /**
-     * Notifie « l'autre partie » : si l'auteur est un relecteur → le producteur ;
-     * si l'auteur est le producteur → superviseur + admins.
+     * Notifie « les autres parties » :
+     * - auteur = relecteur (admin/superviseur) → propriétaire + tous les assignés ;
+     * - auteur = participant (propriétaire ou assigné) → autres participants + superviseur + admins.
      */
     protected function notifyOtherParty(Task $task, User $author, string $body): void
     {
         $url = encrypted_route('tasks.show', $task);
         $extract = Str::limit($body, 60);
-        $isReviewer = $author->hasAnyRole(['admin', 'superviseur']) && $task->owner_id !== $author->id;
+
+        // T-008 : participants = propriétaire + assignés pivot.
+        $participants = collect([$task->owner_id])
+            ->merge($task->assignees->pluck('id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $isReviewer = $author->hasAnyRole(['admin', 'superviseur']) && !$participants->contains((int) $author->id);
 
         if ($isReviewer) {
-            if ($task->owner_id && (int) $task->owner_id !== (int) $author->id) {
-                $this->notifications->push(
-                    (int) $task->owner_id,
+            // L'auteur est admin/superviseur → notifier tous les participants.
+            $participants
+                ->reject(fn($id) => (int) $id === (int) $author->id)
+                ->each(fn($id) => $this->notifications->push(
+                    (int) $id,
                     'task_message',
                     '💬 Réponse sur votre tâche',
                     $author->name . ' : ' . $extract,
                     $url,
                     'chat',
                     'indigo'
-                );
-            }
+                ));
             return;
         }
 
-        // L'auteur est le producteur → notifier superviseur + admins.
+        // L'auteur est un participant → notifier les autres participants…
+        $participants
+            ->reject(fn($id) => (int) $id === (int) $author->id)
+            ->each(fn($id) => $this->notifications->push(
+                (int) $id,
+                'task_message',
+                '💬 Nouveau message',
+                $author->name . ' : ' . $extract,
+                $url,
+                'chat',
+                'indigo'
+            ));
+
+        // … ainsi que le superviseur du stage et les admins.
         $recipients = collect();
 
         if ($task->stage && $task->stage->supervisor_id) {
@@ -196,6 +219,7 @@ class TaskMessageController extends Controller
         User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
 
         $recipients->unique()
+            ->merge($participants)
             ->reject(fn($id) => (int) $id === (int) $author->id)
             ->each(fn($id) => $this->notifications->push(
                 (int) $id,
