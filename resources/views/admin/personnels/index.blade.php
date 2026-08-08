@@ -112,16 +112,13 @@
                             </td>
                             <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                 @if(!$personnel->user)
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ route('personnels.generate-account', $personnel) }}')">
+                                <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ route('personnels.generate-account', $personnel) }}', 'generate')">
                                     Générer compte
                                 </button>
                                 @else
-                                <form action="{{ route('personnels.generate-account', $personnel) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition">
-                                        Renvoyer email
-                                    </button>
-                                </form>
+                                <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ route('personnels.generate-account', $personnel) }}', 'resend')">
+                                    Renvoyer email
+                                </button>
                                 @endif
                                 <a href="{{ route('personnels.show', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
                                     <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,8 +158,8 @@
     {{-- Modal pour mot de passe personnalisé --}}
     <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
-            <p class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
+            <h2 id="passwordModalTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
+            <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
             <form id="passwordForm" method="POST" action="">
                 @csrf
                 <div class="mb-6">
@@ -171,17 +168,24 @@
                 </div>
                 <div class="flex gap-3">
                     <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
-                    <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
+                    <button type="submit" id="passwordSubmitBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        function openPasswordModal(personnelId, actionUrl) {
+        function openPasswordModal(personnelId, actionUrl, mode = 'generate') {
             document.getElementById('passwordModal').classList.remove('hidden');
             document.getElementById('passwordForm').action = actionUrl;
             document.getElementById('customPassword').value = '';
+
+            var resend = mode === 'resend';
+            document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'email d'activation" : 'Générer un compte';
+            document.getElementById('passwordModalDescription').textContent = resend
+                ? "Un compte existe déjà pour ce personnel. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
+                : "Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.";
+            document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
         }
 
         function closePasswordModal() {

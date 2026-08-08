@@ -75,7 +75,7 @@ class AccountGenerationService
         return $this->lastProvisioningEmailSent;
     }
 
-    public function resendProvisioningEmail(Personnel $personnel): User
+    public function resendProvisioningEmail(Personnel $personnel, ?string $customPassword = null): User
     {
         $user = $personnel->user;
 
@@ -84,7 +84,17 @@ class AccountGenerationService
         }
 
         $this->syncAccountIdentity($user, $personnel);
-        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel);
+
+        $tempPassword = $this->normalizePassword($customPassword);
+        if ($tempPassword !== null) {
+            $user->forceFill([
+                'password'                      => Hash::make($tempPassword),
+                'must_change_password'          => true,
+                'temporary_password_created_at' => now(),
+            ])->save();
+        }
+
+        $this->lastProvisioningEmailSent = $this->sendProvisioningEmail($user, $personnel, $tempPassword);
 
         try {
             Log::info('account.provisioning_email_resent', [

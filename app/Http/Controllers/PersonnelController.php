@@ -365,7 +365,7 @@ class PersonnelController extends Controller
     public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
     {
         if ($personnel->user) {
-            $service->resendProvisioningEmail($personnel);
+            $service->resendProvisioningEmail($personnel, $request->input('custom_password'));
             if (!$service->lastProvisioningEmailSent()) {
                 return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
             }
