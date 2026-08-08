@@ -136,7 +136,7 @@ class DashboardController extends Controller
         // Stages upcoming (à venir dans les 7 prochains jours)
         $stagesUpcoming = Stage::whereDate('date_debut', '>', $today)
             ->whereDate('date_debut', '<=', $today->copy()->addDays(7))
-            ->with(['etudiant', 'service'])
+            ->with(['etudiant', 'domaine'])
             ->orderBy('date_debut')
             ->take(5)
             ->get();
