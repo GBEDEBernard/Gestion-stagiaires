@@ -14,7 +14,7 @@ Veuillez trouver ci-dessous vos identifiants de connexion :
 @component('mail::table')
 | | |
 |:---|---|
-| **Lien de connexion** | [https://espace.tfgbusiness.com](https://espace.tfgbusiness.com) |
+| **Lien de connexion** | [https://presence.tfgbusiness.com](https://presence.tfgbusiness.com) |
 | **Identifiant** | `{{ $email }}` |
 @if($password)
 | **Mot de passe** | `{{ $password }}` |
