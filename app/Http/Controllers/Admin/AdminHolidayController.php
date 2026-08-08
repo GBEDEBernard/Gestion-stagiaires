@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\EmergencyCallMail;
+use App\Mail\HolidayPublishedMail;
 use App\Models\Holiday;
 use App\Models\HolidayEmergencyExemption;
 use App\Models\User;
@@ -19,8 +20,25 @@ class AdminHolidayController extends Controller
 
     public function index()
     {
-        $holidays = Holiday::with('creator')->orderBy('date', 'desc')->paginate(20);
-        return view('admin.holidays.index', compact('holidays'));
+        $holidays = Holiday::with('creator', 'exemptions.user')
+            ->withCount('exemptions')
+            ->orderBy('date', 'desc')
+            ->paginate(20);
+
+        $activeUsersCount = User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['employe', 'etudiant', 'fonctionnaire']);
+        })->where('status', 'actif')->count();
+
+        $exemptionsByHoliday = $holidays->mapWithKeys(function ($holiday) {
+            return [$holiday->id => $holiday->exemptions->map(fn($e) => [
+                'id' => $e->id,
+                'name' => $e->user?->name ?? 'Utilisateur supprimé',
+                'email' => $e->user?->email ?? '',
+                'message' => $e->message ?? '',
+            ])];
+        });
+
+        return view('admin.holidays.index', compact('holidays', 'activeUsersCount', 'exemptionsByHoliday'));
     }
 
     public function create()
@@ -89,7 +107,7 @@ class AdminHolidayController extends Controller
             ->with('success', "Jour férié « {$holiday->label} » {$status}.");
     }
 
-    public function notify(Holiday $holiday)
+    public function notify(Request $request, Holiday $holiday)
     {
         if (!$holiday->is_active) {
             return redirect()->route('admin.holidays.index')
@@ -101,7 +119,35 @@ class AdminHolidayController extends Controller
         $holiday->save();
 
         return redirect()->route('admin.holidays.index')
-            ->with('success', 'Notification renvoyée à tous les employés.');
+            ->with('success', 'Notification publiée et envoyée à tous les utilisateurs actifs (email + in-app).');
+    }
+
+    /**
+     * Révoque une autorisation d'urgence déjà accordée.
+     */
+    public function revokeExemption(HolidayEmergencyExemption $exemption)
+    {
+        $user = $exemption->user;
+        $holiday = $exemption->holiday;
+
+        $exemption->delete();
+
+        if ($user) {
+            $formattedDate = $holiday->date->locale('fr')->isoFormat('dddd D MMMM YYYY');
+            $this->notificationService->push(
+                userId: $user->id,
+                type: 'urgence_jour_ferie',
+                title: '❌ Appel d\'urgence annulé',
+                message: "Votre appel d'urgence du {$formattedDate} ({$holiday->label}) a été annulé. Vous ne devez plus vous présenter ce jour-là.",
+                url: route('presence.pointage'),
+                icon: 'x-circle',
+                color: 'gray'
+            );
+        }
+
+        $revokedName = $user?->name ?? 'l\'utilisateur';
+        return redirect()->route('admin.holidays.index')
+            ->with('success', "Autorisation d'urgence révoquée pour $revokedName.");
     }
 
     public function emergencyCall(Request $request, Holiday $holiday)
@@ -208,7 +254,9 @@ class AdminHolidayController extends Controller
     {
         $users = User::whereHas('roles', function ($q) {
             $q->whereIn('name', ['employe', 'etudiant', 'fonctionnaire']);
-        })->get();
+        })
+            ->where('status', 'actif')
+            ->get();
 
         $formattedDate = $holiday->date->locale('fr')->isoFormat('dddd D MMMM YYYY');
 
@@ -224,6 +272,9 @@ class AdminHolidayController extends Controller
                 icon: 'calendar',
                 color: 'purple'
             );
+
+            Mail::to($user->getEmailForVerification())
+                ->send(new HolidayPublishedMail($user, $holiday));
         }
     }
 }

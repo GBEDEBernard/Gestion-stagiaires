@@ -91,6 +91,15 @@ test('student role sees the student history and report spaces', function () {
 test('employee role can open reports with creation and permissions', function () {
     $user = createPersonnelFlowUser('employe');
 
+    // Le pointage du jour est requis avant d'accéder au site.
+    \App\Models\AttendanceDay::create([
+        'user_id' => $user->id,
+        'attendance_date' => today()->toDateString(),
+        'first_check_in_at' => now(),
+        'day_status' => 'present',
+        'validation_status' => 'auto_approuve',
+    ]);
+
     $this->actingAs($user)->get('/reports')
         ->assertOk()
         ->assertSee('Nouveau rapport')

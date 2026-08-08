@@ -142,7 +142,18 @@
                                 Notifié
                             </span>
                             @else
-                            <span class="text-xs text-gray-900 font-bold dark:text-white">Notifié</span>
+                            <span class="text-xs font-medium text-slate-400 dark:text-slate-500">Non notifié</span>
+                            @endif
+
+                            @if(($holiday->exemptions_count ?? 0) > 0)
+                            <div class="mt-1">
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
+                                    {{ $holiday->exemptions_count }} appelé(s)
+                                </span>
+                            </div>
                             @endif
                         </td>
 
@@ -173,14 +184,17 @@
                                 @endcan
 
                                 @can('holidays.toggle')
-                                @if($holiday->is_active && !$holiday->notified)
-                                <a href="{{ route('admin.holidays.notify', $holiday) }}"
-                                   title="Notifier les employés"
-                                   class="p-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                    </svg>
-                                </a>
+                                @if($holiday->is_active)
+                                <form method="POST" action="{{ route('admin.holidays.notify.post', $holiday) }}" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            title="{{ $holiday->notified ? 'Renvoyer la notification' : 'Publier la notification à tous les utilisateurs actifs' }}"
+                                            class="p-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                        </svg>
+                                    </button>
+                                </form>
                                 @endif
                                 @endcan
 
@@ -304,16 +318,19 @@
                     @endcan
 
                     @can('holidays.toggle')
-                    @if($holiday->is_active && !$holiday->notified)
-                    <a href="{{ route('admin.holidays.notify', $holiday) }}"
-                       class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg
-                              text-xs font-medium text-blue-600 dark:text-blue-400
-                              bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                        Notifier
-                    </a>
+                    @if($holiday->is_active)
+                    <form method="POST" action="{{ route('admin.holidays.notify.post', $holiday) }}" class="flex-1">
+                        @csrf
+                        <button type="submit"
+                                class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg
+                                       text-xs font-medium text-blue-600 dark:text-blue-400
+                                       bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            {{ $holiday->notified ? 'Renvoyer' : 'Publier' }}
+                        </button>
+                    </form>
                     @endif
                     @endcan
 
@@ -467,6 +484,20 @@
                                          focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
                                          transition"></textarea>
                     </div>
+
+                    {{-- Personnes déjà appelées --}}
+                    <div id="alreadyCalledSection" class="hidden">
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                                Déjà appelés en urgence
+                            </span>
+                            <span id="alreadyCalledCount" class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-xs font-bold text-red-700 dark:text-red-400"></span>
+                        </div>
+                        <div id="alreadyCalledList" class="space-y-1.5"></div>
+                    </div>
                 </div>
 
                 {{-- Pied modal --}}
@@ -507,6 +538,10 @@
 <script>
     let allUsers    = [];
     let currentFilter = 'all';
+    let currentExemptions = [];
+
+    /* ── Exemptions par jour férié (sérialisées depuis le serveur) ── */
+    const holidayExemptions = @json($exemptionsByHoliday);
 
     /* ── Ouvrir / fermer ──────────────────────── */
     function openEmergencyModal(holidayId, label, date) {
@@ -518,6 +553,8 @@
         document.getElementById('emergencyForm').action = `/admin/holidays/${holidayId}/emergency-call`;
         document.getElementById('emergencyModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+        currentExemptions = holidayExemptions[holidayId] || [];
+        renderAlreadyCalled();
         loadUsers();
     }
 
@@ -530,6 +567,51 @@
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeEmergencyModal();
     });
+
+    /* ── Rendu des personnes déjà appelées ────── */
+    function renderAlreadyCalled() {
+        const section = document.getElementById('alreadyCalledSection');
+        const list    = document.getElementById('alreadyCalledList');
+        const count   = document.getElementById('alreadyCalledCount');
+
+        count.textContent = currentExemptions.length;
+
+        if (!currentExemptions.length) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        list.innerHTML = currentExemptions.map(e => `
+            <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-red-50/60 dark:bg-red-900/15 border border-red-100 dark:border-red-800/50">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white truncate">${esc(e.name)}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        ${esc(e.email)}${e.message ? ' — ' + esc(e.message) : ''}
+                    </p>
+                </div>
+                <form method="POST" action="/admin/holidays/exemptions/${e.id}" onsubmit="return confirm('Révoquer cette autorisation d\\'urgence ?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" title="Révoquer l'appel"
+                            class="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium
+                                   text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30
+                                   hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Retirer
+                    </button>
+                </form>
+            </div>
+        `).join('');
+    }
+
+    function esc(v) {
+        const div = document.createElement('div');
+        div.textContent = v ?? '';
+        return div.innerHTML;
+    }
 
     /* ── Chargement des utilisateurs ─────────── */
     function loadUsers() {

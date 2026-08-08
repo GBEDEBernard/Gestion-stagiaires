@@ -83,6 +83,10 @@ if ($entity === 'tasks' && !in_array($action, ['view', 'create', 'edit', 'delete
         // Permission spéciale pour les signataires d'attestation
         Permission::firstOrCreate(['name' => 'signer_attestation']);
 
+        // Permissions spécifiques aux jours fériés (non générées par le cycle d'actions ci-dessus)
+        Permission::firstOrCreate(['name' => 'holidays.toggle']);
+        Permission::firstOrCreate(['name' => 'holidays.bypass']);
+
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $employeRole = Role::firstOrCreate(['name' => 'employe']);
         $supervisorRole = Role::firstOrCreate(['name' => 'superviseur']);
