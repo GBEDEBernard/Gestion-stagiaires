@@ -81,16 +81,18 @@
                     {{-- Avatars des participants --}}
                     <div class="relative flex shrink-0">
                         <template x-for="(r, i) in recipients.slice(0,3)" :key="r.id">
-                            <template x-if="r.avatar_url">
-                                <img :src="r.avatar_url" :alt="r.name" :title="r.name"
-                                     class="h-9 w-9 rounded-full border-2 border-white object-cover"
-                                     :style="'margin-left:'+(i===0?'0':'')+'-10px'">
-                            </template>
-                            <template x-else>
-                                <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white"
-                                      :style="('background:'+avatarColor(r.name))+((i===0)?'':'margin-left:-10px')"
-                                      x-text="r.initials"></span>
-                            </template>
+                            <span class="contents">
+                                <template x-if="r.avatar_url">
+                                    <img :src="r.avatar_url" :alt="r.name" :title="r.name"
+                                         class="h-9 w-9 rounded-full border-2 border-white object-cover"
+                                         :style="'margin-left:'+(i===0?'0':'')+'-10px'">
+                                </template>
+                                <template x-else>
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white"
+                                          :style="('background:'+avatarColor(r.name))+((i===0)?'':'margin-left:-10px')"
+                                          x-text="r.initials"></span>
+                                </template>
+                            </span>
                         </template>
                         <template x-if="recipients.length > 3">
                             <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[11px] font-bold text-slate-500"

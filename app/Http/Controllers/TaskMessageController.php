@@ -102,7 +102,12 @@ class TaskMessageController extends Controller
 
         $this->notifyOtherParty($task, $user, $sendableText);
 
-        broadcast(new TaskMessageCreated($message, $task))->toOthers();
+        // Serveur WebSocket (soketi) indisponible → le polling de secours prend le relais.
+        try {
+            broadcast(new TaskMessageCreated($message, $task))->toOthers();
+        } catch (\Throwable $e) {
+            // Ignoré volontairement.
+        }
 
         if ($this->wantsJson($request)) {
             $message->load(['user', 'parent.user', 'dailyReport', 'reactions']);
@@ -133,7 +138,13 @@ class TaskMessageController extends Controller
 
         if ($upTo) {
             $this->touchRead($task, $user->id, (int) $upTo);
-            broadcast(new TaskMessageRead($task, $user->id, (int) $upTo, now()->toIso8601String()))->toOthers();
+
+            // Serveur WebSocket indisponible → le polling de secours prend le relais.
+            try {
+                broadcast(new TaskMessageRead($task, $user->id, (int) $upTo, now()->toIso8601String()))->toOthers();
+            } catch (\Throwable $e) {
+                // Ignoré volontairement.
+            }
         }
 
         return response()->json(['ok' => true, 'last_read_message_id' => $upTo]);
