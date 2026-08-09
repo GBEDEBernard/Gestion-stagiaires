@@ -1,5 +1,5 @@
 <x-mail::message>
-# {{ $greeting }} {{ $recipientCivilite }} {{ $recipientName }},
+# {{ $greeting }}@if($recipientCivilite) {{ $recipientCivilite }}@endif {{ $recipientName }},
 
 **{{ $reviewer->name }}** a révisé votre tâche **{{ $task->title }}**.
 

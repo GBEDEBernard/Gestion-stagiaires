@@ -50,9 +50,9 @@ final class NotificationGreeting
         $genre = $user?->personnel?->genre;
         $civility = self::civilityFromGenre($genre);
 
-        // Fallback : si le genre est inconnu
+        // Fallback : genre inconnu → pas de civilité (le nom seul suffit)
         if ($civility === 'Bonjour') {
-            return 'Cher/Chère';
+            return '';
         }
 
         return $civility;

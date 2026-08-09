@@ -1,5 +1,5 @@
 <x-mail::message>
-# {{ $greeting }} {{ $recipientCivilite }} {{ $recipientName }},
+# {{ $greeting }}@if($recipientCivilite) {{ $recipientCivilite }}@endif {{ $recipientName }},
 
 Une nouvelle tâche a été créée par **{{ $task->owner->name }}**.
 

@@ -1,5 +1,5 @@
 @component('mail::message')
-Bonjour @if($civility && $civility !== 'Cher/Chère')**{{ $civility }}** @endif**{{ $fullName }}**,
+Bonjour @if($civility)**{{ $civility }}** @endif**{{ $fullName }}**,
 
 Dans le cadre de l'amélioration du suivi de la présence et des activités au sein de **TECHNOLOGY FOREVER GROUP**, nous mettons à votre disposition une plateforme dédiée qui vous permettra de :
 
