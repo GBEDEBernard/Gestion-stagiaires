@@ -1,4 +1,10 @@
 <x-app-layout>
+@php
+    // Garde anti-erreur : les variables sont toujours définies même si le
+    // bloc de calcul plus bas ne s'exécute pas (versions, fiche sans employé…)
+    $currentSiteId ??= null;
+    $currentDomaineId ??= null;
+@endphp
 <style>
     /* ── Token system (identique à create) ── */
     :root {
@@ -398,6 +404,7 @@
                 $employeData = optional($personnel->personnable);
                 $currentSiteId = old('site_id', $employeData->site_id);
                 $currentDomaineId = old('domaine_id', $employeData->domaine_id);
+                dd($sites)
             @endphp
             <div id="employe-fields" class="pc-section {{ $type !== 'employe' ? 'hidden' : '' }}">
                 <div class="pc-sub">
@@ -408,7 +415,7 @@
                             <select name="site_id" id="site_id" class="pc-select">
                                 <option value="">— Sélectionner un site —</option>
                                 @foreach($sites as $site)
-                                <option value="{{ $site->id }}" {{ old('site_id', $currentSiteId) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                                <option value="{{ $personnel->site_id }}" {{ old('site_id', $personnel->site_id) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
                                 @endforeach
                             </select>
                             @error('site_id')<p class="pc-field-error">{{ $message }}</p>@enderror
