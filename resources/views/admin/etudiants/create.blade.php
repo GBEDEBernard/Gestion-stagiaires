@@ -55,8 +55,8 @@
                         @error('telephone') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="ecole" class="block text-sm font-medium text-gray-700 mb-2">École <span class="text-red-500">*</span></label>
-                        <input type="text" name="ecole" id="ecole" value="{{ old('ecole') }}" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                        <label for="ecole" class="block text-sm font-medium text-gray-700 mb-2">École</label>
+                        <input type="text" name="ecole" id="ecole" value="{{ old('ecole') }}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
                         @error('ecole') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>
                 </div>

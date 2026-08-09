@@ -31,7 +31,7 @@ class EtudiantController extends Controller
             'email'    => 'required|email|unique:personnels,email',
             'telephone' => 'nullable|string|max:20',
             'genre'    => 'nullable|string|max:50',
-            'ecole'    => 'required|string|max:255',
+            'ecole'    => 'nullable|string|max:255',
         ]);
 
         $etudiant = Etudiant::create([
@@ -96,7 +96,7 @@ class EtudiantController extends Controller
             'email'    => ['required', 'email', Rule::unique('personnels', 'email')->ignore($personnel->id)],
             'telephone' => 'nullable|string|max:20',
             'genre'    => 'nullable|string|max:50',
-            'ecole'    => 'required|string|max:255',
+            'ecole'    => 'nullable|string|max:255',
         ]);
 
         $personnel->update([

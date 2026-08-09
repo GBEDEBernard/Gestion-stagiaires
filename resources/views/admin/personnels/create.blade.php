@@ -145,6 +145,16 @@
         .pc-grid .col-span-2 { grid-column: span 2; }
     }
 
+    /* ── Grid 3 colonnes (dates + durée) ── */
+    .pc-grid-3 {
+        display: grid;
+        gap: 1.1rem;
+        grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px) {
+        .pc-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    }
+
     /* ── Field ── */
     .pc-field label {
         display: block;
@@ -198,6 +208,11 @@
         margin-top: .35rem;
         font-size: .77rem;
         color: var(--danger);
+    }
+    .pc-hint {
+        margin-top: .3rem;
+        font-size: .77rem;
+        color: var(--muted);
     }
 
     /* ── Type selector pill tabs ── */
@@ -503,7 +518,7 @@
                 <p class="pc-sub-title">Informations étudiant</p>
                 <div class="pc-grid">
                     <div class="pc-field">
-                        <label>École / Université <span class="req">*</span></label>
+                        <label>École / Université</label>
                         <input type="text" name="ecole" value="{{ old('ecole') }}" class="pc-input" placeholder="ex : UAC, EPAC…">
                         @error('ecole')<p class="pc-field-error">{{ $message }}</p>@enderror
                     </div>
@@ -632,14 +647,19 @@
                 <input type="text" name="theme" class="pc-input" placeholder="ex : Développement web, Data analyse…">
             </div>
 
-            <div class="pc-grid">
+            <div class="pc-grid-3">
                 <div class="pc-field">
                     <label>Date de début <span class="req">*</span></label>
-                    <input type="date" name="date_debut" required class="pc-input">
+                    <input type="date" name="date_debut" id="date_debut_modal" required class="pc-input" onchange="calculerFinStage()">
+                </div>
+                <div class="pc-field">
+                    <label>Nombre de mois <span class="req">*</span></label>
+                    <input type="number" name="nombre_mois" id="nombre_mois_modal" min="1" max="24" required class="pc-input" placeholder="Ex: 3" oninput="calculerFinStage()">
                 </div>
                 <div class="pc-field">
                     <label>Date de fin <span class="req">*</span></label>
-                    <input type="date" name="date_fin" required class="pc-input">
+                    <input type="date" name="date_fin" id="date_fin_modal" required class="pc-input" placeholder="Calculée automatiquement">
+                    <p class="pc-hint">Calculée automatiquement</p>
                 </div>
             </div>
 
@@ -674,6 +694,23 @@
     const domainesParSite  = @json($domainesParSite);
     const defaultSiteId    = @json(old('site_id', ''));
     const defaultDomaineId = @json(old('domaine_id', ''));
+
+    /* ── Modal stage : durée en mois → date de fin auto ── */
+    function calculerFinStage() {
+        const debut = document.getElementById('date_debut_modal');
+        const mois  = document.getElementById('nombre_mois_modal');
+        const fin   = document.getElementById('date_fin_modal');
+        if (debut && mois && fin && debut.value && mois.value && parseInt(mois.value) > 0) {
+            const d = new Date(debut.value);
+            d.setMonth(d.getMonth() + parseInt(mois.value));
+            d.setDate(d.getDate() - 1);
+            fin.value = d.toISOString().split('T')[0];
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        calculerFinStage();
+    });
 
     function setType(value) {
         const realSelect  = document.getElementById('type-select');

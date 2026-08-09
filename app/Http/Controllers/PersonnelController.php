@@ -141,7 +141,7 @@ class PersonnelController extends Controller
         $data = $request->validate($baseRules);
 
         if ($data['type'] === 'etudiant') {
-            $typeRules = ['ecole' => 'required|string|max:255'];
+            $typeRules = ['ecole' => 'nullable|string|max:255'];
         } else {
             // Suppression de 'matricule'
             $typeRules = [
