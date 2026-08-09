@@ -9,7 +9,6 @@ use App\Models\TaskMessage;
 use App\Models\TaskRead;
 use App\Models\User;
 use App\Services\NotificationService;
-use App\Services\EmailNotificationService;
 use App\Services\TaskThreadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,7 +17,6 @@ class TaskMessageController extends Controller
 {
     public function __construct(
         protected NotificationService $notifications,
-        protected EmailNotificationService $emailService,
         protected TaskThreadService $thread
     ) {}
 
@@ -58,26 +56,51 @@ class TaskMessageController extends Controller
         }
 
         $data = $request->validate([
-            'body'      => 'required|string|max:5000',
-            'parent_id' => 'nullable|integer|exists:task_messages,id',
+            'body'       => 'nullable|string|max:5000',
+            'parent_id'  => 'nullable|integer|exists:task_messages,id',
+            'attachment' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,zip|max:20480',
         ]);
+
+        $body = $data['body'] ?? null;
+        $sendableText = $body ?: 'Pièce jointe';
+
+        if (!$body && !$request->hasFile('attachment')) {
+            return $this->fail($request, 'Le message est vide.', 422);
+        }
 
         $parentId = $this->resolveParentId($task, $data['parent_id'] ?? null);
 
+        // ── Pièce jointe (image ou fichier, T-005) ─────────────────────────────
+        $attachmentType = $attachmentPath = $attachmentName = $attachmentMime = null;
+        $attachmentSize = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $extension      = strtolower($file->getClientOriginalExtension());
+            $attachmentType = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) ? 'image' : 'file';
+            $attachmentPath = $file->store('chat-attachments', 'public');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentMime = $file->getClientMimeType();
+            $attachmentSize = $file->getSize();
+        }
+
         $message = TaskMessage::create([
-            'task_id'   => $task->id,
-            'user_id'   => $user->id,
-            'parent_id' => $parentId,
-            'type'      => 'message',
-            'body'      => $data['body'],
+            'task_id'           => $task->id,
+            'user_id'           => $user->id,
+            'parent_id'         => $parentId,
+            'type'              => 'message',
+            'body'              => $body,
+            'attachment_type'   => $attachmentType,
+            'attachment_path'   => $attachmentPath,
+            'attachment_name'   => $attachmentName,
+            'attachment_mime'   => $attachmentMime,
+            'attachment_size'   => $attachmentSize,
         ]);
 
         // L'auteur a « lu » son propre message.
         $this->touchRead($task, $user->id, $message->id);
 
-        $this->emailService->notifyNewMessage($task, $user, $data['body']);
-
-        $this->notifyOtherParty($task, $user, $data['body']);
+        $this->notifyOtherParty($task, $user, $sendableText);
 
         broadcast(new TaskMessageCreated($message, $task))->toOthers();
 

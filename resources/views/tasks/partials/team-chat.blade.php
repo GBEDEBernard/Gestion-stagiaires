@@ -286,12 +286,40 @@
                             </div>
                         </template>
                         {{-- Saisie --}}
+                        <template x-if="attachment">
+                            <div class="mb-2 flex items-center gap-2.5 rounded-xl bg-white px-3 py-2 shadow-sm">
+                                <template x-if="attachment.type==='image'">
+                                    <img :src="attachment.preview" class="h-10 w-10 shrink-0 rounded-lg object-cover">
+                                </template>
+                                <template x-else>
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style="background:rgba(99,102,241,.12);color:#4f46e5;">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3v4a2 2 0 0 0 2 2h4M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/></svg>
+                                    </span>
+                                </template>
+                                <div class="min-w-0 flex-1">
+                                    <span class="block truncate text-xs font-medium text-slate-700" x-text="attachment.name"></span>
+                                    <span class="block text-[10px] text-slate-400" x-text="formatSize(attachment.size)"></span>
+                                </div>
+                                <button type="button" @click="clearAttachment()" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Retirer la pièce jointe">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
                         <form @submit.prevent="send()" class="flex items-end gap-2">
+                            <button type="button" @click="$refs.attachments.click()" :disabled="sending"
+                                    aria-label="Joindre un fichier ou une image"
+                                    class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-white hover:shadow-sm"
+                                    style="border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.7);">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            </button>
+                            <input type="file" x-ref="attachments" class="hidden"
+                                   accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.zip"
+                                   @change="onAttach($event)">
                             <textarea x-ref="input" x-model="body" rows="1" placeholder="Écrire un message…"
                                 @keydown.enter="if(!$event.shiftKey){$event.preventDefault();send()}"
                                 class="flex-1 resize-none rounded-full bg-white px-4 py-2.5 text-sm leading-5 shadow-sm outline-none transition focus:ring-2 focus:ring-indigo-300"
                                 style="max-height:110px;min-height:42px;border:1px solid rgba(0,0,0,.06);color:#111;"></textarea>
-                            <button type="submit" :disabled="sending||!body.trim()"
+                            <button type="submit" :disabled="sending||(!body.trim()&&!attachment)"
                                     aria-label="Envoyer le message"
                                     class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-40"
                                     style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
@@ -311,7 +339,7 @@ if (typeof window.taskChat !== 'function') {
     window.taskChat = function(initial, cfg) {
         return {
             payload: initial||{task:{},messages:[],recipients:[],pinned_report:null,me:{}},
-            cfg, body:'', replyTo:null, sending:false, open:false,
+            cfg, body:'', replyTo:null, sending:false, open:false, attachment:null,
             csrf: document.querySelector('meta[name="csrf-token"]')?.content||'',
             get state()    { return this.payload.task?.discussion_state||'locked'; },
             get isOpen()   { return this.state==='open'; },
@@ -353,10 +381,24 @@ if (typeof window.taskChat !== 'function') {
             async refresh() { try{ const r=await fetch(this.cfg.threadUrl,{headers:{'Accept':'application/json'}}); if(r.ok) this.merge(await r.json()); }catch(e){} },
             merge(data) { const b=this.isAtBottom(),p=this.lastId(); this.payload=data; this.$nextTick(()=>{ if(b||this.lastId()!==p) this.scrollBottom(); }); if(this.lastId()>p) this.markRead(); },
             async send() {
-                const text=this.body.trim(); if(!text||this.sending||!this.isOpen) return; this.sending=true;
-                const fd=new FormData(); fd.append('body',text); fd.append('ajax','1'); if(this.replyTo?.id) fd.append('parent_id',this.replyTo.id);
-                try{ const r=await fetch(this.cfg.storeUrl,{method:'POST',headers:{'X-CSRF-TOKEN':this.csrf,'Accept':'application/json'},body:fd}); if(r.ok){ const d=await r.json(); this.payload.messages.push(d.message); this.payload.task.last_message_id=d.last_message_id; this.body=''; this.replyTo=null; this.$nextTick(()=>this.scrollBottom()); this.markRead(); } }catch(e){} finally{this.sending=false;}
+                const text=(this.body||'').trim();
+                if((!text&&!this.attachment)||this.sending||!this.isOpen) return;
+                this.sending=true;
+                const fd=new FormData();
+                if(text) fd.append('body',text);
+                fd.append('ajax','1');
+                if(this.replyTo?.id) fd.append('parent_id',this.replyTo.id);
+                if(this.attachment) fd.append('attachment',this.attachment.file);
+                try{ const r=await fetch(this.cfg.storeUrl,{method:'POST',headers:{'X-CSRF-TOKEN':this.csrf,'Accept':'application/json'},body:fd}); if(r.ok){ const d=await r.json(); this.payload.messages.push(d.message); this.payload.task.last_message_id=d.last_message_id; this.body=''; this.replyTo=null; this.clearAttachment(); this.$nextTick(()=>this.scrollBottom()); this.markRead(); } }catch(e){} finally{this.sending=false;}
             },
+            onAttach(e) {
+                const file=e.target.files?.[0]; if(!file) return;
+                e.target.value='';
+                const isImage=file.type.startsWith('image/');
+                this.attachment={ file, name:file.name, size:file.size, type:isImage?'image':'file', preview:isImage?URL.createObjectURL(file):null };
+            },
+            clearAttachment() { if(this.attachment?.preview) URL.revokeObjectURL(this.attachment.preview); this.attachment=null; },
+            formatSize(bytes) { if(!bytes) return ''; return bytes>1048576?(bytes/1048576).toFixed(1)+' Mo':(bytes/1024).toFixed(1)+' Ko'; },
             setReply(m) { if(!m||m.is_system) return; this.replyTo={id:m.id,user_name:m.mine?'Vous':m.user.name,excerpt:this.excerptOf(m)}; this.$nextTick(()=>this.$refs.input?.focus()); },
             replyToPinned() { if(!this.pinned) return; const j=(this.payload.messages||[]).find(m=>m.type==='report_jalon'&&m.daily_report_id===this.pinned.id); this.replyTo={id:j?.id||null,user_name:this.pinned.author.name,excerpt:this.pinned.is_voice?'Message vocal':(this.pinned.summary||'Rapport')}; this.$nextTick(()=>this.$refs.input?.focus()); },
             clearReply() { this.replyTo=null; },
