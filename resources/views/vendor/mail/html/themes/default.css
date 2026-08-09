@@ -293,3 +293,62 @@ img {
 .break-all {
     word-break: break-all;
 }
+
+/* ============================================================
+   TFG — Overrides responsive / anti-débordement
+   ============================================================ */
+
+.content-cell {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.content-cell p,
+.content-cell li,
+.content-cell td,
+.content-cell th,
+.content-cell pre,
+.content-cell code {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* Tableau des identifiants : pleine largeur, jamais de débordement */
+.table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table table {
+    width: 100% !important;
+    table-layout: auto;
+}
+
+.table td,
+.table th {
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+
+/* Bouton : pleine largeur sur mobile */
+@media only screen and (max-width: 560px) {
+    .button,
+    .button a {
+        width: 100% !important;
+        display: block !important;
+        box-sizing: border-box;
+    }
+
+    .content-cell {
+        padding: 16px !important;
+    }
+
+    .header {
+        padding: 16px 24px !important;
+    }
+
+    .inner-body {
+        width: 100% !important;
+    }
+}

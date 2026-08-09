@@ -1,13 +1,11 @@
 @component('mail::message')
-# Vos identifiants d'accès à la plateforme
-
 Bonjour **{{ $fullName }}**,
 
 Dans le cadre de l'amélioration du suivi de la présence et des activités au sein de **TECHNOLOGY FOREVER GROUP**, nous mettons à votre disposition une plateforme dédiée qui vous permettra de :
 
-- **Marquer votre présence** quotidienne dans l'entreprise
-- **Rédiger votre rapport journalier** d'activités
-- **Enregistrer et suivre** l'ensemble des tâches réalisées durant la journée
+- Marquer votre présence quotidienne dans l'entreprise
+- Rédiger votre rapport journalier d'activités
+- Enregistrer et suivre l'ensemble des tâches réalisées durant la journée
 
 Veuillez trouver ci-dessous vos identifiants de connexion :
 
@@ -36,7 +34,7 @@ Nous vous invitons à vous connecter chaque jour afin de marquer votre présence
 
 Vous pouvez également accéder directement à la plateforme depuis le lien suivant : [https://presence.tfgbusiness.com](https://presence.tfgbusiness.com)
 
-En cas de difficulté pour accéder à la plateforme ou pour toute question, n'hésitez pas à contacter le **service [Nom du service / Contact IT/RH]** à l'adresse **[email de contact]** ou au **[numéro de téléphone]**.
+En cas de difficulté pour accéder à la plateforme ou pour toute question, n'hésitez pas à contacter le **service Direction Techniques** à l'adresse **techforevergroup@gmail.com** ou au **+229 01 69 58 06 03/ 01 65 10 39 59**.
 
 Nous vous remercions par avance pour votre collaboration.
 
@@ -45,10 +43,4 @@ Cordialement,
 **La Direction Technique**<br>
 **TECHNOLOGY FOREVER GROUP**
 
---
-Edino S.Mario AGBELESSESSI<br>
-Directeur Technique Adjoint – TECHNOLOGY FOREVER GROUP Sarl
-
-Site web : [www.tfgbusiness.com](https://www.tfgbusiness.com) • [www.easylmd.com](https://www.easylmd.com)<br>
-Mail : edi002008@yahoo.fr / edinoagbelessessi@gmail.com
 @endcomponent
