@@ -30,8 +30,8 @@ Nous vous invitons à vous connecter chaque jour afin de marquer votre présence
 **Pour des raisons de sécurité**, nous vous recommandons de :
 - Modifier votre mot de passe dès votre première connexion
 - Ne partager vos identifiants avec **personne**
-- Vous déconnecter après chaque utilisation, notamment sur un poste partagé .
-
+- Vous déconnecter après chaque utilisation, notamment sur un poste partagé . 
+ <br>
 En cas de difficulté pour accéder à la plateforme ou pour toute question, n'hésitez pas à contacter le **service Direction Techniques** à l'adresse **techforevergroup@gmail.com** ou au **+229 01 69 58 06 03/ 01 65 10 39 59**.
 
 Nous vous remercions par avance pour votre collaboration.
