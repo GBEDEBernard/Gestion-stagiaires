@@ -383,7 +383,9 @@
                     <div class="pc-grid">
                         <div class="pc-field">
                             <label>École / Université</label>
-                            @php($ecoleActuelle = old('ecole', optional($personnel->personnable)->ecole))
+                            @php
+                                $ecoleActuelle = old('ecole', optional($personnel->personnable)->ecole);
+                            @endphp
                             <select name="ecole" class="pc-select">
                                 <option value="">— Sélectionner une école —</option>
                                 @if($ecoleActuelle && !$ecoles->contains(fn($s) => $s->nom === $ecoleActuelle))
@@ -404,7 +406,6 @@
                 $employeData = optional($personnel->personnable);
                 $currentSiteId = old('site_id', $employeData->site_id);
                 $currentDomaineId = old('domaine_id', $employeData->domaine_id);
-                dd($sites)
             @endphp
             <div id="employe-fields" class="pc-section {{ $type !== 'employe' ? 'hidden' : '' }}">
                 <div class="pc-sub">
@@ -415,7 +416,7 @@
                             <select name="site_id" id="site_id" class="pc-select">
                                 <option value="">— Sélectionner un site —</option>
                                 @foreach($sites as $site)
-                                <option value="{{ $personnel->site_id }}" {{ old('site_id', $personnel->site_id) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
+                                <option value="{{ $site->id }}" {{ old('site_id', $currentSiteId) == $site->id ? 'selected' : '' }}>{{ $site->name }}</option>
                                 @endforeach
                             </select>
                             @error('site_id')<p class="pc-field-error">{{ $message }}</p>@enderror
