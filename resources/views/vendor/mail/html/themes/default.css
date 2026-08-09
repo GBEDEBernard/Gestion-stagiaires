@@ -352,3 +352,69 @@ img {
         width: 100% !important;
     }
 }
+
+/* ============================================================
+   TFG — Couleurs verrouillées : rendu identique sur tous les
+   clients (Gmail web/mobile, Outlook, Orange, etc.) et en mode
+   sombre : aucun client ne peut plus réécrire nos couleurs.
+   ============================================================ */
+
+body {
+    background-color: #f3f4f6 !important;
+    color: #1f2937 !important;
+    -webkit-text-size-adjust: 100%;
+}
+
+.content-cell {
+    color: #1f2937 !important;
+}
+
+.content-cell p,
+.content-cell li {
+    color: #1f2937 !important;
+}
+
+.content-cell h1,
+.content-cell h2,
+.content-cell h3 {
+    color: #111827 !important;
+}
+
+.content-cell a {
+    color: #2563eb !important;
+    text-decoration: underline;
+}
+
+/* Tableau des identifiants : texte et libellés toujours foncés */
+.table td,
+.table th {
+    color: #1f2937 !important;
+}
+
+.table th {
+    font-weight: 600 !important;
+}
+
+/* Pied de page uniforme */
+.footer p,
+.footer a {
+    color: #6b7280 !important;
+}
+
+/* Mode sombre : on conserve nos propres couleurs (texte foncé,
+   fond clair) pour ne pas laisser le client choisir à notre place */
+@media (prefers-color-scheme: dark) {
+    body,
+    .content,
+    .content-cell,
+    .content-cell p,
+    .content-cell li,
+    .table td,
+    .table th {
+        color: #1f2937 !important;
+    }
+
+    .content-cell a {
+        color: #2563eb !important;
+    }
+}
