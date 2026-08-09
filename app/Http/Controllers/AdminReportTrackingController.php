@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BilanHebdomadaireMail;
 use App\Models\DailyReport;
 use App\Models\DailyReportReview;
 use App\Models\TaskMessage;
+use App\Models\WeeklyBilanSend;
+use App\Services\AdminPresenceService;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AdminReportTrackingController extends Controller
@@ -92,6 +97,140 @@ class AdminReportTrackingController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Tableau complet de TOUS les rapports (étudiants + employés confondus),
+     * avec le nom de l'utilisateur et sa description, paginé et filtrable.
+     */
+    public function all(Request $request)
+    {
+        $period     = $request->get('period', 'all');
+        $dateFilter = $request->get('date', now()->format('Y-m-d'));
+        $filterDate = Carbon::createFromFormat('Y-m-d', $dateFilter);
+        $search     = trim($request->get('q', ''));
+
+        $query = DailyReport::with(['etudiant.user', 'user', 'stage']);
+
+        if ($period === 'weekly') {
+            $query->whereBetween('report_date', [
+                $filterDate->copy()->startOfWeek(),
+                $filterDate->copy()->endOfWeek(),
+            ]);
+        } elseif ($period === 'monthly') {
+            $query->whereBetween('report_date', [
+                $filterDate->copy()->startOfMonth(),
+                $filterDate->copy()->endOfMonth(),
+            ]);
+        } elseif ($period === 'daily') {
+            $query->whereDate('report_date', $filterDate);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('etudiant.user', fn($uq) => $uq->where('name', 'like', "%{$search}%"))
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('summary', 'like', "%{$search}%")
+                    ->orWhere('introduction', 'like', "%{$search}%");
+            });
+        }
+
+        $summary = [
+            'total'     => (clone $query)->count(),
+            'submitted' => (clone $query)->where('status', 'submitted')->count(),
+            'draft'     => (clone $query)->where('status', 'draft')->count(),
+            'reviewed'  => (clone $query)->whereNotNull('reviewed_at')->count(),
+        ];
+
+        $reports = $query->orderBy('report_date', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.reports.all', compact('period', 'filterDate', 'search', 'reports', 'summary'));
+    }
+
+    /**
+     * Envoi du bilan hebdomadaire de présence à l'UTILISATEUR d'un rapport précis
+     * (action "Envoyer" sur chaque ligne du tableau « Tous les rapports »).
+     *
+     * La période couverte est la semaine du rapport : taux de présence, absences,
+     * retards, heures travaillées et nombre de rapports soumis. Un envoi est
+     * bloqué (dédup) si un bilan a déjà été envoyé à cet utilisateur pour la
+     * même semaine.
+     */
+    public function sendWeeklyBilan(Request $request, $id)
+    {
+        $report = DailyReport::with(['etudiant.user', 'user', 'etudiant'])
+            ->findOrFail($id);
+
+        $user = $report->etudiant?->user ?? $report->user;
+
+        if (!$user) {
+            return back()->with('error', 'Impossible de retrouver l\'utilisateur associé à ce rapport.');
+        }
+
+        $weekStart = $report->report_date->copy()->startOfWeek();
+        $weekEnd   = $report->report_date->copy()->endOfWeek();
+        $start     = $weekStart->copy()->startOfDay();
+        $end       = $weekEnd->copy()->endOfDay();
+        $weekLabel = $weekStart->format('d/m/Y') . ' au ' . $weekEnd->format('d/m/Y');
+
+        $alreadySent = WeeklyBilanSend::where('user_id', $user->id)
+            ->where('period_start', $weekStart->toDateString())
+            ->exists();
+
+        if ($alreadySent) {
+            return back()->with('error', "Le bilan hebdomadaire ($weekLabel) a déjà été envoyé à {$user->name}.");
+        }
+
+        try {
+            $stats = app(AdminPresenceService::class)->getUserDetailedStats(
+                $user->id,
+                'week',
+                $start->toDateString(),
+                $end->toDateString()
+            );
+
+            $reportsCount = DailyReport::whereBetween('report_date', [$start->toDateString(), $end->toDateString()])
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if ($user->etudiant) {
+                        $q->orWhere('etudiant_id', $user->etudiant->id);
+                    }
+                })
+                ->count();
+
+            $email = $user->getEmailForVerification();
+            if (!$email) {
+                return back()->with('error', "Aucune adresse email valide pour {$user->name}.");
+            }
+
+            Mail::to($email)->send(new BilanHebdomadaireMail(
+                $user,
+                $stats,
+                $reportsCount,
+                $weekStart->copy(),
+                $weekEnd->copy()
+            ));
+
+            WeeklyBilanSend::create([
+                'user_id'      => $user->id,
+                'period_start' => $weekStart->toDateString(),
+                'period_end'   => $weekEnd->toDateString(),
+                'sent_at'      => now(),
+            ]);
+
+            return back()->with('success', "Bilan hebdomadaire ($weekLabel) envoyé à {$user->name}.");
+        } catch (\Throwable $e) {
+            Log::error('bilan_hebdomadaire.send_failed', [
+                'user_id' => $user->id,
+                'report_id' => $report->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'L\'envoi du bilan à ' . $user->name . ' a échoué. Consultez les logs.');
+        }
     }
 
     /**

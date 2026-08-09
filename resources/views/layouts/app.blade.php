@@ -259,6 +259,7 @@
                                     'presence' => 'Présence',
                                     'attestation' => 'Attestations',
                                     'rapports' => 'Rapports',
+                                    'all' => 'Tous',
                                     'notifications' => 'Notifications',
                                     'profile' => 'Profil',
                                     'dashboard' => 'Tableau de bord',
