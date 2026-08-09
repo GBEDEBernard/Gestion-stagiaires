@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\TypeStageController;
+use App\Http\Controllers\EcoleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\EtudiantController;
@@ -157,6 +158,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{type_stage}/edit', [TypeStageController::class, 'edit'])->name('type_stages.edit')->middleware('permission:type_stages.edit');
         Route::put('{type_stage}', [TypeStageController::class, 'update'])->name('type_stages.update')->middleware('permission:type_stages.edit');
         Route::delete('{type_stage}', [TypeStageController::class, 'destroy'])->name('type_stages.destroy')->middleware('permission:type_stages.delete');
+    });
+
+    // ---------------- Écoles de provenance ----------------
+    Route::prefix('admin/ecoles')->group(function () {
+        Route::get('/', [EcoleController::class, 'index'])->name('ecoles.index')->middleware('permission:ecoles.view');
+        Route::get('create', [EcoleController::class, 'create'])->name('ecoles.create')->middleware('permission:ecoles.create');
+        Route::post('/', [EcoleController::class, 'store'])->name('ecoles.store')->middleware('permission:ecoles.create');
+        Route::get('{ecole}/edit', [EcoleController::class, 'edit'])->name('ecoles.edit')->middleware('permission:ecoles.edit');
+        Route::put('{ecole}', [EcoleController::class, 'update'])->name('ecoles.update')->middleware('permission:ecoles.edit');
+        Route::delete('{ecole}', [EcoleController::class, 'destroy'])->name('ecoles.destroy')->middleware('permission:ecoles.delete');
     });
 
     // ---------------- Badges ----------------

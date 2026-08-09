@@ -18,6 +18,7 @@ class RolePermissionSeeder extends Seeder
             'stages',
             'type_stages',
             'badges',
+            'ecoles',
             'services',
             'domaines',
             'signataires',

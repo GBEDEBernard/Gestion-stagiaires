@@ -248,6 +248,7 @@
                                 // Traductions spécifiques
                                 $translations = [
                                     'stages' => 'Stages',
+                                    'ecoles' => 'Écoles de provenance',
                                     'badges' => 'Badges',
                                     'users' => 'Utilisateurs',
                                     'roles' => 'Rôles',
