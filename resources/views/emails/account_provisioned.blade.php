@@ -21,9 +21,11 @@ Veuillez trouver ci-dessous vos identifiants de connexion :
 @endif
 @endcomponent
 
+@if(!$password)
 @component('mail::button', ['url' => $resetUrl])
 Configurer mon mot de passe
 @endcomponent
+@endif
 
 Nous vous invitons à vous connecter chaque jour afin de marquer votre présence et de renseigner, en fin de journée, votre rapport d'activités ainsi que les tâches effectuées. Cette démarche nous permettra d'assurer un meilleur suivi du travail de chacun et de faciliter la communication entre les équipes.
 
@@ -34,7 +36,7 @@ Nous vous invitons à vous connecter chaque jour afin de marquer votre présence
 
 Vous pouvez également accéder directement à la plateforme depuis le lien suivant : [https://presence.tfgbusiness.com](https://presence.tfgbusiness.com)
 
-En cas de difficulté pour accéder à la plateforme ou pour toute question, n'hésitez pas à contacter le **service Technique / IT** à l'adresse **edi002008@yahoo.fr** ou au **(00229) 01 65 103 959**.
+En cas de difficulté pour accéder à la plateforme ou pour toute question, n'hésitez pas à contacter le **service [Nom du service / Contact IT/RH]** à l'adresse **[email de contact]** ou au **[numéro de téléphone]**.
 
 Nous vous remercions par avance pour votre collaboration.
 
