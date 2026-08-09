@@ -31,7 +31,7 @@ final class NotificationGreeting
 
     public static function civilityFromGenre(?string $genre): string
     {
-        $genre = Str::of((string) $genre)->trim()->lower();
+        $genre = (string) Str::of((string) $genre)->trim()->lower();
 
         if ($genre === 'masculin' || $genre === 'homme') {
             return 'Monsieur';

@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Support\NotificationGreeting;
 
 class AccountProvisionedNotification extends Notification
 {
@@ -34,6 +35,7 @@ class AccountProvisionedNotification extends Notification
             ->subject("TECHNOLOGY FOREVER GROUP - Vos identifiants d'accès à la plateforme de présence et de suivi d'activité")
             ->markdown('emails.account_provisioned', [
                 'fullName'  => $notifiable->name,
+                'civility'  => NotificationGreeting::civilityForRecipient($notifiable),
                 'email'     => $notifiable->email,
                 'password'  => $this->temporaryPassword,
                 'resetUrl'  => $resetUrl,
