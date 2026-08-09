@@ -69,7 +69,7 @@ Route::get('/email-access', [App\Http\Controllers\EmailAccessController::class, 
     ->middleware('signed');
 
 // Routes protégées AVEC déchiffrement des paramètres (sauf pour "reports")
-Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class, 'account_active', 'attendance'])->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'account_active', 'attendance'])->group(function () {
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -422,7 +422,7 @@ Route::prefix('tasks')->group(function () {
 /// =============================================================================
 // ROUTES RAPPORTS SANS DÉCHIFFREMENT (IDs en clair)
 // =============================================================================
-Route::middleware(['auth', 'verified', 'account_active', 'attendance'])->prefix('reports')->group(function () {
+Route::middleware(['auth', 'account_active', 'attendance'])->prefix('reports')->group(function () {
     Route::get('/', [DailyReportController::class, 'index'])->name('reports.index');
     Route::get('{report}', [DailyReportController::class, 'show'])->name('reports.show');
     Route::post('/', [DailyReportController::class, 'store'])->name('reports.store');
@@ -434,7 +434,7 @@ Route::middleware(['auth', 'verified', 'account_active', 'attendance'])->prefix(
 });
 
 // ---------------- Résumés IA des Rapports ----------------
-Route::middleware(['auth', 'verified', 'account_active', 'attendance'])->prefix('summaries')->group(function () {
+Route::middleware(['auth', 'account_active', 'attendance'])->prefix('summaries')->group(function () {
     Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'index'])->name('summaries.index');
     Route::get('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'show'])->name('summaries.show');
     Route::post('generate', [App\Http\Controllers\ReportSummaryController::class, 'generate'])->name('summaries.generate');
@@ -442,7 +442,7 @@ Route::middleware(['auth', 'verified', 'account_active', 'attendance'])->prefix(
 });
 
 // ---------------- Résumés IA (Admin) ----------------
-Route::middleware(['auth', 'verified', 'role:admin|superviseur', 'account_active', 'attendance'])
+Route::middleware(['auth', 'role:admin|superviseur', 'account_active', 'attendance'])
     ->prefix('admin/summaries')
     ->name('admin.summaries.')
     ->group(function () {

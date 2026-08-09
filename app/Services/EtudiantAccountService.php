@@ -44,7 +44,7 @@ class EtudiantAccountService
             $userData = [
                 'email' => $email,
                 'status' => 'actif',
-                'email_verified_at' => $emailChanged ? null : $linkedUser->email_verified_at,
+                'email_verified_at' => now(),
                 'personnel_id' => $personnel->id,
             ];
 
@@ -107,7 +107,7 @@ class EtudiantAccountService
             'email' => $email,
             'password' => Hash::make($temporaryPassword),
             'status' => 'actif',
-            'email_verified_at' => null,
+            'email_verified_at' => now(),
             'must_change_password' => true,
             'temporary_password_created_at' => now(),
             'password_changed_at' => null,
@@ -175,6 +175,12 @@ class EtudiantAccountService
 
     protected function sendVerificationEmailSafely(User $user): bool
     {
+        // Plus aucune vérification d'email requise : les comptes sont créés
+        // directement vérifiés, aucun mail de vérification n'est envoyé.
+        if ($user->hasVerifiedEmail()) {
+            return false;
+        }
+
         try {
             $user->sendEmailVerificationNotification();
 

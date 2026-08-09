@@ -23,15 +23,8 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        // jb -> Ordre volontaire du parcours apres login:
-        // 1. verification email
-        // 2. remplacement du mot de passe temporaire
-        // 3. acces au vrai tableau de bord du role
-        if (!$user->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice');
-        }
-
-
+        // Redirection directe vers le tableau de bord du rôle (admin,
+        // superviseur, étudiant, employé) sans passer par une vérification d'email.
 
         return redirect()->route($user->homeRouteName());
     }

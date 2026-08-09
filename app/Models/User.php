@@ -10,7 +10,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use App\Notifications\ResetPasswordNotification;
-use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Support\Facades\Storage;
 
@@ -253,9 +252,13 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new ResetPasswordNotification($token));
     }
 
+    /**
+     * Plus de vérification d'email : les comptes sont générés déjà vérifiés.
+     * Méthode conservée pour satisfaire l'interface MustVerifyEmail, sans envoi.
+     */
     public function sendEmailVerificationNotification()
     {
-        $this->notify(new VerifyEmailNotification());
+        //
     }
 
     // =========================================================================

@@ -148,6 +148,7 @@ $userData = [
                 'email'                         => $validated['email'],
                 'password'                      => Hash::make($validated['password']),
                 'status'                        => 'actif',
+                'email_verified_at'             => now(),
                 'must_change_password'          => true,
                 'temporary_password_created_at' => now(),
                 'personnel_id'                  => $personnel->id,

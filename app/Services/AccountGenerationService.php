@@ -39,6 +39,7 @@ class AccountGenerationService
             'email'                         => $personnel->email,
             'domaine_id'                    => $domaineId,
             'password'                      => Hash::make($tempPassword),
+            'email_verified_at'             => now(),
             'must_change_password'          => true,
             'temporary_password_created_at' => now(),
             'status'                        => 'actif',
