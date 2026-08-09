@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Mail\TaskCreatedMail;
-use App\Mail\TaskNewMessageMail;
-use App\Mail\TaskReportSubmittedMail;
 use App\Mail\TaskReviewedMail;
 use App\Models\Task;
 use App\Models\User;
@@ -28,63 +26,6 @@ class EmailNotificationService
                     $task,
                     $recipient->name,
                     NotificationGreeting::civilityForRecipient($recipient),
-                    NotificationGreeting::greetingForNow(),
-                    $url
-                ));
-        }
-    }
-
-    public function notifyReportSubmitted(Task $task): void
-    {
-        foreach ($this->recipients->getAllRecipientsForTask($task) as $recipient) {
-            $url = $this->urlService->forRecipient($task, $recipient);
-
-            Mail::to($recipient->getEmailForVerification())
-                ->send(new TaskReportSubmittedMail(
-                    $task,
-                    $recipient->name,
-                    NotificationGreeting::civilityForRecipient($recipient),
-                    NotificationGreeting::greetingForNow(),
-                    $url
-                ));
-        }
-    }
-    
-    public function notifyNewMessage(Task $task, User $sender, string $messageBody): void
-    {
-        if ($task->owner_id === $sender->id) {
-            // Propriétaire écrit → notifier superviseur + admins
-            foreach ($this->recipients->getAllRecipientsForTask($task) as $recipient) {
-                $url = $this->urlService->forRecipient($task, $recipient);
-
-                Mail::to($recipient->getEmailForVerification())
-                    ->send(new TaskNewMessageMail(
-                        $task,
-                        $sender,
-                        $messageBody,
-                        $recipient->name,
-                        NotificationGreeting::civilityForRecipient($recipient),
-                        NotificationGreeting::greetingForNow(),
-                        $url
-                    ));
-            }
-
-            return;
-        }
-
-        // Superviseur/admin écrit → notifier le propriétaire
-        $owner = $task->owner;
-
-        if ($owner) {
-            $url = $this->urlService->forRecipient($task, $owner);
-
-            Mail::to($owner->getEmailForVerification())
-                ->send(new TaskNewMessageMail(
-                    $task,
-                    $sender,
-                    $messageBody,
-                    $owner->name,
-                    NotificationGreeting::civilityForRecipient($owner),
                     NotificationGreeting::greetingForNow(),
                     $url
                 ));

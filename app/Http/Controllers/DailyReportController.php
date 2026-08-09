@@ -9,7 +9,6 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
-use App\Services\EmailNotificationService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -19,7 +18,6 @@ class DailyReportController extends Controller
     public function __construct(
         protected DailyReportService $dailyReportService,
         protected UserProfileLinkService $profileLinkService,
-        protected EmailNotificationService $emailService,
         protected NotificationService $notifications
     ) {}
 
@@ -307,10 +305,6 @@ class DailyReportController extends Controller
                     'chat',
                     'indigo'
                 ));
-
-            if ($task && $task->owner) {
-                $this->emailService->notifyNewMessage($task, $user, $data['comment']);
-            }
         } else {
             $recipients = collect();
 
@@ -331,10 +325,6 @@ class DailyReportController extends Controller
                     'chat',
                     'indigo'
                 ));
-
-            if ($task) {
-                $this->emailService->notifyNewMessage($task, $user, $data['comment']);
-            }
         }
 
         if ($request->expectsJson()) {
