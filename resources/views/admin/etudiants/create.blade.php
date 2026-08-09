@@ -56,7 +56,16 @@
                     </div>
                     <div>
                         <label for="ecole" class="block text-sm font-medium text-gray-700 mb-2">École</label>
-                        <input type="text" name="ecole" id="ecole" value="{{ old('ecole') }}" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                        @php($ecoleActuelle = old('ecole'))
+                        <select name="ecole" id="ecole" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+                            <option value="">— Sélectionner une école —</option>
+                            @if($ecoleActuelle && !$ecoles->contains(fn($s) => $s->nom === $ecoleActuelle))
+                            <option value="{{ $ecoleActuelle }}" selected>{{ $ecoleActuelle }}</option>
+                            @endif
+                            @foreach($ecoles as $school)
+                            <option value="{{ $school->nom }}" {{ $ecoleActuelle === $school->nom ? 'selected' : '' }}>{{ $school->nom }}</option>
+                            @endforeach
+                        </select>
                         @error('ecole') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                     </div>
                 </div>

@@ -377,7 +377,16 @@
                     <div class="pc-grid">
                         <div class="pc-field">
                             <label>École / Université</label>
-                            <input type="text" name="ecole" value="{{ old('ecole', optional($personnel->personnable)->ecole) }}" class="pc-input">
+                            @php($ecoleActuelle = old('ecole', optional($personnel->personnable)->ecole))
+                            <select name="ecole" class="pc-select">
+                                <option value="">— Sélectionner une école —</option>
+                                @if($ecoleActuelle && !$ecoles->contains(fn($s) => $s->nom === $ecoleActuelle))
+                                <option value="{{ $ecoleActuelle }}" selected>{{ $ecoleActuelle }}</option>
+                                @endif
+                                @foreach($ecoles as $school)
+                                <option value="{{ $school->nom }}" {{ $ecoleActuelle === $school->nom ? 'selected' : '' }}>{{ $school->nom }}</option>
+                                @endforeach
+                            </select>
                             @error('ecole')<p class="pc-field-error">{{ $message }}</p>@enderror
                         </div>
                     </div>

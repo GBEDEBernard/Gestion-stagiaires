@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Badge;
 use App\Models\Domaine;
+use App\Models\Ecole;
 use App\Models\Employe;
 use App\Models\Etudiant;
 use App\Models\Personnel;
@@ -113,6 +114,8 @@ class PersonnelController extends Controller
 
         $jours = Jour::all();
 
+        $ecoles = Ecole::orderBy('nom')->get();
+
         return view('admin.personnels.create', compact(
             'sites',
             'domainesParSite',
@@ -121,7 +124,8 @@ class PersonnelController extends Controller
             'badges',
             'stageSites',
             'supervisors',
-            'jours'
+            'jours',
+            'ecoles'
         ));
     }
 
@@ -215,7 +219,7 @@ class PersonnelController extends Controller
         $formType = $data['type'];
 
         if ($formType === 'etudiant') {
-            $typeRules = ['ecole' => 'sometimes|required|string|max:255'];
+            $typeRules = ['ecole' => 'sometimes|nullable|string|max:255'];
         } elseif ($formType === 'employe') {
             $typeRules = [
                 'domaine_id' => 'sometimes|required|exists:domaines,id',
@@ -301,7 +305,7 @@ class PersonnelController extends Controller
     return view('admin.personnels.edit', compact(
         'personnel', 'domaines', 'sites', 'type',
         'superviseurs', 'supervisorIdValue', 'domainesParSite'
-    ));
+    ))->with('ecoles', Ecole::orderBy('nom')->get());
 }
 
     public function trash()

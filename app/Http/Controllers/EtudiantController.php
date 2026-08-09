@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Etudiant;
+use App\Models\Ecole;
 use App\Models\Personnel;
 use App\Services\AccountGenerationService;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class EtudiantController extends Controller
 
     public function create()
     {
-        return view('admin.etudiants.create');
+        return view('admin.etudiants.create', ['ecoles' => Ecole::orderBy('nom')->get()]);
     }
 
     public function store(Request $request)
@@ -84,7 +85,10 @@ class EtudiantController extends Controller
 
     public function edit(Etudiant $etudiant)
     {
-        return view('admin.etudiants.edit', compact('etudiant'));
+        return view('admin.etudiants.edit', [
+            'etudiant' => $etudiant,
+            'ecoles'   => Ecole::orderBy('nom')->get(),
+        ]);
     }
 
     public function update(Request $request, Etudiant $etudiant)
