@@ -243,8 +243,10 @@ class AdminPresenceService
         } else {
             switch ($period) {
                 case 'week':
-                    $startDate = now()->startOfWeek();
-                    $endDate = now()->endOfWeek();
+                    // Fenêtre glissante : les 7 derniers jours — garantit plusieurs
+                    // points de courbe même en début de semaine calendaire.
+                    $startDate = now()->subDays(6)->startOfDay();
+                    $endDate   = now()->endOfDay();
                     break;
                 case 'month':
                     $startDate = now()->startOfMonth();
@@ -269,9 +271,30 @@ class AdminPresenceService
         // ✅ Jours fériés actifs dans la plage
         $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
 
+        // ── Plage du graphique ────────────────────────────────────────────────
+        // Une courbe nécessite plusieurs points. Si la période ne contient pas au
+        // moins 4 jours ouvrés passés (ex : "Aujourd'hui", une plage custom d'un
+        // jour, ou un week-end), on élargit la fenêtre d'affichage du graphique
+        // vers le passé. Les KPI restent calculés sur la période réelle.
+        $weekdaysInPeriod = 0;
+        $probe = $startDate->copy();
+        while ($probe <= $endDate) {
+            if (!$probe->isWeekend() && !$probe->gt($today)) $weekdaysInPeriod++;
+            $probe->addDay();
+        }
+
+        $chartStart = $startDate->copy();
+        if ($weekdaysInPeriod < 4) {
+            $chartStart = $endDate->copy()->subDays(6)->startOfDay();
+            if ($chartStart->gt($startDate)) $chartStart = $startDate->copy();
+        }
+
+        // ✅ Jours fériés actifs sur la plage élargie du graphique
+        $chartHolidays = $this->getActiveHolidaysInRange($chartStart, $endDate);
+
         // ── Données pointage réelles (jours ouvrés uniquement) ───────────────
         $dailyStats = AttendanceDay::forActiveUsers()
-            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->whereBetween('attendance_date', [$chartStart, $endDate])
             ->weekdays()
             ->selectRaw('
                 DATE(attendance_date) as date,
@@ -295,16 +318,63 @@ class AdminPresenceService
             ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
             ->count();
 
-        $allDates      = [];
-        $presentData   = [];
-        $lateMinutesData = [];
-        $lateDaysData  = [];
-        $absentData    = [];
-        $workedHoursData = [];
-        $holidayFlags  = [];
+        // ── Séries du graphique (fenêtre élargie) ─────────────────────────────
+        $chartSeries = $this->buildSeries($dailyStats, $chartStart, $endDate, $systemStart, $chartHolidays, $today, $expectedEmployeesCount);
 
-        $currentDate = $startDate->copy();
-        while ($currentDate <= $endDate) {
+        // ── Séries des KPI (période réelle uniquement) ────────────────────────
+        $periodSeries = $this->buildSeries($dailyStats, $startDate, $endDate, $systemStart, $holidays, $today, $expectedEmployeesCount);
+
+        // ── KPI totaux ────────────────────────────────────────────────────────
+        $totalDays       = array_sum($periodSeries['present']) + array_sum($periodSeries['absent']);
+        $presentDays     = array_sum($periodSeries['present']);
+        $totalLateMin    = array_sum($periodSeries['late_minutes']);
+        $totalWorkedMin  = (int) array_sum(array_map(fn($h) => round($h * 60), $periodSeries['worked_hours']));
+        $totalLateDays   = array_sum($periodSeries['late_days']);
+        $totalAbsent     = array_sum($periodSeries['absent']);
+        $tauxPresence    = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
+
+        $anomaliesCount = AttendanceAnomaly::where('status', 'open')
+            ->whereBetween('detected_at', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
+            ->count();
+
+        return [
+            'taux_presence'      => $tauxPresence,
+            'present_days'       => $presentDays,
+            'total_days'         => $totalDays,
+            'total_late_minutes' => $totalLateMin,
+            'total_late_days'    => $totalLateDays,
+            'total_worked_hours' => round($totalWorkedMin / 60, 1),
+            'total_absent'       => $totalAbsent,
+            'total_anomalies'    => $anomaliesCount,
+            'period_days'        => count($periodSeries['labels']),
+            'chart_data' => [
+                'labels'       => $chartSeries['labels'],
+                'present'      => $chartSeries['present'],
+                'late_minutes' => $chartSeries['late_minutes'],
+                'late_days'    => $chartSeries['late_days'],
+                'absent'       => $chartSeries['absent'],
+                'worked_hours' => $chartSeries['worked_hours'],
+                'holidays'     => $chartSeries['holidays'],
+            ],
+        ];
+    }
+
+    /**
+     * Construit les séries journalières (labels + valeurs) pour une plage donnée,
+     * en ignorant les week-ends et les jours futurs, et en gérant les jours fériés.
+     */
+    private function buildSeries(Collection $dailyStats, Carbon $rangeStart, Carbon $rangeEnd, Carbon $systemStart, array $holidays, Carbon $today, int $expectedEmployeesCount): array
+    {
+        $labels          = [];
+        $presentData     = [];
+        $lateMinutesData = [];
+        $lateDaysData    = [];
+        $absentData      = [];
+        $workedHoursData = [];
+        $holidayFlags    = [];
+
+        $currentDate = $rangeStart->copy();
+        while ($currentDate <= $rangeEnd) {
 
             // ── Ignorer week-ends ─────────────────────────────────────────────
             if ($currentDate->isWeekend()) {
@@ -331,7 +401,7 @@ class AdminPresenceService
             $expectedTotal = $studentsCount + $expectedEmployeesCount;
 
             $isBeforeSystemStart = $currentDate->lt($systemStart);
-            $allDates[]          = $dateLabel;
+            $labels[]            = $dateLabel;
             $holidayFlags[]      = $isHoliday;
             $dayStats            = $dailyStats->get($dateKey);
 
@@ -352,38 +422,14 @@ class AdminPresenceService
             $currentDate->addDay();
         }
 
-        // ── KPI totaux ────────────────────────────────────────────────────────
-        $totalDays       = array_sum($presentData) + array_sum($absentData);
-        $presentDays     = array_sum($presentData);
-        $totalLateMin    = array_sum($lateMinutesData);
-        $totalWorkedMin  = (int) array_sum(array_map(fn($h) => round($h * 60), $workedHoursData));
-        $totalLateDays   = array_sum($lateDaysData);
-        $totalAbsent     = array_sum($absentData);
-        $tauxPresence    = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0;
-
-        $anomaliesCount = AttendanceAnomaly::where('status', 'open')
-            ->whereBetween('detected_at', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
-            ->count();
-
         return [
-            'taux_presence'      => $tauxPresence,
-            'present_days'       => $presentDays,
-            'total_days'         => $totalDays,
-            'total_late_minutes' => $totalLateMin,
-            'total_late_days'    => $totalLateDays,
-            'total_worked_hours' => round($totalWorkedMin / 60, 1),
-            'total_absent'       => $totalAbsent,
-            'total_anomalies'    => $anomaliesCount,
-            'period_days'        => count($allDates),
-            'chart_data' => [
-                'labels'       => $allDates,
-                'present'      => $presentData,
-                'late_minutes' => $lateMinutesData,
-                'late_days'    => $lateDaysData,
-                'absent'       => $absentData,
-                'worked_hours' => $workedHoursData,
-                'holidays'     => $holidayFlags,
-            ],
+            'labels'       => $labels,
+            'present'      => $presentData,
+            'late_minutes' => $lateMinutesData,
+            'late_days'    => $lateDaysData,
+            'absent'       => $absentData,
+            'worked_hours' => $workedHoursData,
+            'holidays'     => $holidayFlags,
         ];
     }
 
@@ -399,8 +445,9 @@ class AdminPresenceService
         } else {
             switch ($period) {
                 case 'week':
-                    $startDate = now()->startOfWeek();
-                    $endDate = now()->endOfWeek();
+                    // Fenêtre glissante : les 7 derniers jours (plusieurs points de courbe garantis)
+                    $startDate = now()->subDays(6)->startOfDay();
+                    $endDate = now()->endOfDay();
                     break;
                 case 'year':
                     $startDate = now()->startOfYear();
@@ -438,14 +485,32 @@ class AdminPresenceService
                 SUM(late_minutes) as late_minutes
             ')->first();
 
+        // ── Plage du graphique ─────────────────────────────────────────────────
+        // Même logique que les stats globales : si la période ne contient pas au
+        // moins 4 jours ouvrés passés, on élargit la fenêtre du graphique vers le
+        // passé. Les KPI du groupe restent calculés sur la période réelle.
+        $today = today();
+        $weekdaysInPeriod = 0;
+        $probe = $startDate->copy();
+        while ($probe <= $endDate) {
+            if (!$probe->isWeekend() && !$probe->gt($today)) $weekdaysInPeriod++;
+            $probe->addDay();
+        }
+
+        $chartStart = $startDate->copy();
+        if ($weekdaysInPeriod < 4) {
+            $chartStart = $endDate->copy()->subDays(6)->startOfDay();
+            if ($chartStart->gt($startDate)) $chartStart = $startDate->copy();
+        }
+
         $etudiantsChart = $this->generateChartData(
-            AttendanceDay::forActiveUsers()->whereNotNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
-            $startDate,
+            AttendanceDay::forActiveUsers()->whereNotNull('etudiant_id')->whereBetween('attendance_date', [$chartStart, $endDate]),
+            $chartStart,
             $endDate
         );
         $employesChart = $this->generateChartData(
-            AttendanceDay::forActiveUsers()->whereNotNull('user_id')->whereNull('etudiant_id')->whereBetween('attendance_date', [$startDate, $endDate]),
-            $startDate,
+            AttendanceDay::forActiveUsers()->whereNotNull('user_id')->whereNull('etudiant_id')->whereBetween('attendance_date', [$chartStart, $endDate]),
+            $chartStart,
             $endDate
         );
 
@@ -562,8 +627,9 @@ class AdminPresenceService
                     $endDate = today()->endOfDay();
                     break;
                 case 'week':
-                    $startDate = now()->startOfWeek()->startOfDay();
-                    $endDate = now()->endOfWeek()->endOfDay();
+                    // Fenêtre glissante : les 7 derniers jours (plusieurs points de courbe garantis)
+                    $startDate = now()->subDays(6)->startOfDay();
+                    $endDate = now()->endOfDay();
                     break;
                 case 'year':
                     $startDate = now()->startOfYear()->startOfDay();
@@ -593,22 +659,43 @@ class AdminPresenceService
         // ✅ Jours fériés actifs dans la plage
         $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
 
-        // ── Récupérer les pointages ───────────────────────────────────────────
+        $today = today()->startOfDay();
+
+        // ── Plage du graphique ─────────────────────────────────────────────────
+        // Même logique que les stats globales : si la période ne contient pas au
+        // moins 4 jours ouvrés passés (ex : "Aujourd'hui" ou début de semaine),
+        // on élargit la fenêtre du graphique vers le passé. Les KPI restent
+        // calculés sur la période réelle.
+        $weekdaysInPeriod = 0;
+        $probe = $startDate->copy();
+        while ($probe->lte($endDate->copy()->startOfDay())) {
+            if (!$probe->isWeekend() && !$probe->gt($today)) $weekdaysInPeriod++;
+            $probe->addDay();
+        }
+
+        $chartStart = $startDate->copy();
+        if ($weekdaysInPeriod < 4) {
+            $chartStart = $endDate->copy()->subDays(6)->startOfDay();
+            if ($chartStart->gt($startDate)) $chartStart = $startDate->copy();
+        }
+
+        // ✅ Jours fériés actifs sur la plage élargie du graphique
+        $chartHolidays = $this->getActiveHolidaysInRange($chartStart, $endDate);
+
+        // ── Récupérer les pointages (plage élargie pour le graphique) ──────────
         $query = AttendanceDay::weekdays();
         if ($isEtudiant) $query->where('etudiant_id', $user->etudiant->id);
         else             $query->where('user_id', $user->id)->whereNull('etudiant_id');
 
         $days = $query
-            ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereBetween('attendance_date', [$chartStart->toDateString(), $endDate->toDateString()])
             ->orderBy('attendance_date')
             ->get()
             ->keyBy(fn($d) => Carbon::parse($d->attendance_date)->toDateString());
 
-        $today = today()->startOfDay();
-
         $labels = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = $isHoliday = [];
 
-        $currentDate = $startDate->copy()->startOfDay();
+        $currentDate = $chartStart->copy()->startOfDay();
         while ($currentDate->lte($endDate->copy()->startOfDay())) {
 
             // ✅ Ignorer week-ends et jours futurs
@@ -620,7 +707,7 @@ class AdminPresenceService
             $dateKey          = $currentDate->toDateString();
             $labels[]         = $currentDate->isoFormat('D MMM');
             $isBeforeActivation = $currentDate->lt($activationDate);
-            $isCurrentHoliday   = isset($holidays[$dateKey]);
+            $isCurrentHoliday   = isset($chartHolidays[$dateKey]);
             $isStudentRestDay   = $isEtudiant && !$this->isStudentWorkDay($user->etudiant->id, $dateKey);
             $isHoliday[]        = $isCurrentHoliday;
             $day                = $days->get($dateKey);
