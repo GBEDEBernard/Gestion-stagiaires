@@ -419,7 +419,20 @@ class AdminPresenceController extends Controller
     /**
      * Résoudre anomalie.
      */
-    public function resolveAnomaliesBulk(Request $request)
+  /**
+ * Résoudre une anomalie individuelle.
+ */
+public function resolveAnomaly(ResolveAnomalyRequest $request, int $anomalyId)
+{
+    $this->presenceService->resolveAnomaly($anomalyId, $request->validated());
+
+    return redirect()->back()->with('success', 'Anomalie résolue.');
+}
+
+/**
+ * Résoudre plusieurs anomalies identiques en une fois (bouton "Tout résoudre").
+ */
+public function resolveAnomaliesBulk(Request $request)
 {
     $ids = (array) $request->input('ids', []);
     $note = $request->input('resolution_note');
