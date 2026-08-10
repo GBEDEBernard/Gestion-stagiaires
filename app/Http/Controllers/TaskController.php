@@ -270,73 +270,74 @@ public function index(Request $request)
         abort_unless($user->can('tasks.assign'), 403);
     }
 
-    public function store(Request $request)
-    {
-        $user = auth()->user();
+  public function store(Request $request)
+{
+    $user = auth()->user();
 
-        $payload = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string|max:5000',
-            'priority'    => 'required|in:low,normal,high,urgent',
-            'start_date'  => 'nullable|date',
-            'due_date'    => 'nullable|date|after_or_equal:start_date',
-        ]);
+    $payload = $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'nullable|string|max:5000',
+        'priority'    => 'required|in:low,normal,high,urgent',
+        'start_date'  => 'nullable|date',
+        'due_date'    => 'nullable|date|after_or_equal:start_date',
+    ]);
 
-        [$stageId, $etudiantId] = $this->resolveStudentContext($user);
+    [$stageId, $etudiantId] = $this->resolveStudentContext($user);
 
-        $task = Task::create([
-            'owner_id'              => $user->id,
-            'assigned_by'           => $user->id,
-            'stage_id'              => $stageId,
-            'etudiant_id'           => $etudiantId,
-            'title'                 => $payload['title'],
-            'description'           => $payload['description'] ?? null,
-            'start_date'            => $payload['start_date'] ?? null,
-            'priority'              => $payload['priority'],
-            'status'                => 'pending',
-            'due_date'              => $payload['due_date'] ?? null,
-            'last_progress_percent' => 0,
-        ]);
+    $task = Task::create([
+        'owner_id'              => $user->id,
+        'assigned_by'           => $user->id,
+        'stage_id'              => $stageId,
+        'etudiant_id'           => $etudiantId,
+        'title'                 => $payload['title'],
+        'description'           => $payload['description'] ?? null,
+        'start_date'            => $payload['start_date'] ?? null,
+        'priority'              => $payload['priority'],
+        'status'                => 'pending',
+        'due_date'              => $payload['due_date'] ?? null,
+        'last_progress_percent' => 0,
+    ]);
 
-        Activity::create([
-            'user_id'     => $user->id,
-            'action'      => 'Creation tache',
-            'description' => "Tache {$task->title} creee",
-        ]);
+    Activity::create([
+        'user_id'     => $user->id,
+        'action'      => 'Creation tache',
+        'description' => "Tache {$task->title} creee",
+    ]);
 
-        // Notification email + DB
-        $this->emailService->notifyTaskCreated($task);
+    // 🔥 EMAIL AUX ADMINS DÉSACTIVÉ
+    // $this->emailService->notifyTaskCreated($task);
 
-        $url = encrypted_route('tasks.show', $task);
-        $recipients = collect();
+    // ✅ NOTIFICATIONS EN BASE DE DONNÉES CONSERVÉES
+    $url = encrypted_route('tasks.show', $task);
+    $recipients = collect();
 
-        if ($task->stage && $task->stage->supervisor_id) {
-            $recipients->push($task->stage->supervisor_id);
-        } else {
-            $supervisor = $task->owner?->profil()?->supervisor;
-            if ($supervisor) {
-                $recipients->push($supervisor->id);
-            }
+    if ($task->stage && $task->stage->supervisor_id) {
+        $recipients->push($task->stage->supervisor_id);
+    } else {
+        $supervisor = $task->owner?->profil()?->supervisor;
+        if ($supervisor) {
+            $recipients->push($supervisor->id);
         }
-
-        User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
-
-        $recipients->unique()
-            ->reject(fn($id) => (int) $id === (int) $user->id)
-            ->each(fn($id) => $this->notifications->push(
-                (int) $id,
-                'task_created',
-                '📋 Nouvelle tâche',
-                $user->name . ' a créé « ' . Str::limit($task->title, 40) . ' »',
-                $url,
-                'clipboard-list',
-                'blue'
-            ));
-
-        return redirect()
-            ->to(encrypted_route('tasks.show', $task))
-            ->with('success', 'Tâche créée avec succès.');
     }
+
+    User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
+
+    $recipients->unique()
+        ->reject(fn($id) => (int) $id === (int) $user->id)
+        ->each(fn($id) => $this->notifications->push(
+            (int) $id,
+            'task_created',
+            '📋 Nouvelle tâche',
+            $user->name . ' a créé « ' . Str::limit($task->title, 40) . ' »',
+            $url,
+            'clipboard-list',
+            'blue'
+        ));
+
+    return redirect()
+        ->to(encrypted_route('tasks.show', $task))
+        ->with('success', 'Tâche créée avec succès.');
+}
 
    public function show(Request $request, Task $task)
 {
