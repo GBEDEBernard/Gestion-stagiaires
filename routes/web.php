@@ -286,6 +286,14 @@ Route::prefix('tasks')->group(function () {
     // ---------------- Logs admin ----------------
     Route::get('/admin/logs', [AdminLogController::class, 'index'])->name('admin.logs.index')->middleware('role:admin');
 
+  Route::delete('/admin/logs/delete', [AdminLogController::class, 'destroy'])
+    ->name('admin.logs.delete')
+    ->middleware('role:admin');
+
+Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
+    ->name('admin.logs.clear')
+    ->middleware('role:admin');
+
     // ---------------- Espace stagiaire ----------------
     Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
     Route::put('/mon-stage/theme', [StudentStageController::class, 'updateTheme'])->name('student.theme.update');

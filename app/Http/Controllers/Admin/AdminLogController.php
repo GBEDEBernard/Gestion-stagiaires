@@ -91,4 +91,65 @@ class AdminLogController extends Controller
             'logPath' => $logPath,
         ]);
     }
+// methode de supression des logs
+  /**
+ * Supprimer une entrée spécifique (par son identifiant)
+ */
+public function destroy(Request $request)
+{
+    $id = $request->input('id');
+    if (!$id) {
+        return response()->json(['error' => 'ID manquant'], 400);
+    }
+
+    // Trouver le fichier de log
+    $logPath = storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log');
+    if (!is_file($logPath)) {
+        $logPath = storage_path('logs/laravel.log');
+    }
+    if (!is_file($logPath)) {
+        return response()->json(['error' => 'Fichier de log introuvable'], 404);
+    }
+
+    $content = file_get_contents($logPath);
+    $lines = preg_split('/\n(?=\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\])/', $content);
+    $newLines = [];
+
+    foreach ($lines as $line) {
+        if (trim($line) === '') continue;
+        // Extraire date et message pour recalculer l'id
+        if (preg_match('/\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\].*?: (.*?)$/s', $line, $m)) {
+            $date = trim($m[1]);
+            $message = trim($m[2]);
+            $hash = md5($date . $message);
+            if ($hash !== $id) {
+                $newLines[] = $line;
+            }
+        } else {
+            // Si on ne peut pas parser, on garde la ligne (sécurité)
+            $newLines[] = $line;
+        }
+    }
+
+    file_put_contents($logPath, implode("\n", $newLines));
+
+    return response()->json(['success' => true]);
+}
+
+/**
+ * Vider tout le fichier (déjà présent)
+ */
+public function clear()
+{
+    $logPath = storage_path('logs/laravel-' . now()->format('Y-m-d') . '.log');
+    if (!is_file($logPath)) {
+        $logPath = storage_path('logs/laravel.log');
+    }
+    if (is_file($logPath)) {
+        file_put_contents($logPath, '');
+    }
+    return response()->json(['success' => true]);
+}
+
+
 }
