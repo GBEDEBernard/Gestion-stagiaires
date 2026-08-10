@@ -29,8 +29,7 @@
                         @if(Auth::user()->avatar)
                             <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
                         @else
-                                    <div class="w-24 h-24 rounded-full bg-blue-300 flex items-center justify-center border-4 border-white shadow-lg">
-                                <!-- Utiliser les initiales depuis le personnel -->
+                            <div class="w-24 h-24 rounded-full bg-blue-300 flex items-center justify-center border-4 border-white shadow-lg">
                                 <span class="text-4xl font-bold text-blue-800">
                                     {{ $initials }}
                                 </span>
@@ -45,7 +44,6 @@
                         <p class="text-blue-100">{{ $displayEmail }}</p>
                         <div class="flex items-center gap-2 mt-2">
                             @if(Auth::user()->email_verified_at)
-                            
                                 <span class="flex items-center gap-1 text-sm bg-green-500 text-white px-2 py-0.5 rounded">Email vérifié</span>
                             @else
                                 <span class="flex items-center gap-1 text-sm bg-yellow-500 text-white px-2 py-0.5 rounded">Email non vérifié</span>
@@ -139,15 +137,19 @@
                         <div class="p-6">
                             <form method="post" action="{{ route('password.update') }}" class="space-y-4">
                                 @csrf @method('put')
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <x-input-label for="update_password_current_password" :value="__('Mot de passe actuel')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
-                                        <div class="relative">
-                                            <x-text-input id="update_password_current_password" name="current_password" type="password" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg pr-10" placeholder="••••••••" />
-                                            <button type="button" class="absolute right-3 top-3 text-gray-500" onclick="togglePassword('update_password_current_password', this)">👁️</button>
-                                        </div>
-                                        <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-1 text-sm" />
+                                
+                                {{-- Ligne 1 : Mot de passe actuel (seul) --}}
+                                <div>
+                                    <x-input-label for="update_password_current_password" :value="__('Mot de passe actuel')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
+                                    <div class="relative">
+                                        <x-text-input id="update_password_current_password" name="current_password" type="password" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg pr-10" placeholder="••••••••" />
+                                        <button type="button" class="absolute right-3 top-3 text-gray-500" onclick="togglePassword('update_password_current_password', this)">👁️</button>
                                     </div>
+                                    <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-1 text-sm" />
+                                </div>
+
+                                {{-- Ligne 2 : Nouveau mot de passe + Confirmation (côte à côte) --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <x-input-label for="update_password_password" :value="__('Nouveau mot de passe')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
                                         <div class="relative">
@@ -156,7 +158,8 @@
                                         </div>
                                         <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-1 text-sm" />
                                     </div>
-                                    <div class="md:col-span-2">
+                                    
+                                    <div>
                                         <x-input-label for="update_password_password_confirmation" :value="__('Confirmer le mot de passe')" class="font-medium text-gray-700 dark:text-gray-200 mb-1" />
                                         <div class="relative">
                                             <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg pr-10" placeholder="••••••••" />
@@ -165,6 +168,7 @@
                                         <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-1 text-sm" />
                                     </div>
                                 </div>
+                                
                                 <div class="flex items-center gap-4 pt-2">
                                     <x-primary-button class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg">{{ __('Mettre à jour') }}</x-primary-button>
                                     @if (session('status') === 'password-updated')
@@ -176,7 +180,7 @@
                     </div>
                 </div>
 
-                <!-- Colonne droite : activité et zone dangereuse -->
+                <!-- Colonne droite : activité du compte -->
                 <div class="space-y-6">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
                         <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
@@ -192,6 +196,8 @@
                         </div>
                     </div>
 
+                    {{-- ZONE DANGEREUSE - Visible UNIQUEMENT par les admins --}}
+                    @if(auth()->user()->hasRole('admin'))
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-red-200 dark:border-red-800">
                         <div class="bg-red-50 dark:bg-red-900/20 px-6 py-4 border-b border-red-100 dark:border-red-800">
                             <h3 class="text-lg font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
@@ -204,6 +210,7 @@
                             <x-danger-button x-data="" x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')" class="w-full justify-center">{{ __('Supprimer mon compte') }}</x-danger-button>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
