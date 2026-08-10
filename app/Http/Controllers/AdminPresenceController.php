@@ -28,12 +28,16 @@ class AdminPresenceController extends Controller
     {
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
-        $period = $request->get('period', ($dateFrom || $dateTo) ? 'custom' : 'today');
+        $period = $request->get('period', 'today');
         $group = $request->get('group', 'all');
 
         $overview = $this->presenceService->getTodayOverview();
         $globalStats = $this->presenceService->getGlobalStats($period, $dateFrom, $dateTo);
         $groupStats = $this->presenceService->getStatsByGroup($group, $period, $dateFrom, $dateTo);
+
+        // ✅ Plage réellement appliquée — sert à remplir Du/Au et à construire les liens des onglets
+        $rangeStart = $globalStats['range_start'];
+        $rangeEnd   = $globalStats['range_end'];
         $topLate = AttendanceDay::topLate(10, $period, $dateFrom, $dateTo)->forActiveUsers()->get();
         $absenceData = $this->presenceService->getAbsencesWithDetails($period, $dateFrom, $dateTo);
         $absences = $absenceData['counts'];
@@ -72,7 +76,9 @@ class AdminPresenceController extends Controller
             'group',
             'days',
             'reportStats',
-            'request'
+            'request',
+            'rangeStart',
+            'rangeEnd'
         ));
     }
 

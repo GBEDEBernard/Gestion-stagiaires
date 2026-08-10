@@ -1075,9 +1075,9 @@
             {{-- PERIOD TABS --}}
             <div class="pres-tabs" style="background-color: #f3f4f6; border-color: rgba(0, 0, 0, 0.08);">
                 @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
-                <a href="?period={{ $k }}" class="pres-tab {{ request('period',$k==='today'?'today':null)===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
+                <a href="{{ route('admin.presence.index', array_filter(['period'=>$k, 'date_from'=>$rangeStart->format('Y-m-d')])) }}" class="pres-tab {{ $period===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
                     {{ $lbl }}
-                    @if(request('period')===$k)<span class="pres-tab-indicator"></span>@endif
+                    @if($period===$k)<span class="pres-tab-indicator"></span>@endif
                 </a>
                 @endforeach
             </div>
@@ -1092,14 +1092,14 @@
                         <div class="pres-filter-field">
                             <label>Du</label>
                             <input type="date" name="date_from"
-                                value="{{ request('date_from', today()->format('Y-m-d')) }}"
+                                value="{{ $rangeStart->format('Y-m-d') }}"
                                 class="pres-filter-input" />
                         </div>
 
                         <div class="pres-filter-field">
                             <label>Au</label>
                             <input type="date" name="date_to"
-                                value="{{ request('date_to', today()->format('Y-m-d')) }}"
+                                value="{{ $rangeEnd->format('Y-m-d') }}"
                                 class="pres-filter-input" />
                         </div>
 
