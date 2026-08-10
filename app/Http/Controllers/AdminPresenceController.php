@@ -170,27 +170,66 @@ class AdminPresenceController extends Controller
     /**
      * Liste anomalies.
      */
-    public function anomalies(Request $request)
-    {
-        $anomalies = $this->presenceService->getOpenAnomalies(100);
+   public function anomalies(Request $request)
+{
+    $filter = $request->get('filter', 'all'); // all | today | week
 
-        if ($request->wantsJson()) {
-            return response()->json($anomalies);
-        }
+    $query = AttendanceAnomaly::with([
+            'attendanceEvent.stage.etudiant.user',
+            'attendanceDay.stage.site',
+            'user',
+        ])
+        ->where('status', 'open');
 
-        $anomaliesJson = $anomalies->map(fn($a) => [
-            'id'          => $a->id,
-            'user'        => $a->attendanceEvent->stage?->etudiant?->nom ?? $a->user?->name ?? 'Inconnu',
-            'type'        => $a->type_label,
-            'severity'    => ucfirst($a->severity),
-            'date'        => $a->detected_at->format('d/m/Y H:i'),
-            'description' => $a->type_description,
-            'solution'    => $a->type_solution,
-            'observation' => $a->payload['message_observation'] ?? null,
-        ])->values();
-
-        return view('admin.presence.anomalies', compact('anomalies', 'anomaliesJson'));
+    if ($filter === 'today') {
+        $query->whereDate('detected_at', today());
+    } elseif ($filter === 'week') {
+        $query->whereBetween('detected_at', [now()->startOfWeek(), now()->endOfWeek()]);
     }
+
+    $anomalies = $query->orderByDesc('detected_at')->get();
+
+    // ✅ Regroupement par utilisateur, puis par type d'anomalie à l'intérieur
+    $grouped = $anomalies
+        ->groupBy(fn($a) => $a->attendanceEvent->stage?->etudiant?->nom ?? $a->user?->name ?? 'Inconnu')
+        ->map(function ($items, $name) {
+            $severityOrder = ['high' => 3, 'medium' => 2, 'low' => 1];
+
+            $types = $items->groupBy('type')->map(function ($typeItems) {
+                $first = $typeItems->first();
+                return [
+                    'type'        => $first->type,
+                    'label'       => $first->type_label,
+                    'description' => $first->type_description,
+                    'solution'    => $first->type_solution,
+                    'severity'    => $first->severity,
+                    'count'       => $typeItems->count(),
+                    'ids'         => $typeItems->pluck('id')->values(),
+                    'items'       => $typeItems->map(fn($a) => [
+                        'id'          => $a->id,
+                        'date'        => $a->detected_at->format('d/m/Y H:i'),
+                        'observation' => $a->payload['message_observation'] ?? null,
+                    ])->values(),
+                ];
+            })->sortByDesc(fn($t) => $severityOrder[$t['severity']] ?? 0)->values();
+
+            return [
+                'user'          => $name,
+                'total'         => $items->count(),
+                'max_severity'  => $types->pluck('severity')->map(fn($s) => $severityOrder[$s] ?? 0)->max(),
+                'last_detected' => $items->max('detected_at'),
+                'types'         => $types,
+            ];
+        })
+        ->sortByDesc('total')
+        ->values();
+
+    if ($request->wantsJson()) {
+        return response()->json($grouped);
+    }
+
+    return view('admin.presence.anomalies', compact('anomalies', 'grouped', 'filter'));
+}
 
     /**
      * Suivi Pointage - Admin
@@ -380,12 +419,20 @@ class AdminPresenceController extends Controller
     /**
      * Résoudre anomalie.
      */
-    public function resolveAnomaly(ResolveAnomalyRequest $request, int $anomalyId)
-    {
-        $this->presenceService->resolveAnomaly($anomalyId, $request->validated());
+    public function resolveAnomaliesBulk(Request $request)
+{
+    $ids = (array) $request->input('ids', []);
+    $note = $request->input('resolution_note');
 
-        return redirect()->back()->with('success', 'Anomalie résolue.');
+    foreach ($ids as $id) {
+        $this->presenceService->resolveAnomaly((int) $id, [
+            'reviewed_by'     => auth()->id(),
+            'resolution_note' => $note,
+        ]);
     }
+
+    return redirect()->back()->with('success', count($ids) . ' anomalie(s) résolue(s).');
+}
 
     /**
      * Export CSV amélioré.

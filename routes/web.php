@@ -80,6 +80,9 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
         Route::match(['put', 'patch'], '/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
+    
+Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::class, 'resolveAnomaliesBulk'])
+    ->name('admin.presence.anomalies.bulk-resolve');
 
     // ---------------- Jours ----------------
     Route::prefix('admin/jours')->group(function () {
