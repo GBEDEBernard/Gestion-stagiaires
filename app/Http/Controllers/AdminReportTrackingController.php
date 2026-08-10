@@ -66,38 +66,69 @@ class AdminReportTrackingController extends Controller
         ));
     }
 
-    public function show(Request $request, $id)
-    {
-        $report = DailyReport::with(['etudiant.user', 'user', 'stage', 'reviews.reviewer'])
-            ->findOrFail($id);
+public function show(Request $request, $id)
+{
+    $report = DailyReport::with([
+        'etudiant.user',
+        'etudiant.personnel',
+        'user.personnel',
+        'stage',
+        'reviews.reviewer',
+        'reviews.reviewer.personnel',
+        'task'
+    ])->findOrFail(decrypt_route_param($id) ?? $id);
 
-        $authorName = $report->etudiant?->user?->name ?? $report->user?->name ?? 'N/A';
+    // Vérification des permissions
+    if (!auth()->user()->can('daily_reports.view')) {
+        abort(403);
+    }
 
+    // Pour le JSON (si appelé via AJAX)
+    if ($request->wantsJson()) {
         return response()->json([
             'report' => [
                 'id'                    => $report->id,
                 'summary'               => $report->summary,
+                'introduction'          => $report->introduction,
                 'blockers'              => $report->blockers,
                 'next_steps'            => $report->next_steps,
                 'hours_declared'        => $report->hours_declared,
                 'status'                => $report->status,
-                'author_name'           => $authorName,
+                'author_name'           => $report->user?->personnel?->prenom . ' ' . $report->user?->personnel?->nom ?? $report->user?->name ?? 'N/A',
+                'author_email'          => $report->user?->email ?? $report->etudiant?->user?->email ?? 'N/A',
+                'author_type'           => $report->etudiant_id ? 'etudiant' : 'employe',
                 'stage_theme'           => $report->stage?->theme,
+                'task_title'            => $report->task?->title,
+                'task_progress_percent' => $report->task_progress_percent,
                 'report_date_formatted' => $report->report_date->format('l j F Y'),
                 'created_at_formatted'  => $report->created_at->diffForHumans(),
                 'updated_at_formatted'  => $report->updated_at->diffForHumans(),
+                'created_at_full'       => $report->created_at->format('d/m/Y à H:i'),
+                'updated_at_full'       => $report->updated_at->format('d/m/Y à H:i'),
+                'latitude'              => $report->latitude,
+                'longitude'             => $report->longitude,
+                'accuracy_meters'       => $report->accuracy_meters,
+                'location_method'       => $report->location_method,
             ],
             'reviews' => $report->reviews->map(function ($review) {
                 return [
                     'id'            => $review->id,
                     'comment'       => $review->comment,
-                    'reviewer_name' => $review->reviewer->name,
+                    'reviewer_name' => $review->reviewer?->personnel?->prenom . ' ' . $review->reviewer?->personnel?->nom ?? $review->reviewer?->name ?? 'Utilisateur',
+                    'reviewer_id'   => $review->reviewer_id,
                     'created_at'    => $review->created_at->diffForHumans(),
+                    'created_at_full' => $review->created_at->format('d/m/Y à H:i'),
                     'action'        => $review->action,
+                    'is_author'     => $review->reviewer_id === $report->user_id || $review->reviewer_id === $report->etudiant?->user?->id,
                 ];
             }),
+            'can_send_bilan' => auth()->user()->can('admin.reports.send-bilan'),
         ]);
     }
+
+    // Pour la vue HTML (page complète)
+    return view('admin.reports.show', compact('report'));
+}
 
     /**
      * Tableau complet de TOUS les rapports (étudiants + employés confondus),

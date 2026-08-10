@@ -371,13 +371,13 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     });
 
     // ---------------- Suivi des Rapports Admin ----------------
-    Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
-        Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
-        Route::get('/all', [AdminReportTrackingController::class, 'all'])->name('admin.reports.all');
-        Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show');
-        Route::post('/{id}/send-bilan', [AdminReportTrackingController::class, 'sendWeeklyBilan'])->name('admin.reports.send-bilan')->middleware('role:admin|superviseur');
-        Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
-    });
+ Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
+    Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
+    Route::get('/all', [AdminReportTrackingController::class, 'all'])->name('admin.reports.all');
+    Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show'); // ← Page de détails
+    Route::post('/{id}/send-bilan', [AdminReportTrackingController::class, 'sendWeeklyBilan'])->name('admin.reports.send-bilan');
+    Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
+});
 
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {
