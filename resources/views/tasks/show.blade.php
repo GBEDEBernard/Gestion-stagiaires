@@ -221,8 +221,8 @@
                             </form>
                             @endif
 
-                            @if($isOwner)
-                            <div class="relative" x-data="{open:false}" @keydown.escape.window="open=false">
+                            @if($isOwner || $user->hasRole('admin'))
+                            <div class="relative" x-data="{open:false, confirmDelete:false}" @keydown.escape.window="open=false; confirmDelete=false">
                                 <button @click="open=!open" @click.outside="open=false"
                                         class="sh-btn-ghost flex h-9 w-9 items-center justify-center rounded-xl">
                                     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7.25a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Zm0 6a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5Z"/></svg>
@@ -237,14 +237,44 @@
                                         Modifier
                                     </a>
                                     @endunless
-                                    <form method="POST" action="{{ encrypted_route('tasks.destroy', $task) }}"
-                                          onsubmit="return confirm('Supprimer cette tâche ?')">
-                                        @csrf @method('DELETE')
-                                        <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition hover:bg-red-50" style="color:#dc2626;">
-                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.94-2.8L18 19a2 2 0 0 1-2 1.8H8A2 2 0 0 1 6 19L4.8 6.2M9 6.2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2.2M3.5 6.2h17"/></svg>
-                                            Supprimer
-                                        </button>
-                                    </form>
+                                    <button type="button" @click="open=false; confirmDelete=true"
+                                            class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition hover:bg-red-50" style="color:#dc2626;">
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.94-2.8L18 19a2 2 0 0 1-2 1.8H8A2 2 0 0 1 6 19L4.8 6.2M9 6.2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2.2M3.5 6.2h17"/></svg>
+                                        Supprimer
+                                    </button>
+                                </div>
+
+                                {{-- Modal de confirmation --}}
+                                <div x-show="confirmDelete" x-cloak x-transition.opacity
+                                     class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                                    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="confirmDelete = false"></div>
+                                    <div class="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+                                         x-show="confirmDelete" x-transition>
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
+                                            <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.94-2.8L18 19a2 2 0 0 1-2 1.8H8A2 2 0 0 1 6 19L4.8 6.2M9 6.2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2.2M3.5 6.2h17"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="mt-4 text-base font-semibold text-slate-900">Supprimer cette tâche ?</h3>
+                                        <p class="mt-1.5 text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($task->title, 60) }}</p>
+                                        <p class="mt-1 text-xs text-slate-400">La tâche sera déplacée dans la corbeille. Tu pourras la restaurer ou la supprimer définitivement.</p>
+                                        <div class="mt-5 flex items-center justify-end gap-2">
+                                            <button type="button" @click="confirmDelete = false"
+                                                    class="h-9 rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
+                                                Annuler
+                                            </button>
+                                            <form method="POST" action="{{ encrypted_route('tasks.destroy', $task) }}">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                        class="inline-flex h-9 items-center gap-1.5 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 transition">
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.94-2.8L18 19a2 2 0 0 1-2 1.8H8A2 2 0 0 1 6 19L4.8 6.2M9 6.2V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2.2M3.5 6.2h17"/>
+                                                    </svg>
+                                                    Supprimer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             @endif

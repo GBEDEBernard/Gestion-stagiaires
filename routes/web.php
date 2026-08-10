@@ -217,6 +217,10 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
     // ---------------- Taches ----------------
 Route::prefix('tasks')->group(function () {
         Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
+        // Corbeille — admin uniquement (déclarée avant {task} pour ne pas être captée)
+        Route::get('trash', [TaskController::class, 'trash'])->name('tasks.trash')->middleware('role:admin');
+        Route::post('trash/{id}/restore', [TaskController::class, 'restore'])->name('tasks.restore')->middleware('role:admin');
+        Route::delete('trash/{id}', [TaskController::class, 'forceDelete'])->name('tasks.force-delete')->middleware('role:admin');
         // Assignation par admin/superviseur (T-006)
         Route::get('assign/create', [TaskController::class, 'assignForm'])->name('tasks.assign.form')->middleware('permission:tasks.assign');
         Route::post('assign', [TaskController::class, 'assign'])->name('tasks.assign')->middleware('permission:tasks.assign');

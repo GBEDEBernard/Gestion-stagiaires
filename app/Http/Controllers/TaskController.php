@@ -487,6 +487,51 @@ public function index(Request $request)
         return redirect()->route('tasks.index')->with('success', 'Tâche supprimée.');
     }
 
+    public function trash()
+    {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
+        $tasks = Task::onlyTrashed()
+            ->with('owner')
+            ->latest('deleted_at')
+            ->paginate(15);
+
+        return view('tasks.trash', compact('tasks'));
+    }
+
+    public function restore($id)
+    {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
+        $task = Task::withTrashed()->findOrFail(decrypt_route_param($id) ?? $id);
+        $task->restore();
+
+        Activity::create([
+            'user_id'     => auth()->id(),
+            'action'      => 'Restauration tache',
+            'description' => "Tache {$task->title} restauree",
+        ]);
+
+        return redirect()->route('tasks.trash')->with('success', 'Tâche restaurée.');
+    }
+
+    public function forceDelete($id)
+    {
+        abort_unless(auth()->user()->hasRole('admin'), 403);
+
+        $task = Task::withTrashed()->findOrFail(decrypt_route_param($id) ?? $id);
+        $title = $task->title;
+        $task->forceDelete();
+
+        Activity::create([
+            'user_id'     => auth()->id(),
+            'action'      => 'Suppression definitive tache',
+            'description' => "Tache {$title} supprimee definitivement",
+        ]);
+
+        return redirect()->route('tasks.trash')->with('success', 'Tâche supprimée définitivement.');
+    }
+
     public function review(Request $request, Task $task)
     {
         $user = auth()->user();
@@ -641,10 +686,11 @@ public function index(Request $request)
        HELPERS
     ========================================================================= */
 
-    /** Seul le propriétaire (producteur) peut éditer/supprimer sa tâche. */
+    /** Le propriétaire (producteur) ou l'admin peuvent éditer/supprimer une tâche. */
     protected function authorizeOwner(Task $task): void
     {
-        abort_unless($task->owner_id === auth()->id(), 403);
+        $user = auth()->user();
+        abort_unless($user->hasRole('admin') || $task->owner_id === $user->id, 403);
     }
 
     /**
