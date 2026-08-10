@@ -150,7 +150,7 @@
                     <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold bg-violet-100 text-violet-700">+8%</span>
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalEtudiants }}</p>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Étudiants inscrits</p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Stagiaires inscrits</p>
             </div>
 
             {{-- Attestations --}}
@@ -373,7 +373,7 @@
                 <div class="p-4 sm:p-6 space-y-4">
                     @foreach([
                         ['Taux de réussite',$tauxReussite,'from-green-400 to-green-500','text-green-600'],
-                        ['Étudiants actifs',$tauxEtudiantsActifs,'from-blue-400 to-blue-500','text-blue-600'],
+                        ['Stagiaires actifs',$tauxEtudiantsActifs,'from-blue-400 to-blue-500','text-blue-600'],
                         ['Conversion',$tauxConversion,'from-violet-400 to-violet-500','text-violet-600']
                     ] as [$lbl,$val,$grad,$cls])
                     <div>
@@ -415,7 +415,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     @foreach([
                         ['Stages',$stagesTrash->count(),'text-purple-600','bg-purple-50 dark:bg-purple-900/20'],
-                        ['Étudiants',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
+                        ['Stagiaires',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
                         ['Badges',$badgesTrash->count(),'text-amber-600','bg-amber-50 dark:bg-amber-900/20'],
                         ['Total',$totalTrash,'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
                     ] as [$lbl,$cnt,$cls,$bg])
