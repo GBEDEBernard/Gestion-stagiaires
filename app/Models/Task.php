@@ -18,6 +18,7 @@ class Task extends Model
         'assigned_by',
         'title',
         'description',
+        'start_date',
         'priority',
         'status',
         'due_date',
@@ -31,6 +32,7 @@ class Task extends Model
     ];
 
     protected $casts = [
+        'start_date' => 'date',
         'due_date' => 'date',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',

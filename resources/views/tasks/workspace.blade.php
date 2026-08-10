@@ -260,7 +260,7 @@ $user = auth()->user();
         }
     </style>
 
-    <div class="ws-root -m-3 sm:-m-4 md:-m-6 min-h-screen" style="background: var(--ws-bg);" x-data="{ openCreate: {{ (isset($errors) && $errors->any()) && $canCreate ? 'true' : 'false' }} }" x-init="$el.classList.toggle('dark', document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark')">
+    <div class="ws-root -m-3 sm:-m-4 md:-m-6 min-h-screen" style="background: var(--ws-bg);" x-data="{}" x-init="$el.classList.toggle('dark', document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark')">
         <script>(function(){var r=document.currentScript.parentElement;if(localStorage.getItem('theme')==='dark'||document.documentElement.classList.contains('dark'))r.classList.add('dark')})()</script>
 
         <div class="mx-auto max-w-[1560px] px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8" style="color: var(--ws-text);">
@@ -306,13 +306,13 @@ $user = auth()->user();
                             </div>
 
 @if($canCreate)
-                            <button type="button" @click="openCreate = true"
+                            <a href="{{ route('tasks.create') }}"
                                 class="ws-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/>
                                 </svg>
                                 Nouvelle tâche
-                            </button>
+                            </a>
                             @endif
                             @if($canAssign)
                             <a href="{{ route('tasks.assign.form') }}"
@@ -440,10 +440,10 @@ $user = auth()->user();
                                 <p class="text-sm font-medium" style="color:var(--ws-text-tag);">Aucune tâche</p>
                                 <p class="mt-1 text-xs" style="color:var(--ws-text-faint);">Ajuste le filtre ou crée une tâche.</p>
                                 @if($canCreate)
-                                <button type="button" @click="openCreate = true"
+                                <a href="{{ route('tasks.create') }}"
                                     class="ws-btn-primary mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-medium">
                                     Créer une tâche
-                                </button>
+                                </a>
                                 @endif
                                 @if($user->hasAnyRole(['admin', 'superviseur']))
                                 <a href="{{ route('admin.tasks.tracking') }}"
@@ -473,13 +473,13 @@ $user = auth()->user();
                             <h2 class="text-base font-semibold" style="letter-spacing:-.01em;">Sélectionne une tâche</h2>
                             <p class="mt-1.5 text-sm leading-6" style="color:var(--ws-text-muted);">Choisis un élément dans la liste pour afficher son détail.</p>
                             @if($canCreate)
-                            <button type="button" @click="openCreate = true"
+                            <a href="{{ route('tasks.create') }}"
                                 class="ws-btn-primary mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/>
                                 </svg>
                                 Créer une tâche
-                            </button>
+                            </a>
                             @endif
                         </div>
                     </div>
@@ -487,108 +487,6 @@ $user = auth()->user();
                 </main>
             </div>
         </div>
-
-        {{-- ── MODAL CRÉATION ──────────────────────────────────── --}}
-        @if($canCreate)
-        <div x-show="openCreate" x-cloak
-             class="ws-modal-backdrop fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4"
-             x-transition.opacity @keydown.escape.window="openCreate = false">
-            <div class="ws-modal-appear w-full max-w-lg" @click.outside="openCreate = false">
-                <div class="overflow-hidden rounded-t-2xl sm:rounded-2xl ws-card" style="background:var(--ws-modal-bg); border-color:var(--ws-border2);">
-
-                    {{-- En-tête modal --}}
-                    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--ws-border);">
-                        <div>
-                            <p class="ws-modal-eyebrow text-[10px] font-semibold uppercase tracking-[.16em]"
-                               style="color:var(--ws-text-muted);">Nouvelle tâche</p>
-                            <h2 class="ws-modal-title mt-0.5 text-base font-semibold"
-                               style="color:var(--ws-text); letter-spacing:-.01em;">Créer une tâche</h2>
-                        </div>
-                        <button type="button" @click="openCreate = false"
-                            class="flex h-8 w-8 items-center justify-center rounded-lg ws-btn-ghost transition"
-                            style="color:var(--ws-text-muted);">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    {{-- Corps modal --}}
-                    <form method="POST" action="{{ route('tasks.store') }}" class="p-5 space-y-4">
-                        @csrf
-
-                        {{-- Titre --}}
-                        <div>
-                            <label class="ws-modal-label block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5"
-                                   style="color:var(--ws-text-muted);">
-                                Titre <span style="color:#ef4444;">*</span>
-                            </label>
-                            <input type="text" name="title" required autofocus value="{{ old('title') }}"
-                                   placeholder="Nom de la tâche…"
-                                   class="ws-input h-10 w-full rounded-xl px-3.5 text-sm font-medium">
-                        </div>
-
-                        {{-- Description --}}
-                        <div>
-                            <label class="ws-modal-label block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5"
-                                   style="color:var(--ws-text-muted);">
-                                Description
-                            </label>
-                            <textarea name="description" rows="3" placeholder="Détails optionnels…"
-                                      class="ws-input w-full rounded-xl px-3.5 py-2.5 text-sm resize-none">{{ old('description') }}</textarea>
-                        </div>
-
-                        {{-- Priorité + Échéance --}}
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="ws-modal-label block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5"
-                                       style="color:var(--ws-text-muted);">
-                                    Priorité
-                                </label>
-                                <select name="priority"
-                                        class="ws-input h-10 w-full rounded-xl px-3.5 text-sm font-medium appearance-none">
-                                    @foreach(['low' => 'Basse', 'normal' => 'Normale', 'high' => 'Haute', 'urgent' => 'Urgente'] as $v => $l)
-                                    <option value="{{ $v }}" {{ old('priority', 'normal') === $v ? 'selected' : '' }}>{{ $l }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div>
-                                <label class="ws-modal-label block text-[10px] font-semibold uppercase tracking-[.14em] mb-1.5"
-                                       style="color:var(--ws-text-muted);">
-                                    Échéance
-                                </label>
-                                <input type="date" name="due_date" value="{{ old('due_date') }}"
-                                       class="ws-input h-10 w-full rounded-xl px-3.5 text-sm">
-                            </div>
-                        </div>
-
-                        {{-- Erreurs --}}
-                        @if(isset($errors) && $errors->any())
-                        <div class="rounded-xl px-3.5 py-2.5 text-sm"
-                             style="background:rgba(239,68,68,.06); color:#b91c1c; border:1px solid rgba(239,68,68,.15);">
-                            @foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach
-                        </div>
-                        @endif
-
-                        {{-- Actions --}}
-                        <div class="flex items-center justify-end gap-2 pt-1">
-                            <button type="button" @click="openCreate = false"
-                                class="ws-btn-cancel h-10 rounded-xl border px-4 text-sm font-medium transition">
-                                Annuler
-                            </button>
-                            <button type="submit"
-                                class="ws-btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Créer
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @endif
 
         {{-- ── TOAST ────────────────────────────────────────────── --}}
         @if(session('success'))

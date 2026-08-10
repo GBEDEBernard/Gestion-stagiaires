@@ -1,9 +1,8 @@
-<x-app-layout title="Modifier la tâche">
+<x-app-layout title="Créer une tâche">
 
     @php
-        $currentPriority = old('priority', $task->priority);
-        $currentStatus = old('status', in_array($task->status, ['pending', 'in_progress', 'blocked', 'completed'], true) ? $task->status : 'pending');
-        $pct = max(0, min(100, (int) $task->last_progress_percent));
+        $currentPriority = old('priority', 'normal');
+        $currentStatus = old('status', 'pending');
         $priorityOptions = [
             'low' => ['label' => 'Basse', 'hint' => 'Suivi léger', 'dot' => 'bg-slate-400'],
             'normal' => ['label' => 'Normale', 'hint' => 'Priorité standard', 'dot' => 'bg-cyan-500'],
@@ -49,41 +48,41 @@
             <div class="edit-rise grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
 
                 <aside class="space-y-4">
-                    <a href="{{ encrypted_route('tasks.show', $task) }}"
+                    <a href="{{ route('tasks.index') }}"
                        class="inline-flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19 8 12l7-7"/></svg>
-                        Retour à la tâche
+                        Retour aux tâches
                     </a>
 
                     <section class="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-950/[0.03] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
                         <div class="h-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-slate-950 dark:to-white"></div>
                         <div class="p-5">
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Édition</p>
-                            <h1 class="mt-2 text-2xl font-semibold leading-tight tracking-tight text-slate-950 dark:text-white">Modifier la tâche</h1>
-                            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Ajuste les informations visibles dans le workspace sans changer le fil de discussion.</p>
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Création</p>
+                            <h1 class="mt-2 text-2xl font-semibold leading-tight tracking-tight text-slate-950 dark:text-white">Créer une tâche</h1>
+                            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Remplis les informations de la nouvelle tâche. Elle apparaîtra dans le workspace dès sa création.</p>
 
                             <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
                                 <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
                                     <span>Progression</span>
-                                    <span class="tabular-nums">{{ $pct }}%</span>
+                                    <span class="tabular-nums">0%</span>
                                 </div>
                                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
-                                    <div class="h-full rounded-full bg-slate-950 transition-all duration-700 dark:bg-white" style="width: {{ $pct }}%"></div>
+                                    <div class="h-full w-0 rounded-full bg-slate-950 transition-all duration-700 dark:bg-white"></div>
                                 </div>
                             </div>
 
                             <dl class="mt-5 space-y-3 text-sm">
                                 <div class="flex items-center justify-between gap-4">
                                     <dt class="text-slate-400">Propriétaire</dt>
-                                    <dd class="max-w-[170px] truncate font-semibold text-slate-700 dark:text-slate-200">{{ $task->owner?->name ?? 'Non défini' }}</dd>
+                                    <dd class="max-w-[170px] truncate font-semibold text-slate-700 dark:text-slate-200">{{ auth()->user()->name }}</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4">
                                     <dt class="text-slate-400">Rapports</dt>
-                                    <dd class="font-semibold text-slate-700 dark:text-slate-200">{{ $task->dailyReports()->count() }}</dd>
+                                    <dd class="font-semibold text-slate-700 dark:text-slate-200">0</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4">
                                     <dt class="text-slate-400">Création</dt>
-                                    <dd class="font-semibold text-slate-700 dark:text-slate-200">{{ $task->created_at?->format('d/m/Y') }}</dd>
+                                    <dd class="font-semibold text-slate-700 dark:text-slate-200">{{ now()->format('d/m/Y') }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -105,20 +104,19 @@
                             </div>
                         </div>
 
-                        <form method="POST" action="{{ encrypted_route('tasks.update', $task) }}" class="space-y-6 p-5 sm:p-6">
+                        <form method="POST" action="{{ route('tasks.store') }}" class="space-y-6 p-5 sm:p-6">
                             @csrf
-                            @method('PUT')
 
                             <div>
                                 <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Titre <span class="text-rose-500">*</span></label>
-                                <input type="text" name="title" required value="{{ old('title', $task->title) }}"
+                                <input type="text" name="title" required value="{{ old('title') }}" placeholder="Nom de la tâche…"
                                     class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-white/20">
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Description</label>
-                                <textarea name="description" rows="7"
-                                    class="w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-950 transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-white/20">{{ old('description', $task->description) }}</textarea>
+                                <textarea name="description" rows="7" placeholder="Détails de la tâche…"
+                                    class="w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-950 transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-white/20">{{ old('description') }}</textarea>
                             </div>
 
                             <div>
@@ -165,16 +163,22 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de début</label>
-                                    <input type="date" name="start_date" value="{{ old('start_date', $task->start_date?->format('Y-m-d')) }}"
-                                        class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                            <div>
+                                <div class="mb-3 flex items-center justify-between gap-4">
+                                    <label class="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Période</label>
+                                    <span class="text-xs text-slate-400">Durée de la tâche</span>
                                 </div>
-                                <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de fin <span class="text-slate-300 dark:text-slate-600">(échéance)</span></label>
-                                    <input type="date" name="due_date" value="{{ old('due_date', $task->due_date?->format('Y-m-d')) }}"
-                                        class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de début</label>
+                                        <input type="date" name="start_date" value="{{ old('start_date') }}"
+                                            class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de fin <span class="text-slate-300 dark:text-slate-600">(échéance)</span></label>
+                                        <input type="date" name="due_date" value="{{ old('due_date') }}"
+                                            class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                    </div>
                                 </div>
                             </div>
 
@@ -185,14 +189,14 @@
                             @endif
 
                             <div class="flex flex-col-reverse gap-2 border-t border-slate-200/70 pt-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-end">
-                                <a href="{{ encrypted_route('tasks.show', $task) }}"
+                                <a href="{{ route('tasks.index') }}"
                                     class="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">
                                     Annuler
                                 </a>
                                 <button type="submit"
                                     class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                                    Enregistrer
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
+                                    Créer la tâche
                                 </button>
                             </div>
                         </form>

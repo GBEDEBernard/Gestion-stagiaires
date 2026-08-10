@@ -26,6 +26,12 @@ public function index(Request $request)
         return view('tasks.workspace', $this->workspaceData($request, null));
     }
 
+    /** Formulaire de création d'une tâche. */
+    public function create()
+    {
+        return view('tasks.create');
+    }
+
     /**
      * Formulaire d'assignation d'une tâche (T-008) — ADMIN UNIQUEMENT.
      * La même tâche peut être assignée à plusieurs personnes : une seule
@@ -272,7 +278,8 @@ public function index(Request $request)
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
             'priority'    => 'required|in:low,normal,high,urgent',
-            'due_date'    => 'nullable|date',
+            'start_date'  => 'nullable|date',
+            'due_date'    => 'nullable|date|after_or_equal:start_date',
         ]);
 
         [$stageId, $etudiantId] = $this->resolveStudentContext($user);
@@ -284,6 +291,7 @@ public function index(Request $request)
             'etudiant_id'           => $etudiantId,
             'title'                 => $payload['title'],
             'description'           => $payload['description'] ?? null,
+            'start_date'            => $payload['start_date'] ?? null,
             'priority'              => $payload['priority'],
             'status'                => 'pending',
             'due_date'              => $payload['due_date'] ?? null,
@@ -438,7 +446,8 @@ public function index(Request $request)
             'description' => 'nullable|string|max:5000',
             'priority'    => 'required|in:low,normal,high,urgent',
             'status'      => 'required|in:pending,in_progress,blocked,completed',
-            'due_date'    => 'nullable|date',
+            'start_date'  => 'nullable|date',
+            'due_date'    => 'nullable|date|after_or_equal:start_date',
         ]);
 
         $status = $payload['status'];
@@ -446,6 +455,7 @@ public function index(Request $request)
         $task->update([
             'title'                 => $payload['title'],
             'description'           => $payload['description'] ?? null,
+            'start_date'            => $payload['start_date'] ?? null,
             'priority'              => $payload['priority'],
             'status'                => $status,
             'due_date'              => $payload['due_date'] ?? null,
