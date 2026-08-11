@@ -121,32 +121,6 @@ class DailyReportController extends Controller
     }
 
     /**
-     * Formulaire d'édition d'un rapport (page dédiée).
-     */
-    public function edit(DailyReport $report)
-    {
-        $user     = auth()->user();
-        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-
-        if (
-            $report->user_id !== $user->id &&
-            $report->etudiant_id !== optional($etudiant)->id
-        ) {
-            abort(403);
-        }
-
-        $report->load(['task', 'reviews']);
-
-        $activeTasks = Task::query()
-            ->visibleTo($user)
-            ->where(fn($q) => $q->where('status', '!=', 'completed')->orWhere('id', $report->task_id))
-            ->latest()
-            ->get(['id', 'title', 'last_progress_percent']);
-
-        return view('reports.edit', compact('report', 'activeTasks'));
-    }
-
-    /**
      * Créer un rapport (appel depuis la vue index ou workspace).
      */
     public function store(StoreDailyReportRequest $request)

@@ -627,7 +627,7 @@
         @if($isParticipant && !$task->isCompleted())
         <div class="d-divider"></div>
 
-        <div class="px-6 py-5" x-data="{ open: {{ $isFirstReport ? 'true' : 'false' }}, prog: {{ (int) $task->last_progress_percent }} }">
+        <div class="px-6 py-5" x-data="{ open: {{ $isFirstReport ? 'true' : 'false' }}, prog: {{ (int) $task->last_progress_percent }}, edit:false }">
 
             {{-- Toggle header --}}
             <button type="button" @click="open = !open"
@@ -675,12 +675,12 @@
                                 </span>
                                 <span class="text-sm font-semibold text-emerald-700">Rapport soumis · {{ (int)$todayReport->task_progress_percent }}%</span>
                             </div>
-                            <a href="{{ route('reports.edit', $todayReport->id) }}"
-                               class="text-xs font-medium text-black/50 hover:text-black/80 transition hover:underline">
-                                Modifier →
-                            </a>
+                            <button type="button" @click="edit=!edit"
+                               class="text-xs font-medium text-black/50 hover:text-black/80 transition hover:underline"
+                               x-text="edit ? 'Annuler' : 'Modifier →'">
+                            </button>
                         </div>
-                        <div class="space-y-3">
+                        <div x-show="!edit" class="space-y-3">
                             @if($todayReport->introduction)
                             <div>
                                 <span class="d-section-label">Introduction</span>
@@ -704,6 +704,97 @@
                             </div>
                             @endif
                         </div>
+
+                        {{-- ── Formulaire édition inline ── --}}
+                        <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5" x-data="{prog:{{ (int)$todayReport->task_progress_percent }}}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="status_action" value="submit">
+                            <input type="hidden" name="task_id" value="{{ $task->id }}">
+
+                            {{-- Introduction --}}
+                            <div class="d-field">
+                                <label class="d-field-label">Introduction <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                <textarea name="introduction" rows="2"
+                                          class="d-input resize-none"
+                                          placeholder="Contexte du jour, objectifs fixés…">{{ $todayReport->introduction }}</textarea>
+                            </div>
+
+                            {{-- Travail réalisé --}}
+                            <div class="d-field">
+                                <label class="d-field-label">
+                                    Travail réalisé
+                                    <span style="color:#ef4444;">*</span>
+                                </label>
+                                <textarea name="summary" rows="4" required
+                                          class="d-input resize-none"
+                                          placeholder="Décris précisément ce que tu as accompli aujourd'hui…">{{ $todayReport->summary }}</textarea>
+                            </div>
+
+                            {{-- Progression --}}
+                            <div class="d-field">
+                                <div class="d-progress-shell">
+                                    <div class="flex items-center justify-between">
+                                        <label class="d-field-label mb-0">Progression de la tâche</label>
+                                        <span class="d-pct-badge" x-text="prog + '%'"></span>
+                                    </div>
+                                    <div class="d-progress-track">
+                                        <div class="d-progress-fill" :style="`width:${prog}%`"></div>
+                                    </div>
+                                    <input type="range" name="task_progress_percent"
+                                           min="0" max="100" step="5"
+                                           x-model="prog"
+                                           class="d-range">
+                                    <div class="flex justify-between mt-1.5">
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">0%</span>
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">50%</span>
+                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">100%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Difficultés + Heures --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="d-field">
+                                    <label class="d-field-label">Difficultés rencontrées <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                    <input type="text" name="blockers"
+                                           class="d-input"
+                                           value="{{ $todayReport->blockers }}"
+                                           placeholder="Ex : accès API indisponible…">
+                                </div>
+                                <div class="d-field">
+                                    <label class="d-field-label">Heures travaillées</label>
+                                    <input type="number" name="hours_declared"
+                                           min="0" max="24" step="0.5"
+                                           class="d-input"
+                                           value="{{ $todayReport->hours_declared }}"
+                                           placeholder="Ex : 7.5">
+                                </div>
+                            </div>
+
+                            {{-- Prochaines étapes --}}
+                            <div class="d-field">
+                                <label class="d-field-label">Prochaines étapes <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
+                                <textarea name="next_steps" rows="2"
+                                          class="d-input resize-none"
+                                          placeholder="Ce que tu prévois pour la prochaine session…">{{ $todayReport->next_steps }}</textarea>
+                            </div>
+
+                            {{-- Footer formulaire --}}
+                            <div class="flex items-center justify-between pt-1" style="border-top:1.5px solid rgba(99,102,241,.10);">
+                                <button type="button" @click="edit=false"
+                                        class="text-sm font-medium transition rounded-lg px-4 py-2.5"
+                                        style="background:rgba(0,0,0,.05);color:rgba(0,0,0,.55);">
+                                    Annuler
+                                </button>
+                                <button type="submit" class="d-btn-dark">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
+                                    </svg>
+                                    Enregistrer les modifications
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     {{-- ── Formulaire nouveau rapport ── --}}

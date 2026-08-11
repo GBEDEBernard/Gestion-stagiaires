@@ -442,7 +442,6 @@ Route::middleware(['auth', 'account_active', 'attendance'])->prefix('reports')->
     Route::get('/', [DailyReportController::class, 'index'])->name('reports.index');
     Route::get('{report}', [DailyReportController::class, 'show'])->name('reports.show');
     Route::post('/', [DailyReportController::class, 'store'])->name('reports.store');
-    Route::get('{report}/edit', [DailyReportController::class, 'edit'])->name('reports.edit');
     Route::put('{report}', [DailyReportController::class, 'update'])->name('reports.update');
     Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])->name('reports.comments.store');
     Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])->name('reports.comments.update');

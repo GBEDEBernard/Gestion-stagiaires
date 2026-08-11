@@ -318,7 +318,7 @@
             {{-- ── RAPPORT DU JOUR ─────────────────────────── --}}
             @if($isOwner && !$task->isCompleted())
             @php $state = $thread['task']['discussion_state'] ?? $task->discussionState(); @endphp
-            <div class="sh-card sh-2 rounded-2xl overflow-hidden mb-4" x-data="{open:{{ $state==='locked'?'true':'false' }}}">
+            <div class="sh-card sh-2 rounded-2xl overflow-hidden mb-4" x-data="{open:{{ $state==='locked'?'true':'false' }}, edit:false}">
                 <div class="h-[3px]" style="background:linear-gradient(90deg,#059669,#10b981);"></div>
                 <button @click="open=!open"
                     class="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 text-left transition hover:bg-black/[.02]">
@@ -365,19 +365,19 @@
                                     <span class="text-xs" style="color:rgba(0,0,0,.3);">·</span>
                                     <span class="text-xs" style="color:rgba(0,0,0,.4);">{{ $todayReport->created_at->format('H:i') }}</span>
                                 </div>
-                                <a href="{{ route('reports.edit', $todayReport->id) }}"
+                                <button type="button" @click="edit=!edit"
                                    class="inline-flex items-center gap-1.5 text-xs font-medium transition rounded-lg px-2.5 py-1.5"
                                    style="color:rgba(0,0,0,.45);"
                                    onmouseenter="this.style.background='rgba(0,0,0,.05)';this.style.color='#0a0a0a'"
-                                   onmouseleave="this.style.background='transparent';this.style.color='rgba(0,0,0,.45)'">
+                                   onmouseleave="this.style.background='transparent';this.style.color='rgba(0,0,0,.45)'"
+                                   x-text="edit ? 'Annuler' : 'Modifier'">
                                     <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l.72-3.95c.07-.39.26-.74.54-1.02L16.3 3.94a1.5 1.5 0 0 1 2.12 0l1.64 1.64a1.5 1.5 0 0 1 0 2.12L9.03 18.74c-.28.28-.63.47-1.02.54L4 20Z"/></svg>
-                                    Modifier
-                                </a>
+                                </button>
                             </div>
 
                             {{-- Progress bar --}}
                             @php $rpct = max(0, min(100, (int)$todayReport->task_progress_percent)); @endphp
-                            <div>
+                            <div x-show="!edit">
                                 <div class="flex items-center justify-between mb-1.5">
                                     <span class="text-[10px] font-semibold uppercase tracking-[.12em]" style="color:rgba(0,0,0,.35);">Progression</span>
                                     <span class="ws-mono text-xs font-semibold px-2 py-0.5 rounded-md" style="background:rgba(0,0,0,.05);color:rgba(0,0,0,.6);">{{ $rpct }}%</span>
@@ -388,13 +388,13 @@
                             </div>
 
                             {{-- Summary --}}
-                            <div class="rounded-xl px-4 py-3.5" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.05);">
+                            <div x-show="!edit" class="rounded-xl px-4 py-3.5" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.05);">
                                 <p class="text-[10px] font-semibold uppercase tracking-[.12em] mb-2" style="color:rgba(0,0,0,.3);">Travail effectué</p>
                                 <p class="text-sm leading-7 whitespace-pre-line" style="color:rgba(0,0,0,.7);">{{ $todayReport->summary }}</p>
                             </div>
 
                             {{-- Meta --}}
-                            <div class="flex flex-wrap items-center gap-3">
+                            <div x-show="!edit" class="flex flex-wrap items-center gap-3">
                                 @if($todayReport->blockers)
                                 <div class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs" style="background:rgba(245,158,11,.06);color:#b45309;border:1px solid rgba(245,158,11,.12);">
                                     <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
@@ -414,6 +414,88 @@
                                 </div>
                                 @endif
                             </div>
+
+                            {{-- ── FORMULAIRE ÉDITION ── --}}
+                            <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5" x-data="{prog:{{ (int)$todayReport->task_progress_percent }}}">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="status_action" value="submit">
+                                <input type="hidden" name="task_id" value="{{ $task->id }}">
+
+                                {{-- Summary avec floating label --}}
+                                <div class="relative">
+                                    <textarea name="summary" rows="4" required placeholder=" "
+                                        class="sh-input peer w-full rounded-xl px-3.5 pt-5 pb-2.5 text-sm leading-6 resize-none transition placeholder:opacity-0 focus:placeholder:opacity-100">{{ $todayReport->summary }}</textarea>
+                                    <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                  peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                  peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                        Résumé du travail <span class="text-red-400">*</span>
+                                    </label>
+                                </div>
+
+                                {{-- Progression --}}
+                                <div class="rounded-xl p-4 sm:p-5" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.06);">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <label class="text-[10px] font-semibold uppercase tracking-[.12em] text-black/30">Progression</label>
+                                        <span class="ws-mono text-sm font-semibold px-2.5 py-0.5 rounded-lg" style="background:#0a0a0a;color:#fff;" x-text="prog+'%'"></span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog" class="sh-range w-full">
+                                        <div class="flex justify-between text-[10px] text-black/20 mt-1 px-0.5 select-none">
+                                            <span>0%</span>
+                                            <span>25%</span>
+                                            <span>50%</span>
+                                            <span>75%</span>
+                                            <span>100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Blocages & Heures --}}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                    <div class="relative">
+                                        <input type="text" name="blockers" placeholder=" " value="{{ $todayReport->blockers }}"
+                                            class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                        <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                      peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                      peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                            Blocages
+                                        </label>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" name="hours_declared" min="0" max="24" step="0.5" placeholder=" " value="{{ $todayReport->hours_declared }}"
+                                            class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                        <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                      peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                      peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                            Heures déclarées
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {{-- Prochaines étapes --}}
+                                <div class="relative">
+                                    <input type="text" name="next_steps" placeholder=" " value="{{ $todayReport->next_steps }}"
+                                        class="sh-input peer w-full rounded-xl px-3.5 pt-4 pb-1.5 text-sm transition">
+                                    <label class="absolute left-3.5 top-1 text-[10px] font-medium uppercase tracking-[.12em] text-black/30 transition-all
+                                                  peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-black/20
+                                                  peer-focus:top-1 peer-focus:text-[10px] peer-focus:text-black/50">
+                                        Prochaines étapes
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-1">
+                                    <button type="button" @click="edit=false" class="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-medium transition"
+                                            style="background:rgba(0,0,0,.04);color:rgba(0,0,0,.55);"
+                                            onmouseenter="this.style.background='rgba(0,0,0,.08)'" onmouseleave="this.style.background='rgba(0,0,0,.04)'">
+                                        Annuler
+                                    </button>
+                                    <button type="submit" class="sh-btn inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-medium">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/></svg>
+                                        Enregistrer
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                         @else
                         {{-- ── FORMULAIRE ── --}}
