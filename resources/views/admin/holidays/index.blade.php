@@ -457,7 +457,7 @@
                         <button type="button" onclick="filterUsers('etudiant')" data-filter="etudiant"
                                 class="filter-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors
                                        bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                            Étudiants
+                            Stagiaires
                         </button>
                     </div>
 

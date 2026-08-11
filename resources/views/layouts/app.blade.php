@@ -252,7 +252,7 @@
                                     'badges' => 'Badges',
                                     'users' => 'Utilisateurs',
                                     'roles' => 'Rôles',
-                                    'etudiants' => 'Étudiants',
+                                    'etudiants' => 'Stagiaires',
                                     'employes' => 'Employés',
                                     'personnels' => 'Personnels',
                                     'sites' => 'Sites',

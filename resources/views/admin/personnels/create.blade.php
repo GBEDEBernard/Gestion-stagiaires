@@ -496,7 +496,7 @@
 
             {{-- Hidden real select --}}
             <select name="type" id="type-select" style="display:none">
-                <option value="etudiant" {{ old('type','etudiant') === 'etudiant' ? 'selected' : '' }}>Étudiant</option>
+                <option value="etudiant" {{ old('type','etudiant') === 'etudiant' ? 'selected' : '' }}>Stagiaire</option>
                 <option value="employe"  {{ old('type') === 'employe'  ? 'selected' : '' }}>Employé</option>
             </select>
 
@@ -504,7 +504,7 @@
             <div class="pc-type-tabs" role="group" aria-label="Type de personnel">
                 <button type="button" class="pc-type-tab {{ old('type','etudiant') === 'etudiant' ? 'active' : '' }}" data-value="etudiant">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                    Étudiant / Stagiaire
+                    Stagiaire
                 </button>
                 <button type="button" class="pc-type-tab {{ old('type') === 'employe' ? 'active' : '' }}" data-value="employe">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
@@ -513,9 +513,9 @@
             </div>
             @error('type')<p class="pc-field-error" style="margin-top:.5rem">{{ $message }}</p>@enderror
 
-            {{-- Étudiant fields --}}
+            {{-- Stagiaire fields --}}
             <div id="etudiant-fields" class="pc-sub {{ old('type','etudiant') !== 'etudiant' ? 'hidden' : '' }}">
-                <p class="pc-sub-title">Informations étudiant</p>
+                <p class="pc-sub-title">Informations stagiaire</p>
                 <div class="pc-grid">
                     <div class="pc-field">
                         <label>École / Université</label>

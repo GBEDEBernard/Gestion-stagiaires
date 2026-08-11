@@ -3,7 +3,7 @@
         <!-- En-tête avec actions -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Fiche étudiant</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Fiche stagiaire</h1>
                 <p class="text-gray-500 dark:text-gray-300 mt-1">Informations détaillées du stagiaire.</p>
             </div>
             <div class="flex gap-3 flex-wrap">
@@ -47,7 +47,7 @@
                     <div class="text-center mb-6">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $p->prenom }} {{ $p->nom }}</h2>
                         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold mt-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                            Étudiant
+                            Stagiaire
                         </span>
                     </div>
                     <div class="space-y-3 text-sm">
@@ -141,7 +141,7 @@
                             </button>
                         </form>
                     @endif
-                    <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" onsubmit="return confirm('Supprimer définitivement cet étudiant ?');" class="inline">
+                    <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" onsubmit="return confirm('Supprimer définitivement ce stagiaire ?');" class="inline">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-800/50 transition">

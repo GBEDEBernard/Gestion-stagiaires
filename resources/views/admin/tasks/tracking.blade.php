@@ -11,7 +11,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight">Suivi des tâches</h1>
-                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Avancement des tâches des producteurs (étudiants & employés).</p>
+                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Avancement des tâches des producteurs (stagiaires & employés).</p>
             </div>
             @if($canCreate || $canAssign)
             <div class="flex flex-wrap items-center gap-3">

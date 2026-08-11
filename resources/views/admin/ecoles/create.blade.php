@@ -10,7 +10,7 @@
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nouvelle école</h1>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 ml-14">Ajoutez une école de provenance pour les étudiants et stagiaires</p>
+            <p class="text-gray-500 dark:text-gray-400 ml-14">Ajoutez une école de provenance pour les stagiaires</p>
         </div>
 
         @if(session('success'))
@@ -36,7 +36,7 @@
                     <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Cette école sera proposée dans la liste lors de la création d'un étudiant, d'un personnel ou d'un stagiaire.
+                    Cette école sera proposée dans la liste lors de la création d'un stagiaire, d'un personnel ou d'un employé.
                 </div>
 
                 <!-- Boutons -->

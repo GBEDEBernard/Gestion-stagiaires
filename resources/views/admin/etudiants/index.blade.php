@@ -3,7 +3,7 @@
         <!-- En-tête -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Étudiants</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Stagiaires</h1>
                 <p class="text-gray-500 dark:text-gray-300 mt-1">Gestion des stagiaires et génération de leurs comptes</p>
             </div>
             <div class="flex gap-3 flex-wrap">
@@ -11,7 +11,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Nouvel étudiant
+                    Nouveau stagiaire
                 </a>
                 <a href="{{ route('etudiants.trash') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@
                         @php $personnel = $etudiant->personnel; @endphp
                         @if(!$personnel)
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-red-500 dark:text-red-400">Erreur : personnel introuvable pour étudiant #{{ $etudiant->id }}</td>
+                            <td colspan="6" class="px-6 py-4 text-red-500 dark:text-red-400">Erreur : personnel introuvable pour le stagiaire #{{ $etudiant->id }}</td>
                         </tr>
                         @continue
                         @endif
@@ -134,7 +134,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun étudiant trouvé.</td>
+                            <td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun stagiaire trouvé.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -150,7 +150,7 @@
     <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
             <h2 id="passwordModalTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
-            <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour cet étudiant. Si laissé vide, un mot de passe aléatoire sera généré.</p>
+            <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré.</p>
 
             <form id="passwordForm" method="POST" action="">
                 @csrf
@@ -176,8 +176,8 @@
             var resend = mode === 'resend';
             document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'email d'activation" : 'Générer un compte';
             document.getElementById('passwordModalDescription').textContent = resend
-                ? "Un compte existe déjà pour cet étudiant. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
-                : "Entrez un mot de passe temporaire pour cet étudiant. Si laissé vide, un mot de passe aléatoire sera généré.";
+                ? "Un compte existe déjà pour ce stagiaire. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
+                : "Entrez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré.";
             document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
         }
 

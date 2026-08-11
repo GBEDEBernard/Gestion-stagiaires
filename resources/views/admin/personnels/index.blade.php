@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Personnels</h1>
-                <p class="text-gray-500 dark:text-gray-300 mt-1">Liste des personnels, étudiants et employés enregistrés dans le système.</p>
+                <p class="text-gray-500 dark:text-gray-300 mt-1">Liste des personnels, stagiaires et employés enregistrés dans le système.</p>
             </div>
             <div class="flex gap-3 flex-wrap">
                 <a href="{{ route('personnels.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition shadow-lg font-medium">
@@ -36,7 +36,7 @@
                     <select name="type" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
                         <option value="all" {{ request('type') === 'all' ? ' selected' : '' }}>Tous</option>
                         <option value="admin" {{ request('type') === 'admin' ? ' selected' : '' }}>Admin</option>
-                        <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Étudiant</option>
+                        <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Stagiaire</option>
                         <option value="employe" {{ request('type') === 'employe' ? ' selected' : '' }}>Employé</option>
                     </select>
                 </div>
@@ -89,7 +89,7 @@
                                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold 
                                         @if($personnel->type_label === 'Admin') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
                                         @elseif($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
-                                        @elseif($personnel->type_label === 'Étudiant') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
+                                        @elseif($personnel->type_label === 'Stagiaire') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
                                         @else bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
                                         @endif">
                                     {{ $personnel->type_label }}

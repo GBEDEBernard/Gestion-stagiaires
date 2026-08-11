@@ -165,7 +165,7 @@ class EtudiantAccountService
 
     protected function buildDisplayName(Etudiant $etudiant): string
     {
-        return $etudiant->personnel?->full_name ?? 'Etudiant';
+        return $etudiant->personnel?->full_name ?? 'Stagiaire';
     }
 
     protected function generateTemporaryPassword(): string

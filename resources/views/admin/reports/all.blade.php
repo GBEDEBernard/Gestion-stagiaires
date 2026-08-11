@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight">Tous les rapports</h1>
-                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Tableau complet des rapports de tous les utilisateurs (étudiants et employés).</p>
+                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Tableau complet des rapports de tous les utilisateurs (stagiaires et employés).</p>
             </div>
             <a href="{{ route('admin.reports.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-all">

@@ -13,7 +13,7 @@
         $statusText = ($user?->status ?? null) === 'actif' ? 'Actif' : 'Inactif';
         $typeLabel = $personnel->type_label;
         $typeColor = match($typeLabel) {
-            'Étudiant' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+            'Stagiaire' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
             'Employé'  => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
             default    => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
         };
@@ -120,7 +120,7 @@
                         <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
                                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/></svg>
-                                Informations étudiant
+                                Informations stagiaire
                             </h3>
                         </div>
                         <div class="p-6">

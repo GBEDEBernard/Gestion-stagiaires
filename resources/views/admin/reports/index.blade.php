@@ -3,7 +3,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight">Rapports de travail</h1>
-                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Suivi propre des rapports étudiants et employés.</p>
+                <p class="mt-2 text-lg text-slate-600 dark:text-slate-300">Suivi propre des rapports stagiaires et employés.</p>
             </div>
         </div>
 
@@ -39,7 +39,7 @@
         <div class="grid grid-cols-1 gap-6">
             <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Étudiants</h2>
+                    <h2 class="text-xl font-semibold text-slate-900 dark:text-slate-100">Stagiaires</h2>
                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Rapports liés aux stagiaires.</p>
                 </div>
                 <div class="overflow-x-auto">
@@ -88,7 +88,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucun rapport étudiant trouvé pour cette période.</td>
+                                <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucun rapport stagiaire trouvé pour cette période.</td>
                             </tr>
                             @endforelse
                         </tbody>

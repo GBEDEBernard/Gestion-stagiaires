@@ -18,7 +18,7 @@
                     </div>
                     <h1 class="text-2xl font-semibold text-slate-900 dark:text-white">Éléments supprimés</h1>
                     <p class="mt-1.5 max-w-md text-sm text-slate-500 dark:text-slate-400">
-                        Retrouve ici tous les étudiants, le personnel, les stages et badges supprimés.
+                        Retrouve ici tous les stagiaires, le personnel, les stages et badges supprimés.
                     </p>
                 </div>
 
@@ -47,7 +47,7 @@
             </p>
         </div>
         <div class="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 dark:border-teal-900 dark:bg-teal-950">
-            <p class="text-xs font-medium uppercase tracking-wider text-teal-500 dark:text-teal-400">Étudiants</p>
+            <p class="text-xs font-medium uppercase tracking-wider text-teal-500 dark:text-teal-400">Stagiaires</p>
             <p class="mt-1 text-2xl font-semibold text-teal-700 dark:text-teal-300">{{ $etudiantsTrash->count() ?? 0 }}</p>
         </div>
         <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950">
@@ -76,7 +76,7 @@
         }
     }">
 
-        {{-- ── Étudiants ── --}}
+        {{-- ── Stagiaires ── --}}
         @if(isset($etudiantsTrash) && $etudiantsTrash->count() > 0)
         <div class="rounded-xl border border-teal-200 bg-white dark:border-teal-800 dark:bg-slate-900 overflow-hidden">
             <button @click="openSections.etudiants = !openSections.etudiants" class="w-full flex items-center justify-between p-4 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 dark:hover:bg-teal-950/50 transition">
@@ -85,7 +85,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422A12.083 12.083 0 0121 13c0 5.523-4.477 10-9 10S3 18.523 3 13a12.083 12.083 0 012.84-7.578L12 14z"/>
                     </svg>
-                    <h2 class="text-lg font-semibold text-teal-800 dark:text-teal-300">Étudiants supprimés</h2>
+                    <h2 class="text-lg font-semibold text-teal-800 dark:text-teal-300">Stagiaires supprimés</h2>
                     <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-200 text-teal-800 dark:bg-teal-800 dark:text-teal-200">{{ $etudiantsTrash->count() }}</span>
                 </div>
                 <svg class="h-5 w-5 transform transition-transform duration-200" :class="openSections.etudiants ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +96,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stagiaire</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supprimé le</th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -198,7 +198,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stagiaire</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thème</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Période</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supprimé le</th>

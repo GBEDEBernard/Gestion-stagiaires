@@ -368,7 +368,7 @@
                         Employé
                     @elseif($type === 'etudiant')
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                        Étudiant / Stagiaire
+                        Stagiaire
                     @else
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5.5 20v-2a6.5 6.5 0 0 1 13 0v2"/></svg>
                         Inconnu
@@ -376,10 +376,10 @@
                 </div>
             </div>
 
-            {{-- Étudiant fields --}}
+            {{-- Stagiaire fields --}}
             <div id="etudiant-fields" class="pc-section {{ $type !== 'etudiant' ? 'hidden' : '' }}">
                 <div class="pc-sub">
-                    <p class="pc-sub-title">Informations étudiant</p>
+                    <p class="pc-sub-title">Informations stagiaire</p>
                     <div class="pc-grid">
                         <div class="pc-field">
                             <label>École / Université</label>

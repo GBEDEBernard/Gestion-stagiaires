@@ -1,12 +1,12 @@
 <x-app-layout>
     <div class="max-w-4xl mx-auto">
 
-        {{-- Modal de création rapide (après création d’un étudiant) --}}
+        {{-- Modal de création rapide (après création d’un stagiaire) --}}
         <div id="stageModal" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4"
             style="display: {{ ($showModal ?? false) ? 'flex' : 'none' }};">
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Créer un stage pour l'étudiant</h2>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Créer un stage pour le stagiaire</h2>
                     <button onclick="closeModal()" class="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -22,7 +22,7 @@
                             </label>
                             <select name="etudiant_id" id="etudiant_id_modal" required
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un étudiant</option>
+                                <option value="">Sélectionner un stagiaire</option>
                                 @foreach($etudiants as $etudiant)
                                 <option value="{{ $etudiant->id }}"
                                     {{ ($preselectedEtudiantId ?? request('etudiant_id') ?? old('etudiant_id')) == $etudiant->id ? 'selected' : '' }}>
@@ -188,11 +188,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="etudiant_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Étudiant <span class="text-red-500">*</span>
+                                Stagiaire <span class="text-red-500">*</span>
                             </label>
                             <select name="etudiant_id" id="etudiant_id" required
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                <option value="">Sélectionner un étudiant</option>
+                                <option value="">Sélectionner un stagiaire</option>
                                 @foreach($etudiants as $etudiant)
                                 <option value="{{ $etudiant->id }}"
                                     {{ (request('etudiant_id') ?? old('etudiant_id')) == $etudiant->id ? 'selected' : '' }}>

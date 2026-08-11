@@ -112,7 +112,7 @@ class Personnel extends Model
         }
 
         return match ($this->personnable_type) {
-            Etudiant::class => 'Étudiant',
+            Etudiant::class => 'Stagiaire',
             Employe::class  => 'Employé',
             default         => 'Inconnu',
         };

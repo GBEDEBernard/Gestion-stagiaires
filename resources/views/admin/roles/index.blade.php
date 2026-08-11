@@ -113,7 +113,7 @@
                                         @if($role->name === 'admin') Administrateur système
                                         @elseif($role->name === 'superviseur') Responsable de suivi
                                         @elseif($role->name === 'employe') Personnel employé
-                                        @elseif($role->name === 'etudiant') Stagiaire / Étudiant
+                                        @elseif($role->name === 'etudiant') Stagiaire
                                         @elseif($role->name === 'super_admin') Accès complet
                                         @else Rôle personnalisé
                                         @endif

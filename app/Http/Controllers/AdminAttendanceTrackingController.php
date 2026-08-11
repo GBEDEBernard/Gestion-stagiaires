@@ -35,7 +35,7 @@ class AdminAttendanceTrackingController extends Controller
         })->map(function ($etudiant) {
             return [
                 'id' => $etudiant->user->id,
-                'name' => $etudiant->user->name . ' (Étudiant)',
+                'name' => $etudiant->user->name . ' (Stagiaire)',
                 'type' => 'student'
             ];
         });

@@ -131,6 +131,16 @@
                         <span class="font-medium text-slate-800">{{ $attendanceDay?->last_check_out_at?->format('H:i') ?: '--:--' }}</span>
                     </div>
                 </div>
+                <div class="mt-5 border-t border-slate-100 pt-4">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-xs uppercase tracking-wide text-slate-400">Présence cette semaine</span>
+                        <span class="font-semibold text-slate-800">{{ $presenceSemaine }}%</span>
+                    </div>
+                    <div class="mt-2 h-2 w-full rounded-full bg-slate-100">
+                        <div class="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-700" style="width: {{ $presenceSemaine }}%"></div>
+                    </div>
+                    <p class="mt-1.5 text-xs text-slate-500">{{ $joursPresentSemaine }} jour(s) pointé(s) sur {{ $joursTrackesSemaine }}</p>
+                </div>
             </div>
 
             <!-- Carte 3 : Rapport du jour -->
@@ -244,7 +254,22 @@
                             <dt>Mode présence</dt>
                             <dd class="font-medium text-slate-900">{{ $activeStage->presence_mode ?: 'Géolocalisée' }}</dd>
                         </div>
+                        <div class="flex items-center justify-between py-2.5">
+                            <dt>Jours restants</dt>
+                            <dd class="font-medium {{ $joursRestants > 0 ? 'text-emerald-600' : 'text-slate-400' }}">
+                                {{ $joursRestants > 0 ? $joursRestants . ' jour(s)' : 'Terminé' }}
+                            </dd>
+                        </div>
                     </dl>
+                    <div class="mt-4 border-t border-slate-100 pt-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-xs uppercase tracking-wide text-slate-400">Progression du stage</span>
+                            <span class="font-semibold text-slate-800">{{ $progressionStage }}%</span>
+                        </div>
+                        <div class="mt-2 h-2 w-full rounded-full bg-slate-100">
+                            <div class="h-2 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 transition-all duration-700" style="width: {{ $progressionStage }}%"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">

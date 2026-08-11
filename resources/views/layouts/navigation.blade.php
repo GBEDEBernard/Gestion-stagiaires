@@ -258,7 +258,7 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                         <!-- @can('etudiants.view')
                         <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                            <span>Étudiants</span>
+                            <span>Stagiaires</span>
                         </a>
                         @endcan
                         @role('admin|superviseur')

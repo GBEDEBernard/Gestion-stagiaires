@@ -58,15 +58,22 @@ class NotificationService
             ->get();
 
         foreach ($nouveauxEtudiants as $etudiant) {
+            // Destination intelligente : si le stagiaire a un stage → détail de son stage
+            // le plus récent, sinon → sa fiche (profil).
+            $dernierStage = $etudiant->stages()->latest('date_debut')->first();
+            $url = $dernierStage
+                ? encrypted_route('stages.show', $dernierStage)
+                : encrypted_route('etudiants.show', $etudiant);
+
             $this->createNotificationIfNotExists(
                 'etudiant_' . $etudiant->id,
                 $currentUserId, // Destinataire: l'admin connecté
                 'nouveau_etudiant',
-                '👤 Nouvel étudiant',
-                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                '👤 Nouveau stagiaire',
+                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit le ' . $etudiant->created_at->format('d/m/Y'),
                 'users',
                 'blue',
-                route('admin.users.show', $etudiant->user_id ?? 0),
+                $url,
                 $etudiant->id,
                 \App\Models\Etudiant::class
             );
@@ -238,7 +245,7 @@ class NotificationService
 
         $name = trim(($etudiant->prenom ?? '') . ' ' . ($etudiant->nom ?? ''));
 
-        return $name !== '' ? $name : 'Etudiant #' . $etudiant->id;
+        return $name !== '' ? $name : 'Stagiaire #' . $etudiant->id;
     }
 
     /**

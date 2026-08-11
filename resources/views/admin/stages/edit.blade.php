@@ -29,10 +29,10 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="etudiant_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Étudiant <span class="text-red-500">*</span></label>
+                            <label for="etudiant_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stagiaire <span class="text-red-500">*</span></label>
                             <select name="etudiant_id" id="etudiant_id" required
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Sélectionner un étudiant</option>
+                                <option value="">Sélectionner un stagiaire</option>
                                 @foreach($etudiants as $etudiant)
                                 <option value="{{ $etudiant->id }}" {{ old('etudiant_id', $stage->etudiant_id) == $etudiant->id ? 'selected' : '' }}>
                                     {{ $etudiant->personnel->nom ?? '' }} {{ $etudiant->personnel->prenom ?? '' }}

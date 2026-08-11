@@ -5,7 +5,7 @@
             <div class="pres-header-left">
                 <div class="pres-header-badge">Administration</div>
                 <h1 class="pres-header-title">Tableau de Bord Présence</h1>
-                <p class="pres-header-sub">Vue temps réel · Étudiants & Employés</p>
+                <p class="pres-header-sub">Vue temps réel · Stagiaires & Employés</p>
             </div>
             <div class="pres-header-actions">
                 <div class="pres-live-dot"><span></span>Live</div>
@@ -1236,7 +1236,7 @@
                 <div class="pres-group-card">
                     <div class="pres-group-head">
                         <div>
-                            <div class="pres-group-label">👥 Étudiants</div>
+                            <div class="pres-group-label">👥 Stagiaires</div>
                             <div class="pres-group-role">Stagiaires actifs</div>
                         </div>
                         <div style="text-align:right;">

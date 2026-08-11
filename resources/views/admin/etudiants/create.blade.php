@@ -5,7 +5,7 @@
                 <a href="{{ route('etudiants.index') }}" class="p-2 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 transition">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nouvel étudiant</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Nouveau stagiaire</h1>
             </div>
             <p class="text-gray-500 ml-14">Ajoutez un stagiaire. Le compte de connexion pourra être généré ultérieurement.</p>
         </div>

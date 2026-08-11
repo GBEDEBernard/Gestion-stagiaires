@@ -8,7 +8,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Modifier l'étudiant</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Modifier le stagiaire</h1>
             </div>
             <p class="text-gray-500 dark:text-gray-300 ml-11">Mettez à jour les informations du stagiaire.</p>
         </div>

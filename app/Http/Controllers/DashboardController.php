@@ -225,7 +225,15 @@ class DashboardController extends Controller
         $tauxReussite = $totalStages > 0
             ? round(($terminesGlobal / $totalStages) * 100)
             : 0;
-        $tauxAbandon = 8;
+
+        // Taux d'abandon réel : stages terminés (date passée) sans attestation délivrée
+        $terminesSansAttestation = Stage::whereDate('date_fin', '<', $today)
+            ->whereDoesntHave('attestation')
+            ->count();
+        $tauxAbandon = $terminesGlobal > 0
+            ? round(($terminesSansAttestation / $terminesGlobal) * 100)
+            : 0;
+
         $etudiantsAvecStages = Etudiant::has('stages')->count();
         $tauxConversion = $totalEtudiants > 0
             ? round(($etudiantsAvecStages / $totalEtudiants) * 100)
@@ -251,8 +259,24 @@ class DashboardController extends Controller
             : ($enCoursGlobal > 0 ? 100 : 0);
 
         $tauxCompletion = $totalStages > 0
-            ? round((($terminesGlobal - ($totalStages * 0.08)) / $totalStages) * 100)
+            ? round(($terminesGlobal / $totalStages) * 100)
             : 0;
+
+        // ==================== Évolutions 30 jours (badges KPI) ====================
+        $debutPeriode = Carbon::now()->subDays(30);
+        $debutPeriodePrecedente = Carbon::now()->subDays(60);
+
+        $stages30 = Stage::where('created_at', '>=', $debutPeriode)->count();
+        $stages30Precedents = Stage::whereBetween('created_at', [$debutPeriodePrecedente, $debutPeriode])->count();
+        $evolutionStages30j = $stages30Precedents > 0
+            ? round((($stages30 - $stages30Precedents) / $stages30Precedents) * 100)
+            : ($stages30 > 0 ? 100 : 0);
+
+        $etudiants30 = Etudiant::where('created_at', '>=', $debutPeriode)->count();
+        $etudiants30Precedents = Etudiant::whereBetween('created_at', [$debutPeriodePrecedente, $debutPeriode])->count();
+        $evolutionEtudiants30j = $etudiants30Precedents > 0
+            ? round((($etudiants30 - $etudiants30Precedents) / $etudiants30Precedents) * 100)
+            : ($etudiants30 > 0 ? 100 : 0);
 
         // ==================== Listes ====================
         $activities = Activity::latest()->take(5)->get();
@@ -335,6 +359,8 @@ class DashboardController extends Controller
             'tauxConversion',
             'evolutionInscriptionsMois',
             'evolutionStages',
+            'evolutionStages30j',
+            'evolutionEtudiants30j',
             'tauxCompletion',
             'activities',
             'derniersEtudiants',

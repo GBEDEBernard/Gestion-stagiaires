@@ -81,7 +81,7 @@
                  </div>
              </div>
 
-             {{-- Tableau Étudiants - Version responsive --}}
+             {{-- Tableau Stagiaires - Version responsive --}}
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                      <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Stagiaires</h3>
@@ -389,7 +389,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Stagiaires</h3>
                  </div>
 
                  {{-- Version mobile --}}
@@ -413,7 +413,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette semaine.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour cette semaine.</div>
                      @endforelse
                  </div>
 
@@ -443,7 +443,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour cette semaine.</td>
+                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour cette semaine.</td>
                              </tr>
                              @endforelse
                          </tbody>
@@ -522,7 +522,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Stagiaires</h3>
                  </div>
 
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
@@ -536,7 +536,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour ce mois.</div>
                      @endforelse
                  </div>
 
@@ -560,7 +560,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</td>
+                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour ce mois.</td>
                              </tr>
                              @endforelse
                          </tbody>
@@ -623,7 +623,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Stagiaires</h3>
                  </div>
 
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
@@ -638,7 +638,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour cette année.</div>
                      @endforelse
                  </div>
 
@@ -664,7 +664,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</td>
+                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour cette année.</td>
                              </tr>
                              @endforelse
                          </tbody>

@@ -114,7 +114,7 @@ x-data="{
                         Sélectionnez d'abord une tâche pour afficher les personnes éligibles.
                     </p>
 
-                    {{-- Filtre Étudiant / Employé --}}
+                    {{-- Filtre Stagiaire / Employé --}}
                     <div x-show="transferTask" x-cloak class="flex items-center gap-2 mb-4">
                         <template x-for="f in ['all', 'etudiant', 'employe']" :key="f">
                             <button type="button"
@@ -123,7 +123,7 @@ x-data="{
                                     :class="roleFilter === f
                                         ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
                                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'"
-                                    x-text="f === 'all' ? '👥 Tous' : (f === 'etudiant' ? '🎓 Étudiants' : '💼 Employés')"></button>
+                                    x-text="f === 'all' ? '👥 Tous' : (f === 'etudiant' ? '🎓 Stagiaires' : '💼 Employés')"></button>
                         </template>
                         <span class="ml-auto text-xs text-slate-400" x-text="filteredProducers().length + ' personne(s)'"></span>
                     </div>
@@ -139,7 +139,7 @@ x-data="{
                                    class="mt-1 h-4 w-4 accent-slate-900 shrink-0">
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm font-semibold text-slate-900 break-words" x-text="producer.name"></p>
-                                <p class="text-xs text-slate-400" x-text="producer.type === 'etudiant' ? 'Étudiant' : 'Employé'"></p>
+                                <p class="text-xs text-slate-400" x-text="producer.type === 'etudiant' ? 'Stagiaire' : 'Employé'"></p>
                             </div>
                             <span x-show="hasHolder(transferTask, producer.id)"
                                   class="text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 shrink-0">déjà assignée</span>
@@ -212,7 +212,7 @@ x-data="{
                         <option value="{{ $producer->id }}" {{ old('owner_id') == $producer->id ? 'selected' : '' }}>
                             {{ $producer->name }}
                             @if($producer->profil() instanceof \App\Models\Etudiant)
-                                (Étudiant)
+                                (Stagiaire)
                             @elseif($producer->profil() instanceof \App\Models\Employe)
                                 (Employé)
                             @endif

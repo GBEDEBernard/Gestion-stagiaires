@@ -233,7 +233,7 @@ class AdminHolidayController extends Controller
         $users = $query->limit(50)->get()->map(function ($user) {
             $role = $user->roles->first()?->name;
             $label = match ($role) {
-                'etudiant' => 'Étudiant',
+                'etudiant' => 'Stagiaire',
                 'employe' => 'Employé',
                 'fonctionnaire' => 'Fonctionnaire',
                 default => $role,
