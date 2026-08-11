@@ -20,6 +20,11 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Admin/Superviseur toujours sur le dashboard global, même avec le rôle employe en plus
+        if (Auth::user()?->hasAnyRole(['admin', 'superviseur'])) {
+            return $this->globalDashboard();
+        }
+
         if (Auth::user()?->hasRole('etudiant')) {
             return redirect()
                 ->route('student.stage')
@@ -60,6 +65,11 @@ class DashboardController extends Controller
 
         abort_unless(Auth::user()?->can('dashboard.view'), 403);
 
+        return $this->globalDashboard();
+    }
+
+    private function globalDashboard()
+    {
         $today = Carbon::now()->startOfDay();
 
         // ==================== Notifications (via Service + ViewComposer universel) ====================

@@ -197,6 +197,25 @@ $homeRoute = Auth::user()->hasRole('etudiant') ? route('student.stage') : route(
                              <span>Jours fériés</span>
                          </a>
                          @endcan
+                         {{-- Admin/superviseur aussi employé : pointage personnel (arrivée/départ) --}}
+                         @if(auth()->user()->hasAnyRole(['employe', 'fonctionnaire']))
+                         <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.pointage') ? 'bg-slate-800/40 text-white' : '' }}">
+                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                             <span>Mon pointage</span>
+                         </a>
+                         <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.historique') ? 'bg-slate-800/40 text-white' : '' }}">
+                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                             <span>Historique de mes pointages</span>
+                         </a>
+                         <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('permissions.*') ? 'bg-slate-800/40 text-white' : '' }}">
+                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
+                             <span>Mes permissions</span>
+                             @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
+                             @if($pendingCount > 0)
+                             <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
+                             @endif
+                         </a>
+                         @endif
                         @else
                         {{-- Employé simple --}}
                         <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
