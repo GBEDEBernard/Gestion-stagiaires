@@ -99,7 +99,7 @@
                                 <div class="flex items-center gap-2">
                                     <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $authorName }}</span>
                                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide {{ $isStudent ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                        {{ $isStudent ? 'Étudiant' : 'Employé' }}
+                                        {{ $isStudent ? 'Stagiaire' : 'Employé' }}
                                     </span>
                                 </div>
                                 @if($report->stage?->theme)
