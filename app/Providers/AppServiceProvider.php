@@ -106,6 +106,10 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('task', function ($value) {
             return $this->resolveEncryptedModel($value, Task::class);
         });
+
+        Route::bind('personnel', function ($value) {
+            return $this->resolveEncryptedModel($value, \App\Models\Personnel::class);
+        });
     }
 
     /**

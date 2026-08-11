@@ -160,12 +160,12 @@
                             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $personnel->email ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-500">{{ $personnel->deleted_at?->format('d/m/Y H:i') ?? '-' }}</td>
                             <td class="px-4 py-3 text-center space-x-2">
-                                <form method="POST" action="{{ route('personnels.restore', $personnel->id) }}" class="inline">
+                                <form method="POST" action="{{ encrypted_route('personnels.restore', $personnel->id) }}" class="inline">
                                     @csrf
                                     @method('PUT')
                                     <button class="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-xs">Restaurer</button>
                                 </form>
-                                <form method="POST" action="{{ route('personnels.force-delete', $personnel->id) }}" class="inline" data-confirm-delete>
+                                <form method="POST" action="{{ encrypted_route('personnels.force-delete', $personnel->id) }}" class="inline" data-confirm-delete>
                                     @csrf
                                     @method('DELETE')
                                     <button class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-xs">Supprimer déf.</button>

@@ -290,7 +290,7 @@
 
     {{-- ── Main card ── --}}
     <div class="pc-card">
-        <form action="{{ route('personnels.update', $personnel) }}" method="POST">
+        <form action="{{ encrypted_route('personnels.update', $personnel) }}" method="POST">
             @csrf
             @method('PUT')
             <input type="hidden" name="type" value="{{ $type }}">
