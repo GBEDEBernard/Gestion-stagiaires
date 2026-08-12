@@ -151,7 +151,15 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::get('{stage}/attestation/print', [AttestationController::class, 'generatePDF'])->name('stages.attestation.print')->middleware('permission:attestation.print')->defaults('type', 'print');
         Route::put('{id}/restore', [StageController::class, 'restore'])->name('stages.restore')->middleware('permission:stages.restore');
         Route::delete('{id}/force-delete', [StageController::class, 'forceDelete'])->name('stages.forceDelete')->middleware('permission:stages.force-delete');
-    });
+
+        // Aperçu de la fiche de poste (dans l'application)
+Route::get('/stages/{stage}/fiche-poste/preview', [StageController::class, 'previewFichePoste'])
+    ->name('stages.fiche-poste.preview');
+
+// Téléchargement PDF
+Route::get('/stages/{stage}/fiche-poste/download', [StageController::class, 'downloadFichePoste'])
+    ->name('stages.fiche-poste.download');    
+        });
 
     // ---------------- TypeStages ----------------
     Route::prefix('admin/type_stages')->group(function () {

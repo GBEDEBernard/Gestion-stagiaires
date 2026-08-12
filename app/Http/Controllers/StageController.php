@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StageController extends Controller
 {
@@ -497,4 +498,22 @@ class StageController extends Controller
   
         return redirect()->route('stages.trash')->with('success', 'Stage supprime definitivement.');
     }
+
+
+/**
+ * Affiche l'aperçu de la fiche de poste dans l'application
+ */
+public function previewFichePoste(Stage $stage)
+{
+    return view('admin.stages.fiche_poste_preview', compact('stage'));
+}
+
+/**
+ * Télécharge la fiche de poste en PDF
+ */
+public function downloadFichePoste(Stage $stage)
+{
+    $pdf = Pdf::loadView('admin.stages.fiche_poste_pdf', compact('stage'));
+    return $pdf->download('fiche_poste_'.$stage->id.'.pdf');
+}
 }
