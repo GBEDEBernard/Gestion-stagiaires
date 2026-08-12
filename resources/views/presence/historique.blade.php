@@ -947,8 +947,8 @@
             <div class="pres-card corr-panel">
                 <div class="pres-section-title">✏️ Corriger les absences</div>
                 <p style="font-size:.85rem;color:var(--muted);margin:0 0 1rem;">
-                    Cliquez sur un jour absent dans le graphique, le tableau, ou dans la liste ci-dessous pour le corriger
-                    (ex. : site pas encore en ligne ce jour-là). Une fois corrigé, il ne sera plus compté comme absence.
+                    Cliquez sur un jour absent dans la liste ci-dessous pour le corriger
+                    . Une fois corrigé, il ne sera plus compté comme absence.
                 </p>
                 <div class="corr-grid">
                     <div class="corr-col">
