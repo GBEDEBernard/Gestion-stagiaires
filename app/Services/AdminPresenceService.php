@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AttendanceAnomaly;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\AttendanceException;
 use App\Models\Etudiant;
 use App\Models\Employe;
 use App\Models\Holiday;
@@ -82,6 +83,43 @@ class AdminPresenceService
             ->flip()
             ->map(fn() => true)
             ->toArray();
+    }
+
+    /**
+     * Jours d'absence corrigés (exceptions) pour un utilisateur dans un intervalle,
+     * indexés par date [Y-m-d => AttendanceException].
+     */
+    private function getUserExceptions(int $userId, Carbon $start, Carbon $end): Collection
+    {
+        return AttendanceException::where('user_id', $userId)
+            ->whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
+            ->get()
+            ->keyBy(fn($e) => $e->attendance_date->format('Y-m-d'));
+    }
+
+    /**
+     * Clés [userId:Y-m-d => true] de toutes les exceptions d'un intervalle,
+     * pour éviter de compter un jour corrigé comme absence.
+     */
+    private function getExceptionKeysInRange(Carbon $start, Carbon $end): array
+    {
+        return AttendanceException::whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
+            ->get(['user_id', 'attendance_date'])
+            ->mapWithKeys(fn($e) => [$e->user_id . ':' . $e->attendance_date->format('Y-m-d') => true])
+            ->all();
+    }
+
+    /**
+     * Nombre de jours corrigés (exceptions) par date dans un intervalle.
+     */
+    private function getExceptionsCountByDate(Carbon $start, Carbon $end): array
+    {
+        return AttendanceException::whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw('DATE(attendance_date) as date, COUNT(*) as cnt')
+            ->groupBy('date')
+            ->pluck('cnt', 'date')
+            ->map(fn($cnt) => (int) $cnt)
+            ->all();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -382,6 +420,9 @@ class AdminPresenceService
         $holidayFlags    = [];
         $futureFlags     = [];
 
+        // ✅ Jours d'absence corrigés par date (non comptés comme absences)
+        $exceptionsByDate = $this->getExceptionsCountByDate($rangeStart, $rangeEnd);
+
         $currentDate = $rangeStart->copy();
         while ($currentDate <= $rangeEnd) {
 
@@ -394,6 +435,7 @@ class AdminPresenceService
             $dateKey = $currentDate->format('Y-m-d');
             $future  = $currentDate->gt($today);
             $holiday = isset($holidays[$dateKey]);
+            $exceptionsCount = (int) ($exceptionsByDate[$dateKey] ?? 0);
 
             $labels[]       = $currentDate->format('d/m');
             $holidayFlags[] = $holiday;
@@ -425,13 +467,13 @@ class AdminPresenceService
                 $lateMinutesData[] = (int) $dayStats->late_minutes;
                 $lateDaysData[]    = (int) $dayStats->late_days;
                 $workedHoursData[] = round((int) $dayStats->worked_minutes / 60, 1);
-                $absentData[]      = $holiday ? 0 : ($isBeforeSystemStart ? 0 : max(0, $expectedTotal - (int) $dayStats->present));
+                $absentData[]      = $holiday ? 0 : ($isBeforeSystemStart ? 0 : max(0, $expectedTotal - (int) $dayStats->present - $exceptionsCount));
             } else {
                 $presentData[]     = 0;
                 $lateMinutesData[] = 0;
                 $lateDaysData[]    = 0;
                 $workedHoursData[] = 0;
-                $absentData[]      = $holiday ? 0 : ($isBeforeSystemStart ? 0 : $expectedTotal);
+                $absentData[]      = $holiday ? 0 : ($isBeforeSystemStart ? 0 : max(0, $expectedTotal - $exceptionsCount));
             }
 
             $currentDate->addDay();
@@ -667,6 +709,9 @@ class AdminPresenceService
         // ✅ Jours fériés actifs sur la plage élargie du graphique
         $chartHolidays = $this->getActiveHolidaysInRange($chartStart, $endDate);
 
+        // ✅ Jours d'absence corrigés (exceptions) — non comptés comme absences
+        $exceptions = $this->getUserExceptions($user->id, $chartStart, $endDate);
+
         // ── Récupérer les pointages (plage élargie pour le graphique) ──────────
         $query = AttendanceDay::weekdays();
         if ($isEtudiant) $query->where('etudiant_id', $user->etudiant->id);
@@ -678,7 +723,7 @@ class AdminPresenceService
             ->get()
             ->keyBy(fn($d) => Carbon::parse($d->attendance_date)->toDateString());
 
-        $labels = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = $isHoliday = $isFuture = [];
+        $labels = $dates = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = $isHoliday = $isFuture = [];
 
         $currentDate = $chartStart->copy()->startOfDay();
         while ($currentDate->lte($endDate->copy()->startOfDay())) {
@@ -691,9 +736,11 @@ class AdminPresenceService
 
             $dateKey          = $currentDate->toDateString();
             $labels[]         = $currentDate->isoFormat('D MMM');
+            $dates[]          = $dateKey;
             $future           = $currentDate->gt($today);
             $isBeforeActivation = $currentDate->lt($activationDate);
             $isCurrentHoliday   = isset($chartHolidays[$dateKey]);
+            $isCorrectedAbsence = isset($exceptions[$dateKey]);
             $isStudentRestDay   = $isEtudiant && !$this->isStudentWorkDay($user->etudiant->id, $dateKey);
             $isHoliday[]        = $isCurrentHoliday;
             $isFuture[]         = $future;
@@ -707,7 +754,8 @@ class AdminPresenceService
                 $absences[]    = 0;
                 $lateMinutes[] = 0;
                 $workedHours[] = 0;
-            } elseif ($isCurrentHoliday || $isStudentRestDay) {
+            } elseif ($isCurrentHoliday || $isStudentRestDay || $isCorrectedAbsence) {
+                // ✅ Jours fériés, repos, ou absences corrigées : non comptés
                 $present[]     = 0;
                 $onTime[]      = 0;
                 $lateDays[]    = 0;
@@ -754,9 +802,10 @@ class AdminPresenceService
             $isActive = $checkDate->gte($activationDate);
             $isFutureDay = $checkDate->gt($today);
             $isHolidayCheck = isset($holidays[$checkDate->toDateString()]);
+            $isCorrectedAbsence = isset($exceptions[$checkDate->toDateString()]);
             $isStudentRestDay = $isEtudiant && !$this->isStudentWorkDay($user->etudiant->id, $checkDate->toDateString());
 
-            if ($isActive && !$isFutureDay && !$isHolidayCheck && !$isStudentRestDay) {
+            if ($isActive && !$isFutureDay && !$isHolidayCheck && !$isStudentRestDay && !$isCorrectedAbsence) {
                 $totalExpectedDays++;
                 $day = $days->get($checkDate->toDateString());
                 if ($day && !is_null($day->first_check_in_at)) {
@@ -788,6 +837,7 @@ class AdminPresenceService
             'open_anomalies'     => $anomalies,
             'chart_data'         => [
                 'labels'       => $labels,
+                'dates'        => $dates,
                 'present'      => $present,
                 'on_time'      => $onTime,
                 'late_days'    => $lateDays,
@@ -828,6 +878,8 @@ class AdminPresenceService
 
         $absentCountByUserName = [];
         $absentDaysByUserName = [];
+
+        $exceptionsByKey = $this->getExceptionKeysInRange($startDate, $endDate);
 
         $employeeIds = User::whereHas('personnel', function ($query) {
             $query->where('personnable_type', Employe::class);
@@ -872,6 +924,8 @@ class AdminPresenceService
             if (!empty($absentEtudiantIds)) {
                 $etudiantUsers = Etudiant::whereIn('id', $absentEtudiantIds)->with('user')->get();
                 foreach ($etudiantUsers as $et) {
+                    // ✅ Ne pas compter un jour corrigé (exception)
+                    if (isset($exceptionsByKey[($et->user?->id ?? 0) . ':' . $dateKey])) continue;
                     $userCreatedAt = Carbon::parse($et->user?->created_at ?? $systemStart)->startOfDay();
                     if ($days->gte($userCreatedAt)) {
                         $name = $et->user?->name ?? 'Inconnu';
@@ -886,6 +940,8 @@ class AdminPresenceService
 
             foreach ($employeeIds as $uid) {
                 if (!in_array($uid, $presentEmployeeIds)) {
+                    // ✅ Ne pas compter un jour corrigé (exception)
+                    if (isset($exceptionsByKey[$uid . ':' . $dateKey])) continue;
                     $empCreatedAt = $employeeCreatedAtById[$uid] ?? $systemStart;
                     if ($days->gte($empCreatedAt)) {
                         $name = $employeeNameById[$uid] ?? 'Inconnu';
@@ -940,6 +996,8 @@ class AdminPresenceService
         $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
 
         $absentCountByUserName = [];
+        $exceptionsByKey = $this->getExceptionKeysInRange($startDate, $endDate);
+
         $employeeIds = User::whereHas('personnel', function ($query) {
             $query->where('personnable_type', Employe::class);
         })
@@ -986,6 +1044,8 @@ class AdminPresenceService
             if (!empty($absentEtudiantIds)) {
                 $etudiantUsers = Etudiant::whereIn('id', $absentEtudiantIds)->with('user')->get();
                 foreach ($etudiantUsers as $et) {
+                    // ✅ Ne pas compter un jour corrigé (exception)
+                    if (isset($exceptionsByKey[($et->user?->id ?? 0) . ':' . $dateKey])) continue;
                     // ✅ Ne compter absent que si le user existait déjà à cette date
                     $userCreatedAt = Carbon::parse($et->user?->created_at ?? $systemStart)->startOfDay();
                     if ($days->gte($userCreatedAt)) {
@@ -997,6 +1057,8 @@ class AdminPresenceService
 
             foreach ($employeeIds as $uid) {
                 if (!in_array($uid, $presentEmployeeIds)) {
+                    // ✅ Ne pas compter un jour corrigé (exception)
+                    if (isset($exceptionsByKey[$uid . ':' . $dateKey])) continue;
                     // ✅ Ne compter absent que si l'employé existait à cette date
                     $empCreatedAt = $employeeCreatedAtById[$uid] ?? $systemStart;
                     if ($days->gte($empCreatedAt)) {
@@ -1030,6 +1092,8 @@ class AdminPresenceService
 
         $today = today()->endOfDay();
         $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
+        $exceptionsByKey = $this->getExceptionKeysInRange($startDate, $endDate);
 
         $userId    = $filters['user_id'] ?? null;
         $siteId    = $filters['site_id'] ?? null;
@@ -1089,6 +1153,9 @@ class AdminPresenceService
                 if (!$user || $user->status !== 'actif') continue;
                 if ($days->lt(Carbon::parse($user->created_at)->startOfDay())) continue;
 
+                // ✅ Ne pas compter un jour corrigé (exception)
+                if (isset($exceptionsByKey[$user->id . ':' . $dateKey])) continue;
+
                 $rows[] = [
                     'user'    => $user,
                     'group'   => 'etudiant',
@@ -1102,6 +1169,9 @@ class AdminPresenceService
                 if ($userId && $employee->id !== (int) $userId) continue;
                 if (in_array($employee->id, $presentEmployeeIds)) continue;
                 if ($days->lt(Carbon::parse($employee->created_at)->startOfDay())) continue;
+
+                // ✅ Ne pas compter un jour corrigé (exception)
+                if (isset($exceptionsByKey[$employee->id . ':' . $dateKey])) continue;
 
                 $rows[] = [
                     'user'    => $employee,

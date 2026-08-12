@@ -111,6 +111,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(AttendanceDay::class);
     }
 
+    public function attendanceExceptions()
+    {
+        return $this->hasMany(AttendanceException::class);
+    }
+
     public function dailyReportReviews()
     {
         return $this->hasMany(DailyReportReview::class, 'reviewer_id');

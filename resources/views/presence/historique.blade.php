@@ -601,6 +601,150 @@
             margin-bottom: .5rem;
         }
 
+        /* FLASH MESSAGES */
+        .pres-flash {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .8rem 1rem;
+            border-radius: .8rem;
+            font-size: .85rem;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .pres-flash-success {
+            background: rgba(16, 185, 129, .12);
+            border: 1px solid rgba(16, 185, 129, .3);
+            color: var(--emerald);
+        }
+
+        .pres-flash-error {
+            background: rgba(244, 63, 94, .1);
+            border: 1px solid rgba(244, 63, 94, .3);
+            color: var(--rose);
+        }
+
+        /* PANEL CORRECTION ABSENCES */
+        .corr-panel {
+            margin-top: 1.5rem;
+            border: 1px dashed var(--border-hi);
+        }
+
+        .corr-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media(max-width:768px) {
+            .corr-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .corr-col {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: .85rem;
+            padding: 1rem;
+        }
+
+        .corr-col-title {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 .25rem;
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+        }
+
+        .corr-col-sub {
+            font-size: .75rem;
+            color: var(--muted);
+            margin: 0 0 .75rem;
+        }
+
+        .corr-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .55rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: .85rem;
+            flex-wrap: wrap;
+        }
+
+        .corr-row:last-child {
+            border-bottom: none;
+        }
+
+        .corr-date {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .corr-reason {
+            font-size: .75rem;
+            color: var(--muted);
+        }
+
+        .corr-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border: none;
+            border-radius: .6rem;
+            padding: .42rem .9rem;
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .corr-btn-fix {
+            background: var(--emerald);
+            color: #fff;
+        }
+
+        .corr-btn-fix:hover {
+            background: var(--emerald-d);
+            transform: translateY(-1px);
+        }
+
+        .corr-btn-undo {
+            background: transparent;
+            border: 1px solid var(--border-hi);
+            color: var(--rose);
+        }
+
+        .corr-btn-undo:hover {
+            background: rgba(244, 63, 94, .1);
+        }
+
+        .corr-btn-sm {
+            padding: .3rem .7rem;
+            font-size: .72rem;
+        }
+
+        .corr-badge {
+            display: inline-block;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .15rem .5rem;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, .12);
+            color: var(--emerald);
+        }
+
+        .corr-empty {
+            font-size: .8rem;
+            color: var(--muted);
+            padding: .5rem 0;
+        }
+
         .mt-6 {
             margin-top: 1.5rem;
         }
@@ -680,7 +824,10 @@
             }
         }
     </style>
-    <div class="pres-wrap">
+
+    {{-- ICI : on met le x-data sur .pres-wrap pour que les modals (placés après .pres-page) soient dans la portée --}}
+    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''">
+
         <div class="pres-header">
             <div class="pres-header-left">
                 <div class="pres-header-badge">Mon espace</div>
@@ -704,7 +851,8 @@
             </div>
         </div>
 
-        <div class="pres-page" x-data="{ obsModal: false, obsText: '', obsDate: '' }">
+        {{-- .pres-page ne contient plus le x-data --}}
+        <div class="pres-page">
 
             {{-- PERIOD TABS --}}
             <div class="pres-tabs">
@@ -785,6 +933,68 @@
                     <div class="pres-kpi-sub">{{ $userStats['open_anomalies'] ?? 0 }} anomalies ouvertes</div>
                 </div>
             </div>
+
+            {{-- FLASH MESSAGES --}}
+            @if(session('success'))
+            <div class="pres-flash pres-flash-success">✓ {{ session('success') }}</div>
+            @endif
+            @if($errors->any())
+            <div class="pres-flash pres-flash-error">✗ {{ $errors->first() }}</div>
+            @endif
+
+            {{-- PANEL CORRECTION DES ABSENCES (admin) --}}
+            @isset($user)
+            <div class="pres-card corr-panel">
+                <div class="pres-section-title">✏️ Corriger les absences</div>
+                <p style="font-size:.85rem;color:var(--muted);margin:0 0 1rem;">
+                    Cliquez sur un jour absent dans le graphique, le tableau, ou dans la liste ci-dessous pour le corriger
+                    (ex. : site pas encore en ligne ce jour-là). Une fois corrigé, il ne sera plus compté comme absence.
+                </p>
+                <div class="corr-grid">
+                    <div class="corr-col">
+                        <h4 class="corr-col-title">Absences détectées
+                            <span class="corr-badge">{{ count($absenceDates ?? []) }}</span>
+                        </h4>
+                        <p class="corr-col-sub">Ces jours sont actuellement comptés comme absents.</p>
+                        @forelse($absenceDates ?? [] as $absence)
+                        <div class="corr-row">
+                            <div>
+                                <span class="corr-date">{{ $absence['label'] }}</span>
+                                <div class="corr-reason">Aucun pointage enregistré</div>
+                            </div>
+                            <button type="button" class="corr-btn corr-btn-fix" onclick="openCorrection('{{ $absence['date'] }}', '{{ $absence['label'] }}')">Corriger</button>
+                        </div>
+                        @empty
+                        <p class="corr-empty">Aucune absence détectée sur la période.</p>
+                        @endforelse
+                    </div>
+                    <div class="corr-col">
+                        <h4 class="corr-col-title">Jours corrigés
+                            <span class="corr-badge">{{ $exceptions->count() }}</span>
+                        </h4>
+                        <p class="corr-col-sub">Ces jours ne sont plus comptés comme absents.</p>
+                        @forelse($exceptions as $exception)
+                        <div class="corr-row">
+                            <div>
+                                <span class="corr-date">{{ \Carbon\Carbon::parse($exception->attendance_date)->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</span>
+                                <div class="corr-reason">
+                                    @if($exception->reason){{ $exception->reason }}@endif
+                                    @if($exception->creator)@if($exception->reason) — @endif par {{ $exception->creator->name }}@endif
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ route('attendance.tracking.user.exception.destroy', [$user, $exception]) }}" onsubmit="return confirm('Annuler cette correction ? Le jour sera de nouveau compté comme absence.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="corr-btn corr-btn-undo corr-btn-sm">Annuler</button>
+                            </form>
+                        </div>
+                        @empty
+                        <p class="corr-empty">Aucune correction enregistrée.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            @endisset
 
             {{-- CHARTS --}}
             @php
@@ -868,6 +1078,9 @@
                                     @endif
                                     @else
                                     <span class="pres-tag tag-rose">Absent</span>
+                                    @isset($user)
+                                    <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;" onclick="openCorrection('{{ $day->attendance_date->format('Y-m-d') }}', '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}')">Corriger</button>
+                                    @endisset
                                     @endif
                                 </td>
                                 <td>
@@ -943,6 +1156,9 @@
                                 @endif
                                 @else
                                 <span class="pres-tag tag-rose">Absent</span>
+                                @isset($user)
+                                <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;" onclick="openCorrection('{{ $day->attendance_date->format('Y-m-d') }}', '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}')">Corriger</button>
+                                @endisset
                                 @endif
                             </span>
                         </div>
@@ -968,33 +1184,71 @@
                     @endforelse
                 </div>
             </div>
-        </div>
-    </div>
 
-    {{-- Modal Observation --}}
-    <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
-        <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
-                    <p class="text-sm text-slate-500" x-text="'du ' + obsDate"></p>
+        </div> {{-- fin de .pres-page --}}
+
+        {{-- ==================== MODALS ==================== --}}
+        {{-- Modal Observation --}}
+        <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="'du ' + obsDate"></p>
+                    </div>
+                    <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                 </div>
-                <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            <div class="mt-4">
-                <p class="text-base font-medium text-slate-900" x-text="obsText"></p>
-            </div>
-            <div class="mt-6 flex justify-end">
-                <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Fermer</button>
+                <div class="mt-4">
+                    <p class="text-base font-medium text-slate-900 dark:text-slate-100" x-text="obsText"></p>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors">Fermer</button>
+                </div>
             </div>
         </div>
-    </div>
+
+        {{-- Modal Correction Absence (admin) --}}
+        @isset($user)
+        <div x-show="corrModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="corrModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Corriger une absence</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="corrLabel ? 'Jour : ' + corrLabel : ''"></p>
+                    </div>
+                    <button @click="corrModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <form method="POST" action="{{ route('attendance.tracking.user.exception.store', $user) }}">
+                    @csrf
+                    <input type="hidden" name="attendance_date" x-model="corrDate" />
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Motif de la correction (optionnel)</label>
+                        <textarea name="reason" x-model="corrReason" rows="3" placeholder="Ex : Site pas encore en ligne ce jour-là" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button" @click="corrModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
+                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Confirmer la correction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @endisset
+
+    </div> {{-- fin de .pres-wrap --}}
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
+        @isset($user)
+        function openCorrection(date, label) {
+            window.dispatchEvent(new CustomEvent('open-correction', { detail: { date, label } }));
+        }
+        @endisset
+
         document.addEventListener('DOMContentLoaded', () => {
             Chart.defaults.font.family = "'DM Sans', sans-serif";
             Chart.defaults.color = '#9ca3af';
@@ -1003,6 +1257,7 @@
             @php
             $chartDataSafe = $userStats['chart_data'] ?? [
                 'labels' => [],
+                'dates' => [],
                 'present' => [],
                 'on_time' => [],
                 'late_days' => [],
@@ -1015,6 +1270,7 @@
             const cd = @json($chartDataSafe);
 
             const labels = cd.labels ?? [];
+            const dates = cd.dates ?? [];
             const present = cd.present ?? [];
             const onTime = cd.on_time ?? [];
             const lateDays = cd.late_days ?? [];
@@ -1053,8 +1309,6 @@
 
             /* ══════════════════════════════════════════════════════════
                GRAPHIQUE 1 — Courbes binaires + minutes retard
-               Axe gauche  (yBin)  : 0 / 1 (présent, à l'heure, retard, absent)
-               Axe droit   (yMin)  : minutes de retard (échelle libre)
             ══════════════════════════════════════════════════════════ */
             const ctx1 = document.getElementById('chartPresence');
             if (ctx1) {
@@ -1171,10 +1425,26 @@
                             mode: 'index',
                             intersect: false
                         },
+                        onClick: (evt, items, chart) => {
+                            if (typeof openCorrection !== 'function' || !items.length) return;
+                            const ds = chart.data.datasets[items[0].datasetIndex];
+                            if (ds.label !== 'Absent' || ds.data[items[0].index] !== 1) return;
+                            const date = dates[items[0].index];
+                            if (date) openCorrection(date, labels[items[0].index]);
+                        },
+                        onHover: (evt, item, chart) => {
+                            if (typeof openCorrection !== 'function') return;
+                            let pointer = false;
+                            if (item.length) {
+                                const ds = chart.data.datasets[item[0].datasetIndex];
+                                pointer = ds.label === 'Absent' && ds.data[item[0].index] === 1;
+                            }
+                            evt.native.target.style.cursor = pointer ? 'pointer' : 'default';
+                        },
                         plugins: {
                             legend: {
                                 display: false
-                            }, // on utilise la légende HTML custom
+                            },
                             tooltip: {
                                 ...tooltipStyle,
                                 callbacks: {
@@ -1256,8 +1526,6 @@
 
             /* ══════════════════════════════════════════════════════════
                GRAPHIQUE 2 — Barres : heures travaillées + retard (min)
-               Axe gauche : heures
-               Axe droit  : minutes de retard
             ══════════════════════════════════════════════════════════ */
             const ctx2 = document.getElementById('chartOverview');
             if (ctx2) {

@@ -363,6 +363,10 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
         Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
         Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
+        Route::middleware('role:admin|superviseur')->group(function () {
+            Route::post('/user/{user}/exceptions', [AdminAttendanceTrackingController::class, 'storeException'])->name('attendance.tracking.user.exception.store');
+            Route::delete('/user/{user}/exceptions/{exception}', [AdminAttendanceTrackingController::class, 'destroyException'])->name('attendance.tracking.user.exception.destroy');
+        });
     });
 
     // ---------------- Suivi des Taches Admin/Superviseur ----------------

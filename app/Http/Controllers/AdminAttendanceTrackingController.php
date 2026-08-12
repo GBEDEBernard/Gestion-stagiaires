@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
+use App\Models\AttendanceException;
 use App\Models\Etudiant;
 use App\Models\Employe;
 use App\Models\User;
@@ -432,6 +433,72 @@ class AdminAttendanceTrackingController extends Controller
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user'));
+        // ── Jours d'absence détectés sur le graphe (pour les corriger) ─────────
+        $chart = $userStats['chart_data'] ?? [];
+        $absenceDates = [];
+        foreach ($chart['dates'] ?? [] as $i => $date) {
+            if (isset($chart['absences'][$i]) && (int) $chart['absences'][$i] === 1) {
+                $absenceDates[] = [
+                    'date' => $date,
+                    'label' => Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM YYYY'),
+                ];
+            }
+        }
+
+        // ── Jours déjà corrigés (exceptions) ───────────────────────────────────
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$dateFrom->format('Y-m-d'), now()->format('Y-m-d')])
+            ->with('creator')
+            ->orderByDesc('attendance_date')
+            ->get();
+
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user', 'absenceDates', 'exceptions'));
+    }
+
+    /**
+     * Corrige un jour d'absence : le jour n'est plus compté comme absence.
+     */
+    public function storeException(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'attendance_date' => ['required', 'date'],
+            'reason'          => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $date = Carbon::parse($validated['attendance_date'])->toDateString();
+
+        // Refuser si un pointage (check-in) existe déjà ce jour-là
+        $hasCheckIn = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereNotNull('first_check_in_at')
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('etudiant_id', $user->etudiant?->id);
+            })
+            ->exists();
+
+        if ($hasCheckIn) {
+            return back()
+                ->withInput()
+                ->withErrors(['attendance_date' => 'Impossible de corriger ce jour : un pointage existe déjà.']);
+        }
+
+        AttendanceException::updateOrCreate(
+            ['user_id' => $user->id, 'attendance_date' => $date],
+            ['reason' => $validated['reason'] ?? null, 'created_by' => Auth::id()]
+        );
+
+        return back()->with('success', 'Absence du ' . Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM YYYY') . ' corrigée. Ce jour ne sera plus compté comme absence.');
+    }
+
+    /**
+     * Annule une correction d'absence.
+     */
+    public function destroyException(User $user, AttendanceException $exception)
+    {
+        abort_unless($exception->user_id === $user->id, 403);
+
+        $exception->delete();
+
+        return back()->with('success', 'Correction du ' . Carbon::parse($exception->attendance_date)->locale('fr')->isoFormat('dddd D MMMM YYYY') . ' annulée.');
     }
 }
