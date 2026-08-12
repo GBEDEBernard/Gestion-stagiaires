@@ -11,9 +11,18 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-BNNKxTFp.css",
+    "file": "assets/app-3Hdc2cbb.css",
     "src": "resources/css/app.css",
     "isEntry": true
+  },
+  "resources/css/auth-tfg.css": {
+    "file": "assets/auth-tfg-lFK9IbU5.css",
+    "src": "resources/css/auth-tfg.css",
+    "isEntry": true
+  },
+  "resources/images/backgroundlogin.png": {
+    "file": "assets/backgroundlogin-K9ZgWD0R.png",
+    "src": "resources/images/backgroundlogin.png"
   },
   "resources/js/app.js": {
     "file": "assets/app-bq0JlFft.js",
