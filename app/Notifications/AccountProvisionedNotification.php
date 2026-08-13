@@ -25,20 +25,23 @@ class AccountProvisionedNotification extends Notification
     }
 
     public function toMail($notifiable)
-    {
-        $resetUrl = url(route('password.reset', [
-            'token' => $this->token,
-            'email' => $this->email ?? $notifiable->getEmailForPasswordReset(),
-        ], false));
+{
+    $resetUrl = url(route('password.reset', [
+        'token' => $this->token,
+        'email' => $this->email ?? $notifiable->getEmailForPasswordReset(),
+    ], false));
 
-        return (new MailMessage)
-            ->subject("TECHNOLOGY FOREVER GROUP - Vos identifiants d'accès à la plateforme de présence et de suivi d'activité")
-            ->markdown('emails.account_provisioned', [
-                'fullName'  => $notifiable->name,
-                'civility'  => NotificationGreeting::civilityForRecipient($notifiable),
-                'email'     => $notifiable->email,
-                'password'  => $this->temporaryPassword,
-                'resetUrl'  => $resetUrl,
-            ]);
-    }
+    // Décoder le mot de passe avant de l'envoyer à la vue
+    $decodedPassword = html_entity_decode($this->temporaryPassword, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    return (new MailMessage)
+        ->subject("TECHNOLOGY FOREVER GROUP - Vos identifiants d'accès à la plateforme de présence et de suivi d'activité")
+        ->view('emails.account_provisioned_html', [
+            'fullName'  => $notifiable->name,
+            'civility'  => NotificationGreeting::civilityForRecipient($notifiable),
+            'email'     => $notifiable->email,
+            'password'  => $decodedPassword,
+            'resetUrl'  => $resetUrl,
+        ]);
+}
 }
