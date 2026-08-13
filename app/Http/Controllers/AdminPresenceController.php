@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\AttendanceEvent;
 use App\Models\Etudiant;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 
 class AdminPresenceController extends Controller
@@ -261,37 +262,28 @@ class AdminPresenceController extends Controller
                 break;
         }
 
-        // ── Pointages ──
-        $filters = [
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'user_id' => $userId,
-            'site_id' => $siteId,
-            'school' => $schoolFilter,
-        ];
-
-        $query = $this->presenceService->listAttendanceDays($filters, 9999)
-            ->with(['user', 'etudiant.user', 'stage.site', 'checkInEvent.site', 'checkInEvent.geofence.site', 'checkOutEvent', 'anomalies'])
-            ->orderByDesc('attendance_date');
-
-        $days = $query->paginate(10);
-
-        $days->getCollection()->transform(function ($day) {
-            $day->resolved_site_name = $day->checkInEvent?->site?->name
-                ?? $day->checkInEvent?->geofence?->site?->name
-                ?? $day->stage?->site?->name
-                ?? null;
-            return $day;
-        });
-
-        // ── Absences (calcul en direct : stagiaires attendus − présents,
-        //    en respectant les jours de présence des stages) ──
-        $absences = $this->presenceService->getAbsenceRows($dateFrom, $dateTo, [
+        // ── Rapport détaillé par utilisateur (présents + retards + absences) ──
+        $detailCollection = $this->presenceService->getPointageDetail($dateFrom, $dateTo, [
             'user_id' => $userId,
             'site_id' => $siteId,
             'school'  => $schoolFilter,
-            'per_page'=> 10,
         ]);
+
+        // Détail ciblé si un utilisateur précis est choisi, sinon pagination par utilisateur
+        if ($userId) {
+            $detail = $detailCollection->values();
+        } else {
+            $page    = LengthAwarePaginator::resolveCurrentPage('detail_page');
+            $perPage = 10;
+            $dataset = $detailCollection->forPage($page, $perPage)->values();
+            $detail  = new LengthAwarePaginator(
+                $dataset,
+                $detailCollection->count(),
+                $perPage,
+                $page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query(), 'pageName' => 'detail_page']
+            );
+        }
 
         // ── Stats ──
         $today = today();
@@ -315,8 +307,7 @@ class AdminPresenceController extends Controller
         $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
 
         return view('admin.presence.pointage-suivi', compact(
-            'days',
-            'absences',
+            'detail',
             'todayCount',
             'checkinsToday',
             'checkoutsToday',
@@ -363,29 +354,36 @@ class AdminPresenceController extends Controller
                 break;
         }
 
-        $filters = [
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
+        $detail = $this->presenceService->getPointageDetail($dateFrom, $dateTo, [
             'user_id' => $userId,
             'site_id' => $siteId,
-            'school' => $schoolFilter,
+            'school'  => $schoolFilter,
+        ]);
+
+        // ── Totaux globaux du rapport ──
+        $globalTotals = [
+            'users'          => $detail->count(),
+            'present'        => $detail->sum(fn ($b) => $b['totals']['present']),
+            'absent'         => $detail->sum(fn ($b) => $b['totals']['absent']),
+            'corrected'      => $detail->sum(fn ($b) => $b['totals']['corrected']),
+            'late_minutes'   => $detail->sum(fn ($b) => $b['totals']['late_minutes']),
+            'worked_minutes' => $detail->sum(fn ($b) => $b['totals']['worked_minutes']),
         ];
 
-        $query = $this->presenceService->listAttendanceDays($filters, 9999)
-            ->with(['user', 'etudiant.user', 'stage.site', 'checkInEvent.site', 'checkInEvent.geofence.site', 'checkOutEvent', 'anomalies'])
-            ->orderByDesc('attendance_date');
+        $userNames = [];
 
-        $days = $query->get(); // Tous les résultats pour impression
-
-        $days->transform(function ($day) {
-            $day->resolved_site_name = $day->checkInEvent?->site?->name
-                ?? $day->checkInEvent?->geofence?->site?->name
-                ?? $day->stage?->site?->name
-                ?? null;
-            return $day;
-        });
-
-        return view('admin.presence.print', compact('days', 'date', 'period', 'userId', 'siteId', 'schoolFilter'));
+        return view('admin.presence.print', compact(
+            'detail',
+            'globalTotals',
+            'date',
+            'period',
+            'dateFrom',
+            'dateTo',
+            'userId',
+            'siteId',
+            'schoolFilter',
+            'userNames'
+        ));
     }
     /**
      * Export pointages CSV

@@ -1261,4 +1261,270 @@ class AdminPresenceService
             ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query()]
         );
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  RAPPORT DÉTAILLÉ PAR UTILISATEUR (page Pointage-suivi + impression)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Rapport détaillé : pour chaque personne attendue de la période, la liste de
+     * ses journées (présence / retard / absence / absence corrigée) avec totaux.
+     * Seules les personnes réellement attendues apparaissent (stage actif + date de
+     * début effective passée pour les stagiaires, employés actifs hors admin).
+     *
+     * @return \Illuminate\Support\Collection  blocs [user, group, school, site_name, days, totals]
+     */
+    public function getPointageDetail(string $dateFrom, string $dateTo, array $filters = []): Collection
+    {
+        $startDate = Carbon::parse($dateFrom)->startOfDay();
+        $endDate   = Carbon::parse($dateTo)->startOfDay();
+        $today     = today()->startOfDay();
+
+        // Jamais avant l'activation du système
+        $systemStart = $this->systemStartDate();
+        if ($startDate->lt($systemStart)) {
+            $startDate = $systemStart->copy();
+        }
+
+        $holidays = $this->getActiveHolidaysInRange($startDate, $endDate);
+
+        // Absences corrigées (exceptions) indexées par user_id:date
+        $exceptionsByKey = $this->getExceptionKeysInRange($startDate, $endDate);
+
+        $userId = $filters['user_id'] ?? null;
+        $siteId = $filters['site_id'] ?? null;
+        $school = $filters['school'] ?? null;
+
+        // ── Stagiaires attendus (stages actifs sur la plage) ──────────────────
+        $stages = Stage::with(['etudiant.user.personnel', 'etudiant.user.roles', 'site:id,name', 'jours'])
+            ->whereDate('date_debut', '<=', $endDate)
+            ->whereDate('date_fin', '>=', $startDate)
+            ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            ->get();
+
+        if ($userId) {
+            $stages = $stages->filter(fn ($s) => ($s->etudiant->user?->id ?? null) === (int) $userId);
+        }
+        if ($school) {
+            $stages = $stages->filter(fn ($s) => ($s->etudiant->ecole ?? null) === $school);
+        }
+        if ($siteId) {
+            $stages = $stages->filter(fn ($s) => ($s->site_id ?? null) === (int) $siteId);
+        }
+
+        $stagesByEtudiant = $stages->groupBy('etudiant_id');
+
+        // ── Employés actifs attendus (hors admin) ─────────────────────────────
+        $employees = User::with(['personnel.personnable', 'personnel.personnable.site:id,name', 'roles'])
+            ->whereHas('personnel', fn ($q) => $q->where('personnable_type', Employe::class))
+            ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'admin'))
+            ->get()
+            ->mapWithKeys(fn ($u) => [$u->id => $u]);
+
+        if ($userId) {
+            $employees = collect([$userId => $employees[$userId] ?? null])->filter();
+        }
+        if ($siteId) {
+            $employees = $employees->filter(fn ($u) => ($u->personnel?->personnable?->site_id ?? null) === (int) $siteId);
+        }
+
+        // ── Pointages réels de la plage, indexés par clé (etudiant|user):date ──
+        $attendanceMap = AttendanceDay::forActiveUsers()
+            ->with(['checkInEvent', 'checkOutEvent', 'stage.site:id,name', 'site:id,name'])
+            ->whereBetween('attendance_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->weekdays()
+            ->get()
+            ->mapWithKeys(function (AttendanceDay $day) {
+                $key = $day->etudiant_id
+                    ? 'e' . $day->etudiant_id
+                    : 'u' . $day->user_id;
+                return [$key . ':' . $day->attendance_date->format('Y-m-d') => $day];
+            });
+
+        $blocks = collect();
+
+        // ── Construction des blocs stagiaires ─────────────────────────────────
+        foreach ($stagesByEtudiant as $etudiantId => $etudiantStages) {
+            $etudiant = $etudiantStages->first()->etudiant;
+            $user     = $etudiant?->user;
+
+            if (!$etudiant || !$user) {
+                continue;
+            }
+
+            // Début effectif : date_debut_pointage / stage / compte
+            $stageStart = $etudiantStages->map(fn ($s) => Carbon::parse($s->date_debut)->startOfDay())->min();
+            $effectiveStart = $this->debutPointage($user, $stageStart)->max($stageStart);
+
+            $days = collect();
+            $current = $startDate->copy();
+            while ($current->lte($endDate)) {
+                $dateKey = $current->format('Y-m-d');
+
+                if ($current->isWeekend() || $current->gt($today) || isset($holidays[$dateKey])) {
+                    $current->addDay();
+                    continue;
+                }
+
+                // Jour de travail attendu ? (stage actif ce jour + jour coché)
+                $workStage = $etudiantStages->first(fn ($s) =>
+                    Carbon::parse($s->date_debut)->startOfDay()->lte($current)
+                    && Carbon::parse($s->date_fin)->startOfDay()->gte($current)
+                    && $s->isWorkDay($current)
+                );
+
+                if (!$workStage || $current->lt($effectiveStart)) {
+                    $current->addDay();
+                    continue;
+                }
+
+                $days->push($this->buildDetailDay(
+                    $attendanceMap->get('e' . $etudiantId . ':' . $dateKey),
+                    $current,
+                    $exceptionsByKey[($user->id) . ':' . $dateKey] ?? null,
+                    $workStage->site?->name
+                ));
+
+                $current->addDay();
+            }
+
+            if ($days->isEmpty()) {
+                continue;
+            }
+
+            $blocks->push([
+                'user'      => $user,
+                'group'     => 'etudiant',
+                'school'    => $etudiant->ecole,
+                'site_name' => $etudiantStages->first()?->site?->name,
+                'days'      => $days,
+                'totals'    => $this->sumDetailTotals($days),
+            ]);
+        }
+
+        // ── Construction des blocs employés ───────────────────────────────────
+        foreach ($employees as $employee) {
+            $effectiveStart = $this->debutPointage($employee);
+
+            $days = collect();
+            $current = $startDate->copy();
+            while ($current->lte($endDate)) {
+                $dateKey = $current->format('Y-m-d');
+
+                if ($current->isWeekend() || $current->gt($today) || isset($holidays[$dateKey]) || $current->lt($effectiveStart)) {
+                    $current->addDay();
+                    continue;
+                }
+
+                $days->push($this->buildDetailDay(
+                    $attendanceMap->get('u' . $employee->id . ':' . $dateKey),
+                    $current,
+                    $exceptionsByKey[$employee->id . ':' . $dateKey] ?? null,
+                    $employee->personnel?->personnable?->site?->name
+                ));
+
+                $current->addDay();
+            }
+
+            if ($days->isEmpty()) {
+                continue;
+            }
+
+            $blocks->push([
+                'user'      => $employee,
+                'group'     => 'employe',
+                'school'    => null,
+                'site_name' => $employee->personnel?->personnable?->site?->name,
+                'days'      => $days,
+                'totals'    => $this->sumDetailTotals($days),
+            ]);
+        }
+
+        return $blocks->sortBy(fn ($b) => mb_strtolower($b['user']->name))->values();
+    }
+
+    /**
+     * Construit la ligne d'une journée pour le rapport détaillé.
+     */
+    private function buildDetailDay(?AttendanceDay $attendanceDay, Carbon $date, ?AttendanceException $exception, ?string $expectedSite): array
+    {
+        $dateKey = $date->format('Y-m-d');
+
+        if ($exception) {
+            return [
+                'date'         => $date->copy(),
+                'present'      => false,
+                'corrected'    => true,
+                'absent'       => false,
+                'status'       => 'corrected',
+                'arrival'      => null,
+                'departure'    => null,
+                'site_name'    => $expectedSite,
+                'distance'     => null,
+                'late_minutes' => 0,
+                'worked_minutes' => 0,
+            ];
+        }
+
+        if ($attendanceDay && !is_null($attendanceDay->first_check_in_at)) {
+            $lateMinutes = (int) ($attendanceDay->late_minutes ?? 0);
+            $checkIn     = $attendanceDay->checkInEvent;
+            $checkOut    = $attendanceDay->checkOutEvent;
+
+            $siteName = $checkIn?->site?->name
+                ?? $checkIn?->geofence?->site?->name
+                ?? $attendanceDay->stage?->site?->name
+                ?? $attendanceDay->site?->name
+                ?? $expectedSite;
+
+            $distance = $checkIn?->distance_to_site_meters
+                ?? $checkIn?->accuracy_meters
+                ?? null;
+
+            $isLate = ($attendanceDay->arrival_status === 'late') || $lateMinutes > 0;
+
+            return [
+                'date'         => $date->copy(),
+                'present'      => true,
+                'corrected'    => false,
+                'absent'       => false,
+                'status'       => $isLate ? 'late' : 'on_time',
+                'arrival'      => $attendanceDay->first_check_in_at?->format('H:i'),
+                'departure'    => $attendanceDay->last_check_out_at?->format('H:i'),
+                'site_name'    => $siteName,
+                'distance'     => $distance !== null ? round((float) $distance) . ' m' : null,
+                'late_minutes' => $lateMinutes,
+                'worked_minutes' => (int) ($attendanceDay->worked_minutes ?? 0),
+            ];
+        }
+
+        return [
+            'date'         => $date->copy(),
+            'present'      => false,
+            'corrected'    => false,
+            'absent'       => true,
+            'status'       => 'absent',
+            'arrival'      => null,
+            'departure'    => null,
+            'site_name'    => $expectedSite,
+            'distance'     => null,
+            'late_minutes' => 0,
+            'worked_minutes' => 0,
+        ];
+    }
+
+    /**
+     * Totaux d'un bloc utilisateur.
+     */
+    private function sumDetailTotals(Collection $days): array
+    {
+        return [
+            'present'        => $days->where('present', true)->count(),
+            'absent'         => $days->where('absent', true)->count(),
+            'corrected'      => $days->where('corrected', true)->count(),
+            'late_minutes'   => $days->sum('late_minutes'),
+            'worked_minutes' => $days->sum('worked_minutes'),
+        ];
+    }
 }

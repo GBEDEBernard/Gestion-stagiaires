@@ -185,208 +185,120 @@
             </x-stats-card>
         </div>
 
-        {{-- Tableau pointages --}}
+        {{-- ── Rapport détaillé par utilisateur (présences + retards + absences) ── --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-gray-900/50 flex items-center justify-between flex-wrap gap-2">
                 <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                     </svg>
-                    Historique Récent ({{ $days->total() }} résultats)
+                    Rapport des pointages ({{ $detail instanceof \Illuminate\Pagination\LengthAwarePaginator ? $detail->total() : $detail->count() }} utilisateur(s))
                 </h3>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                    <thead class="bg-slate-50 dark:bg-gray-800/50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Utilisateur</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Heure</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Site</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Distance</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Statut</th>
-                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @forelse($days ?? [] as $day)
-                        @php
-                        $userName = $day->user?->name ?? $day->etudiant?->user?->name ?? 'N/A';
-                        $checkIn = $day->checkInEvent;
-                        $checkOut = $day->checkOutEvent;
-                        $arrivalTime = $checkIn?->occurred_at ?? $day->first_check_in_at;
-                        $departureTime = $checkOut?->occurred_at ?? $day->last_check_out_at;
-                        $distance = $checkIn?->distance_to_site_meters ?? null;
-                        $precision = $checkIn?->accuracy_meters ?? null;
-                        $distanceDisplay = $distance !== null ? round($distance).' m' : ($precision !== null ? round($precision).' m' : '—');
-                        @endphp
-                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-900/50 transition-colors">
-                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{{ $userName }}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                                    </svg>
-                                    Journée
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                <div class="flex flex-col gap-0.5">
-                                    @if($arrivalTime)
-                                    <span class="text-emerald-600 dark:text-emerald-400">Arrivée : {{ Carbon\Carbon::parse($arrivalTime)->format('d/m H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">Arrivée : —</span>
-                                    @endif
-                                    @if($departureTime)
-                                    <span class="text-blue-600 dark:text-blue-400">Départ : {{ Carbon\Carbon::parse($departureTime)->format('d/m H:i') }}</span>
-                                    @else
-                                    <span class="text-slate-400">Départ : —</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($day->resolved_site_name)
-                                <span class="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 text-xs font-semibold rounded-full">
-                                    {{ $day->resolved_site_name }}
-                                </span>
-                                @else
-                                <span class="px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-semibold rounded-full">
-                                    À distance
-                                </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300 text-xs font-semibold rounded-full">
-                                    {{ $distanceDisplay }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                @php
-                                $statutPonctualite = '';
-                                $badgeClass = '';
-                                if ($arrivalTime) {
-                                    $heureArrivee = Carbon\Carbon::parse($arrivalTime);
-                                    $heureReference = $heureArrivee->copy()->setTime(8, 0, 0);
-                                    if ($heureArrivee <= $heureReference) {
-                                        $statutPonctualite = 'À l\'heure';
-                                        $badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
-                                    } else {
-                                        $minutesRetard = (int) $heureArrivee->diffInMinutes($heureReference);
-                                        $statutPonctualite = "En retard (-" . formatMinutes($minutesRetard) . ")";
-                                        $badgeClass = 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300';
-                                    }
-                                } else {
-                                    $statutPonctualite = 'Non pointé';
-                                    $badgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-                                }
-                                @endphp
-                                <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
-                                    {{ $statutPonctualite }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="flex items-center justify-end gap-2">
-                                    @if($day->anomalies->count() > 0)
-                                    <span class="text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
-                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                        </svg>
-                                        {{ $day->anomalies->count() }}
-                                    </span>
-                                    @endif
-                                    @php
-                                    $targetUser = $day->etudiant?->user ?? $day->user;
-                                    @endphp
-                                    @if($targetUser)
-                                    <a href="{{ route('attendance.tracking.user.historique', $targetUser) }}"
-                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-300 text-xs font-semibold rounded-full transition-colors">
-                                        <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        Voir
-                                    </a>
+            <div class="p-6 space-y-6">
+                @forelse($detail as $block)
+                @php
+                $u = $block['user'];
+                $t = $block['totals'];
+                $workedHours = round($t['worked_minutes'] / 60, 1);
+                @endphp
+                <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                    {{-- En-tête utilisateur + totaux --}}
+                    <div class="px-5 py-3 bg-slate-50 dark:bg-gray-900/50 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a href="{{ route('attendance.tracking.user.historique', $u) }}" class="font-bold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ $u->name }}</a>
+                            <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full {{ $block['group'] === 'etudiant' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' }}">
+                                {{ $block['group'] === 'etudiant' ? 'Stagiaire' : 'Employé' }}
+                            </span>
+                            @if($block['school'])
+                            <span class="text-xs text-slate-500 dark:text-slate-400">🎓 {{ $block['school'] }}</span>
+                            @endif
+                            @if($block['site_name'])
+                            <span class="text-xs text-slate-500 dark:text-slate-400">📍 {{ $block['site_name'] }}</span>
+                            @endif
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold">
+                            <span class="text-emerald-600 dark:text-emerald-400">✓ {{ $t['present'] }} présent(s)</span>
+                            <span class="text-rose-600 dark:text-rose-400">✗ {{ $t['absent'] }} absence(s)</span>
+                            @if($t['corrected'] > 0)
+                            <span class="text-slate-500 dark:text-slate-400">◌ {{ $t['corrected'] }} corrigé(s)</span>
+                            @endif
+                            <span class="text-amber-600 dark:text-amber-400">⏱ Retard cumulé : {{ formatMinutes($t['late_minutes']) }}</span>
+                            <span class="text-indigo-600 dark:text-indigo-400">🕒 {{ $workedHours }}h pointées</span>
+                        </div>
+                    </div>
+                    {{-- Jours --}}
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead class="bg-slate-100 dark:bg-gray-800/80">
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Journée</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Arrivée</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Départ</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Site</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Distance</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Retard</th>
+                                <th class="px-4 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @foreach($block['days'] as $day)
+                            <tr class="{{ $day['absent'] ? 'bg-rose-50/70 dark:bg-rose-900/10' : '' }} hover:bg-slate-50 dark:hover:bg-gray-900/40 transition-colors">
+                                <td class="px-4 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                    {{ $day['date']->locale('fr')->isoFormat('dddd D MMM') }}
+                                    <span class="text-xs text-slate-400">{{ $day['date']->format('Y') }}</span>
+                                </td>
+                                <td class="px-4 py-2.5 text-sm">
+                                    @if($day['arrival'])
+                                    <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ $day['arrival'] }}</span>
                                     @else
                                     <span class="text-slate-400">—</span>
                                     @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0 -3.332.477 -4.5 1.253" />
-                                </svg>
-                                Aucun pointage trouvé pour ces filtres.<br><small class="text-xs">Essayez d'étendre la période ou ajustez la date.</small>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($days->hasPages())
-            <div class="px-6 py-4 bg-slate-50 dark:bg-gray-900/50 border-t border-slate-200 dark:border-slate-700">
-                {{ $days->appends(request()->query())->links() }}
-            </div>
-            @endif
-        </div>
-
-        {{-- ── Absences ── --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-gray-900/50 flex items-center justify-between">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-rose-600 dark:text-rose-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </td>
+                                <td class="px-4 py-2.5 text-sm">
+                                    @if($day['departure'])
+                                    <span class="font-semibold text-blue-600 dark:text-blue-400">{{ $day['departure'] }}</span>
+                                    @else
+                                    <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300">{{ $day['site_name'] ?? '—' }}</td>
+                                <td class="px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300">{{ $day['distance'] ?? '—' }}</td>
+                                <td class="px-4 py-2.5 text-sm">
+                                    @if($day['late_minutes'] > 0)
+                                    <span class="font-semibold text-rose-600 dark:text-rose-400">-{{ formatMinutes($day['late_minutes']) }}</span>
+                                    @else
+                                    <span class="text-slate-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-2.5">
+                                    @if($day['status'] === 'on_time')
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">À l'heure</span>
+                                    @elseif($day['status'] === 'late')
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">En retard</span>
+                                    @elseif($day['status'] === 'absent')
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Absent</span>
+                                    @else
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Corrigé</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @empty
+                <div class="text-center py-14">
+                    <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Absences ({{ $absences->total() }} résultats)
-                </h3>
+                    <p class="text-slate-500 dark:text-slate-400 font-medium">Aucun pointage ni absence pour ces filtres.</p>
+                    <small class="text-xs text-slate-400">Essayez d'étendre la période, ajustez la date ou changez l'utilisateur / l'école.</small>
+                </div>
+                @endforelse
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                    <thead class="bg-slate-50 dark:bg-gray-800/50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Utilisateur</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Site</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        @forelse($absences as $absence)
-                        @php
-                        $userName = $absence['user']?->name ?? 'N/A';
-                        @endphp
-                        <tr class="hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-colors">
-                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{{ $userName }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{{ $absence['date']->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-semibold rounded-full">
-                                    {{ $absence['stage']?->site?->name ?? '—' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
-                                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                    </svg>
-                                    Absent
-                                </span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                Aucune absence pour cette période.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($absences->hasPages())
+            @if(method_exists($detail, 'hasPages') && $detail->hasPages())
             <div class="px-6 py-4 bg-slate-50 dark:bg-gray-900/50 border-t border-slate-200 dark:border-slate-700">
-                {{ $absences->appends(request()->query())->links() }}
+                {{ $detail->appends(request()->query())->links() }}
             </div>
             @endif
         </div>
