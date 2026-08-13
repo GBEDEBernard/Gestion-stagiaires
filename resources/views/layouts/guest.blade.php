@@ -19,7 +19,8 @@
 <link rel="shortcut icon" href="{{ asset('android-chrome-512x512.png') }}?v={{ filemtime(public_path('android-chrome-512x512.png')) }}">
 <link rel="apple-touch-icon" href="{{ asset('android-chrome-512x512.png') }}?v={{ filemtime(public_path('android-chrome-512x512.png')) }}">
 @endif <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/css/auth-tfg.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/auth-tfg.css') }}?v={{ filemtime(public_path('css/auth-tfg.css')) }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         /* Style pour les favicons bord avecures arrondies */
