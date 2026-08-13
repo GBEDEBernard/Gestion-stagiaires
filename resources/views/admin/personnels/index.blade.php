@@ -66,28 +66,28 @@
         {{-- ── Tableau responsive (conteneur AJAX) ── --}}
         <div id="personnels-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full min-w-[900px]">
                     <thead class="bg-gray-50 dark:bg-gray-900/50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">N°</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Identité</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Infos</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inscription</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Début pointage</th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            <th class="hidden sm:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10">N°</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Identité</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                            <th class="hidden lg:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Infos</th>
+                            <th class="hidden md:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inscription</th>
+                            <th class="hidden md:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Début pointage</th>
+                            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($personnels as $personnel)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
-                            <td class="px-6 py-4">
+                            <td class="hidden sm:table-cell px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
+                            <td class="px-4 py-3.5">
                                 <div class="font-semibold text-gray-900 dark:text-white">{{ $personnel->prenom }} {{ $personnel->nom }}</div>
-                                <div class="text-gray-500 dark:text-gray-400 text-sm">{{ $personnel->adresse ?? '-' }}</div>
+                                <div class="text-gray-500 dark:text-gray-400 text-sm truncate max-w-[12rem]">{{ $personnel->adresse ?? '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm">
+                            <td class="px-4 py-3.5 text-sm whitespace-nowrap">
                                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold 
                                         @if($personnel->type_label === 'Admin') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
                                         @elseif($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
@@ -97,11 +97,11 @@
                                     {{ $personnel->type_label }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="text-gray-900 dark:text-white">{{ $personnel->email }}</div>
-                                <div class="text-gray-500 dark:text-gray-400">{{ $personnel->telephone ?? '-' }}</div>
+                            <td class="px-4 py-3.5 text-sm">
+                                <div class="text-gray-900 dark:text-white truncate max-w-[14rem]">{{ $personnel->email }}</div>
+                                <div class="text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $personnel->telephone ?? '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm">
+                            <td class="hidden lg:table-cell px-4 py-3.5 text-sm">
                                 @if($personnel->personnable)
                                     @if($personnel->personnable_type === App\Models\Etudiant::class)
                                         <div class="text-gray-900 dark:text-white"><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
@@ -112,41 +112,58 @@
                                     <div class="text-gray-500 dark:text-gray-400">Aucun détail</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="hidden md:table-cell px-4 py-3.5 text-sm whitespace-nowrap">
                                 <div class="text-gray-900 dark:text-white">{{ $personnel->date_inscription ? \Illuminate\Support\Carbon::parse($personnel->date_inscription)->format('d/m/Y') : '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="hidden md:table-cell px-4 py-3.5 text-sm whitespace-nowrap">
                                 <div class="text-gray-900 dark:text-white">{{ $personnel->date_debut_pointage ? \Illuminate\Support\Carbon::parse($personnel->date_debut_pointage)->format('d/m/Y') : '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                @if(!$personnel->user)
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'generate')">
-                                    Générer compte
-                                </button>
-                                @else
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'resend')">
-                                    Renvoyer email
-                                </button>
-                                @endif
-                                <a href="{{ encrypted_route('personnels.show', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
-                                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </a>
-                                <a href="{{ encrypted_route('personnels.edit', $personnel) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </a>
-                                <form action="{{ encrypted_route('personnels.destroy', $personnel) }}" method="POST" class="inline" data-confirm-delete>
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/50 transition" title="Supprimer">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                            <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center gap-2">
+                                    @if(!$personnel->user)
+                                    <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'generate')">
+                                        Générer compte
                                     </button>
-                                </form>
+                                    @else
+                                    <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'resend')">
+                                        Renvoyer email
+                                    </button>
+                                    @endif
+
+                                    <div class="relative" x-data="{ open: false }">
+                                        <button type="button" @click="open = !open" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Actions">
+                                            Actions
+                                            <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        <div x-show="open" x-cloak @click.outside="open = false" x-transition.origin.top.right
+                                             class="absolute right-0 z-20 w-44 {{ $loop->last ? 'bottom-full mb-2' : 'mt-2' }} bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1">
+                                            <a href="{{ encrypted_route('personnels.show', $personnel) }}" @click="open = false" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                Voir
+                                            </a>
+                                            <a href="{{ encrypted_route('personnels.edit', $personnel) }}" @click="open = false" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                                                <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                Modifier
+                                            </a>
+                                            <form action="{{ encrypted_route('personnels.destroy', $personnel) }}" method="POST" data-confirm-delete>
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    Supprimer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         @empty
