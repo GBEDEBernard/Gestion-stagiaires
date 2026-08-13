@@ -13,6 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use App\Rules\NoForbiddenChars; // ← Importer
+
 
 class RegisteredUserController extends Controller
 {

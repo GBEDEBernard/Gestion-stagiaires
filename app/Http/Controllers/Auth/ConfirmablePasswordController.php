@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use App\Rules\NoForbiddenChars; // ← Importer
+
 
 class ConfirmablePasswordController extends Controller
 {

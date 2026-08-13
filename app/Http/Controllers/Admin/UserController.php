@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Notifications\AccountProvisionedNotification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
+use App\Rules\NoForbiddenChars; // ← Importer
 
 class UserController extends Controller
 {
@@ -110,19 +111,24 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'nom'       => 'required|string|max:255',
-            'prenom'    => 'required|string|max:255',
-            'email'     => 'required|email|unique:personnels,email|unique:users,email',
-            'password'  => 'required|min:8|confirmed',
-            'user_type' => 'required|string|exists:roles,name',
-            'roles'     => 'array',
-            'roles.*'   => 'exists:roles,name',
-            'etudiant_genre'     => 'nullable|string|max:50',
-            'etudiant_telephone' => 'nullable|string|max:20',
-'etudiant_ecole'     => 'nullable|string|max:255',
-            'domaine_id' => 'nullable|exists:domaines,id',
-            'remote_work_enabled' => 'nullable|boolean',
-        ];
+        'nom'       => 'required|string|max:255',
+        'prenom'    => 'required|string|max:255',
+        'email'     => 'required|email|unique:personnels,email|unique:users,email',
+        'password'  => [
+            'required',
+            'min:8',
+            'confirmed',
+            new NoForbiddenChars(), // ✅ ici, dans le tableau du champ password
+        ],
+        'user_type' => 'required|string|exists:roles,name',
+        'roles'     => 'array',
+        'roles.*'   => 'exists:roles,name',
+        'etudiant_genre'     => 'nullable|string|max:50',
+        'etudiant_telephone' => 'nullable|string|max:20',
+        'etudiant_ecole'     => 'nullable|string|max:255',
+        'domaine_id' => 'nullable|exists:domaines,id',
+        'remote_work_enabled' => 'nullable|boolean',
+    ];
 
         $selectedRoles = $request->input('roles', [$request->input('user_type')]);
 

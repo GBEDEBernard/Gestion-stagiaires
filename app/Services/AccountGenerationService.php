@@ -130,6 +130,7 @@ class AccountGenerationService
             return false;
         }
     }
+    
 
     private function syncAccountIdentity(User $user, Personnel $personnel): void
     {
@@ -150,10 +151,22 @@ class AccountGenerationService
         $user->forceFill($userData)->save();
     }
 
-    private function normalizePassword(?string $password): ?string
+     private function normalizePassword(?string $password): ?string
     {
-        $password = is_string($password) ? trim($password) : $password;
+        if ($password === null || trim($password) === '') {
+            return null;
+        }
 
-        return $password === '' ? null : $password;
+        // ✅ Vérification supplémentaire : interdire les caractères problématiques
+        $forbidden = ['&', '"', "'", '<', '>'];
+        foreach ($forbidden as $char) {
+            if (strpos($password, $char) !== false) {
+                throw new \InvalidArgumentException(
+                    'Le mot de passe ne doit pas contenir les caractères : & " \' < >'
+                );
+            }
+        }
+
+        return $password;
     }
 }

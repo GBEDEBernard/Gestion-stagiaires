@@ -181,15 +181,37 @@
     </div>
 
     {{-- Modal pour mot de passe personnalisé --}}
-    <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 {{ $errors->has('custom_password') ? '' : 'hidden' }}">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 relative">
+            <!-- Bouton fermeture -->
+            <button type="button" onclick="closePasswordModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
             <h2 id="passwordModalTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
             <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
-            <form id="passwordForm" method="POST" action="">
+
+            {{-- Affichage des erreurs de validation --}}
+            @if($errors->any())
+            <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            <form id="passwordForm" method="POST" action="{{ old('_action') ?? '' }}">
                 @csrf
                 <div class="mb-6">
                     <label for="customPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Mot de passe temporaire (optionnel)</label>
-                    <input type="password" id="customPassword" name="custom_password" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                    <input type="password" id="customPassword" name="custom_password" value="{{ old('custom_password') }}" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                    @error('custom_password')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="flex gap-3">
                     <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
@@ -201,35 +223,48 @@
 
     <script>
         function openPasswordModal(personnelId, actionUrl, mode = 'generate') {
-            document.getElementById('passwordModal').classList.remove('hidden');
-            document.getElementById('passwordForm').action = actionUrl;
-            document.getElementById('customPassword').value = '';
-
+            // Mettre à jour le titre et la description
             var resend = mode === 'resend';
             document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'email d'activation" : 'Générer un compte';
             document.getElementById('passwordModalDescription').textContent = resend
                 ? "Un compte existe déjà pour ce personnel. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
                 : "Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.";
             document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
+
+            // Mettre à jour l'action du formulaire
+            document.getElementById('passwordForm').action = actionUrl;
+
+            // Réinitialiser le champ et supprimer les anciennes erreurs (visuelles)
+            document.getElementById('customPassword').value = '';
+            const errorContainer = document.getElementById('passwordModal').querySelector('.bg-red-100');
+            if (errorContainer) errorContainer.remove();
+
+            // Afficher la modale
+            document.getElementById('passwordModal').classList.remove('hidden');
         }
 
         function closePasswordModal() {
             document.getElementById('passwordModal').classList.add('hidden');
+            // Réinitialiser l'erreur (optionnel)
+            const errorContainer = document.getElementById('passwordModal').querySelector('.bg-red-100');
+            if (errorContainer) errorContainer.remove();
         }
 
+        // Fermer la modale avec la touche Échap
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closePasswordModal();
             }
         });
 
+        // Fermer la modale en cliquant à l'extérieur
         document.getElementById('passwordModal')?.addEventListener('click', function(event) {
             if (event.target === this) {
                 closePasswordModal();
             }
         });
 
-        // ---- AJAX recherche dynamique (identique à celle des utilisateurs) ----
+        // ---- AJAX recherche dynamique ----
         document.addEventListener('DOMContentLoaded', function () {
             const filtersForm = document.getElementById('filters-form');
             const searchInput = filtersForm?.querySelector('.search-input');

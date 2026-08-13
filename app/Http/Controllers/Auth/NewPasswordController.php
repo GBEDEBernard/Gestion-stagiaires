@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Rules\NoForbiddenChars; // ← Importer
+
 
 class NewPasswordController extends Controller
 {
@@ -32,11 +34,16 @@ class NewPasswordController extends Controller
     public function store(Request $request): RedirectResponse
     {
         try {
-            $request->validate([
-                'token'    => 'required',
-                'email'    => 'required|email',
-                'password' => 'required|confirmed|min:8',
-            ]);
+             $request->validate([
+            'token'    => 'required',
+            'email'    => 'required|email',
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                new NoForbiddenChars(), // ✅ ici
+            ],
+        ]);
 
             // 1. Trouver le personnel par email
             $personnel = Personnel::where('email', $request->email)->first();
@@ -139,11 +146,16 @@ class NewPasswordController extends Controller
     public function firstUpdate(Request $request): RedirectResponse
     {
         try {
-            $request->validate([
-                'token'    => 'required',
-                'email'    => 'required|email',
-                'password' => 'required|confirmed|min:8',
-            ]);
+             $request->validate([
+            'token'    => 'required',
+            'email'    => 'required|email',
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                new NoForbiddenChars(), // ✅ ici
+            ],
+        ]);
 
             $personnel = Personnel::where('email', $request->email)->first();
 

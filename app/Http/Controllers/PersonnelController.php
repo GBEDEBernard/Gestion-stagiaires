@@ -15,6 +15,8 @@ use App\Models\Jour;
 use App\Services\AccountGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Rules\NoForbiddenChars;
+
 
 class PersonnelController extends Controller
 {
@@ -374,23 +376,47 @@ class PersonnelController extends Controller
             ->with('success', 'Personnel définitivement supprimé.');
     }
 
-    public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
-    {
-        if ($personnel->user) {
-            $service->resendProvisioningEmail($personnel, $request->input('custom_password'));
-            if (!$service->lastProvisioningEmailSent()) {
-                return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
-            }
-            return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
+   public function generateAccount(Request $request, Personnel $personnel, AccountGenerationService $service)
+{
+    $customPassword = $request->input('custom_password');
+
+    // 1. Validation du mot de passe personnalisé (si fourni)
+    if ($customPassword !== null && trim($customPassword) !== '') {
+        // 1.1 Interdire les caractères problématiques via la règle dédiée
+        $validator = validator(['password' => $customPassword], [
+            'password' => [new NoForbiddenChars()],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors([
+                'custom_password' => $validator->errors()->first('password'),
+            ])->withInput();
         }
 
-        $customPassword = $request->input('custom_password');
-        $role = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
-        $service->generateForPersonnel($personnel, $role, $customPassword);
-
-        if (!$service->lastProvisioningEmailSent()) {
-            return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+        // 1.2 Limiter la longueur
+        if (strlen($customPassword) > 255) {
+            return back()->withErrors([
+                'custom_password' => 'Le mot de passe ne peut pas dépasser 255 caractères.',
+            ])->withInput();
         }
-        return back()->with('success', "Compte généré pour {$personnel->full_name}.");
     }
+
+    // 2. Appel au service (inchangé)
+    if ($personnel->user) {
+        $service->resendProvisioningEmail($personnel, $customPassword);
+        if (!$service->lastProvisioningEmailSent()) {
+            return back()->with('error', "Un compte existe déjà pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+        }
+        return back()->with('success', "Un compte existe déjà pour {$personnel->full_name}. L'email d'activation a été renvoyé.");
+    }
+
+    $role = $personnel->personnable_type === Employe::class ? 'employe' : 'etudiant';
+    $service->generateForPersonnel($personnel, $role, $customPassword);
+
+    if (!$service->lastProvisioningEmailSent()) {
+        return back()->with('error', "Compte généré pour {$personnel->full_name}, mais l'email d'activation n'a pas pu être envoyé. Vérifiez la configuration SMTP.");
+    }
+
+    return back()->with('success', "Compte généré pour {$personnel->full_name}.");
+}
 }
