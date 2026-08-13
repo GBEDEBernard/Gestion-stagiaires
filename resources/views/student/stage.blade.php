@@ -34,7 +34,7 @@
                     <a href="{{ route('presence.pointage') }}" class="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-indigo-900/20 hover:bg-slate-50 transition-colors">
                         Pointer ma présence
                     </a>
-                    <a href="{{ route('reports.index') }}" class="inline-flex items-center rounded-xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/10 transition-colors">
+                    <a href="{{ route('tasks.index') }}" class="inline-flex items-center rounded-xl border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/10 transition-colors">
                         Ouvrir le rapport du jour
                     </a>
                 </div>
@@ -289,7 +289,7 @@
                         <a href="{{ route('presence.pointage') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-colors">
                             Aller au pointage
                         </a>
-                        <a href="{{ route('reports.index') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                        <a href="{{ route('tasks.index') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                             Aller au rapport journalier
                         </a>
                     </div>
