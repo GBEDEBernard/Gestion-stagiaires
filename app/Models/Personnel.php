@@ -18,6 +18,8 @@ class Personnel extends Model
         'genre',
         'date_naissance',
         'adresse',
+        'date_inscription',
+        'date_debut_pointage',
         'personnable_type',
         'personnable_id',
         'created_by',

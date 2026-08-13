@@ -74,6 +74,8 @@
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Infos</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inscription</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Début pointage</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -110,6 +112,12 @@
                                     <div class="text-gray-500 dark:text-gray-400">Aucun détail</div>
                                 @endif
                             </td>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                <div class="text-gray-900 dark:text-white">{{ $personnel->date_inscription ? \Illuminate\Support\Carbon::parse($personnel->date_inscription)->format('d/m/Y') : '-' }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                <div class="text-gray-900 dark:text-white">{{ $personnel->date_debut_pointage ? \Illuminate\Support\Carbon::parse($personnel->date_debut_pointage)->format('d/m/Y') : '-' }}</div>
+                            </td>
                             <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
                                 @if(!$personnel->user)
                                 <button type="button" class="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition" onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'generate')">
@@ -143,7 +151,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun personnel trouvé.</td>
+                            <td colspan="8" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun personnel trouvé.</td>
                         </tr>
                         @endforelse
                     </tbody>

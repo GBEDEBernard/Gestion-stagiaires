@@ -122,6 +122,13 @@ class PresenceController extends Controller
                 ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
         }
 
+        // ✅ Blocage avant la date de début de pointage choisie à l'inscription
+        $debutPointage = $user->personnel?->date_debut_pointage;
+        if ($debutPointage && \Illuminate\Support\Carbon::parse($debutPointage)->startOfDay()->gt(today())) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Votre prise de poste commencera le " . \Illuminate\Support\Carbon::parse($debutPointage)->format('d/m/Y') . ". Le pointage n'est pas encore activé.");
+        }
+
 $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 

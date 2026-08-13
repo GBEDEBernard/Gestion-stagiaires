@@ -139,6 +139,8 @@ class PersonnelController extends Controller
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
             'adresse'        => 'nullable|string|max:1000',
+            'date_inscription'     => 'nullable|date',
+            'date_debut_pointage'  => 'nullable|date|after_or_equal:date_inscription',
             'type'           => 'required|in:etudiant,employe',
         ];
 
@@ -159,14 +161,16 @@ class PersonnelController extends Controller
 
         // Étape 1 : créer le Personnel
         $personnel = Personnel::create([
-            'nom'            => $data['nom'],
-            'prenom'         => $data['prenom'],
-            'email'          => $data['email'],
-            'telephone'      => $data['telephone'],
-            'genre'          => $data['genre'],
-            'date_naissance' => $data['date_naissance'],
-            'adresse'        => $data['adresse'],
-            'created_by'     => auth()->id(),
+            'nom'                 => $data['nom'],
+            'prenom'              => $data['prenom'],
+            'email'               => $data['email'],
+            'telephone'           => $data['telephone'],
+            'genre'               => $data['genre'],
+            'date_naissance'      => $data['date_naissance'],
+            'adresse'             => $data['adresse'],
+            'date_inscription'    => $data['date_inscription'] ?? today()->toDateString(),
+            'date_debut_pointage' => $data['date_debut_pointage'] ?? null,
+            'created_by'          => auth()->id(),
         ]);
 
         // Étape 2 : créer la fiche métier
@@ -212,6 +216,8 @@ class PersonnelController extends Controller
             'genre'          => 'nullable|string|max:50',
             'date_naissance' => 'nullable|date',
             'adresse'        => 'nullable|string|max:1000',
+            'date_inscription'    => 'nullable|date',
+            'date_debut_pointage' => 'nullable|date|after_or_equal:date_inscription',
             'type'           => ['required', Rule::in(['etudiant', 'employe', 'inconnu'])],
         ];
 
@@ -235,13 +241,15 @@ class PersonnelController extends Controller
         $data = array_merge($data, $request->validate($typeRules));
 
         $personnel->update([
-            'nom'            => $data['nom'],
-            'prenom'         => $data['prenom'],
-            'email'          => $data['email'],
-            'telephone'      => $data['telephone'],
-            'genre'          => $data['genre'],
-            'date_naissance' => $data['date_naissance'],
-            'adresse'        => $data['adresse'],
+            'nom'                 => $data['nom'],
+            'prenom'              => $data['prenom'],
+            'email'               => $data['email'],
+            'telephone'           => $data['telephone'],
+            'genre'               => $data['genre'],
+            'date_naissance'      => $data['date_naissance'],
+            'adresse'             => $data['adresse'],
+            'date_inscription'    => $data['date_inscription'] ?? $personnel->date_inscription,
+            'date_debut_pointage' => $data['date_debut_pointage'] ?? null,
         ]);
 
         if ($formType === 'etudiant' && $personnel->personnable) {

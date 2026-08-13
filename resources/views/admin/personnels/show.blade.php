@@ -107,6 +107,8 @@
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Téléphone</label><p class="text-gray-900 dark:text-white font-medium">{{ $personnel->telephone ?? '-' }}</p></div>
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Genre</label><p class="text-gray-900 dark:text-white font-medium">{{ $personnel->genre ?? '-' }}</p></div>
                                 <div><label class="block text-sm text-gray-500 dark:text-gray-400">Date de naissance</label><p class="text-gray-900 dark:text-white font-medium">{{ $dateNaissanceFormatted }}</p></div>
+                                <div><label class="block text-sm text-gray-500 dark:text-gray-400">Date d'inscription</label><p class="text-gray-900 dark:text-white font-medium">{{ $personnel->date_inscription ? \Illuminate\Support\Carbon::parse($personnel->date_inscription)->format('d/m/Y') : '-' }}</p></div>
+                                <div><label class="block text-sm text-gray-500 dark:text-gray-400">Début de pointage</label><p class="text-gray-900 dark:text-white font-medium">{{ $personnel->date_debut_pointage ? \Illuminate\Support\Carbon::parse($personnel->date_debut_pointage)->format('d/m/Y') : '-' }}</p></div>
                                 @if($personnel->adresse)
                                 <div class="md:col-span-2"><label class="block text-sm text-gray-500 dark:text-gray-400">Adresse</label><p class="text-gray-900 dark:text-white font-medium">{{ $personnel->adresse }}</p></div>
                                 @endif

@@ -39,7 +39,23 @@ class AdminPresenceService
 
         return Stage::whereDate('date_debut', '<=', $dateKey)
             ->whereDate('date_fin', '>=', $dateKey)
-            ->whereHas('etudiant.user', fn ($q) => $q->where('status', 'actif'))
+            ->whereHas('etudiant.user', function ($q) use ($dateKey) {
+                $q->where('status', 'actif')
+                  ->where(function ($inner) use ($dateKey) {
+                      // Le stagiaire n'est attendu qu'à partir de sa date effective de début :
+                      //  - date_debut_pointage renseignée ET déjà passée (ou aujourd'hui)
+                      $inner->whereHas('personnel', fn ($p) => $p
+                          ->whereNotNull('date_debut_pointage')
+                          ->where('date_debut_pointage', '<=', $dateKey))
+                          //  - sinon, aucun début fixé → le compte utilisateur doit exister à cette date
+                          ->orWhere(function ($fallback) use ($dateKey) {
+                              $fallback->where(function ($f) {
+                                  $f->whereNull('personnel_id')
+                                    ->orWhereHas('personnel', fn ($p) => $p->whereNull('date_debut_pointage'));
+                              })->whereDate('users.created_at', '<=', $dateKey);
+                          });
+                  });
+            })
             ->where(function (Builder $q) use ($dayName) {
                 // Aucun jour configuré → tous les jours ouvrés
                 $q->whereDoesntHave('jours')
@@ -69,6 +85,26 @@ class AdminPresenceService
         return $firstUser
             ? Carbon::parse($firstUser->created_at)->startOfDay()
             : Carbon::parse('2026-04-27')->startOfDay();
+    }
+
+    /**
+     * Date effective de début de pointage d'un utilisateur.
+     * Priorité : 1) date_debut_pointage (personnels)  2) $fallback (ex: stage.date_debut)
+     *            3) users.created_at. Toujours bornée par la date d'activation du système.
+     * Avant cette date : aucune absence comptée, aucun attendu.
+     */
+    private function debutPointage(?User $user, ?Carbon $fallback = null): Carbon
+    {
+        if (!$user) {
+            return $this->systemStartDate();
+        }
+
+        $personnelDate = $user->personnel?->date_debut_pointage;
+        $base = $personnelDate
+            ? Carbon::parse($personnelDate)->startOfDay()
+            : ($fallback ?? Carbon::parse($user->created_at)->startOfDay());
+
+        return $base->max($this->systemStartDate());
     }
 
     /**
@@ -347,19 +383,24 @@ class AdminPresenceService
             ->get()
             ->keyBy('date');
 
-        // Nombre d'employés actifs attendus (exclure les admin)
-        $expectedEmployeesCount = User::whereHas('personnel', function ($query) {
-            $query->where('personnable_type', Employe::class);
-        })
+        // Employés actifs attendus (exclure les admin), avec leur date effective de début
+        $employees = User::with('personnel')
+            ->whereHas('personnel', function ($query) {
+                $query->where('personnable_type', Employe::class);
+            })
             ->where('status', 'actif')
             ->whereDoesntHave('roles', fn($q) => $q->where('name', 'admin'))
-            ->count();
+            ->get();
+
+        $employeeStartDates = $employees
+            ->mapWithKeys(fn($u) => [$u->id => $this->debutPointage($u)])
+            ->all();
 
         // ── Séries du graphique (fenêtre élargie) ─────────────────────────────
-        $chartSeries = $this->buildSeries($dailyStats, $chartStart, $endDate, $systemStart, $chartHolidays, $today, $expectedEmployeesCount);
+        $chartSeries = $this->buildSeries($dailyStats, $chartStart, $endDate, $systemStart, $chartHolidays, $today, $employeeStartDates);
 
         // ── Séries des KPI (période réelle) — jours futurs inclus à 0 mais ignorés ──
-        $periodSeries = $this->buildSeries($dailyStats, $startDate, $endDate, $systemStart, $holidays, $today, $expectedEmployeesCount);
+        $periodSeries = $this->buildSeries($dailyStats, $startDate, $endDate, $systemStart, $holidays, $today, $employeeStartDates);
 
         // ── KPI totaux : uniquement sur les jours déjà passés ────────────────
         $presentDays = $totalLateMin = $totalLateDays = $totalWorkedMin = $totalAbsent = 0;
@@ -409,7 +450,7 @@ class AdminPresenceService
      * comptée), ce qui donne une vraie courbe qui "monte" avec les jours passés
      * puis retombe à 0 sur les jours pas encore arrivés.
      */
-    private function buildSeries(Collection $dailyStats, Carbon $rangeStart, Carbon $rangeEnd, Carbon $systemStart, array $holidays, Carbon $today, int $expectedEmployeesCount): array
+    private function buildSeries(Collection $dailyStats, Carbon $rangeStart, Carbon $rangeEnd, Carbon $systemStart, array $holidays, Carbon $today, array $employeeStartDates): array
     {
         $labels          = [];
         $presentData     = [];
@@ -456,6 +497,12 @@ class AdminPresenceService
             $studentsCount = $this->activeStagesOnDate($dateKey)
                 ->distinct('etudiant_id')
                 ->count('etudiant_id');
+
+            // ── Employés attendus ce jour : uniquement ceux déjà entrés en pointage ──
+            $expectedEmployeesCount = count(array_filter(
+                $employeeStartDates,
+                fn(Carbon $start) => $start->lte($currentDate)
+            ));
 
             $expectedTotal = $studentsCount + $expectedEmployeesCount;
 
@@ -669,13 +716,17 @@ class AdminPresenceService
         [$startDate, $endDate] = $this->resolvePeriodRange($period, $dateFrom, $dateTo);
 
         // ── Date d'activation de l'utilisateur ───────────────────────────────
+        // Priorité : date_debut_pointage → date_debut du 1er stage (stagiaire) → users.created_at
         if ($isEtudiant) {
             $firstStage     = $user->etudiant->stages()->orderBy('date_debut')->first();
-            $activationDate = $firstStage
+            $stageStart     = $firstStage
                 ? Carbon::parse($firstStage->date_debut)->startOfDay()
-                : Carbon::parse($user->created_at)->startOfDay();
+                : null;
+            $activationDate = $stageStart
+                ? $this->debutPointage($user, $stageStart)->max($stageStart)
+                : $this->debutPointage($user);
         } else {
-            $activationDate = Carbon::parse($user->created_at)->startOfDay();
+            $activationDate = $this->debutPointage($user);
         }
 
         // ✅ La date effective est le MAX entre l'activation user et l'activation système
@@ -704,6 +755,12 @@ class AdminPresenceService
             if ($chartLimit->gt($today)) $chartLimit = $today->copy();
             $chartStart = $chartLimit->subDays(6)->startOfDay();
             if ($chartStart->gt($startDate)) $chartStart = $startDate->copy();
+        }
+
+        // ✅ La courbe ne commence qu'à la date effective de début de pointage
+        $chartStart = $chartStart->max($activationDate);
+        if ($chartStart->gt($endDate->copy()->startOfDay())) {
+            $chartStart = $endDate->copy()->startOfDay();
         }
 
         // ✅ Jours fériés actifs sur la plage élargie du graphique
@@ -891,7 +948,9 @@ class AdminPresenceService
             ->all();
 
         $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
-        $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
+        $employeeStartDateById = User::with('personnel')->whereIn('id', $employeeIds)->get()
+            ->mapWithKeys(fn($u) => [$u->id => $this->debutPointage($u)])
+            ->all();
 
         $attendanceDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
@@ -926,8 +985,8 @@ class AdminPresenceService
                 foreach ($etudiantUsers as $et) {
                     // ✅ Ne pas compter un jour corrigé (exception)
                     if (isset($exceptionsByKey[($et->user?->id ?? 0) . ':' . $dateKey])) continue;
-                    $userCreatedAt = Carbon::parse($et->user?->created_at ?? $systemStart)->startOfDay();
-                    if ($days->gte($userCreatedAt)) {
+                    // ✅ Absent uniquement si la date de début de pointage effective est passée
+                    if ($days->gte($this->debutPointage($et->user))) {
                         $name = $et->user?->name ?? 'Inconnu';
                         $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
                         $absentDaysByUserName[$name][] = [
@@ -942,8 +1001,8 @@ class AdminPresenceService
                 if (!in_array($uid, $presentEmployeeIds)) {
                     // ✅ Ne pas compter un jour corrigé (exception)
                     if (isset($exceptionsByKey[$uid . ':' . $dateKey])) continue;
-                    $empCreatedAt = $employeeCreatedAtById[$uid] ?? $systemStart;
-                    if ($days->gte($empCreatedAt)) {
+                    $empStartDate = $employeeStartDateById[$uid] ?? $this->systemStartDate();
+                    if ($days->gte($empStartDate)) {
                         $name = $employeeNameById[$uid] ?? 'Inconnu';
                         $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
                         $absentDaysByUserName[$name][] = [
@@ -1008,7 +1067,9 @@ class AdminPresenceService
             ->all();
 
         $employeeNameById = User::with('personnel')->whereIn('id', $employeeIds)->get()->pluck('name', 'id')->toArray();
-        $employeeCreatedAtById = User::whereIn('id', $employeeIds)->pluck('created_at', 'id')->map(fn($d) => Carbon::parse($d)->startOfDay())->toArray();
+        $employeeStartDateById = User::with('personnel')->whereIn('id', $employeeIds)->get()
+            ->mapWithKeys(fn($u) => [$u->id => $this->debutPointage($u)])
+            ->all();
 
         $attendanceDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startDate, $endDate])
             ->weekdays()
@@ -1046,9 +1107,8 @@ class AdminPresenceService
                 foreach ($etudiantUsers as $et) {
                     // ✅ Ne pas compter un jour corrigé (exception)
                     if (isset($exceptionsByKey[($et->user?->id ?? 0) . ':' . $dateKey])) continue;
-                    // ✅ Ne compter absent que si le user existait déjà à cette date
-                    $userCreatedAt = Carbon::parse($et->user?->created_at ?? $systemStart)->startOfDay();
-                    if ($days->gte($userCreatedAt)) {
+                    // ✅ Absent uniquement si la date de début de pointage effective est passée
+                    if ($days->gte($this->debutPointage($et->user))) {
                         $name = $et->user?->name ?? 'Inconnu';
                         $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
                     }
@@ -1059,9 +1119,9 @@ class AdminPresenceService
                 if (!in_array($uid, $presentEmployeeIds)) {
                     // ✅ Ne pas compter un jour corrigé (exception)
                     if (isset($exceptionsByKey[$uid . ':' . $dateKey])) continue;
-                    // ✅ Ne compter absent que si l'employé existait à cette date
-                    $empCreatedAt = $employeeCreatedAtById[$uid] ?? $systemStart;
-                    if ($days->gte($empCreatedAt)) {
+                    // ✅ Absent uniquement si la date de début de pointage effective est passée
+                    $empStartDate = $employeeStartDateById[$uid] ?? $this->systemStartDate();
+                    if ($days->gte($empStartDate)) {
                         $name = $employeeNameById[$uid] ?? 'Inconnu';
                         $absentCountByUserName[$name] = ($absentCountByUserName[$name] ?? 0) + 1;
                     }
@@ -1151,7 +1211,8 @@ class AdminPresenceService
 
                 $user = $stage->etudiant?->user;
                 if (!$user || $user->status !== 'actif') continue;
-                if ($days->lt(Carbon::parse($user->created_at)->startOfDay())) continue;
+                // ✅ Pas d'absence avant la date de début de pointage effective
+                if ($days->lt($this->debutPointage($user))) continue;
 
                 // ✅ Ne pas compter un jour corrigé (exception)
                 if (isset($exceptionsByKey[$user->id . ':' . $dateKey])) continue;
@@ -1168,7 +1229,8 @@ class AdminPresenceService
             foreach ($employees as $employee) {
                 if ($userId && $employee->id !== (int) $userId) continue;
                 if (in_array($employee->id, $presentEmployeeIds)) continue;
-                if ($days->lt(Carbon::parse($employee->created_at)->startOfDay())) continue;
+                // ✅ Pas d'absence avant la date de début de pointage effective
+                if ($days->lt($this->debutPointage($employee))) continue;
 
                 // ✅ Ne pas compter un jour corrigé (exception)
                 if (isset($exceptionsByKey[$employee->id . ':' . $dateKey])) continue;

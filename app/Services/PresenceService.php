@@ -43,6 +43,27 @@ class PresenceService
     }
 
     /**
+     * Vérifie que la date de début de pointage effective de l'utilisateur est passée.
+     * Bloque le pointage tant que la date choisie à l'inscription n'est pas atteinte
+     * (aucune dérogation, même en cas d'exemption d'urgence).
+     */
+    protected function ensurePointageStarted(User $user): void
+    {
+        $start = $user->personnel?->date_debut_pointage;
+        if (!$start) {
+            return;
+        }
+
+        if (\Carbon\Carbon::parse($start)->startOfDay()->gt(today())) {
+            throw ValidationException::withMessages([
+                'presence' => "Votre prise de poste commencera le "
+                    . \Carbon\Carbon::parse($start)->format('d/m/Y')
+                    . ". Le pointage n'est pas encore activé.",
+            ]);
+        }
+    }
+
+    /**
      * Vérifie si aujourd'hui est un jour de présence pour le stage concerné.
      * Bloque le pointage si le stage n'a pas les jours de présence eux-mêmes configurés.
      */
@@ -82,6 +103,7 @@ protected function checkWorkDayRestriction(Stage $stage): void
      */
 public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
         $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
@@ -107,6 +129,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
      */
     public function registerEmployeeCheckIn(User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
         return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }

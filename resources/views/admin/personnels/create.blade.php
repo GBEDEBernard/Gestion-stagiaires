@@ -479,6 +479,17 @@
                     <textarea name="adresse" rows="2" class="pc-textarea" placeholder="Quartier, ville…">{{ old('adresse') }}</textarea>
                     @error('adresse')<p class="pc-field-error">{{ $message }}</p>@enderror
                 </div>
+                <div class="pc-field">
+                    <label>Date d'inscription</label>
+                    <input type="date" name="date_inscription" value="{{ old('date_inscription', today()->toDateString()) }}" class="pc-input">
+                    @error('date_inscription')<p class="pc-field-error">{{ $message }}</p>@enderror
+                </div>
+                <div class="pc-field">
+                    <label>Début de pointage</label>
+                    <input type="date" name="date_debut_pointage" value="{{ old('date_debut_pointage') }}" class="pc-input">
+                    @error('date_debut_pointage')<p class="pc-field-error">{{ $message }}</p>@enderror
+                    <p class="pc-hint">Le jour où la personne commencera à pointer. Avant cette date : aucune absence comptée.</p>
+                </div>
             </div>
         </div>
 
