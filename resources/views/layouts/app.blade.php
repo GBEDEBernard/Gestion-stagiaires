@@ -232,6 +232,28 @@
         @include('layouts.navigation')
 
         <div class="flex-1 flex flex-col main-content min-w-0 overflow-x-hidden">
+            @if(session()->has('impersonate_user_id'))
+            @php $impersonated = \App\Models\User::find(session('impersonate_user_id')); @endphp
+            @if($impersonated)
+            <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white text-sm">
+                <div class="flex items-center gap-2 min-w-0">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                    <span class="truncate">Vous consultez le compte de <strong>{{ $impersonated->name }}</strong> ({{ $impersonated->hasRole('etudiant') ? 'Stagiaire' : 'Employé' }})</span>
+                </div>
+                <form method="POST" action="{{ route('impersonate.leave') }}" class="shrink-0">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition text-xs font-semibold">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Revenir à mon espace
+                    </button>
+                </form>
+            </div>
+            @endif
+            @endif
             <header class="sticky top-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
                 <div class="px-4 sm:px-6 lg:px-8">
                     <div class="flex items-center h-14 sm:h-16 gap-3">

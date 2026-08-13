@@ -30,6 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'attendance' => \App\Http\Middleware\EnsureDailyAttendance::class,
             'account_active' => \App\Http\Middleware\EnsureAccountActive::class,
         ]);
+
+        // Impersonation admin : bascule "en tant que" employé / stagiaire
+        $middleware->web(append: [
+            \App\Http\Middleware\Impersonate::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

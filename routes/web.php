@@ -40,6 +40,7 @@ use App\Http\Controllers\TacheController as ControllersTacheController;
 use App\Http\Controllers\AttestationSignatureController;
 use App\Http\Controllers\Admin\AdminHolidayController;
 use App\Http\Controllers\Admin\AdminLogController;
+use App\Http\Controllers\ImpersonateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -475,3 +476,14 @@ Route::middleware(['auth', 'role:admin|superviseur', 'account_active', 'attendan
     ->group(function () {
         Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'adminIndex'])->name('index');
     });
+
+// =============================================================================
+// IMPERSONATION — Connexion admin "en tant que" employé / stagiaire
+// =============================================================================
+Route::middleware(['auth', 'role:admin'])->prefix('admin/impersonate')->group(function () {
+    Route::get('options', [ImpersonateController::class, 'options'])->name('impersonate.options');
+    Route::post('{user}', [ImpersonateController::class, 'store'])->name('impersonate.store');
+});
+
+Route::middleware(['auth'])->post('impersonate/leave', [ImpersonateController::class, 'leave'])
+    ->name('impersonate.leave');
