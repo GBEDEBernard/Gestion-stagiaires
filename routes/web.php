@@ -153,13 +153,12 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::put('{id}/restore', [StageController::class, 'restore'])->name('stages.restore')->middleware('permission:stages.restore');
         Route::delete('{id}/force-delete', [StageController::class, 'forceDelete'])->name('stages.forceDelete')->middleware('permission:stages.force-delete');
 
-        // Aperçu de la fiche de poste (dans l'application)
-Route::get('/stages/{stage}/fiche-poste/preview', [StageController::class, 'previewFichePoste'])
-    ->name('stages.fiche-poste.preview');
+        // Fiche de poste : édition, aperçu et téléchargement
+        Route::get('{stage}/fiche-poste/edit', [StageController::class, 'editFichePoste'])->name('stages.fiche-poste.edit')->middleware('permission:stages.edit');
+        Route::put('{stage}/fiche-poste', [StageController::class, 'updateFichePoste'])->name('stages.fiche-poste.update')->middleware('permission:stages.edit');
+        Route::get('{stage}/fiche-poste/preview', [StageController::class, 'previewFichePoste'])->name('stages.fiche-poste.preview')->middleware('permission:stages.view');
+        Route::get('{stage}/fiche-poste/download', [StageController::class, 'downloadFichePoste'])->name('stages.fiche-poste.download')->middleware('permission:stages.view');
 
-// Téléchargement PDF
-Route::get('/stages/{stage}/fiche-poste/download', [StageController::class, 'downloadFichePoste'])
-    ->name('stages.fiche-poste.download');    
         });
 
     // ---------------- TypeStages ----------------

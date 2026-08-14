@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 
 class StageController extends Controller
 {
@@ -501,6 +501,69 @@ class StageController extends Controller
 
 
 /**
+ * Formulaire d'édition des informations de la fiche de poste.
+ */
+public function editFichePoste(Stage $stage)
+{
+    $stage->load(['etudiant.personnel', 'typestage', 'domaine', 'site', 'supervisor.personnel']);
+
+    $typestages = TypeStage::all();
+    $domaines   = Domaine::all();
+
+    $defaultLivrables = ['Rapport de stage à déposer', 'Soutenance orale devant jury'];
+
+    return view('admin.stages.fiche_poste_edit', compact('stage', 'typestages', 'domaines', 'defaultLivrables'));
+}
+
+/**
+ * Enregistre les informations de la fiche de poste puis redirige vers l'aperçu.
+ */
+public function updateFichePoste(Request $request, Stage $stage)
+{
+    $request->validate([
+        'intitule_poste'    => 'nullable|string|max:255',
+        'typestage_id'      => 'nullable|exists:typestages,id',
+        'ecole'             => 'nullable|string|max:255',
+        'filiere'           => 'nullable|string|max:255',
+        'niveau_etude'      => 'nullable|string|max:255',
+        'domaine_id'        => 'nullable|exists:domaines,id',
+        'tuteur_academique' => 'nullable|string|max:255',
+        'theme'             => 'nullable|string|max:255',
+        'indemnite'         => 'nullable|string|max:255',
+        'livrables'         => 'nullable|array',
+        'livrables.*'       => 'string|max:255',
+    ]);
+
+    $stage->update([
+        'intitule_poste'    => $request->filled('intitule_poste') ? trim($request->intitule_poste) : null,
+        'typestage_id'      => $request->filled('typestage_id') ? $request->typestage_id : null,
+        'domaine_id'        => $request->filled('domaine_id') ? $request->domaine_id : null,
+        'filiere'           => $request->filled('filiere') ? trim($request->filiere) : null,
+        'niveau_etude'      => $request->filled('niveau_etude') ? trim($request->niveau_etude) : null,
+        'tuteur_academique' => $request->filled('tuteur_academique') ? trim($request->tuteur_academique) : null,
+        'indemnite'         => $request->filled('indemnite') ? trim($request->indemnite) : null,
+        'livrables'         => $request->filled('livrables') ? array_values($request->livrables) : [],
+    ]);
+
+    if ($request->filled('ecole') && $stage->etudiant) {
+        $stage->etudiant->update(['ecole' => trim($request->ecole)]);
+    }
+
+    if ($request->filled('theme')) {
+        $stage->update(['theme' => trim($request->theme)]);
+    }
+
+    Activity::create([
+        'user_id'     => auth()->id(),
+        'action'      => 'Mise a jour fiche de poste',
+        'description' => "Fiche de poste mise a jour pour le stage {$stage->id}",
+    ]);
+
+    return redirect()->route('stages.fiche-poste.preview', $stage)
+        ->with('success', 'Fiche de poste enregistrée. La fiche est maintenant complète.');
+}
+
+/**
  * Affiche l'aperçu de la fiche de poste dans l'application
  */
 public function previewFichePoste(Stage $stage)
@@ -510,10 +573,46 @@ public function previewFichePoste(Stage $stage)
 
 /**
  * Télécharge la fiche de poste en PDF
+ *
+ * Stratégie identique à l'attestation :
+ * - Mpdf gère les marges (15 mm sur chaque côté, répétées sur chaque page)
+ * - le blade ne rajoute pas de padding quand $isPdf est défini
  */
 public function downloadFichePoste(Stage $stage)
 {
-    $pdf = Pdf::loadView('admin.stages.fiche_poste_pdf', compact('stage'));
-    return $pdf->download('fiche_poste_'.$stage->id.'.pdf');
+    $stage->load([
+        'etudiant.personnel',
+        'supervisor.personnel',
+        'domaine',
+        'site',
+    ]);
+
+    $logoPath    = public_path('images/TFGLOGO.png');
+    $logoDataUri = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+    $isPdf       = true;
+
+    $html = view('admin.stages.fiche_poste_pdf', compact('stage', 'logoDataUri', 'isPdf'))->render();
+
+    $mpdf = new Mpdf([
+        'format'        => 'A4',
+        'margin_left'   => 15,
+        'margin_right'  => 15,
+        'margin_top'    => 15,
+        'margin_bottom' => 8,
+        'default_font'  => 'dejavusans',
+    ]);
+
+    ini_set('pcre.backtrack_limit', '4000000');
+    ini_set('pcre.jit', '0');
+
+    $mpdf->WriteHTML($html);
+
+    $fileName   = 'fiche_poste_' . $stage->id . '.pdf';
+    $pdfContent = $mpdf->Output($fileName, \Mpdf\Output\Destination::STRING_RETURN);
+
+    return response($pdfContent, 200, [
+        'Content-Type'        => 'application/pdf',
+        'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+    ]);
 }
 }

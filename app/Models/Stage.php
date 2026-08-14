@@ -29,6 +29,12 @@ class Stage extends Model
         'allowed_early_departure_minutes',
         'presence_mode',
         'follow_up_status',
+        'intitule_poste',
+        'filiere',
+        'niveau_etude',
+        'tuteur_academique',
+        'indemnite',
+        'livrables',
     ];
 
     protected static function booted()
@@ -47,7 +53,30 @@ class Stage extends Model
     protected $casts = [
         'date_debut' => 'datetime',
         'date_fin' => 'datetime',
+        'livrables' => 'array',
     ];
+
+    /** Options proposées pour le livrable attendu (fiche de poste). */
+    public const LIVERABLES = [
+        'Rapport de stage à déposer',
+        'Soutenance orale devant jury',
+        'Projet / réalisation technique',
+        'Documentation des travaux réalisés',
+    ];
+
+    /** Valeurs par défaut affichées dans le formulaire de fiche de poste. */
+    public const DEFAULT_INTITULE_POSTE = 'Stagiaire académique en développement web';
+    public const DEFAULT_INDEMNITE = 'Non rémunéré';
+
+    /** Description lisible du type de stage pour la fiche de poste. */
+    public function fichePosteTypeStage(): string
+    {
+        return match ($this->typestage?->libelle) {
+            'Académique' => 'Stage académique de fin de formation (obligatoire pour la validation du diplôme)',
+            'Professionnel' => 'Stage professionnel',
+            default => $this->typestage?->libelle ?? 'Stage académique de fin de formation (obligatoire pour la validation du diplôme)',
+        };
+    }
 
     public function etudiant()
     {

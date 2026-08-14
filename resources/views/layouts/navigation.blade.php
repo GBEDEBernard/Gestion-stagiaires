@@ -731,6 +731,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
     <div x-show="sidebarOpen" @click="sidebarOpen = false" class="lg:hidden fixed inset-0 bg-black/60 z-30" x-transition></div>
 
     {{-- ── Modale : Se connecter en tant que (admin) ── --}}
+    @role('admin')
     <div x-show="impersonateOpen" x-cloak @click.outside="impersonateOpen = false"
          class="fixed inset-0 z-[70] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="impersonateOpen = false"></div>
@@ -756,7 +757,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                                     class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 transition text-left group">
                                 <div class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
                                      :class="u.type === 'stagiaire' ? 'bg-gradient-to-br from-blue-500 to-cyan-600' : 'bg-gradient-to-br from-amber-500 to-orange-600'">
-                                    <span x-text="u.name.substring(0, 1).toUpperCase()"></span>
+                                    <span x-text="(u.name || '?').charAt(0).toUpperCase()"></span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-gray-900 dark:text-white truncate" x-text="u.name"></p>
@@ -774,6 +775,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
             </div>
         </div>
     </div>
+    @endrole
 </div>
 
 <script>
@@ -817,8 +819,11 @@ function impersonateSearch() {
             fetch('/admin/impersonate/options?q=' + encodeURIComponent(this.q), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(r => r.json())
-            .then(data => { this.results = data; this.loading = false; })
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(data => { this.results = Array.isArray(data) ? data : []; this.loading = false; })
             .catch(() => { this.results = []; this.loading = false; });
         }
     };
