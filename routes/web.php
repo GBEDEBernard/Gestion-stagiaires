@@ -343,14 +343,14 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::get('/', [PersonnelController::class, 'index'])->name('personnels.index');
         Route::get('create', [PersonnelController::class, 'create'])->name('personnels.create')->middleware('permission:personnels.create');
         Route::post('/', [PersonnelController::class, 'store'])->name('personnels.store')->middleware('permission:personnels.create');
+        Route::put('{id}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
+        Route::delete('{id}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
         Route::get('{personnel}', [PersonnelController::class, 'show'])->name('personnels.show')->middleware('permission:personnels.view');
         Route::get('{personnel}/edit', [PersonnelController::class, 'edit'])->name('personnels.edit')->middleware('permission:personnels.edit');
         Route::put('{personnel}', [PersonnelController::class, 'update'])->name('personnels.update')->middleware('permission:personnels.edit');
         Route::delete('{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy')->middleware('permission:personnels.delete');
         Route::post('{personnel}/generate-account', [PersonnelController::class, 'generateAccount'])->name('personnels.generate-account')->middleware('permission:personnels.edit');
-        Route::put('{personnel}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
-        Route::delete('{personnel}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
-    });
+          });
 
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {

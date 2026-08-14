@@ -15,8 +15,8 @@ Veuillez trouver ci-dessous vos identifiants de connexion :
 **Identifiant**  
 {{ $email }}
 
-**Mot de passe**  
-{!! html_entity_decode($password, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}
+***Mot de passe**  
+{{ $password }}
 
 Nous vous invitons à vous connecter chaque jour afin de marquer votre présence et de renseigner, en fin de journée, votre rapport d'activités ainsi que les tâches effectuées. Cette démarche nous permettra d'assurer un meilleur suivi du travail de chacun et de faciliter la communication entre les équipes.
 

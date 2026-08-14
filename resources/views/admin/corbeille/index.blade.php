@@ -128,56 +128,58 @@
         </div>
         @endif
 
-        {{-- ── Personnel ── --}}
-        @if(isset($personnelsTrash) && $personnelsTrash->count() > 0)
-        <div class="rounded-xl border border-amber-200 bg-white dark:border-amber-800 dark:bg-slate-900 overflow-hidden">
-            <button @click="openSections.personnels = !openSections.personnels" class="w-full flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition">
-                <div class="flex items-center gap-3">
-                    <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    <h2 class="text-lg font-semibold text-amber-800 dark:text-amber-300">Personnel supprimé</h2>
-                    <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">{{ $personnelsTrash->count() }}</span>
-                </div>
-                <svg class="h-5 w-5 transform transition-transform duration-200" :class="openSections.personnels ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            <div x-show="openSections.personnels" x-collapse class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supprimé le</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @foreach($personnelsTrash as $personnel)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $personnel->full_name ?? $personnel->nom . ' ' . $personnel->prenom }}</td>
-                            <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $personnel->email ?? '-' }}</td>
-                            <td class="px-4 py-3 text-gray-500">{{ $personnel->deleted_at?->format('d/m/Y H:i') ?? '-' }}</td>
-                            <td class="px-4 py-3 text-center space-x-2">
-                                <form method="POST" action="{{ encrypted_route('personnels.restore', $personnel->id) }}" class="inline">
-                                    @csrf
-                                    @method('PUT')
-                                    <button class="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-xs">Restaurer</button>
-                                </form>
-                                <form method="POST" action="{{ encrypted_route('personnels.force-delete', $personnel->id) }}" class="inline" data-confirm-delete>
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-xs">Supprimer déf.</button>
-                                </form>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+      {{-- ── Personnel ── --}}
+@if(isset($personnelsTrash) && $personnelsTrash->count() > 0)
+<div class="rounded-xl border border-amber-200 bg-white dark:border-amber-800 dark:bg-slate-900 overflow-hidden">
+    <button @click="openSections.personnels = !openSections.personnels" class="w-full flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition">
+        <div class="flex items-center gap-3">
+            <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            <h2 class="text-lg font-semibold text-amber-800 dark:text-amber-300">Personnel supprimé</h2>
+            <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200">{{ $personnelsTrash->count() }}</span>
         </div>
-        @endif
+        <svg class="h-5 w-5 transform transition-transform duration-200" :class="openSections.personnels ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+    <div x-show="openSections.personnels" x-collapse class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supprimé le</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                @foreach($personnelsTrash as $personnel)
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $personnel->full_name ?? $personnel->nom . ' ' . $personnel->prenom }}</td>
+                    <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ $personnel->email ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ $personnel->deleted_at?->format('d/m/Y H:i') ?? '-' }}</td>
+                    <td class="px-4 py-3 text-center space-x-2">
+                        {{-- RESTAURER : on utilise route() et non encrypted_route() --}}
+                        <form method="POST" action="{{ route('personnels.restore', $personnel->id) }}" class="inline">
+                            @csrf
+                            @method('PUT')
+                            <button class="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-xs">Restaurer</button>
+                        </form>
+                        {{-- SUPPRIMER DÉFINITIVEMENT : on utilise route() et non encrypted_route() --}}
+                        <form method="POST" action="{{ route('personnels.force-delete', $personnel->id) }}" class="inline" data-confirm-delete>
+                            @csrf
+                            @method('DELETE')
+                            <button class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-xs">Supprimer déf.</button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 
         {{-- ── STAGES (Corbeille des stages intégrée) ── --}}
         @if(isset($stagesTrash) && $stagesTrash->count() > 0)
