@@ -1,27 +1,34 @@
+@php
+    $isEmbedded = !empty($embedded) && !isset($isPdf);
+@endphp
+@unless($isEmbedded)
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Fiche de poste – {{ $stage->etudiant->personnel->nom ?? 'Stagiaire' }}</title>
+@endunless
     <style>
         @if(isset($isPdf))
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @elseif(empty($embedded))
+        @elseif(!$isEmbedded)
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @else
         .sheet, .sheet * { margin: 0; padding: 0; box-sizing: border-box; }
         @endif
 
-        /* ===== FORMAT A4 ===== */
-        @if(!isset($isPdf))
+        /* ===== FORMAT A4 =====
+           Une vraie marge de page (@page) se répète automatiquement sur CHAQUE
+           page imprimée/générée — contrairement à un padding CSS, qui ne
+           s'applique qu'une fois en haut et en bas de tout le document. C'est
+           ce qui garantissait une marge sur la page 1 mais pas sur la page 2. */
         @page {
-            margin: 0;
             size: A4;
+            margin: 15mm 15mm 18mm 15mm;
         }
-        @endif
 
         @if(!isset($isPdf))
-        @if(empty($embedded))
+        @if(!$isEmbedded)
         html, body {
             background: #e2e8f0;
             display: flex;
@@ -35,13 +42,21 @@
             background: #ffffff;
             box-shadow: 0 4px 24px rgba(0,0,0,0.18);
         }
-        .sheet-inner { padding: 15mm; }
+        .sheet-inner { padding: 0; } /* la marge vient de @page, pas d'un padding */
         @else
         .sheet { width: 100%; }
         .sheet-inner { padding: 0; }
         @endif
 
+        @unless($isEmbedded)
         body {
+            font-family: 'DejaVu Sans', 'Segoe UI', sans-serif;
+            color: #1e293b;
+            font-size: 11.5px;
+            line-height: 1.4;
+        }
+        @endunless
+        .sheet {
             font-family: 'DejaVu Sans', 'Segoe UI', sans-serif;
             color: #1e293b;
             font-size: 11.5px;
@@ -96,7 +111,7 @@
             font-weight: 600;
         }
 
-        h2.titre-principal {
+        .sheet h2.titre-principal {
             text-align: center;
             font-size: 19px;
             font-weight: 700;
@@ -123,7 +138,7 @@
             font-size: 9px;
         }
         table.info td {
-            padding: 1px 5px;
+            padding: 3px 5px;
             border: 1px solid #cbd5e1;
             vertical-align: top;
         }
@@ -158,21 +173,24 @@
         }
         .content {
             font-size: 10.5px;
-            line-height: 1.35;
+            line-height: 1.45;
         }
         .content ul {
             padding-left: 18px;
-            margin: 2px 0;
+            margin: 4px 0;
         }
         .content ul li {
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
         .content p {
-            margin: 2px 0;
+            margin: 4px 0;
         }
 
         .footer {
-            margin-top: 18px;
+            margin-top: 30px;
+            padding-top: 10px;
+            margin-left: 30px;
+            margin-bottom:20px;
             border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
@@ -190,53 +208,57 @@
             font-size: 11px;
             font-weight: 600;
         }
+        /* Vrai espace pour signer à la main entre "Date de signature" et
+           "Signature" — avant, .fr-line était un div vide sans hauteur donc
+           les deux lignes se touchaient. */
+        .footer-right .fr-space {
+            height: 42px;
+        }
         .footer-right .fr-line {
             display: inline-block;
             min-width: 130px;
             border-bottom: 1px solid #334155;
-            margin-left: 4px;
         }
 
-        /* ---- Impression ---- */
+        /* ---- Impression (Ctrl+P / bouton Imprimer sur la page d'aperçu) ---- */
         @if(!isset($isPdf))
         @media print {
-            body {
-                margin: 0 !important;
+            html, body {
+                background: #ffffff !important;
+                display: block !important;
                 padding: 0 !important;
+                margin: 0 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            /* On masque TOUT le reste de la page admin (sidebar, topbar,
+               boutons Modifier/Télécharger/Imprimer, breadcrumb...) et on ne
+               laisse visible que la feuille A4 elle-même. */
+            body * {
+                visibility: hidden !important;
+            }
+            .sheet, .sheet * {
+                visibility: visible !important;
+            }
             .sheet {
+                position: absolute;
+                left: 0;
+                top: 0;
                 width: 210mm;
                 min-height: 297mm;
-                margin: 0 auto;
+                margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                background: #ffffff;
+                background: #ffffff !important;
             }
-            .sheet-inner {
-                padding: 15mm !important;
-            }
-            /* Masquer le chrome du layout admin à l'impression */
-            nav, header, #loader-overlay {
-                display: none !important;
-            }
-            .main-content {
-                margin-left: 0 !important;
-            }
-            main {
-                padding: 0 !important;
-            }
-            /* Supprimer tout filigrane éventuel */
-            .tfg-bg, .tfg-watermark, .watermark, .a4-container::before {
-                display: none !important;
-                opacity: 0 !important;
-            }
+            .sheet-inner { padding: 0 !important; }
         }
         @endif
     </style>
+@unless($isEmbedded)
 </head>
 <body>
+@endunless
 
     @php
     // Gestion du logo en base64 pour le PDF
@@ -257,16 +279,12 @@
                     <h1>TECHNOLOGY FOREVER GROUP SARL</h1>
                     <p class="i"><span>***</span> La Technologie au service du développement <span>***</span></p>
                     <p class="p1">
-                        Informatique – Télécommunications – BTP – Énergie – Électricité – Formations – Commerce Général – Fournitures – Import-Export & Divers
+                        Informatique – Télécommunications – BTP – Énergie – Électricité
+                        – Formations – Commerce <br> Général – Fournitures – Import-Export & Divers
                     </p>
                 </div>
             </div>
-            <p class="header-contact">
-                {{ $stage->site->name ?? '' }}@if($stage->site?->address) – {{ $stage->site->address }}@endif
-                @if($stage->site?->phone) – Tél : {{ $stage->site->phone }}@endif
-                – Email : {{ config('mail.from.address') }}
-            </p>
-
+           
             <h2 class="titre-principal">FICHE DE POSTE</h2>
             <p class="sous-titre">{{ $stage->intitule_poste ?? \App\Models\Stage::DEFAULT_INTITULE_POSTE }}</p>
             <p class="sous-titre2">(Stage de fin de formation – avec dépôt et soutenance de rapport)</p>
@@ -376,19 +394,15 @@
                 <div class="footer-left">Date de mise à jour de la fiche : {{ now()->format('d/m/Y') }}</div>
                 <div class="footer-right">
                     <div>Date de signature</div>
-                    <div class="fr-line"></div>
+                    <div class="fr-space"></div>
                     <div>Signature</div>
-                    <div>Lu et approuvé</div>
+                    <div>Ecrire lu et approuvé</div>
                 </div>
             </div>
-
         </div>
     </div>
 
-    {{-- ================================================================
-         SUPPRESSION DES BOUTONS FLOTTANTS (Retour / Imprimer)
-         Ils sont déjà présents dans le layout parent (x-app-layout).
-         ================================================================ --}}
-
+@unless($isEmbedded)
 </body>
 </html>
+@endunless
