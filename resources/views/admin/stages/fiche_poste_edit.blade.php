@@ -110,7 +110,7 @@
                         </div>
 
                         <div>
-                            <label for="tuteur_academique" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tuteur académique</label>
+                            <label for="tuteur_academique" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Maitre de Stage</label>
                             <input type="text" name="tuteur_academique" id="tuteur_academique"
                                 value="{{ old('tuteur_academique', $stage->tuteur_academique ?? '') }}"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white"
@@ -157,7 +157,7 @@
                                 </p>
                             </div>
                             <div>
-                                <p class="text-gray-500 dark:text-gray-400">Maître de stage</p>
+                                <p class="text-gray-500 dark:text-gray-400">Tuteur academique</p>
                                 @if($stage->supervisor)
                                 <p class="font-medium text-gray-900 dark:text-white">
                                     {{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? '' }}

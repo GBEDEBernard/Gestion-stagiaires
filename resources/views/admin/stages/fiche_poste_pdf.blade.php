@@ -297,8 +297,8 @@
                 <tr><td><strong>Service / Département d'accueil</strong></td><td>{{ $stage->domaine->nom ?? 'Service informatique / Développement' }}</td></tr>
                 <tr><td><strong>Lieu de travail</strong></td><td>{{ $stage->site->name ?? 'TFG SARL' }}@if($stage->site?->city) – {{ $stage->site->city }}@endif</td></tr>
                 <tr><td><strong>Durée du stage</strong></td><td>Du {{ $stage->date_debut?->format('d/m/Y') ?? 'jj/mm/aaaa' }} au {{ $stage->date_fin?->format('d/m/Y') ?? 'jj/mm/aaaa' }}</td></tr>
-                <tr><td><strong>Maître de stage (entreprise)</strong></td><td>{{ trim(($stage->supervisor?->personnel?->nom ?? '') . ' ' . ($stage->supervisor?->personnel?->prenom ?? '')) }}{{ $stage->supervisor?->fonction ? ' – ' . $stage->supervisor->fonction : '' }}</td></tr>
-                <tr><td><strong>Tuteur académique</strong></td><td>{{ $stage->tuteur_academique ?? '[Nom Prénom – Établissement]' }}</td></tr>
+                <tr><td><strong>Maître de stage</strong></td><td>{{ $stage->tuteur_academique ?? '[Nom Prénom – Établissement]' }}</td></tr>
+                <tr><td><strong>Tuteur académique  (entreprise)</strong></td><td>{{ trim(($stage->supervisor?->personnel?->nom ?? '') . ' ' . ($stage->supervisor?->personnel?->prenom ?? '')) }}{{ $stage->supervisor?->fonction ? ' – ' . $stage->supervisor->fonction : '' }}</td></tr>
                 <tr><td><strong>Thème du stage</strong></td><td>{{ $stage->theme ?? '[Intitulé du sujet]' }}</td></tr>
                 <tr><td><strong>Livrable attendu</strong></td><td>{{ !empty($stage->livrables) ? implode(' + ', $stage->livrables) : 'Rapport de stage à déposer + soutenance orale devant jury' }}</td></tr>
                 <tr><td><strong>Indemnité de stage</strong></td><td>{{ $stage->indemnite ?? \App\Models\Stage::DEFAULT_INDEMNITE }}</td></tr>
