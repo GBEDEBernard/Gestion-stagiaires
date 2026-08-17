@@ -12,6 +12,7 @@ use App\Models\Attestation;
 use App\Models\AppNotification;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -54,12 +55,32 @@ class DashboardController extends Controller
                 ->whereBetween('occurred_at', [$weekStart, $weekEnd])
                 ->count();
 
+            // ==================== Mes tâches (créées ou assignées) ====================
+            $myTasks = Task::with([
+                'dailyReports' => fn($q) => $q
+                    ->with('user')
+                    ->latest('report_date')
+                    ->limit(5),
+            ])
+                ->visibleTo($user)
+                ->latest('updated_at')
+                ->limit(15)
+                ->get();
+
+            $myTasksCreated = $myTasks->where('owner_id', $user->id)->count();
+            $myTasksAssigned = $myTasks->where('owner_id', '!=', $user->id)->count();
+            $myTasksCompleted = $myTasks->where('status', 'completed')->count();
+
             return view('employe.dashboard', compact(
                 'user',
                 'todayAttendance',
                 'daysPresentThisWeek',
                 'daysTrackedThisWeek',
-                'attendanceEventsThisWeek'
+                'attendanceEventsThisWeek',
+                'myTasks',
+                'myTasksCreated',
+                'myTasksAssigned',
+                'myTasksCompleted'
             ));
         }
 
