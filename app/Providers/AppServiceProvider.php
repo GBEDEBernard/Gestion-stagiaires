@@ -17,6 +17,7 @@ use App\Models\TypeStage;
 use App\Models\Signataire;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Ecole;
 use Spatie\Permission\Models\Role;
 use App\Http\ViewComposers\NavigationComposer;
 use App\Http\ViewComposers\NotificationComposer;
@@ -109,6 +110,10 @@ class AppServiceProvider extends ServiceProvider
 
         Route::bind('personnel', function ($value) {
             return $this->resolveEncryptedModel($value, \App\Models\Personnel::class);
+        });
+
+        Route::bind('ecole', function ($value) {
+            return $this->resolveEncryptedModel($value, Ecole::class);
         });
     }
 

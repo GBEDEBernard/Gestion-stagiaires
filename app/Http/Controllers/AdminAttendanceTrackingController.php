@@ -41,12 +41,8 @@ class AdminAttendanceTrackingController extends Controller
             ];
         });
 
-        $employees = User::with('personnel.personnable')
-            ->whereHas('personnel', function ($query) {
-                $query->where('personnable_type', Employe::class);
-            })
-            ->where('status', 'actif')
-            ->where('id', '!=', Auth::id())
+        $employees = $this->employeeUsersQuery()
+            ->with('personnel.personnable')
             ->get()
             ->map(function ($user) {
                 return [
@@ -95,7 +91,6 @@ class AdminAttendanceTrackingController extends Controller
         $employeeDays = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -121,13 +116,8 @@ class AdminAttendanceTrackingController extends Controller
             ->pluck('etudiant_id');
         $studentPresent = $studentPresentIds->count();
 
-        // Employés (utilisateurs sans étudiant)
-        $employeeUsersIds = User::whereHas('personnel', function ($query) {
-            $query->where('personnable_type', Employe::class);
-        })
-            ->where('status', 'actif')
-            ->where('id', '!=', Auth::id())
-            ->pluck('id');
+        // Employés (utilisateurs avec fiche Employe ou rôle employe)
+        $employeeUsersIds = $this->employeeUsersQuery()->pluck('id');
 
         $employeeTotal = $employeeUsersIds->count();
 
@@ -179,7 +169,6 @@ class AdminAttendanceTrackingController extends Controller
         $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -242,7 +231,6 @@ class AdminAttendanceTrackingController extends Controller
         $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -307,7 +295,6 @@ class AdminAttendanceTrackingController extends Controller
         $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -453,6 +440,21 @@ class AdminAttendanceTrackingController extends Controller
             ->get();
 
         return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user', 'absenceDates', 'exceptions'));
+    }
+
+    /**
+     * Utilisateurs considérés comme employés (qui doivent pointer) :
+     *  - ceux liés à une fiche personnel de type Employé ;
+     *  - ceux ayant le rôle `employe` (ex. un admin qui a aussi le rôle employe).
+     */
+    protected function employeeUsersQuery()
+    {
+        return User::query()
+            ->where('status', 'actif')
+            ->where(function ($q) {
+                $q->whereHas('personnel', fn($p) => $p->where('personnable_type', Employe::class))
+                    ->orWhereHas('roles', fn($r) => $r->where('name', 'employe'));
+            });
     }
 
     /**
