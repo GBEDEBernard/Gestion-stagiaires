@@ -66,7 +66,7 @@ if (!function_exists('formatMinutes')) {
      */
     function formatMinutes($minutes)
     {
-        $minutes = (int) $minutes;
+        $minutes = abs((int) $minutes);
         if ($minutes <= 0) return '0min';
 
         $hours = floor($minutes / 60);

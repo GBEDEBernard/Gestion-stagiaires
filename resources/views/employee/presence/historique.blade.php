@@ -469,6 +469,25 @@
             color: var(--muted);
         }
 
+        .obs-clickable {
+            position: relative;
+        }
+        .obs-clickable::after {
+            content: '';
+            display: inline-block;
+            width: 0; height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid var(--amber);
+            margin-left: 4px;
+            vertical-align: middle;
+            opacity: 0.6;
+        }
+        .obs-clickable:hover {
+            text-decoration: underline;
+            opacity: 0.85;
+        }
+
         .legend-dot {
             width: 10px;
             height: 10px;
@@ -685,7 +704,7 @@
             </div>
         </div>
 
-        <div class="pres-page">
+        <div class="pres-page" x-data="{ obsModal: false, obsText: '', obsDate: '' }">
 
             {{-- PERIOD TABS --}}
             <div class="pres-tabs">
@@ -741,7 +760,7 @@
                     </div>
                     <div class="pres-kpi-value">{{ round(($userStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
                     <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ number_format($userStats['total_late_minutes'] ?? 0) }} min au total</div>
+                    <div class="pres-kpi-sub">{{ ($userStats['total_late_minutes'] ?? 0) ? formatMinutes($userStats['total_late_minutes']) : '0min' }} au total</div>
                 </div>
 
                 <div class="pres-kpi kpi-blue">
@@ -842,7 +861,7 @@
                                 <td style="font-family:var(--mono);">{{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1) . 'h' : '—' }}</td>
                                 <td>
                                     @if($day->late_minutes > 0)
-                                    <span class="pres-tag tag-amber">{{ $day->late_minutes }} min</span>
+                                    <span class="pres-tag tag-amber">{{ formatMinutes($day->late_minutes) }}</span>
                                     @else
                                     <span style="color:var(--muted);">—</span>
                                     @endif
@@ -862,7 +881,7 @@
                                     @if($day->arrival_status === 'late')
                                     @php $obs = $day->late_observation; @endphp
                                     @if($obs)
-                                    <span class="pres-tag tag-amber" style="cursor:help; white-space:normal; display:inline-block; max-width:220px;" title="{{ e($obs) }}">
+                                    <span class="pres-tag tag-amber obs-clickable" @click="obsText = {{ json_encode($obs) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer; white-space:normal; display:inline-block; max-width:220px;">
                                         {{ Str::limit($obs, 60) }}
                                     </span>
                                     @else
@@ -924,7 +943,14 @@
                         @if($day->arrival_status === 'late')
                         <div class="mobile-card-row">
                             <span class="mobile-label">Observation</span>
-                            <span class="mobile-value">{{ Str::limit($day->late_observation ?? 'Aucune observation', 50) }}</span>
+                            @php $obsMobile = $day->late_observation; @endphp
+                            @if($obsMobile)
+                            <span class="mobile-value obs-clickable" @click="obsText = {{ json_encode($obsMobile) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer;">
+                                {{ Str::limit($obsMobile, 50) }}
+                            </span>
+                            @else
+                            <span class="mobile-value">Aucune observation</span>
+                            @endif
                         </div>
                         @endif
                     </div>
@@ -935,6 +961,27 @@
                     </div>
                     @endforelse
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Observation --}}
+    <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
+        <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
+                    <p class="text-sm text-slate-500" x-text="'du ' + obsDate"></p>
+                </div>
+                <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="mt-4">
+                <p class="text-base font-medium text-slate-900" x-text="obsText"></p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">Fermer</button>
             </div>
         </div>
     </div>
@@ -959,6 +1006,15 @@
             const absences = cd.absences ?? [];
             const lateMinutes = cd.late_minutes ?? [];
             const workedHours = cd.worked_hours ?? [];
+            const workedMinutes = workedHours.map(v => Math.round(v * 60));
+
+            const fmtMin = (m) => {
+                if (!m || m <= 0) return '0min';
+                const h = Math.floor(m / 60), mins = m % 60;
+                if (h === 0) return mins + 'min';
+                if (mins === 0) return h + 'h';
+                return h + 'h ' + mins + 'min';
+            };
 
             if (!labels.length) return;
 
@@ -1062,6 +1118,21 @@
                                 pointBorderColor: '#fff',
                                 pointBorderWidth: 1,
                                 yAxisID: 'yMin'
+                            },
+                            {
+                                label: 'Heures travaillées',
+                                data: workedMinutes,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
+                                yAxisID: 'yMin'
                             }
                         ]
                     },
@@ -1086,7 +1157,8 @@
                                     label(ctx) {
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
-                                        if (lbl === 'Retard (min)') return `${lbl}: ${v} min`;
+                                        if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
+                                        if (lbl === 'Heures travaillées') return `Heures: ${fmtMin(v)}`;
                                         return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
                                     }
                                 }
@@ -1134,17 +1206,17 @@
                                 type: 'linear',
                                 position: 'right',
                                 min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Minutes',
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + ' min',
-                                    color: '#f97316',
+                            title: {
+                                display: true,
+                                text: 'Minutes / Heures',
+                                color: '#8b5cf6',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            ticks: {
+                                callback: v => fmtMin(v),
+                                color: '#8b5cf6',
                                     font: {
                                         size: 10
                                     }
@@ -1219,7 +1291,7 @@
                                 callbacks: {
                                     label(ctx) {
                                         const v = ctx.parsed.y;
-                                        return ctx.dataset.label === 'Heures travaillées' ? `Heures: ${v}h` : `Retard: ${v} min`;
+                                        return ctx.dataset.label === 'Heures travaillées' ? `Heures: ${v}h` : `Retard: ${fmtMin(v)}`;
                                     }
                                 }
                             }

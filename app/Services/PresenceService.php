@@ -7,6 +7,8 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Domaine;
 use App\Models\Etudiant;
+use App\Models\Holiday;
+use App\Models\HolidayEmergencyExemption;
 use App\Models\SiteGeofence;
 use App\Models\Stage;
 use App\Models\TrustedDevice;
@@ -18,20 +20,93 @@ use Illuminate\Validation\ValidationException;
 class PresenceService
 {
     // ──────────────────────────────────────────────────────────────────────────
-    //  NOUVEAU : distance maximale absolue (en mètres) pour accepter un pointage
-    //  Tout pointage à plus de 100 mètres du site sera rejeté.
+    //  Distance maximale absolue (en mètres) pour accepter un pointage/un rapport.
+    //  Tout pointage ou rapport à plus de 25 mètres du site sera rejeté.
     // ──────────────────────────────────────────────────────────────────────────
-    protected const MAX_ALLOWED_DISTANCE_METERS = 100;
+    public const MAX_ALLOWED_DISTANCE_METERS = 25;
 
     // ==========================================================================
     //  POINTAGE POUR LES STAGIAIRES (check-in / check-out)
     // ==========================================================================
 
     /**
+     * Vérifie si aujourd'hui est un jour férié actif et bloque le pointage
+     * si l'utilisateur n'a pas la permission de contournement.
+     */
+    protected function checkHolidayRestriction(User $user): void
+    {
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$this->isEmergencyExempted($user)) {
+            throw ValidationException::withMessages([
+                'presence' => "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé sauf pour le personnel d'urgence.",
+            ]);
+        }
+    }
+
+    /**
+     * Vérifie que la date de début de pointage effective de l'utilisateur est passée.
+     * Bloque le pointage tant que la date choisie à l'inscription n'est pas atteinte
+     * (aucune dérogation, même en cas d'exemption d'urgence).
+     */
+    protected function ensurePointageStarted(User $user): void
+    {
+        $start = $user->personnel?->date_debut_pointage;
+        if (!$start) {
+            return;
+        }
+
+        if (\Carbon\Carbon::parse($start)->startOfDay()->gt(today())) {
+            throw ValidationException::withMessages([
+                'presence' => "Votre prise de poste commencera le "
+                    . \Carbon\Carbon::parse($start)->format('d/m/Y')
+                    . ". Le pointage n'est pas encore activé.",
+            ]);
+        }
+    }
+
+    /**
+     * Vérifie si aujourd'hui est un jour de présence pour le stage concerné.
+     * Bloque le pointage si le stage n'a pas les jours de présence eux-mêmes configurés.
+     */
+protected function checkWorkDayRestriction(Stage $stage): void
+    {
+        if (!$stage->isWorkDay()) {
+            throw ValidationException::withMessages([
+                'presence' => "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.",
+            ]);
+        }
+    }
+
+    /**
+     * Vérifie que le pointage d'arrivée (check-in) des stagiaires n'a lieu
+     * qu'à partir de 07h30. En-deçà, le pointage est refusé.
+     */
+    protected function checkCheckInOpeningTime(): void
+    {
+        if (now()->format('H:i') < '07:30') {
+            throw ValidationException::withMessages([
+                'presence' => "Le pointage d'arrivée sera ouvert à partir de 07h30.",
+            ]);
+        }
+    }
+
+    protected function isEmergencyExempted(User $user): bool
+    {
+        return HolidayEmergencyExemption::where('user_id', $user->id)
+            ->whereHas('holiday', function ($q) {
+                $q->whereDate('date', today())->where('is_active', true);
+            })
+            ->exists();
+    }
+
+    /**
      * Enregistre l'arrivée (check-in) d'un stagiaire.
      */
-    public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
+public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->ensurePointageStarted($user);
+        $this->checkHolidayRestriction($user);
+        $this->checkWorkDayRestriction($stage);
+        $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 
@@ -40,6 +115,8 @@ class PresenceService
      */
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
+        $this->checkWorkDayRestriction($stage);
         return $this->registerEvent($stage, $user, $payload, 'check_out');
     }
 
@@ -52,6 +129,8 @@ class PresenceService
      */
     public function registerEmployeeCheckIn(User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
+        $this->ensurePointageStarted($user);
+        $this->checkHolidayRestriction($user);
         return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }
 
@@ -60,6 +139,7 @@ class PresenceService
      */
     public function registerEmployeeCheckOut(User $user, array $payload): AttendanceEvent
     {
+        $this->checkHolidayRestriction($user);
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 
@@ -98,7 +178,15 @@ class PresenceService
             }
 
             // Évaluation de la validité du pointage (distance, précision, doublons...)
-            $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance, $hasCoordinates);
+            if ($this->isEmergencyExempted($user)) {
+                $decision = [
+                    'status'      => 'approved',
+                    'reason_code' => 'emergency_exemption',
+                    'message'     => 'Pointage urgence : toutes les contraintes sont levées.',
+                ];
+            } else {
+                $decision = $this->evaluateEmployeeEvent($user, $eventType, $payload, $geofence, $distance, $hasCoordinates);
+            }
 
             // Création de l'événement de pointage
             $event = AttendanceEvent::create([
@@ -133,6 +221,9 @@ class PresenceService
                 ],
             ]);
 
+            // ✅ Sync AttendanceDay FIRST so attendance_day_id is available for anomalies
+            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
+
             // Enregistrement d'une anomalie si la décision l'indique
             if (!empty($decision['anomaly'])) {
                 $this->recordAnomaly($event, $decision['anomaly'], $decision['severity'] ?? 'medium', [
@@ -152,7 +243,6 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-            $this->syncEmployeeAttendanceDay($user, $event, $isLate);
 
             return $event;
         });
@@ -416,7 +506,16 @@ class PresenceService
                 : null;
 
             $isLate   = $payload['is_late'] ?? false;
-            $decision = $this->evaluateEvent($stage, $eventType, $payload, $geofence, $distance);
+
+            if ($this->isEmergencyExempted($user)) {
+                $decision = [
+                    'status'      => 'approved',
+                    'reason_code' => 'emergency_exemption',
+                    'message'     => 'Pointage urgence : toutes les contraintes sont levées.',
+                ];
+            } else {
+                $decision = $this->evaluateEvent($stage, $eventType, $payload, $geofence, $distance);
+            }
 
             $event = AttendanceEvent::create([
                 'stage_id'               => $stage->id,
@@ -449,6 +548,9 @@ class PresenceService
                 ],
             ]);
 
+            // ✅ Sync AttendanceDay FIRST so attendance_day_id is available for anomalies
+            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
+
             if (!empty($decision['anomaly'])) {
                 $this->recordAnomaly($event, $decision['anomaly'], $decision['severity'] ?? 'medium', [
                     'message' => $decision['message'],
@@ -465,7 +567,6 @@ class PresenceService
             }
 
             $this->recordDeviceSwitchAnomalyIfNeeded($event, $device);
-            $this->syncAttendanceDay($stage, $etudiant, $event, $isLate);
 
             return $event;
         });
@@ -723,7 +824,7 @@ class PresenceService
     {
         AttendanceAnomaly::create([
             'attendance_event_id' => $event->id,
-            'attendance_day_id'   => $event->attendanceDay?->id ?? null,
+            'attendance_day_id'   => $event->checkInDay?->id ?? $event->checkOutDay?->id,
             'stage_id'            => $event->stage_id ?? null,
             'etudiant_id'         => $event->etudiant_id ?? null,
             'user_id'             => $event->user_id,
@@ -787,9 +888,62 @@ class PresenceService
     }
 
     /**
+     * Vérifie si une position GPS est à moins de MAX_ALLOWED_DISTANCE_METERS
+     * du site (géofence active) fourni.
+     *
+     * @param float $latitude
+     * @param float $longitude
+     * @param \App\Models\Site|null $site
+     * @return array{verified: bool, distance_meters: ?int, message: string, geofence_center_lat: ?float, geofence_center_lng: ?float}
+     */
+    public function verifyLocationOnSite(float $latitude, float $longitude, ?\App\Models\Site $site): array
+    {
+        if (!$site) {
+            return [
+                'verified'     => false,
+                'distance_meters' => null,
+                'message'      => 'Aucun site associé pour vérifier la position.',
+                'geofence_center_lat' => null,
+                'geofence_center_lng' => null,
+            ];
+        }
+
+        $geofence = $site->geofences()->where('is_active', true)->orderByDesc('is_primary')->first();
+
+        if (!$geofence) {
+            return [
+                'verified'     => false,
+                'distance_meters' => null,
+                'message'      => 'Aucune zone de présence (géofence) active configurée pour ce site.',
+                'geofence_center_lat' => null,
+                'geofence_center_lng' => null,
+            ];
+        }
+
+        $distance = $this->calculateDistanceMeters(
+            $latitude,
+            $longitude,
+            (float) $geofence->center_latitude,
+            (float) $geofence->center_longitude
+        );
+
+        $verified = $distance <= self::MAX_ALLOWED_DISTANCE_METERS;
+
+        return [
+            'verified'     => $verified,
+            'distance_meters' => $distance,
+            'message'      => $verified
+                ? "Position validée (à {$distance} m du site)."
+                : "Vous êtes à {$distance} m du site. Maximum autorisé : " . self::MAX_ALLOWED_DISTANCE_METERS . " m.",
+            'geofence_center_lat' => (float) $geofence->center_latitude,
+            'geofence_center_lng' => (float) $geofence->center_longitude,
+        ];
+    }
+
+    /**
      * Calcule la distance en mètres entre deux points GPS (formule de Haversine).
      */
-    protected function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
+    public function calculateDistanceMeters(float $latFrom, float $lngFrom, float $latTo, float $lngTo): int
     {
         $earthRadius = 6371000;
         $latDelta    = deg2rad($latTo - $latFrom);

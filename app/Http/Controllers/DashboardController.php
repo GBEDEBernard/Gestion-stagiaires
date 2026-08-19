@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Stage;
-use App\Models\Service;
+use App\Models\Domaine;
 use App\Models\TypeStage;
 use App\Models\Badge;
 use App\Models\Activity;
@@ -12,6 +12,7 @@ use App\Models\Attestation;
 use App\Models\AppNotification;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,11 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Admin/Superviseur toujours sur le dashboard global, même avec le rôle employe en plus
+        if (Auth::user()?->hasAnyRole(['admin', 'superviseur'])) {
+            return $this->globalDashboard();
+        }
+
         if (Auth::user()?->hasRole('etudiant')) {
             return redirect()
                 ->route('student.stage')
@@ -49,17 +55,42 @@ class DashboardController extends Controller
                 ->whereBetween('occurred_at', [$weekStart, $weekEnd])
                 ->count();
 
+            // ==================== Mes tâches (créées ou assignées) ====================
+            $myTasks = Task::with([
+                'dailyReports' => fn($q) => $q
+                    ->with('user')
+                    ->latest('report_date')
+                    ->limit(5),
+            ])
+                ->visibleTo($user)
+                ->latest('updated_at')
+                ->limit(15)
+                ->get();
+
+            $myTasksCreated = $myTasks->where('owner_id', $user->id)->count();
+            $myTasksAssigned = $myTasks->where('owner_id', '!=', $user->id)->count();
+            $myTasksCompleted = $myTasks->where('status', 'completed')->count();
+
             return view('employe.dashboard', compact(
                 'user',
                 'todayAttendance',
                 'daysPresentThisWeek',
                 'daysTrackedThisWeek',
-                'attendanceEventsThisWeek'
+                'attendanceEventsThisWeek',
+                'myTasks',
+                'myTasksCreated',
+                'myTasksAssigned',
+                'myTasksCompleted'
             ));
         }
 
         abort_unless(Auth::user()?->can('dashboard.view'), 403);
 
+        return $this->globalDashboard();
+    }
+
+    private function globalDashboard()
+    {
         $today = Carbon::now()->startOfDay();
 
         // ==================== Notifications (via Service + ViewComposer universel) ====================
@@ -79,7 +110,7 @@ class DashboardController extends Controller
         $inscritsGlobal = Stage::whereDate('date_debut', '>', $today)->count();
         $totalBadges = Badge::count();
         $totalTypes = TypeStage::count();
-        $totalServices = Service::count();
+        $totalDomaines = Domaine::count();
 
         // ==================== NOUVELLES STATISTIQUES ====================
         // Total attestations délivrées
@@ -115,8 +146,8 @@ class DashboardController extends Controller
                 ->count();
         }
 
-        // Top services (avec le plus de stages)
-        $topServices = Service::withCount('stages')
+        // Top domaines (avec le plus de stages)
+        $topDomaines = Domaine::withCount('stages')
             ->orderByDesc('stages_count')
             ->take(5)
             ->get();
@@ -136,7 +167,7 @@ class DashboardController extends Controller
         // Stages upcoming (à venir dans les 7 prochains jours)
         $stagesUpcoming = Stage::whereDate('date_debut', '>', $today)
             ->whereDate('date_debut', '<=', $today->copy()->addDays(7))
-            ->with(['etudiant', 'service'])
+            ->with(['etudiant', 'domaine'])
             ->orderBy('date_debut')
             ->take(5)
             ->get();
@@ -180,43 +211,43 @@ class DashboardController extends Controller
         $typesLabels = $typesStages->pluck('libelle')->toArray();
         $typesData = $typesStages->pluck('stages_count')->toArray();
 
-        // ==================== Stats par Service ====================
-        $servicesStats = Service::all()->map(function ($service) use ($today) {
-            $allStages = Stage::where('service_id', $service->id)
+        // ==================== Stats par Domaine ====================
+        $domainesStats = Domaine::all()->map(function ($domaine) use ($today) {
+            $allStages = Stage::where('domaine_id', $domaine->id)
                 ->select('id', 'date_debut', 'date_fin')
                 ->get();
 
-            $enCoursService = 0;
-            $terminesService = 0;
-            $inscritsService = 0;
+            $enCoursDomaine = 0;
+            $terminesDomaine = 0;
+            $inscritsDomaine = 0;
 
             foreach ($allStages as $stage) {
                 $debut = $stage->date_debut->startOfDay();
                 $fin = $stage->date_fin->endOfDay();
 
                 if ($today->between($debut, $fin)) {
-                    $enCoursService++;
+                    $enCoursDomaine++;
                 } elseif ($today->gt($fin)) {
-                    $terminesService++;
+                    $terminesDomaine++;
                 } elseif ($today->lt($debut)) {
-                    $inscritsService++;
+                    $inscritsDomaine++;
                 }
             }
 
             return [
-                'service' => $service->nom,
-                'enCours' => $enCoursService,
-                'termines' => $terminesService,
-                'inscrits' => $inscritsService,
-                'total' => $enCoursService + $terminesService + $inscritsService
+                'domaine' => $domaine->nom,
+                'enCours' => $enCoursDomaine,
+                'termines' => $terminesDomaine,
+                'inscrits' => $inscritsDomaine,
+                'total' => $enCoursDomaine + $terminesDomaine + $inscritsDomaine
             ];
         });
 
-        // Données pour le graphique services (pré-formatées)
-        $servicesLabelsJson = json_encode($servicesStats->pluck('service')->toArray());
-        $servicesEnCoursJson = json_encode($servicesStats->pluck('enCours')->toArray());
-        $servicesTerminesJson = json_encode($servicesStats->pluck('termines')->toArray());
-        $servicesInscritsJson = json_encode($servicesStats->pluck('inscrits')->toArray());
+        // Données pour le graphique domaines (pré-formatées)
+        $domainesLabelsJson = json_encode($domainesStats->pluck('domaine')->toArray());
+        $domainesEnCoursJson = json_encode($domainesStats->pluck('enCours')->toArray());
+        $domainesTerminesJson = json_encode($domainesStats->pluck('termines')->toArray());
+        $domainesInscritsJson = json_encode($domainesStats->pluck('inscrits')->toArray());
 
         // ==================== Taux et Pourcentages ====================
         $tauxPresence = $totalEtudiants > 0
@@ -225,7 +256,15 @@ class DashboardController extends Controller
         $tauxReussite = $totalStages > 0
             ? round(($terminesGlobal / $totalStages) * 100)
             : 0;
-        $tauxAbandon = 8;
+
+        // Taux d'abandon réel : stages terminés (date passée) sans attestation délivrée
+        $terminesSansAttestation = Stage::whereDate('date_fin', '<', $today)
+            ->whereDoesntHave('attestation')
+            ->count();
+        $tauxAbandon = $terminesGlobal > 0
+            ? round(($terminesSansAttestation / $terminesGlobal) * 100)
+            : 0;
+
         $etudiantsAvecStages = Etudiant::has('stages')->count();
         $tauxConversion = $totalEtudiants > 0
             ? round(($etudiantsAvecStages / $totalEtudiants) * 100)
@@ -251,8 +290,24 @@ class DashboardController extends Controller
             : ($enCoursGlobal > 0 ? 100 : 0);
 
         $tauxCompletion = $totalStages > 0
-            ? round((($terminesGlobal - ($totalStages * 0.08)) / $totalStages) * 100)
+            ? round(($terminesGlobal / $totalStages) * 100)
             : 0;
+
+        // ==================== Évolutions 30 jours (badges KPI) ====================
+        $debutPeriode = Carbon::now()->subDays(30);
+        $debutPeriodePrecedente = Carbon::now()->subDays(60);
+
+        $stages30 = Stage::where('created_at', '>=', $debutPeriode)->count();
+        $stages30Precedents = Stage::whereBetween('created_at', [$debutPeriodePrecedente, $debutPeriode])->count();
+        $evolutionStages30j = $stages30Precedents > 0
+            ? round((($stages30 - $stages30Precedents) / $stages30Precedents) * 100)
+            : ($stages30 > 0 ? 100 : 0);
+
+        $etudiants30 = Etudiant::where('created_at', '>=', $debutPeriode)->count();
+        $etudiants30Precedents = Etudiant::whereBetween('created_at', [$debutPeriodePrecedente, $debutPeriode])->count();
+        $evolutionEtudiants30j = $etudiants30Precedents > 0
+            ? round((($etudiants30 - $etudiants30Precedents) / $etudiants30Precedents) * 100)
+            : ($etudiants30 > 0 ? 100 : 0);
 
         // ==================== Listes ====================
         $activities = Activity::latest()->take(5)->get();
@@ -264,26 +319,25 @@ class DashboardController extends Controller
         $stagesTrash = Stage::onlyTrashed()->get();
         $etudiantsTrash = Etudiant::onlyTrashed()->get();
         $badgesTrash = Badge::onlyTrashed()->get();
-        $servicesTrash = Service::onlyTrashed()->get();
         $totalTrash = $stagesTrash->count() + $etudiantsTrash->count() +
-            $badgesTrash->count() + $servicesTrash->count();
+            $badgesTrash->count();
 
         // ==================== SUIVI DES POINTAGES ====================
-        $todayAttendance = AttendanceDay::whereDate('attendance_date', $today)
+        $todayAttendance = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->with(['etudiant.user', 'stage.site'])
             ->count();
 
-        $todayPresent = AttendanceDay::whereDate('attendance_date', $today)
+        $todayPresent = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->whereNotNull('first_check_in_at')
             ->count();
 
-        $todayLate = AttendanceDay::whereDate('attendance_date', $today)
+        $todayLate = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $today)
             ->where('arrival_status', 'late')
             ->count();
 
         $weekStart = now()->startOfWeek();
         $weekEnd = now()->endOfWeek();
-        $weekLateMinutes = AttendanceDay::whereBetween('attendance_date', [$weekStart, $weekEnd])
+        $weekLateMinutes = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$weekStart, $weekEnd])
             ->sum('late_minutes');
 
         // ==================== Retour à la Vue ====================
@@ -299,7 +353,7 @@ class DashboardController extends Controller
             'terminesGlobal',
             'inscritsGlobal',
             'totalBadges',
-            'totalServices',
+            'totalDomaines',
             'totalTypes',
 
             // Nouvelles statistiques
@@ -309,7 +363,7 @@ class DashboardController extends Controller
             'tauxEtudiantsActifs',
             'stagesParMois',
             'labelsMoisAnnee',
-            'topServices',
+            'topDomaines',
             'topTypes',
             'etudiantsSansStage',
             'dernieresActivites',
@@ -325,24 +379,26 @@ class DashboardController extends Controller
 
             'typesLabels',
             'typesData',
-            'servicesStats',
-            'servicesLabelsJson',
-            'servicesEnCoursJson',
-            'servicesTerminesJson',
-            'servicesInscritsJson',
+            'domainesStats',
+            'domainesLabelsJson',
+            'domainesEnCoursJson',
+            'domainesTerminesJson',
+            'domainesInscritsJson',
             'tauxPresence',
             'tauxReussite',
             'tauxAbandon',
             'tauxConversion',
             'evolutionInscriptionsMois',
             'evolutionStages',
+            'evolutionStages30j',
+            'evolutionEtudiants30j',
             'tauxCompletion',
             'activities',
             'derniersEtudiants',
             'stagesTrash',
             'etudiantsTrash',
             'badgesTrash',
-            'servicesTrash',
+
             'totalTrash',
 
             // Suivi pointages

@@ -1,0 +1,339 @@
+<x-app-layout>
+    <div class="mb-8 ml-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Personnels</h1>
+                <p class="text-gray-500 dark:text-gray-300 mt-1">Liste des personnels, stagiaires et employés enregistrés dans le système.</p>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <a href="{{ route('personnels.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition shadow-lg font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Nouveau personnel
+                </a>
+            </div>
+        </div>
+
+        @if(session('success'))
+        <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-xl">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+        <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-xl">{{ session('error') }}</div>
+        @endif
+
+        {{-- ── Filtres (AJAX) ── --}}
+        <form id="filters-form" method="GET" action="{{ route('personnels.index') }}"
+              class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Recherche</label>
+                    <input id="personnelsSearch" type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..."
+                           class="search-input mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Type</label>
+                    <select name="type" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="all" {{ request('type') === 'all' ? ' selected' : '' }}>Tous</option>
+                        <option value="admin" {{ request('type') === 'admin' ? ' selected' : '' }}>Admin</option>
+                        <option value="etudiant" {{ request('type') === 'etudiant' ? ' selected' : '' }}>Stagiaire</option>
+                        <option value="employe" {{ request('type') === 'employe' ? ' selected' : '' }}>Employé</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Statut de compte</label>
+                    <select name="account" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="all" {{ request('account') === 'all' ? ' selected' : '' }}>Tous</option>
+                        <option value="with" {{ request('account') === 'with' ? ' selected' : '' }}>Avec compte</option>
+                        <option value="without" {{ request('account') === 'without' ? ' selected' : '' }}>Sans compte</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
+                    <select name="school" class="filter-select w-full mt-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
+                        <option value="">Toutes</option>
+                        @foreach($schools as $school)
+                        <option value="{{ $school }}" {{ request('school') === $school ? ' selected' : '' }}>{{ $school }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between">
+                <p id="result-count" class="text-xs text-gray-400">{{ $personnels->total() }} personnel(s) trouvé(s)</p>
+            </div>
+        </form>
+
+        {{-- ── Tableau responsive (conteneur AJAX) ── --}}
+        <div id="personnels-table-container" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[980px]">
+                    <thead class="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                            <th class="hidden sm:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10">N°</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Identité</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                            <th class="hidden lg:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Infos</th>
+                            <th class="hidden md:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inscription</th>
+                            <th class="hidden md:table-cell px-4 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Début pointage</th>
+                            <th class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        @forelse($personnels as $personnel)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                            <td class="hidden sm:table-cell px-4 py-3.5 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
+                            <td class="px-4 py-3.5">
+                                <div class="font-semibold text-gray-900 dark:text-white">{{ $personnel->prenom }} {{ $personnel->nom }}</div>
+                                <div class="text-gray-500 dark:text-gray-400 text-sm truncate max-w-[12rem]">{{ $personnel->adresse ?? '-' }}</div>
+                            </td>
+                            <td class="px-4 py-3.5 text-sm whitespace-nowrap">
+                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold 
+                                        @if($personnel->type_label === 'Admin') bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                                        @elseif($personnel->type_label === 'Employé') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
+                                        @elseif($personnel->type_label === 'Stagiaire') bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300
+                                        @else bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+                                        @endif">
+                                    {{ $personnel->type_label }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-sm">
+                                <div class="text-gray-900 dark:text-white truncate max-w-[14rem]">{{ $personnel->email }}</div>
+                                <div class="text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $personnel->telephone ?? '-' }}</div>
+                            </td>
+                            <td class="hidden lg:table-cell px-4 py-3.5 text-sm">
+                                @if($personnel->personnable)
+                                    @if($personnel->personnable_type === App\Models\Etudiant::class)
+                                        <div class="text-gray-900 dark:text-white"><span class="font-medium">École :</span> {{ $personnel->personnable->ecole ?? '-' }}</div>
+                                    @elseif($personnel->personnable_type === App\Models\Employe::class)
+                                        <div class="text-gray-900 dark:text-white"><span class="font-medium">Poste :</span> {{ $personnel->personnable->poste ?? '-' }}</div>
+                                    @endif
+                                @else
+                                    <div class="text-gray-500 dark:text-gray-400">Aucun détail</div>
+                                @endif
+                            </td>
+                            <td class="hidden md:table-cell px-4 py-3.5 text-sm whitespace-nowrap">
+                                <div class="text-gray-900 dark:text-white">{{ $personnel->date_inscription ? \Illuminate\Support\Carbon::parse($personnel->date_inscription)->format('d/m/Y') : '-' }}</div>
+                            </td>
+                            <td class="hidden md:table-cell px-4 py-3.5 text-sm whitespace-nowrap">
+                                <div class="text-gray-900 dark:text-white">{{ $personnel->date_debut_pointage ? \Illuminate\Support\Carbon::parse($personnel->date_debut_pointage)->format('d/m/Y') : '-' }}</div>
+                            </td>
+
+                            {{-- ── Actions : boutons icônes alignés, plus de dropdown ── --}}
+                            <td class="px-4 py-3.5">
+                                <div class="flex items-center justify-end gap-1.5 flex-wrap">
+
+                                    @if(!$personnel->user)
+                                    <button type="button"
+                                            title="Générer compte"
+                                            aria-label="Générer compte"
+                                            class="inline-flex items-center justify-center w-9 h-9 shrink-0 text-white bg-gradient-to-r from-sky-500 to-blue-600 rounded-lg hover:from-sky-600 hover:to-blue-700 shadow-sm transition"
+                                            onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'generate')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8zm8 0v4m2-2h-4" />
+                                        </svg>
+                                    </button>
+                                    @else
+                                    <button type="button"
+                                            title="Renvoyer email"
+                                            aria-label="Renvoyer email"
+                                            class="inline-flex items-center justify-center w-9 h-9 shrink-0 text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition"
+                                            onclick="openPasswordModal({{ $personnel->id }}, '{{ encrypted_route('personnels.generate-account', $personnel) }}', 'resend')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                    </button>
+                                    @endif
+
+                                    <a href="{{ encrypted_route('personnels.show', $personnel) }}"
+                                       title="Voir"
+                                       aria-label="Voir"
+                                       class="inline-flex items-center justify-center w-9 h-9 shrink-0 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/40 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
+
+                                    <a href="{{ encrypted_route('personnels.edit', $personnel) }}"
+                                       title="Modifier"
+                                       aria-label="Modifier"
+                                       class="inline-flex items-center justify-center w-9 h-9 shrink-0 text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+
+                                    <form action="{{ encrypted_route('personnels.destroy', $personnel) }}" method="POST" data-confirm-delete class="inline-flex">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                                title="Supprimer"
+                                                aria-label="Supprimer"
+                                                class="inline-flex items-center justify-center w-9 h-9 shrink-0 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun personnel trouvé.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-5 border-t border-gray-100 dark:border-gray-700">
+                {{ $personnels->links() }}
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal pour mot de passe personnalisé --}}
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 {{ $errors->has('custom_password') ? '' : 'hidden' }}">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 relative">
+            <!-- Bouton fermeture -->
+            <button type="button" onclick="closePasswordModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h2 id="passwordModalTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
+            <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.</p>
+
+            {{-- Affichage des erreurs de validation --}}
+            @if($errors->any())
+            <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            <form id="passwordForm" method="POST" action="{{ old('_action') ?? '' }}">
+                @csrf
+                <div class="mb-6">
+                    <label for="customPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Mot de passe temporaire (optionnel)</label>
+                    <input type="password" id="customPassword" name="custom_password" value="{{ old('custom_password') }}" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                    @error('custom_password')
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
+                    <button type="submit" id="passwordSubmitBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openPasswordModal(personnelId, actionUrl, mode = 'generate') {
+            // Mettre à jour le titre et la description
+            var resend = mode === 'resend';
+            document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'email d'activation" : 'Générer un compte';
+            document.getElementById('passwordModalDescription').textContent = resend
+                ? "Un compte existe déjà pour ce personnel. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
+                : "Entrez un mot de passe temporaire pour ce personnel. Si laissé vide, un mot de passe aléatoire sera généré.";
+            document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
+
+            // Mettre à jour l'action du formulaire
+            document.getElementById('passwordForm').action = actionUrl;
+
+            // Réinitialiser le champ et supprimer les anciennes erreurs (visuelles)
+            document.getElementById('customPassword').value = '';
+            const errorContainer = document.getElementById('passwordModal').querySelector('.bg-red-100');
+            if (errorContainer) errorContainer.remove();
+
+            // Afficher la modale
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            // Réinitialiser l'erreur (optionnel)
+            const errorContainer = document.getElementById('passwordModal').querySelector('.bg-red-100');
+            if (errorContainer) errorContainer.remove();
+        }
+
+        // Fermer la modale avec la touche Échap
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePasswordModal();
+            }
+        });
+
+        // Fermer la modale en cliquant à l'extérieur
+        document.getElementById('passwordModal')?.addEventListener('click', function(event) {
+            if (event.target === this) {
+                closePasswordModal();
+            }
+        });
+
+        // ---- AJAX recherche dynamique ----
+        document.addEventListener('DOMContentLoaded', function () {
+            const filtersForm = document.getElementById('filters-form');
+            const searchInput = filtersForm?.querySelector('.search-input');
+            const filterSelects = filtersForm?.querySelectorAll('.filter-select');
+            const container = document.getElementById('personnels-table-container');
+
+            if (!filtersForm || !container) return;
+
+            let debounceTimer;
+
+            function updatePersonnelsTable() {
+                const url = new URL(filtersForm.action);
+                const formData = new FormData(filtersForm);
+                for (let [key, value] of formData.entries()) {
+                    if (value && value !== '') url.searchParams.set(key, value);
+                    else url.searchParams.delete(key);
+                }
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContainer = doc.getElementById('personnels-table-container');
+                    if (newContainer) {
+                        container.innerHTML = newContainer.innerHTML;
+                        const newCount = doc.querySelector('#result-count');
+                        const oldCount = document.getElementById('result-count');
+                        if (newCount && oldCount) oldCount.innerText = newCount.innerText;
+                    } else {
+                        const newTable = doc.querySelector('#personnels-table-container');
+                        if (newTable) container.innerHTML = newTable.innerHTML;
+                    }
+                })
+                .catch(err => console.error('Erreur AJAX:', err));
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => updatePersonnelsTable(), 400);
+                });
+            }
+
+            if (filterSelects) {
+                filterSelects.forEach(select => {
+                    select.addEventListener('change', () => updatePersonnelsTable());
+                });
+            }
+
+            filtersForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                updatePersonnelsTable();
+            });
+        });
+    </script>
+</x-app-layout>

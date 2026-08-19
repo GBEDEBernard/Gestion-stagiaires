@@ -17,6 +17,7 @@ return new class extends Migration
     $table->string('action');       // ex: "Création stagiaire", "Badge attribué"
     $table->text('description');    // ex: "Stagiaire Jean Dupont enregistré"
     $table->timestamps();
+    $table->softDeletes();
 });
 
     }

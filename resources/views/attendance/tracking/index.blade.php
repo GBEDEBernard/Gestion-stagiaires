@@ -1,4 +1,7 @@
  <x-app-layout title="Suivi des Pointages - Présence">
+     <style>
+         .tracking-table th, .tracking-table td { white-space: nowrap; }
+     </style>
      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 text-slate-900 dark:text-slate-100">
          {{-- Header --}}
          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -9,31 +12,31 @@
          </div>
 
          {{-- Period Selector --}}
-         <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 shadow-sm">
+         <div class="bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 shadow-sm overflow-hidden">
              <div class="flex flex-col gap-3 sm:gap-4">
-                 <div class="flex flex-wrap gap-1.5 sm:gap-2">
+                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
                      <a href="?period=day{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
-                         class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                         class="inline-flex items-center justify-center gap-1 whitespace-nowrap px-2 sm:px-4 py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'day' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                          📅 Jour
                      </a>
                      <a href="?period=week{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
-                         class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                         class="inline-flex items-center justify-center gap-1 whitespace-nowrap px-2 sm:px-4 py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'week' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                          📊 Semaine
                      </a>
                      <a href="?period=month{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
-                         class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                         class="inline-flex items-center justify-center gap-1 whitespace-nowrap px-2 sm:px-4 py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'month' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                          📈 Mois
                      </a>
                      <a href="?period=year{{ request('user_id') ? '&user_id=' . request('user_id') : '' }}"
-                         class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
+                         class="inline-flex items-center justify-center gap-1 whitespace-nowrap px-2 sm:px-4 py-2 rounded-lg sm:rounded-xl text-sm sm:text-base {{ request('period', 'day') === 'year' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} transition-all">
                          📊 Année
                      </a>
                  </div>
 
-                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+                 <div class="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center min-w-0">
                      <select id="userFilter" name="user_id"
-                         class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
-                         <option value="">Tous les utilisateurs</option>
+                         class="w-full sm:flex-1 sm:min-w-0 truncate px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                         <option value="">Tout les utilisateurs</option>
                          @foreach($allUsers as $user)
                          <option value="{{ $user['id'] }}" {{ request('user_id') == $user['id'] ? 'selected' : '' }}>
                              {{ $user['name'] }}
@@ -41,7 +44,7 @@
                          @endforeach
                      </select>
                      <input type="date" id="dateFilter" name="date" value="{{ $filterDate->format('Y-m-d') }}"
-                         class="px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                         class="w-full sm:w-auto sm:shrink-0 px-3 sm:px-4 py-2 text-sm sm:text-base dark:bg-slate-800 border border-slate-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
 
                  </div>
              </div>
@@ -52,7 +55,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                  <div class="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-sm">
-                     <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Étudiants</h3>
+                     <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Stagiaires</h3>
                      <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences des stagiaires.</p>
                      <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
                          <div class="rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-950/60 p-3 sm:p-4">
@@ -81,19 +84,19 @@
                  </div>
              </div>
 
-             {{-- Tableau Étudiants - Version responsive --}}
+             {{-- Tableau Stagiaires - Version responsive --}}
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Pointages du {{ $displayDate }} — Stagiaires</h3>
                  </div>
 
                  {{-- Version mobile : cartes --}}
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                      @forelse($attendanceStudents as $day)
                      <div class="p-4 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-800">
-                         <div class="flex justify-between items-start">
-                             <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $day->etudiant?->user?->name ?? 'N/A' }}</span>
-                             <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass ?? 'bg-gray-100 text-gray-800' }}">{{ $statusText ?? 'Absent' }}</span>
+                         <div class="flex justify-between items-start gap-2">
+                             <span class="font-semibold text-slate-900 dark:text-slate-100 min-w-0 flex-1 truncate">{{ $day->etudiant?->user?->name ?? 'N/A' }}</span>
+                             <span class="px-2 py-1 text-xs font-semibold rounded-full shrink-0 {{ $statusClass ?? 'bg-gray-100 text-gray-800' }}">{{ $statusText ?? 'Absent' }}</span>
                          </div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
                              <div>
@@ -127,13 +130,13 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</div>
+                     <div class="p-8 text-center text-slate-500">Aucun pointage des  Stagiaires pour cette date</div>
                      @endforelse
                  </div>
 
                  {{-- Version desktop : tableau --}}
                  <div class="hidden sm:block overflow-x-auto">
-                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                     <table class="tracking-table min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                          <thead>
                              <tr class="bg-slate-50 dark:bg-slate-800">
                                  <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Nom</th>
@@ -228,7 +231,7 @@
                                      </tr>
                                      @empty
                                      <tr>
-                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage étudiant pour cette date.</td>
+                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage des Stagiaires pour cette date</td>
                                      </tr>
                                      @endforelse
                          </tbody>
@@ -246,9 +249,9 @@
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
                      @forelse($attendanceEmployees as $day)
                      <div class="p-4 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-800">
-                         <div class="flex justify-between items-start">
-                             <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $day->user?->name ?? 'N/A' }}</span>
-                             <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass ?? 'bg-gray-100 text-gray-800' }}">{{ $statusText ?? 'Absent' }}</span>
+                         <div class="flex justify-between items-start gap-2">
+                             <span class="font-semibold text-slate-900 dark:text-slate-100 min-w-0 flex-1 truncate">{{ $day->user?->name ?? 'N/A' }}</span>
+                             <span class="px-2 py-1 text-xs font-semibold rounded-full shrink-0 {{ $statusClass ?? 'bg-gray-100 text-gray-800' }}">{{ $statusText ?? 'Absent' }}</span>
                          </div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
                              <div>
@@ -279,13 +282,13 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucun pointage employé pour cette date.</div>
+                     <div class="p-8 text-center text-slate-500">Aucun pointage des employé pour cette date</div>
                      @endforelse
                  </div>
 
                  {{-- Version desktop : tableau --}}
                  <div class="hidden sm:block overflow-x-auto">
-                     <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                     <table class="tracking-table min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                          <thead>
                              <tr class="bg-slate-50 dark:bg-slate-800">
                                  <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase text-slate-700 dark:text-slate-300">Nom</th>
@@ -374,7 +377,7 @@
                                      </tr>
                                      @empty
                                      <tr>
-                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage employé pour cette date.</td>
+                                         <td colspan="8" class="px-6 py-8 text-center text-slate-500">Aucun pointage des employés pour cette date</td>
                                      </tr>
                                      @endforelse
                          </tbody>
@@ -389,7 +392,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi hebdomadaire — Stagiaires</h3>
                  </div>
 
                  {{-- Version mobile --}}
@@ -413,7 +416,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette semaine.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour cette semaine.</div>
                      @endforelse
                  </div>
 
@@ -443,7 +446,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour cette semaine.</td>
+                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour cette semaine.</td>
                              </tr>
                              @endforelse
                          </tbody>
@@ -522,7 +525,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi mensuel — Stagiaires</h3>
                  </div>
 
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
@@ -536,7 +539,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour ce mois.</div>
                      @endforelse
                  </div>
 
@@ -560,7 +563,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour ce mois.</td>
+                                 <td colspan="4" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour ce mois.</td>
                              </tr>
                              @endforelse
                          </tbody>
@@ -623,7 +626,7 @@
          <div class="space-y-4 sm:space-y-6">
              <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                  <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Étudiants</h3>
+                     <h3 class="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">Suivi annuel — Stagiaires</h3>
                  </div>
 
                  <div class="block sm:hidden divide-y divide-slate-200 dark:divide-slate-700">
@@ -638,7 +641,7 @@
                          </div>
                      </div>
                      @empty
-                     <div class="p-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</div>
+                     <div class="p-8 text-center text-slate-500">Aucune donnée stagiaire pour cette année.</div>
                      @endforelse
                  </div>
 
@@ -664,7 +667,7 @@
                              </tr>
                              @empty
                              <tr>
-                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée étudiant pour cette année.</td>
+                                 <td colspan="5" class="px-6 py-8 text-center text-slate-500">Aucune donnée stagiaire pour cette année.</td>
                              </tr>
                              @endforelse
                          </tbody>
@@ -767,7 +770,8 @@
          var onTime = Array.isArray(chartData.on_time) ? chartData.on_time : [];
          var lateDays = Array.isArray(chartData.late_days) ? chartData.late_days : [];
          var absences = Array.isArray(chartData.absences) ? chartData.absences : [];
-         var workedHours = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+         var workedHoursRaw = Array.isArray(chartData.worked_hours) ? chartData.worked_hours : [];
+         var workedHours = workedHoursRaw.map(function(v) { return Math.round(v * 60); });
          var lateMinutes = Array.isArray(chartData.late_minutes) ? chartData.late_minutes : [];
 
          var canvas = document.getElementById('presenceChart');
@@ -922,8 +926,8 @@
                                  label: function(context) {
                                      var val = context.parsed.y;
                                      var label = context.dataset.label;
-                                     if (label.includes('Minutes')) return label + ': ' + val + ' min';
-                                     if (label.includes('Heures')) return label + ': ' + val + 'h';
+                                      if (label.includes('Minutes')) return label + ': ' + val + ' min';
+                                      if (label.includes('Heures')) { var h = Math.floor(val / 60), m = val % 60; return label + ': ' + h + 'h' + (m ? ' ' + m + 'min' : ''); }
                                      if (val === 1) return label + ': OUI';
                                      if (val === 0) return label + ': non';
                                      return label + ': ' + val;

@@ -5,7 +5,7 @@
             <div class="pres-header-left">
                 <div class="pres-header-badge">Administration</div>
                 <h1 class="pres-header-title">Tableau de Bord Présence</h1>
-                <p class="pres-header-sub">Vue temps réel · Étudiants & Employés</p>
+                <p class="pres-header-sub">Vue temps réel · Stagiaires & Employés</p>
             </div>
             <div class="pres-header-actions">
                 <div class="pres-live-dot"><span></span>Live</div>
@@ -325,6 +325,142 @@
             background: var(--bg3);
         }
 
+        .pres-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.65);
+            padding: 1.5rem;
+        }
+
+        .pres-modal-backdrop.active {
+            display: flex;
+        }
+
+        .pres-modal {
+            width: min(100%, 560px);
+            background: var(--bg);
+            border-radius: 1.25rem;
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+            overflow: hidden;
+        }
+
+        .pres-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.4rem 1.5rem;
+            border-bottom: 1px solid rgba(15, 23, 42, .08);
+        }
+
+        .pres-modal-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .pres-modal-meta {
+            margin: .35rem 0 0;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .pres-modal-close {
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 1.45rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .pres-modal-body {
+            padding: 1.5rem;
+            max-height: min(70vh, 420px);
+            overflow-y: auto;
+        }
+
+        .pres-modal-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: .8rem;
+        }
+
+        .pres-modal-item {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: .85rem;
+            align-items: center;
+            padding: 1rem 1.1rem;
+            border-radius: .95rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: slideIn 280ms ease forwards;
+        }
+
+        .pres-modal-item-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--rose);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .pres-modal-item-content {
+            display: grid;
+            gap: .25rem;
+        }
+
+        .pres-modal-item-title {
+            font-weight: 600;
+            color: var(--text);
+            font-size: .95rem;
+        }
+
+        .pres-modal-item-sub {
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pres-modal-empty {
+            color: var(--muted);
+            font-size: .95rem;
+            line-height: 1.65;
+        }
+
+        .pres-absence-count-button {
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+
         /* KPI CARDS */
         .pres-kpis {
             display: grid;
@@ -519,6 +655,34 @@
         .pres-chart-wrap {
             position: relative;
             height: 220px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .78rem;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
         /* QUICK ACTIONS */
@@ -911,9 +1075,9 @@
             {{-- PERIOD TABS --}}
             <div class="pres-tabs" style="background-color: #f3f4f6; border-color: rgba(0, 0, 0, 0.08);">
                 @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
-                <a href="?period={{ $k }}" class="pres-tab {{ request('period',$k==='today'?'today':null)===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
+                <a href="{{ route('admin.presence.index', array_filter(['period'=>$k, 'date_from'=>$rangeStart->format('Y-m-d')])) }}" class="pres-tab {{ $period===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
                     {{ $lbl }}
-                    @if(request('period')===$k)<span class="pres-tab-indicator"></span>@endif
+                    @if($period===$k)<span class="pres-tab-indicator"></span>@endif
                 </a>
                 @endforeach
             </div>
@@ -928,14 +1092,14 @@
                         <div class="pres-filter-field">
                             <label>Du</label>
                             <input type="date" name="date_from"
-                                value="{{ request('date_from', today()->format('Y-m-d')) }}"
+                                value="{{ $rangeStart->format('Y-m-d') }}"
                                 class="pres-filter-input" />
                         </div>
 
                         <div class="pres-filter-field">
                             <label>Au</label>
                             <input type="date" name="date_to"
-                                value="{{ request('date_to', today()->format('Y-m-d')) }}"
+                                value="{{ $rangeEnd->format('Y-m-d') }}"
                                 class="pres-filter-input" />
                         </div>
 
@@ -981,7 +1145,7 @@
                     </div>
                     <div class="pres-kpi-value">{{ round(($globalStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
                     <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ number_format($globalStats['total_late_minutes'] ?? 0) }} min au total</div>
+                    <div class="pres-kpi-sub">{{ ($globalStats['total_late_minutes'] ?? 0) ? formatMinutes($globalStats['total_late_minutes']) : '0min' }} au total</div>
                 </div>
 
                 <div class="pres-kpi kpi-blue">
@@ -1031,36 +1195,48 @@
                         <span class="pres-action-icon">📍</span>
                         <span>Suivi Pointage</span>
                     </a>
-                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue">
+                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue">
                         <span class="pres-action-icon">📋</span>
-                        <span>Rapports</span>
+                        <span>Tâches</span>
                     </a>
                 </div>
             </div>
 
             {{-- CHARTS --}}
+            @php $hasChartData = !empty($globalStats['chart_data']['labels']); @endphp
+            @if($hasChartData)
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
                 <div class="pres-card">
-                    <div class="pres-chart-wrap" style="height:280px;">
+                    <div class="chart-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présents</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>En retard</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absents</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#f97316;border-radius:2px;"></span>Retard (min) →</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;border-radius:2px;"></span>Heures travaillées →</div>
+                        <div class="legend-item"><span class="legend-dot" style="background:rgba(139,92,246,0.3);"></span>Jour férié</div>
+                    </div>
+                    <div class="chart-container" style="height:300px;">
                         <canvas id="chartGlobal"></canvas>
                     </div>
                 </div>
             </div>
 
             <div class="pres-card mt-6">
-                <div class="pres-section-title">Vue d'Ensemble Quotidienne</div>
-                <div style="position:relative;height:280px;">
+                <div class="pres-section-title">Vue d'Ensemble · Heures & Retards</div>
+                <div class="chart-container" style="height:300px;">
                     <canvas id="chartOverview"></canvas>
                 </div>
             </div>
+            @endif
 
             {{-- GROUP STATS --}}
             <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
                 <div class="pres-group-card">
                     <div class="pres-group-head">
                         <div>
-                            <div class="pres-group-label">👥 Étudiants</div>
+                            <div class="pres-group-label">👥 Stagiaires</div>
                             <div class="pres-group-role">Stagiaires actifs</div>
                         </div>
                         <div style="text-align:right;">
@@ -1107,7 +1283,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">12</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['drafts'] }}</div>
                         <div class="pres-kpi-label">Brouillons</div>
                         <div class="pres-kpi-sub">À compléter aujourd'hui</div>
                     </div>
@@ -1116,7 +1292,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">⏳</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">8</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['pending'] }}</div>
                         <div class="pres-kpi-label">En Attente</div>
                         <div class="pres-kpi-sub">À reviewer par sup.</div>
                     </div>
@@ -1125,7 +1301,7 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">✅</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">45</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['approved'] }}</div>
                         <div class="pres-kpi-label">Approuvés</div>
                         <div class="pres-kpi-sub">Cette semaine</div>
                     </div>
@@ -1134,15 +1310,15 @@
                         <div class="pres-kpi-top">
                             <div class="pres-kpi-icon">🏆</div>
                         </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">92%</div>
+                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['validation_rate'] }}%</div>
                         <div class="pres-kpi-label">Taux Validation</div>
                         <div class="pres-kpi-sub">Objectif › 90%</div>
                     </div>
                 </div>
                 <div class="pres-reports-bottom">
-                    <a href="{{ route('reports.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
+                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
                         <span class="pres-action-icon">📊</span>
-                        <span style="font-size:1rem;">Tous les Rapports</span>
+                        <span style="font-size:1rem;">Toutes les Tâches</span>
                     </a>
                     <div class="pres-tips">
                         <div class="pres-tips-title">💡 Astuces Suivi</div>
@@ -1153,7 +1329,7 @@
                         </ul>
                     </div>
                 </div>
-            </div>
+            </div>::
 
             {{-- TOP RETARDS & ABSENCES --}}
             <div class="pres-charts-grid mt-6">
@@ -1218,10 +1394,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($absences as $userName => $count)
+                            @foreach($absenceItems as $item)
                             <tr>
-                                <td style="font-weight:500;">{{ $userName }}</td>
-                                <td><span class="pres-tag tag-rose">{{ $count }} j</span></td>
+                                <td style="font-weight:500;">{{ $item['user'] }}</td>
+                                <td>
+                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-index="{{ $loop->index }}">
+                                        {{ $item['count'] }} j
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -1230,6 +1410,21 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <div class="pres-modal-backdrop" id="absenceModalBackdrop" aria-hidden="true">
+        <div class="pres-modal" role="dialog" aria-modal="true" aria-labelledby="absenceModalTitle">
+            <div class="pres-modal-header">
+                <div>
+                    <h2 class="pres-modal-title" id="absenceModalTitle">Jours d'absence</h2>
+                    <p class="pres-modal-meta" id="absenceModalMeta">Sélectionnez un utilisateur pour voir les dates.</p>
+                </div>
+                <button type="button" class="pres-modal-close" id="absenceModalClose" aria-label="Fermer la modale">×</button>
+            </div>
+            <div class="pres-modal-body" id="absenceModalBody">
+                <div class="pres-modal-empty">Cliquez sur un total d'absences pour afficher les jours.</div>
+            </div>
         </div>
     </div>
 
@@ -1246,90 +1441,224 @@
             Chart.defaults.font.family = "'DM Sans', sans-serif";
             Chart.defaults.color = textColor;
 
+            /* Helper JS : minutes → Xh Ymin */
+            const fmtMin = (m) => {
+                if (!m || m <= 0) return '0min';
+                const h = Math.floor(m / 60), mins = m % 60;
+                if (h === 0) return mins + 'min';
+                if (mins === 0) return h + 'h';
+                return h + 'h ' + mins + 'min';
+            };
+
             const labels = @json($globalStats['chart_data']['labels'] ?? []);
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
             const absences = @json($globalStats['chart_data']['absent'] ?? []);
             const workedHours = @json($globalStats['chart_data']['worked_hours'] ?? []);
+            const workedMinutes = workedHours.map(v => Math.round(v * 60));
+            const holidays = @json($globalStats['chart_data']['holidays'] ?? []);
+            const absenceItems = @json($absenceItems ?? []);
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
+            /* Plugin : bandes verticales pour jours fériés */
+            const holidayPlugin = {
+                id: 'holidayBands',
+                beforeDraw(chart) {
+                    const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
+                    if (!x || !holidays.length) return;
+                    const gap = labels.length > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : 0;
+                    holidays.forEach((isHoliday, i) => {
+                        if (isHoliday) {
+                            const xPos = x.getPixelForValue(i) - gap / 2;
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(139,92,246,0.07)';
+                            ctx.fillRect(xPos, top, gap, bottom - top);
+                            ctx.restore();
+                        }
+                    });
+                }
+            };
+
+            const absenceModalBackdrop = document.getElementById('absenceModalBackdrop');
+            const absenceModalClose = document.getElementById('absenceModalClose');
+            const absenceModalTitle = document.getElementById('absenceModalTitle');
+            const absenceModalMeta = document.getElementById('absenceModalMeta');
+            const absenceModalBody = document.getElementById('absenceModalBody');
+            const absenceButtons = document.querySelectorAll('.pres-absence-count-button');
+
+            const renderAbsenceDays = (days) => {
+                if (!days || days.length === 0) {
+                    return '<div class="pres-modal-empty">Aucune date d\'absence disponible pour cet utilisateur.</div>';
+                }
+                return `<ul class="pres-modal-list">${days.map((day, index) => `
+                    <li class="pres-modal-item" style="animation-delay: ${index * 80}ms;">
+                        <span class="pres-modal-item-marker">✖</span>
+                        <div class="pres-modal-item-content">
+                            <div class="pres-modal-item-title">${day.label}</div>
+                            <div class="pres-modal-item-sub">${day.date}</div>
+                        </div>
+                    </li>
+                `).join('')}</ul>`;
+            };
+
+            const openAbsenceModal = (index) => {
+                const item = absenceItems[index] ?? null;
+                if (!item) {
+                    return;
+                }
+                absenceModalTitle.textContent = `Absences de ${item.user}`;
+                absenceModalMeta.textContent = `${item.count} jour${item.count > 1 ? 's' : ''} d'absence`;
+                absenceModalBody.innerHTML = renderAbsenceDays(item.details);
+                absenceModalBackdrop?.classList.add('active');
+                absenceModalBackdrop?.setAttribute('aria-hidden', 'false');
+            };
+
+            absenceButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    openAbsenceModal(button.dataset.index);
+                });
+            });
+
+            if (absenceModalClose && absenceModalBackdrop) {
+                absenceModalClose.addEventListener('click', () => {
+                    absenceModalBackdrop.classList.remove('active');
+                    absenceModalBackdrop.setAttribute('aria-hidden', 'true');
+                });
+            }
+
+            if (absenceModalBackdrop) {
+                absenceModalBackdrop.addEventListener('click', (event) => {
+                    if (event.target === absenceModalBackdrop) {
+                        absenceModalBackdrop.classList.remove('active');
+                        absenceModalBackdrop.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
+
+            /* ══════════════════════════════════════════════════════════
+               GRAPHIQUE 1 — Courbes : Présence, Retards, Absences
+               Axe gauche : nombre de personnes
+               Axe droit  : minutes / heures
+            ══════════════════════════════════════════════════════════ */
             const ctx = document.getElementById('chartGlobal');
             if (ctx && labels.length > 0) {
                 const g = ctx.getContext('2d');
-                const createGradient = (c1, c2) => {
-                    const grad = g.createLinearGradient(0, 0, 0, 280);
-                    grad.addColorStop(0, c1);
-                    grad.addColorStop(1, c2);
+                const mkGrad = (top, bottom) => {
+                    const grad = g.createLinearGradient(0, 0, 0, 300);
+                    grad.addColorStop(0, top);
+                    grad.addColorStop(1, bottom);
                     return grad;
+                };
+                const tooltipStyle = {
+                    backgroundColor: isDark ? '#1c2333' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    titleColor: isDark ? '#fff' : '#0f172a',
+                    bodyColor: isDark ? '#d1d5db' : '#475569',
+                    padding: 12,
+                    cornerRadius: 10,
                 };
 
                 new Chart(ctx, {
                     type: 'line',
+                    plugins: [holidayPlugin],
                     data: {
                         labels,
                         datasets: [{
-                                label: 'Présence',
+                                label: 'Présents',
                                 data: present,
                                 borderColor: '#10b981',
-                                backgroundColor: createGradient('rgba(16,185,129,0.3)', 'rgba(16,185,129,0.02)'),
+                                backgroundColor: mkGrad('rgba(16,185,129,0.22)', 'rgba(16,185,129,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 3,
-                                pointRadius: 5,
+                                pointRadius: present.map(v => v ? 5 : 0),
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#10b981',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
                                 label: "À l'heure",
                                 data: onTime,
                                 borderColor: '#3b82f6',
-                                backgroundColor: createGradient('rgba(59,130,246,0.25)', 'rgba(59,130,246,0.02)'),
+                                backgroundColor: mkGrad('rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: onTime.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Jours retard',
+                                label: 'En retard',
                                 data: lateDays,
                                 borderColor: '#f59e0b',
-                                backgroundColor: createGradient('rgba(245,158,11,0.2)', 'rgba(245,158,11,0.02)'),
+                                backgroundColor: mkGrad('rgba(245,158,11,0.16)', 'rgba(245,158,11,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: lateDays.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#f59e0b',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Absences',
+                                label: 'Absents',
                                 data: absences,
                                 borderColor: '#f43f5e',
-                                backgroundColor: createGradient('rgba(244,63,94,0.2)', 'rgba(244,63,94,0.02)'),
+                                backgroundColor: mkGrad('rgba(244,63,94,0.16)', 'rgba(244,63,94,0.02)'),
                                 fill: true,
                                 tension: 0.4,
+                                cubicInterpolationMode: 'monotone',
                                 borderWidth: 2,
-                                pointRadius: 4,
+                                pointRadius: absences.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
+                                pointBackgroundColor: '#f43f5e',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
-                                label: 'Minutes retard',
+                                label: 'Retard (min)',
                                 data: lateMinutes,
                                 borderColor: '#f97316',
+                                backgroundColor: 'transparent',
                                 fill: false,
-                                tension: 0.3,
+                                tension: 0.35,
+                                borderWidth: 2,
                                 borderDash: [6, 4],
-                                pointRadius: 5,
+                                pointRadius: lateMinutes.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#f97316',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             },
                             {
                                 label: 'Heures travaillées',
-                                data: workedHours,
+                                data: workedMinutes,
                                 borderColor: '#8b5cf6',
+                                backgroundColor: 'transparent',
                                 fill: false,
                                 tension: 0.4,
-                                pointRadius: 4,
+                                borderWidth: 2,
+                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#8b5cf6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             }
                         ]
@@ -1337,15 +1666,28 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: {
+                            duration: 900,
+                            easing: 'easeOutQuart'
+                        },
                         interaction: {
                             mode: 'index',
                             intersect: false
                         },
                         plugins: {
                             legend: {
-                                position: 'top',
-                                labels: {
-                                    color: textColor
+                                display: false
+                            },
+                            tooltip: {
+                                ...tooltipStyle,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        const lbl = ctx.dataset.label;
+                                        if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
+                                        if (lbl === 'Heures travaillées') return `${lbl}: ${fmtMin(v)}`;
+                                        return `${lbl}: ${v}`;
+                                    }
                                 }
                             }
                         },
@@ -1355,7 +1697,12 @@
                                     color: gridColor
                                 },
                                 ticks: {
-                                    color: mutedColor
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    },
+                                    maxRotation: 45,
+                                    maxTicksLimit: 20
                                 }
                             },
                             yCount: {
@@ -1365,10 +1712,16 @@
                                 title: {
                                     display: true,
                                     text: 'Nombre de personnes',
-                                    color: mutedColor
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 ticks: {
-                                    color: '#10b981'
+                                    color: mutedColor,
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 grid: {
                                     color: gridColor
@@ -1383,10 +1736,17 @@
                                 title: {
                                     display: true,
                                     text: 'Minutes / Heures',
-                                    color: mutedColor
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
                                 },
                                 ticks: {
-                                    color: '#f97316'
+                                    callback: (v) => fmtMin(v),
+                                    color: '#f97316',
+                                    font: {
+                                        size: 10
+                                    }
                                 }
                             }
                         }
@@ -1394,67 +1754,39 @@
                 });
             }
 
+            /* ══════════════════════════════════════════════════════════
+               GRAPHIQUE 2 — Barres : Heures travaillées + Retard (min)
+            ══════════════════════════════════════════════════════════ */
             const ctxOv = document.getElementById('chartOverview');
             if (ctxOv && labels.length > 0) {
                 new Chart(ctxOv, {
                     type: 'bar',
+                    plugins: [holidayPlugin],
                     data: {
                         labels,
                         datasets: [{
-                                label: 'Présents',
-                                data: present,
-                                backgroundColor: '#10b981',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: "À l'heure",
-                                data: onTime,
-                                backgroundColor: '#3b82f6',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Jours retard',
-                                data: lateDays,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Absences',
-                                data: absences,
-                                backgroundColor: '#f43f5e',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8
-                            },
-                            {
-                                label: 'Min retard',
-                                data: lateMinutes,
-                                backgroundColor: '#f97316',
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
-                            },
-                            {
-                                label: 'Heures',
+                                label: 'Heures travaillées',
                                 data: workedHours,
-                                backgroundColor: '#8b5cf6',
+                                backgroundColor: 'rgba(59,130,246,0.75)',
+                                borderColor: '#3b82f6',
+                                borderWidth: 1,
                                 borderRadius: 5,
                                 borderSkipped: false,
-                                barPercentage: 0.7,
-                                categoryPercentage: 0.8,
-                                yAxisID: 'yMinutes'
+                                barPercentage: 0.65,
+                                categoryPercentage: 0.75,
+                                yAxisID: 'yHours'
+                            },
+                            {
+                                label: 'Retard (min)',
+                                data: lateMinutes,
+                                backgroundColor: 'rgba(245,158,11,0.7)',
+                                borderColor: '#f59e0b',
+                                borderWidth: 1,
+                                borderRadius: 5,
+                                borderSkipped: false,
+                                barPercentage: 0.65,
+                                categoryPercentage: 0.75,
+                                yAxisID: 'yMin'
                             }
                         ]
                     },
@@ -1465,15 +1797,19 @@
                             duration: 800,
                             easing: 'easeOutQuart'
                         },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         plugins: {
                             legend: {
                                 position: 'top',
                                 labels: {
                                     color: textColor,
                                     usePointStyle: true,
-                                    padding: 10,
+                                    padding: 14,
                                     font: {
-                                        size: 11
+                                        size: 12
                                     }
                                 }
                             },
@@ -1483,8 +1819,16 @@
                                 borderWidth: 1,
                                 titleColor: isDark ? '#fff' : '#0f172a',
                                 bodyColor: isDark ? '#d1d5db' : '#475569',
-                                padding: 10,
-                                cornerRadius: 8
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    label(ctx) {
+                                        const v = ctx.parsed.y;
+                                        return ctx.dataset.label === 'Heures travaillées'
+                                            ? `Heures: ${v}h`
+                                            : `Retard: ${fmtMin(v)}`;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -1497,37 +1841,54 @@
                                     font: {
                                         size: 10
                                     },
-                                    maxRotation: 45
+                                    maxRotation: 45,
+                                    maxTicksLimit: 20
                                 }
                             },
-                            y: {
-                                beginAtZero: true,
-                                max: 1.25,
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: v => v === 1 ? '1 ▲' : (v === 0 ? '0' : ''),
-                                    color: mutedColor,
+                            yHours: {
+                                type: 'linear',
+                                position: 'left',
+                                min: 0,
+                                title: {
+                                    display: true,
+                                    text: 'Heures',
+                                    color: '#3b82f6',
                                     font: {
-                                        size: 10,
-                                        weight: 'bold'
+                                        size: 10
+                                    }
+                                },
+                                ticks: {
+                                    callback: v => v + 'h',
+                                    color: '#3b82f6',
+                                    font: {
+                                        size: 10
                                     }
                                 },
                                 grid: {
                                     color: gridColor
                                 }
                             },
-                            yMinutes: {
+                            yMin: {
                                 type: 'linear',
                                 position: 'right',
-                                display: true,
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                ticks: {
-                                    color: '#f97316',
+                                min: 0,
+                                title: {
+                                    display: true,
+                                    text: 'Retard (min)',
+                                    color: '#f59e0b',
                                     font: {
                                         size: 10
                                     }
+                                },
+                                ticks: {
+                                    callback: v => v + ' min',
+                                    color: '#f59e0b',
+                                    font: {
+                                        size: 10
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
                                 }
                             }
                         }

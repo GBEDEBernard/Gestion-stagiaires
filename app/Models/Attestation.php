@@ -17,10 +17,12 @@ class Attestation extends Model
         'reference',
         'date_delivrance',
         'fichier_pdf',
+        'download_count',
     ];
 
     protected $casts = [
         'date_delivrance' => 'date',
+        'download_count'  => 'integer',
     ];
 
     public function stage()

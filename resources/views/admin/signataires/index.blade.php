@@ -26,8 +26,10 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nom</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Poste</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sigle</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ordre</th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -53,10 +55,14 @@
                             </span>
                         </td>
                         <td class="px-6 py-4">
+                            <span class="text-gray-600 dark:text-gray-300">{{ $signataire->email ?? '—' }}</span>
+                        </td>
+                        <td class="px-6 py-4">
                             <span class="text-gray-600 dark:text-gray-300">{{ $signataire->ordre ?? '-' }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">
+
                                 <a href="{{ encrypted_route('signataires.edit', $signataire) }}"
                                     class="p-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition" title="Modifier" data-confirm-edit>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

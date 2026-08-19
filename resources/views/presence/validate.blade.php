@@ -156,6 +156,27 @@
         </div>
     </div>
 
+    {{-- BANNIÈRE PERMISSION APPROUVÉE (pas de modale) --}}
+    @if(isset($is_early_departure) && $is_early_departure && $type === 'départ' && isset($has_approved_permission) && $has_approved_permission)
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-emerald-800">Permission de départ anticipé approuvée</p>
+            <p class="text-xs text-emerald-700 mt-0.5">
+                @if($approved_departure_time)
+                Départ autorisé à <strong>{{ $approved_departure_time }}</strong>. Vous pouvez pointer votre départ.
+                @else
+                Votre demande de départ anticipé a été approuvée. Vous pouvez pointer votre départ.
+                @endif
+            </p>
+        </div>
+    </div>
+    @endif
+
     {{-- MODALE POUR OBSERVATION EN CAS DE RETARD --}}
     @if(isset($is_late) && $is_late)
     <div id="observationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300" style="display: flex;">

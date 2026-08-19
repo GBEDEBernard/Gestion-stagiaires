@@ -17,7 +17,48 @@ class Signataire extends Model
         'sigle',
         'ordre',
         'peut_par_ordre',
+        'user_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function getNomAttribute($value)
+    {
+        return $this->user?->personnel?->full_name ?? $value;
+    }
+
+    public function getEmailAttribute($value)
+    {
+        return $this->user?->personnel?->email ?? $value;
+    }
+
+    public function getPosteAttribute($value)
+    {
+        return $this->user?->personnel?->personnable?->poste ?? $value;
+    }
+
+    public function getSigleAttribute($value)
+    {
+        if ($value) {
+            return $value;
+        }
+
+        $poste = $this->user?->personnel?->personnable?->poste ?? ($this->attributes['poste'] ?? '');
+        if (stripos($poste, 'directeur général') !== false) {
+            return 'DG';
+        }
+        if (stripos($poste, 'directeur technique adjoint') !== false) {
+            return 'DTA';
+        }
+        if (stripos($poste, 'directeur technique') !== false) {
+            return 'DT';
+        }
+
+        return 'SIG';
+    }
 
     public function permissionRecipients()
     {

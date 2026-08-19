@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
+use App\Models\Personnel;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -28,30 +31,41 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $credentials = $this->only('email', 'password');
-        $remember = $this->boolean('remember');
+        $email = Str::lower((string) $this->input('email'));
 
-        if (!Auth::attempt($credentials, $remember)) {
+        // 1. Trouver le compte via Personnel (source principale) ou via users.email
+        // pour rester compatible avec les comptes existants.
+        $personnel = Personnel::where('email', $email)->first();
+        $user = $personnel?->user ?: User::where('email', $email)->first();
+
+        if (!$user) {
             RateLimiter::hit($this->throttleKey());
-
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
-        $user = Auth::user();
-
-        if ($user->status !== 'actif') {
-            Auth::logout();
-
+        // 2. Vérifier le mot de passe
+        if (!Hash::check($this->password, $user->password)) {
+            RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
-                'email' => 'Votre compte est desactive.',
+                'email' => trans('auth.failed'),
             ]);
         }
 
+        // 3. Vérifier le statut
+        if ($user->status && $user->status !== 'actif') {
+            RateLimiter::hit($this->throttleKey());
+            throw ValidationException::withMessages([
+                'email' => 'Votre compte est désactivé.',
+            ]);
+        }
+
+        // 4. Connecter l'utilisateur
+        Auth::login($user, $this->boolean('remember'));
+
         RateLimiter::clear($this->throttleKey());
     }
-
     public function ensureIsNotRateLimited(): void
     {
         if (!RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {

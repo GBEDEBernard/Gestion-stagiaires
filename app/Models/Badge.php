@@ -18,6 +18,28 @@ class Badge extends Model
     protected $fillable = ['badge'];
 
     /**
+     * Générer le prochain numéro de badge automatiquement
+     */
+    public static function getNextBadgeNumber(): string
+    {
+        $lastBadge = self::orderBy('id', 'desc')->first();
+
+        if (!$lastBadge) {
+            return 'TFG0001';
+        }
+
+        preg_match('/(\d+)$/', $lastBadge->badge, $matches);
+
+        if ($matches) {
+            $lastNumber = (int) $matches[1];
+            $prefix = substr($lastBadge->badge, 0, -strlen($matches[1]));
+            return $prefix . str_pad($lastNumber + 1, strlen($matches[1]), '0', STR_PAD_LEFT);
+        }
+
+        return 'TFG0001';
+    }
+
+    /**
      * Récupérer les badges disponibles pour attribution à un stage
      *
      * @param int|null $excludeStageId

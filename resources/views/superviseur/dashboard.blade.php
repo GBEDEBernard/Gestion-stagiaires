@@ -21,7 +21,7 @@
                 @foreach($supervisedStages as $stage)
                 <div class="bg-white border rounded-lg p-6 shadow-sm">
                     <h3 class="font-semibold text-lg mb-2">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</h3>
-                    <p class="text-sm text-gray-600 mb-4">{{ $stage->service->name }} - {{ $stage->site->name }}</p>
+                    <p class="text-sm text-gray-600 mb-4">{{ $stage->domaine->nom }} - {{ $stage->site->name }}</p>
                     <div class="space-y-2 mb-4">
                         <div class="flex justify-between">
                             <span>Pointage aujourd'hui:</span>

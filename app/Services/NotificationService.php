@@ -6,9 +6,35 @@ use App\Models\AppNotification;
 use App\Models\Etudiant;
 use App\Models\Stage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class NotificationService
 {
+    /**
+     * Pousse une notification ciblée à un utilisateur précis (événementiel).
+     * Utilisé par T-003 (nouveau rapport, nouveau message, corrections demandées).
+     */
+    public function push(
+        int $userId,
+        string $type,
+        string $title,
+        string $message,
+        ?string $url = null,
+        string $icon = 'bell',
+        string $color = 'blue'
+    ): void {
+        AppNotification::create([
+            'unique_id' => $type . '_' . (string) Str::uuid(),
+            'user_id'   => $userId,
+            'type'      => $type,
+            'title'     => $title,
+            'message'   => $message,
+            'icon'      => $icon,
+            'color'     => $color,
+            'url'       => $url,
+        ]);
+    }
+
     /**
      * Generer les notifications automatiquement (ADMIN/SUPERVISEUR uniquement).
      */
@@ -32,15 +58,22 @@ class NotificationService
             ->get();
 
         foreach ($nouveauxEtudiants as $etudiant) {
+            // Destination intelligente : si le stagiaire a un stage → détail de son stage
+            // le plus récent, sinon → sa fiche (profil).
+            $dernierStage = $etudiant->stages()->latest('date_debut')->first();
+            $url = $dernierStage
+                ? encrypted_route('stages.show', $dernierStage)
+                : encrypted_route('etudiants.show', $etudiant);
+
             $this->createNotificationIfNotExists(
                 'etudiant_' . $etudiant->id,
                 $currentUserId, // Destinataire: l'admin connecté
                 'nouveau_etudiant',
-                '👤 Nouvel étudiant',
-                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit il y a ' . $etudiant->created_at->diffForHumans(),
+                '👤 Nouveau stagiaire',
+                $etudiant->nom . ' ' . $etudiant->prenom . ' s\'est inscrit le ' . $etudiant->created_at->format('d/m/Y'),
                 'users',
                 'blue',
-                route('admin.users.show', $etudiant->user_id ?? 0),
+                $url,
                 $etudiant->id,
                 \App\Models\Etudiant::class
             );
@@ -48,17 +81,24 @@ class NotificationService
         // 2STAGES TERMINANT CETTE SEMAINE
         $stagesFinSemaine = \App\Models\Stage::where('date_fin', '>=', now())
             ->where('date_fin', '<=', now()->addDays(7))
-            ->with('etudiant')
+            ->whereHas('etudiant')
+            ->with('etudiant.personnel')
             ->get();
 
         foreach ($stagesFinSemaine as $stage) {
+            $etudiantName = $this->stageEtudiantName($stage);
+
+            if (!$etudiantName) {
+                continue;
+            }
+
             $joursRestants = now()->diffInDays($stage->date_fin, false);
             $this->createNotificationIfNotExists(
                 'stage_fin_' . $stage->id,
                 $currentUserId,
                 'stage_fin_semaine',
                 'Stage bientôt terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' - Fin dans ' . $joursRestants . ' jour(s)',
+                $etudiantName . ' - Fin dans ' . $joursRestants . ' jour(s)',
                 'clock',
                 'amber',
                 encrypted_route('stages.show', $stage),
@@ -70,16 +110,23 @@ class NotificationService
         // 3STAGES TERMINÉS (7 derniers jours)
         $stagesTermines = \App\Models\Stage::where('date_fin', '<', now())
             ->where('date_fin', '>=', now()->subDays(7))
-            ->with('etudiant')
+            ->whereHas('etudiant')
+            ->with('etudiant.personnel')
             ->get();
 
         foreach ($stagesTermines as $stage) {
+            $etudiantName = $this->stageEtudiantName($stage);
+
+            if (!$etudiantName) {
+                continue;
+            }
+
             $this->createNotificationIfNotExists(
                 'stage_termine_' . $stage->id,
                 $currentUserId,
                 'stage_termine',
                 'Stage terminé',
-                $stage->etudiant->nom . ' ' . $stage->etudiant->prenom . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
+                $etudiantName . ' a terminé son stage le ' . $stage->date_fin->format('d/m'),
                 'check-circle',
                 'green',
                 encrypted_route('stages.show', $stage),
@@ -186,6 +233,19 @@ class NotificationService
     private function buildScopedUniqueId(string $uniqueId, int|string|null $userId): string
     {
         return "{$uniqueId}_user_{$userId}";
+    }
+
+    private function stageEtudiantName(Stage $stage): ?string
+    {
+        $etudiant = $stage->etudiant;
+
+        if (!$etudiant) {
+            return null;
+        }
+
+        $name = trim(($etudiant->prenom ?? '') . ' ' . ($etudiant->nom ?? ''));
+
+        return $name !== '' ? $name : 'Stagiaire #' . $etudiant->id;
     }
 
     /**

@@ -18,6 +18,25 @@
             </p>
         </div>
 
+        {{-- Bannière jour férié --}}
+        @if($todayHoliday ?? false)
+        <div class="mb-6 p-4 {{ ($canBypassHoliday ?? false) || ($isEmergencyExempted ?? false) ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400' }} border rounded-xl flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <div>
+                <strong class="font-semibold">Jour férié : {{ $todayHoliday->label }}</strong>
+                @if($isEmergencyExempted ?? false)
+                <p class="text-sm mt-1">Vous avez été appelé(e) en urgence. Vous pouvez pointer normalement.</p>
+                @elseif($canBypassHoliday ?? false)
+                <p class="text-sm mt-1">Vous avez une permission spéciale pour pointer aujourd'hui.</p>
+                @else
+                <p class="text-sm mt-1">Le pointage est désactivé aujourd'hui. En cas d'urgence, votre responsable peut vous contacter.</p>
+                @endif
+            </div>
+        </div>
+        @endif
+
         {{-- Messages flash --}}
         @if(session('success'))
         <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
@@ -52,7 +71,7 @@
                         {{ $attendanceDay?->first_check_in_at?->format('H:i') ?? '--:--' }}
                     </p>
                     @if($attendanceDay?->first_check_in_at && $attendanceDay->arrival_status === 'late')
-                    <p class="text-xs text-amber-500 mt-1">{{ $attendanceDay->late_minutes }} min de retard</p>
+                    <p class="text-xs text-amber-500 mt-1">{{ formatMinutes($attendanceDay->late_minutes) }} de retard</p>
                     @endif
                 </div>
                 <div class="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
@@ -92,10 +111,30 @@
             @endif
         </div>
 
+        {{-- Bannière départ anticipé approuvée (avant 18h00) --}}
+        @if(($isBefore18h ?? false) && ($hasCheckedIn ?? false) && !($hasCheckedOut ?? false) && ($earlyDeparturePermission ?? null))
+        <div class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <strong class="font-semibold">Permission de départ anticipé approuvée pour aujourd'hui</strong>
+                <p class="text-sm mt-1">
+                    Vous pouvez pointer votre départ avant 18h00
+                    @if($earlyDeparturePermission->fields_data['departure_time'] ?? null)
+                    à <strong>{{ $earlyDeparturePermission->fields_data['departure_time'] }}</strong>
+                    @endif
+                    . Cliquez sur « Pointer le départ ».
+                </p>
+            </div>
+        </div>
+        @endif
+
         {{-- Boutons d'action --}}
         @php
             $hasCheckIn = $attendanceDay && $attendanceDay->first_check_in_at;
             $hasCheckOut = $attendanceDay && $attendanceDay->last_check_out_at;
+            $earlyDepartureRefused = ($isBefore18h ?? false) && $hasCheckIn && !$hasCheckOut && !($earlyDeparturePermission ?? null);
         @endphp
 
         @if($hasCheckOut)
@@ -168,7 +207,7 @@
             </div>
         @endif
 
-        {{-- Lien vers l'historique --}}
+{{-- Lien vers l'historique --}}
         <div class="mt-8 text-center">
             <a href="{{ route('presence.historique') }}"
                 class="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
@@ -179,6 +218,38 @@
             </a>
         </div>
     </main>
+
+    {{-- MODALE DÉPART ANTICIPÉ REFUSÉ (avant 18h00, sans permission approuvée pour aujourd'hui) --}}
+    @if($earlyDepartureRefused ?? false)
+    <div id="earlyRefusedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Pointage de départ avant 18h00 refusé</h3>
+                </div>
+                <p class="text-slate-600 dark:text-slate-300 mb-4">
+                    Il n'est pas encore l'heure de pointer votre départ (18h00). Vous devez avoir une permission de départ anticipé
+                    <strong>approuvée pour aujourd'hui ({{ now()->format('d/m/Y') }})</strong>.
+                </p>
+                <div class="flex gap-3">
+                    <button type="button" id="earlyRefusedClose"
+                        class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition text-center">
+                        Fermer
+                    </button>
+                    <a href="{{ route('permissions.index') }}"
+                        class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold transition text-center">
+                        Faire une demande de permission
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     @push('scripts')
     <script>
@@ -383,6 +454,13 @@
                 if (!btn || btn.disabled) return;
 
                 btn.addEventListener('click', async () => {
+                    // Départ anticipé avant 18h sans permission approuvée → modale de refus
+                    if (formId === 'form-checkout' && {{ $earlyDepartureRefused ?? false ? 'true' : 'false' }} && document.getElementById('earlyRefusedModal')) {
+                        document.getElementById('earlyRefusedModal').classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                        return;
+                    }
+
                     // Désactiver les deux boutons
                     document.getElementById('btn-checkin').disabled = true;
                     document.getElementById('btn-checkout').disabled = true;
@@ -431,6 +509,17 @@
                     }
                 });
             }
+
+            // Fermeture de la modale départ anticipé refusé
+            @if($earlyDepartureRefused ?? false)
+            const earlyRefusedClose = document.getElementById('earlyRefusedClose');
+            if (earlyRefusedClose) {
+                earlyRefusedClose.addEventListener('click', () => {
+                    document.getElementById('earlyRefusedModal').classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            @endif
 
             // Attacher les listeners
             handlePointing('form-checkin', 'btn-checkin');

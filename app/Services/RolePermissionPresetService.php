@@ -30,11 +30,10 @@ class RolePermissionPresetService
     {
         $allPermissions = Permission::query()->pluck('name')->all();
 
+  
         return [
-            // jb -> Le role admin sert ici de preset maximal:
-            // il precharge toutes les permissions, mais l'admin pourra
-            // ensuite retirer celles qu'il ne veut pas garder sur un compte.
-            'admin' => $allPermissions,
+ 
+        'admin' => $allPermissions,
             'employe' => [
                 'dashboard.view',
                 'presence.view',
@@ -43,27 +42,45 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                // T-003 : les producteurs gèrent leurs propres tâches
+                'tasks.view',
+                'tasks.create',
+                'tasks.edit',
+                'tasks.delete',
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.create',
+                'permissions.cancel',
             ],
             'superviseur' => [
                 'dashboard.view',
+                'holidays.view',
                 'etudiants.view',
                 'stages.view',
                 'attestation.view',
                 'attestation.approve',
+                'signer_attestation',
                 'sites.view',
                 'presence.view',
                 'presence.audit',
                 'daily_reports.view',
                 'daily_reports.review',
                 'daily_reports.approve',
+// T-003 : le superviseur LIT, COMMENTE et ASSIGNE les tâches
                 'tasks.view',
-                'tasks.create',
-                'tasks.edit',
                 'tasks.review',
+                'tasks.assign',
                 'attendance_anomalies.view',
                 'attendance_anomalies.review',
                 'presence_stats.view',
-
+                'personnels.view',
+                'personnels.create',
+                'personnels.edit',
+                'personnels.delete',
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.review',
+                'permissions.approve',
             ],
             'etudiant' => [
                 'presence.view',
@@ -72,7 +89,16 @@ class RolePermissionPresetService
                 'daily_reports.view',
                 'daily_reports.create',
                 'daily_reports.submit',
+                // T-003 : les producteurs gèrent leurs propres tâches
                 'tasks.view',
+                'tasks.create',
+                'tasks.edit',
+                'tasks.delete',
+                'stages.view',
+                // Permissions pour les demandes de permission
+                'permissions.view',
+                'permissions.create',
+                'permissions.cancel',
             ],
         ];
     }
@@ -118,9 +144,6 @@ class RolePermissionPresetService
         $existingRoles = $user->roles()->pluck('name')->all();
         $user->syncRoles($this->normalizeRoleNames(array_merge($existingRoles, $normalizedRoles)));
 
-        // jb -> On ne force les presets qu'au moment ou le compte n'a pas
-        // encore de permissions directes; ainsi les ajustements manuels
-        // faits plus tard par l'admin restent intacts.
         if ($user->permissions()->count() === 0) {
             $user->syncPermissions($this->permissionsForRoles($user->roles()->pluck('name')->all()));
         }

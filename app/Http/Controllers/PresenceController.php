@@ -4,8 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\Holiday;
+use App\Models\HolidayEmergencyExemption;
+use App\Models\PermissionRequest;
+use App\Models\PermissionType;
+use App\Models\User;
 use App\Services\AdminPresenceService;
 use App\Services\PresenceService;
+use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +20,8 @@ class PresenceController extends Controller
 {
     public function __construct(
         private PresenceService $presenceService,
-        private AdminPresenceService $adminPresenceService
+        private AdminPresenceService $adminPresenceService,
+        private UserProfileLinkService $profileLinkService
     ) {}
 
     /**
@@ -23,9 +30,13 @@ class PresenceController extends Controller
     public function pointage(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if ($etudiant) {
+        $todayHoliday = Holiday::whereDate('date', today())->where('is_active', true)->first();
+        $canBypassHoliday = $user->can('holidays.bypass');
+        $isEmergencyExempted = HolidayEmergencyExemption::isExempted($user);
+
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
             abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
 
@@ -38,7 +49,7 @@ class PresenceController extends Controller
                 ->first();
 
             if (!$activeStage) {
-                return view('presence.pointage', compact('activeStage'));
+                return view('presence.pointage', compact('activeStage', 'todayHoliday', 'canBypassHoliday', 'isEmergencyExempted'));
             }
 
             // Statut du jour
@@ -46,7 +57,25 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('presence.pointage', compact('activeStage', 'attendanceDay'));
+            // Permission départ anticipé pour aujourd'hui (départ avant 18h)
+            $isBefore18 = now()->lt(today()->setTime(18, 0));
+            $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+            $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+            $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+            return view('presence.pointage', [
+                'activeStage'            => $activeStage,
+                'attendanceDay'          => $attendanceDay,
+                'todayHoliday'           => $todayHoliday,
+                'canBypassHoliday'       => $canBypassHoliday,
+                'isEmergencyExempted'    => $isEmergencyExempted,
+                'isBefore18h'            => $isBefore18,
+                'earlyDeparturePermission' => $earlyDeparturePermission,
+                'hasCheckedIn'           => $hasCheckedIn,
+                'hasCheckedOut'          => $hasCheckedOut,
+                'isWorkDay'              => $activeStage->isWorkDay(),
+                'workDaysLabel'          => $activeStage->workDaysLabel(),
+            ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
             $domaine = $user->domaine;
@@ -60,7 +89,23 @@ class PresenceController extends Controller
                 ->whereDate('attendance_date', today())
                 ->first();
 
-            return view('employee.presence.pointage', compact('attendanceDay', 'user'));
+            // Permission départ anticipé pour aujourd'hui (départ avant 18h)
+            $isBefore18 = now()->lt(today()->setTime(18, 0));
+            $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+            $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+            $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+            return view('employee.presence.pointage', [
+                'attendanceDay'            => $attendanceDay,
+                'user'                     => $user,
+                'todayHoliday'             => $todayHoliday,
+                'canBypassHoliday'         => $canBypassHoliday,
+                'isEmergencyExempted'      => $isEmergencyExempted,
+                'isBefore18h'              => $isBefore18,
+                'earlyDeparturePermission' => $earlyDeparturePermission,
+                'hasCheckedIn'             => $hasCheckedIn,
+                'hasCheckedOut'            => $hasCheckedOut,
+            ]);
         }
     }
 
@@ -70,11 +115,34 @@ class PresenceController extends Controller
     public function prepareCheckIn(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+
+        $isExempted = HolidayEmergencyExemption::isExempted($user);
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$isExempted) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
+        }
+
+        // ✅ Blocage avant la date de début de pointage choisie à l'inscription
+        $debutPointage = $user->personnel?->date_debut_pointage;
+        if ($debutPointage && \Illuminate\Support\Carbon::parse($debutPointage)->startOfDay()->gt(today())) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Votre prise de poste commencera le " . \Illuminate\Support\Carbon::parse($debutPointage)->format('d/m/Y') . ". Le pointage n'est pas encore activé.");
+        }
+
+$etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
+            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
+            // ✅ Le pointage d'arrivée des stagiaires est ouvert à partir de 07h30 uniquement
+            if (now()->format('H:i') < '07:30') {
+                return redirect()->route('presence.pointage')
+                    ->with('points_avant_7h30', true)
+                    ->with('error', "Le pointage d'arrivée sera ouvert à partir de 07h30.");
+            }
+
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',
                 'latitude' => 'required|numeric',
@@ -84,6 +152,11 @@ class PresenceController extends Controller
             ]);
 
             $stage = $etudiant->stages()->findOrFail($request->stage_id);
+
+            if (!$stage->isWorkDay()) {
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.");
+            }
 
             $previewData = [
                 'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
@@ -180,10 +253,40 @@ class PresenceController extends Controller
     public function prepareCheckOut(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
 
-        if ($etudiant) {
+        $isExempted = HolidayEmergencyExemption::isExempted($user);
+        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$isExempted) {
+            return redirect()->route('presence.pointage')
+                ->with('error', "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé.");
+        }
+
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+
+        $isEarlyDeparture = now()->lt(today()->setTime(18, 0));
+
+        $hasApprovedPermission = false;
+        $approvedDepartureTime = null;
+
+        // Départ anticipé (avant 18h00) : une permission approuvée POUR AUJOURD'HUI est obligatoire
+        if ($isEarlyDeparture) {
+            $approved = $this->getApprovedEarlyDeparturePermission($user);
+
+            if ($approved) {
+                $hasApprovedPermission = true;
+                $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
+            } else {
+                // Refus du pointage : pas de permission valable pour aujourd'hui
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Il n'est pas encore l'heure de pointer votre départ (18h00). "
+                        . "Une permission de départ anticipé approuvée pour aujourd'hui (" . today()->format('d/m/Y') . ") est requise. "
+                        . "Faites votre demande de permission puis réessayez.");
+            }
+        }
+
+        if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
+            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',
                 'latitude' => 'required|numeric',
@@ -194,6 +297,11 @@ class PresenceController extends Controller
 
             $stage = $etudiant->stages()->findOrFail($request->stage_id);
 
+            if (!$stage->isWorkDay()) {
+                return redirect()->route('presence.pointage')
+                    ->with('error', "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.");
+            }
+
             $previewData = [
                 'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
                 'site_name' => $stage->site?->name ?? 'Site principal',
@@ -203,6 +311,9 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
+                'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ];
 
             // Calculer distance si geofence disponible
@@ -231,6 +342,9 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
+                'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -255,6 +369,9 @@ class PresenceController extends Controller
                 'accuracy' => $request->accuracy_meters ?? 'N/A',
                 'pointage_time' => now()->format('H:i'),
                 'type' => 'départ',
+                'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ];
 
             // No geofence for employee preview (calculated later in service)
@@ -271,7 +388,9 @@ class PresenceController extends Controller
                 'platform' => $request->platform ?? '',
                 'browser' => $request->browser ?? '',
                 'app_version' => $request->app_version ?? '',
-
+                'is_early_departure' => $isEarlyDeparture,
+                'has_approved_permission' => $hasApprovedPermission,
+                'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
             return view('presence.validate', $previewData);
@@ -293,7 +412,7 @@ class PresenceController extends Controller
 
         if ($pending['user_type'] === 'etudiant') {
             // Logique pour stagiaire
-            $etudiant = $user->etudiant;
+            $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
             $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
 
             $previewData = [
@@ -307,6 +426,7 @@ class PresenceController extends Controller
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
                 'is_late' => $isLate,
+                'is_early_departure' => $pending['is_early_departure'] ?? false,
             ];
 
             // Distance
@@ -335,6 +455,7 @@ class PresenceController extends Controller
                 'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
                 'form_data' => $pending,
                 'is_late' => $isLate,
+                'is_early_departure' => $pending['is_early_departure'] ?? false,
             ];
 
             // No geofence preview for employees
@@ -356,11 +477,24 @@ class PresenceController extends Controller
         try {
             $user = $request->user();
             $isLate = $pending['is_late'] ?? false;
+            $isEarlyDeparture = $pending['is_early_departure'] ?? false;
 
             // Validation observation obligatoire si retard
             $request->validate([
                 'observation_message' => $isLate ? 'required|string|min:10|max:500' : 'nullable|string|max:500',
             ]);
+
+            // ✅ Départ anticipé avant 18h : permission approuvée requise VÉRIFIÉE côté serveur
+            if ($isEarlyDeparture && $pending['type'] === 'check_out') {
+                if (!$this->getApprovedEarlyDeparturePermission($user)) {
+                    request()->session()->forget('pending_pointage');
+
+                    return redirect()->route('presence.pointage')
+                        ->with('error', "Pointage refusé : aucune permission de départ anticipé approuvée "
+                            . "pour aujourd'hui (" . today()->format('d/m/Y') . "). "
+                            . "Il n'est pas encore l'heure de pointer (18h00) ou demandez une permission.");
+                }
+            }
 
             $data = $pending;
             $data['device_uuid'] = $pending['device_uuid'];
@@ -372,7 +506,8 @@ class PresenceController extends Controller
 
             if ($pending['user_type'] === 'etudiant') {
                 // Logique pour stagiaire
-                $stage = $user->etudiant->stages()->findOrFail($pending['stage_id']);
+                $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+                $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
 
                 if ($pending['type'] === 'check_in') {
                     $event = $this->presenceService->registerCheckIn($stage, $user, $data, $data['observation_message'] ?? null);
@@ -432,7 +567,8 @@ class PresenceController extends Controller
     public function historique(Request $request)
     {
         $user = $request->user();
-        $etudiant = $user->etudiant;
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+        abort_if($user->hasRole('etudiant') && !$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
         $period = $request->get('period', 'month');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
@@ -491,7 +627,7 @@ class PresenceController extends Controller
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        if ($etudiant) {
+        if ($user->hasRole('etudiant')) {
             return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
         } else {
             return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
@@ -513,7 +649,40 @@ class PresenceController extends Controller
             ->whereDate('attendance_date', today())
             ->first();
 
-        return view('employee.presence.pointage', compact('attendanceDay', 'user'));
+        $isBefore18 = now()->lt(today()->setTime(18, 0));
+        $earlyDeparturePermission = $isBefore18 ? $this->getApprovedEarlyDeparturePermission($user) : null;
+        $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
+        $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
+
+        return view('employee.presence.pointage', [
+            'attendanceDay'            => $attendanceDay,
+            'user'                     => $user,
+            'isBefore18h'              => $isBefore18,
+            'earlyDeparturePermission' => $earlyDeparturePermission,
+            'hasCheckedIn'             => $hasCheckedIn,
+            'hasCheckedOut'            => $hasCheckedOut,
+        ]);
+    }
+
+    /**
+     * Recherche la permission "départ anticipé" approuvée pour le jour même.
+     * La permission n'est valable QUE si la date demandée (fields_data.date) est aujourd'hui.
+     */
+    private function getApprovedEarlyDeparturePermission(User $user): ?PermissionRequest
+    {
+        $departAnticipe = PermissionType::where('slug', 'depart-anticipe')->first();
+        if (!$departAnticipe) {
+            return null;
+        }
+
+        $approved = PermissionRequest::where('user_id', $user->id)
+            ->where('permission_type_id', $departAnticipe->id)
+            ->where('status', 'approved')
+            ->latest()
+            ->get()
+            ->first(fn ($permission) => ($permission->fields_data['date'] ?? null) === today()->toDateString());
+
+        return $approved;
     }
 
     /**

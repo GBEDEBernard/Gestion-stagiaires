@@ -17,6 +17,7 @@ return new class extends Migration
              $table->string('code')->unique(); // Exemple: "ATS" ou "ACA"
             $table->string('libelle')->unique();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

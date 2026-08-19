@@ -11,7 +11,7 @@ class ResolveAnomalyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('presence.admin.anomalies.review');
+        return $this->user()->can('reviewAdminAnomalies');
     }
 
     /**

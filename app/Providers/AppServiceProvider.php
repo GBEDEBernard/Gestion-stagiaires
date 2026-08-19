@@ -8,14 +8,16 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Broadcast;
 use App\Models\Stage;
 use App\Models\Etudiant;
 use App\Models\Badge;
-use App\Models\Service;
 use App\Models\Jour;
 use App\Models\TypeStage;
 use App\Models\Signataire;
+use App\Models\Task;
 use App\Models\User;
+use App\Models\Ecole;
 use Spatie\Permission\Models\Role;
 use App\Http\ViewComposers\NavigationComposer;
 use App\Http\ViewComposers\NotificationComposer;
@@ -35,11 +37,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        if (config('app.env') === 'production') {
+        if (config('app.env') === 'production' || $this->requestIsForwardedHttps()) {
             URL::forceScheme('https');
         }
 
         Paginator::useTailwind();
+
+        // Load broadcast channels
+        Broadcast::routes();
+        require base_path('routes/channels.php');
 
         // Enregistrer le ViewComposer pour la navigation
         View::composer('layouts.navigation', NavigationComposer::class);
@@ -55,7 +61,6 @@ class AppServiceProvider extends ServiceProvider
         Route::model('stage', Stage::class);
         Route::model('etudiant', Etudiant::class);
         Route::model('badge', Badge::class);
-        Route::model('service', Service::class);
         Route::model('jour', Jour::class);
         Route::model('type_stage', TypeStage::class);
         Route::model('signataire', Signataire::class);
@@ -83,10 +88,6 @@ class AppServiceProvider extends ServiceProvider
             return $this->resolveEncryptedModel($value, Badge::class);
         });
 
-        Route::bind('service', function ($value) {
-            return $this->resolveEncryptedModel($value, Service::class);
-        });
-
         Route::bind('jour', function ($value) {
             return $this->resolveEncryptedModel($value, Jour::class);
         });
@@ -101,7 +102,19 @@ class AppServiceProvider extends ServiceProvider
         Route::bind('site', function ($value) {
             return $this->resolveEncryptedModel($value, \App\Models\Site::class);
         });
-       
+
+        // T-003 : binding chiffré pour les tâches (sinon 404 sur tasks.show/edit/messages/review)
+        Route::bind('task', function ($value) {
+            return $this->resolveEncryptedModel($value, Task::class);
+        });
+
+        Route::bind('personnel', function ($value) {
+            return $this->resolveEncryptedModel($value, \App\Models\Personnel::class);
+        });
+
+        Route::bind('ecole', function ($value) {
+            return $this->resolveEncryptedModel($value, Ecole::class);
+        });
     }
 
     /**
@@ -141,6 +154,16 @@ class AppServiceProvider extends ServiceProvider
         // Encrypted strings are typically long, contain '=' at the end (base64 padding)
         // and are not purely numeric
         return strlen($value) > 20 && !is_numeric($value);
+    }
+
+    private function requestIsForwardedHttps(): bool
+    {
+        if ($this->app->runningInConsole()) {
+            return false;
+        }
+
+        return request()->isSecure()
+            || request()->headers->get('x-forwarded-proto') === 'https';
     }
     
 }

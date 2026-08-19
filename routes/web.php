@@ -4,14 +4,15 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\JourController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\TypeStageController;
+use App\Http\Controllers\EcoleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\EtudiantController;
 use App\Http\Controllers\StageController;
-use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AttestationController;
 use App\Http\Controllers\SignataireController;
 use App\Http\Controllers\CorbeilleController;
@@ -21,15 +22,25 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StudentStageController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskMessageController;
 use App\Http\Controllers\AdminPresenceController;
 use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
+use App\Http\Controllers\AdminTaskTrackingController;
 use App\Http\Controllers\SuperviseurDashboardController;
 use App\Http\Controllers\DomaineController;
 use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\AdminPermissionRequestController;
-
-
+use App\Http\Controllers\EmployeController;
+use App\Http\Controllers\PersonnelController;
+use App\Http\Controllers\EtudiantsPresenceController;
+use App\Http\Controllers\SiteGeofenceController;
+use App\Http\Controllers\TacheController;
+use App\Http\Controllers\TacheController as ControllersTacheController;
+use App\Http\Controllers\AttestationSignatureController;
+use App\Http\Controllers\Admin\AdminHolidayController;
+use App\Http\Controllers\Admin\AdminLogController;
+use App\Http\Controllers\ImpersonateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,20 +52,38 @@ Route::get('/', fn() => redirect()->route('login'));
 
 require __DIR__ . '/auth.php';
 
-// Routes protégées
-// Routes protégées (mdp change non requis)
-Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParameter::class])->group(function () {
+Route::get('/storage/{path}', function (string $path) {
+    $fullPath = Storage::disk('public')->path($path);
+
+    if (!is_file($fullPath)) {
+        abort(404);
+    }
+
+    return response()->file($fullPath, [
+        'Content-Type' => mime_content_type($fullPath),
+    ]);
+})->where('path', '.*');
+
+// Route d'accès par email (URL signée temporaire)
+Route::get('/email-access', [App\Http\Controllers\EmailAccessController::class, 'handle'])
+    ->name('email.access')
+    ->middleware('signed');
+
+// Routes protégées AVEC déchiffrement des paramètres (sauf pour "reports")
+Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'account_active', 'attendance'])->group(function () {
 
     // ---------------- Dashboard ----------------
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
+        Route::match(['put', 'patch'], '/', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
+    
+Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::class, 'resolveAnomaliesBulk'])
+    ->name('admin.presence.anomalies.bulk-resolve');
 
     // ---------------- Jours ----------------
     Route::prefix('admin/jours')->group(function () {
@@ -66,6 +95,24 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{jour}', [JourController::class, 'destroy'])->name('jours.destroy')->middleware('permission:jour_stage.delete');
     });
 
+    // ---------------- Jours Feriés ----------------
+    Route::prefix('admin/holidays')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [AdminHolidayController::class, 'index'])->name('admin.holidays.index')->middleware('permission:holidays.view');
+        Route::get('create', [AdminHolidayController::class, 'create'])->name('admin.holidays.create')->middleware('permission:holidays.create');
+        Route::post('/', [AdminHolidayController::class, 'store'])->name('admin.holidays.store')->middleware('permission:holidays.create');
+        Route::get('{holiday}/edit', [AdminHolidayController::class, 'edit'])->name('admin.holidays.edit')->middleware('permission:holidays.edit');
+        Route::put('{holiday}', [AdminHolidayController::class, 'update'])->name('admin.holidays.update')->middleware('permission:holidays.edit');
+        Route::delete('{holiday}', [AdminHolidayController::class, 'destroy'])->name('admin.holidays.destroy')->middleware('permission:holidays.delete');
+        Route::post('{holiday}/toggle', [AdminHolidayController::class, 'toggle'])->name('admin.holidays.toggle')->middleware('permission:holidays.toggle');
+        Route::get('{holiday}/notify', [AdminHolidayController::class, 'notify'])->name('admin.holidays.notify')->middleware('permission:holidays.toggle');
+        Route::post('{holiday}/notify', [AdminHolidayController::class, 'notify'])->name('admin.holidays.notify.post')->middleware('permission:holidays.toggle');
+        Route::post('{holiday}/emergency-call', [AdminHolidayController::class, 'emergencyCall'])->name('admin.holidays.emergency-call')->middleware('permission:holidays.toggle');
+        Route::delete('exemptions/{exemption}', [AdminHolidayController::class, 'revokeExemption'])->name('admin.holidays.exemptions.destroy')->middleware('permission:holidays.toggle');
+    });
+
+    // ---------------- API: Users list for holiday emergency call ----------------
+    Route::get('/api/holiday-users', [AdminHolidayController::class, 'usersList'])->name('admin.holidays.users-list')->middleware('permission:holidays.toggle');
+
     // ---------------- Étudiants ----------------
     Route::prefix('admin/etudiants')->group(function () {
         Route::get('/', [EtudiantController::class, 'index'])->name('etudiants.index')->middleware('permission:etudiants.view');
@@ -76,11 +123,15 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::put('{etudiant}', [EtudiantController::class, 'update'])->name('etudiants.update')->middleware('permission:etudiants.edit');
         Route::delete('{etudiant}', [EtudiantController::class, 'destroy'])->name('etudiants.destroy')->middleware('permission:etudiants.delete');
         Route::post('{etudiant}/sync-account', [EtudiantController::class, 'syncAccount'])->name('etudiants.syncAccount')->middleware('permission:etudiants.edit');
+        Route::get('{etudiant}/domaines', [StageController::class, 'domainesDisponibles'])->name('etudiants.domaines')->middleware('auth');
 
-        // Corbeille
+        Route::post('etudiants/{etudiant}/generate-account', [EtudiantController::class, 'generateAccount'])->name('etudiants.generate-account');
+
         Route::get('corbeille', [EtudiantController::class, 'trash'])->name('etudiants.trash')->middleware('permission:etudiants.view');
         Route::put('{id}/restore', [EtudiantController::class, 'restore'])->name('etudiants.restore')->middleware('permission:etudiants.restore');
         Route::delete('{id}/force-delete', [EtudiantController::class, 'forceDelete'])->name('etudiants.forceDelete')->middleware('permission:etudiants.force-delete');
+
+        Route::get('{etudiant}', [EtudiantController::class, 'show'])->name('etudiants.show')->middleware('permission:etudiants.view');
     });
 
     // ---------------- Stages ----------------
@@ -88,30 +139,27 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [StageController::class, 'index'])->name('stages.index')->middleware('permission:stages.view');
         Route::get('create', [StageController::class, 'create'])->name('stages.create')->middleware('permission:stages.create');
         Route::post('/', [StageController::class, 'store'])->name('stages.store')->middleware('permission:stages.create');
-
-        // Corbeille
         Route::get('corbeille', [StageController::class, 'trash'])->name('stages.trash')->middleware('permission:stages.view');
-
-        // Routes avec paramètres cryptés
         Route::get('{stage}', [StageController::class, 'show'])->name('stages.show')->middleware('permission:stages.view');
         Route::get('{stage}/edit', [StageController::class, 'edit'])->name('stages.edit')->middleware('permission:stages.edit');
         Route::put('{stage}', [StageController::class, 'update'])->name('stages.update')->middleware('permission:stages.edit');
         Route::delete('{stage}', [StageController::class, 'destroy'])->name('stages.destroy')->middleware('permission:stages.delete');
-
-        // Badge
         Route::get('{stage}/badge', [BadgeController::class, 'show'])->name('admin.stages.badge.show')->middleware('permission:badges.view');
         Route::get('{stage}/badge/download', [BadgeController::class, 'download'])->name('stages.badge.download')->middleware('permission:badges.download');
-
-        // Attestation
-        Route::get('{stage}/attestation', [AttestationController::class, 'show'])->name('stages.attestation.show')->middleware('permission:attestation.view');
+        Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])->name('stages.attestation.show')->middleware('permission:attestation.view');
         Route::post('{stage}/attestation/store', [AttestationController::class, 'store'])->name('stages.attestation.store')->middleware('permission:attestation.create');
         Route::get('{stage}/attestation/download', [AttestationController::class, 'generatePDF'])->name('stages.attestation.download')->middleware('permission:attestation.download')->defaults('type', 'download');
         Route::get('{stage}/attestation/print', [AttestationController::class, 'generatePDF'])->name('stages.attestation.print')->middleware('permission:attestation.print')->defaults('type', 'print');
-
-        // Corbeille actions
         Route::put('{id}/restore', [StageController::class, 'restore'])->name('stages.restore')->middleware('permission:stages.restore');
         Route::delete('{id}/force-delete', [StageController::class, 'forceDelete'])->name('stages.forceDelete')->middleware('permission:stages.force-delete');
-    });
+
+        // Fiche de poste : édition, aperçu et téléchargement
+        Route::get('{stage}/fiche-poste/edit', [StageController::class, 'editFichePoste'])->name('stages.fiche-poste.edit')->middleware('permission:stages.edit');
+        Route::put('{stage}/fiche-poste', [StageController::class, 'updateFichePoste'])->name('stages.fiche-poste.update')->middleware('permission:stages.edit');
+        Route::get('{stage}/fiche-poste/preview', [StageController::class, 'previewFichePoste'])->name('stages.fiche-poste.preview')->middleware('permission:stages.view');
+        Route::get('{stage}/fiche-poste/download', [StageController::class, 'downloadFichePoste'])->name('stages.fiche-poste.download')->middleware('permission:stages.view');
+
+        });
 
     // ---------------- TypeStages ----------------
     Route::prefix('admin/type_stages')->group(function () {
@@ -123,6 +171,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::delete('{type_stage}', [TypeStageController::class, 'destroy'])->name('type_stages.destroy')->middleware('permission:type_stages.delete');
     });
 
+    // ---------------- Écoles de provenance ----------------
+    Route::prefix('admin/ecoles')->group(function () {
+        Route::get('/', [EcoleController::class, 'index'])->name('ecoles.index')->middleware('permission:ecoles.view');
+        Route::get('create', [EcoleController::class, 'create'])->name('ecoles.create')->middleware('permission:ecoles.create');
+        Route::post('/', [EcoleController::class, 'store'])->name('ecoles.store')->middleware('permission:ecoles.create');
+        Route::get('{ecole}/edit', [EcoleController::class, 'edit'])->name('ecoles.edit')->middleware('permission:ecoles.edit');
+        Route::put('{ecole}', [EcoleController::class, 'update'])->name('ecoles.update')->middleware('permission:ecoles.edit');
+        Route::delete('{ecole}', [EcoleController::class, 'destroy'])->name('ecoles.destroy')->middleware('permission:ecoles.delete');
+    });
+
     // ---------------- Badges ----------------
     Route::prefix('admin/badges')->group(function () {
         Route::get('/', [BadgeController::class, 'index'])->name('badges.index')->middleware('permission:badges.view');
@@ -131,22 +189,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{badge}/edit', [BadgeController::class, 'edit'])->name('badges.edit')->middleware('permission:badges.edit');
         Route::put('{badge}', [BadgeController::class, 'update'])->name('badges.update')->middleware('permission:badges.edit');
         Route::delete('{badge}', [BadgeController::class, 'destroy'])->name('badges.destroy')->middleware('permission:badges.delete');
-
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreBadge'])->name('badges.restore')->middleware('permission:badges.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteBadge'])->name('badges.force-delete')->middleware('permission:badges.force-delete');
-    });
-
-    // ---------------- Services ----------------
-    Route::prefix('admin/services')->group(function () {
-        Route::get('/', [ServiceController::class, 'index'])->name('services.index')->middleware('permission:services.view');
-        Route::get('create', [ServiceController::class, 'create'])->name('services.create')->middleware('permission:services.create');
-        Route::post('/', [ServiceController::class, 'store'])->name('services.store')->middleware('permission:services.create');
-        Route::get('{service}/edit', [ServiceController::class, 'edit'])->name('services.edit')->middleware('permission:services.edit');
-        Route::put('{service}', [ServiceController::class, 'update'])->name('services.update')->middleware('permission:services.edit');
-        Route::delete('{service}', [ServiceController::class, 'destroy'])->name('services.destroy')->middleware('permission:services.delete');
-
-        Route::patch('{id}/restore', [CorbeilleController::class, 'restoreService'])->name('services.restore')->middleware('permission:services.restore');
-        Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteService'])->name('services.force-delete')->middleware('permission:services.force-delete');
     });
 
     // ---------------- Domaines ----------------
@@ -176,20 +220,37 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     });
 
     // ---------------- API: Domaines par Site ----------------
-    // Route AJAX pour récupérer les domaines associés à un site (utilisée dans le formulaire utilisateur)
     Route::get('/api/sites/{site}/domaines', function (App\Models\Site $site) {
         $domaines = $site->domaines()->orderBy('nom')->get(['domaines.id', 'domaines.nom']);
         return response()->json($domaines);
     })->middleware('auth');
 
     // ---------------- Taches ----------------
-    Route::prefix('admin/tasks')->group(function () {
+Route::prefix('tasks')->group(function () {
         Route::get('/', [TaskController::class, 'index'])->name('tasks.index')->middleware('permission:tasks.view');
+        // Corbeille — admin uniquement (déclarée avant {task} pour ne pas être captée)
+        Route::get('trash', [TaskController::class, 'trash'])->name('tasks.trash')->middleware('role:admin');
+        Route::post('trash/{id}/restore', [TaskController::class, 'restore'])->name('tasks.restore')->middleware('role:admin');
+        Route::delete('trash/{id}', [TaskController::class, 'forceDelete'])->name('tasks.force-delete')->middleware('role:admin');
+        // Assignation par admin/superviseur (T-006)
+        Route::get('assign/create', [TaskController::class, 'assignForm'])->name('tasks.assign.form')->middleware('permission:tasks.assign');
+        Route::post('assign', [TaskController::class, 'assign'])->name('tasks.assign')->middleware('permission:tasks.assign');
         Route::get('create', [TaskController::class, 'create'])->name('tasks.create')->middleware('permission:tasks.create');
         Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
+        Route::get('{task}', [TaskController::class, 'show'])->name('tasks.show')->middleware('permission:tasks.view');
         Route::get('{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit')->middleware('permission:tasks.edit');
         Route::put('{task}', [TaskController::class, 'update'])->name('tasks.update')->middleware('permission:tasks.edit');
         Route::delete('{task}', [TaskController::class, 'destroy'])->name('tasks.destroy')->middleware('permission:tasks.delete');
+        Route::get('{task}/thread', [TaskMessageController::class, 'index'])->name('tasks.thread')->middleware('permission:tasks.view');
+        Route::post('{task}/messages', [TaskMessageController::class, 'store'])->name('tasks.messages.store')->middleware('permission:tasks.view');
+        Route::patch('{task}/messages/{message}', [TaskMessageController::class, 'update'])->name('tasks.messages.update')->middleware('permission:tasks.view');
+        Route::delete('{task}/messages/{message}', [TaskMessageController::class, 'destroy'])->name('tasks.messages.destroy')->middleware('permission:tasks.view');
+        Route::post('{task}/messages/{message}/react', [TaskMessageController::class, 'react'])->name('tasks.messages.react')->middleware('permission:tasks.view');
+        Route::post('{task}/typing', [TaskMessageController::class, 'typing'])->name('tasks.typing')->middleware('permission:tasks.view');
+        Route::post('{task}/read', [TaskMessageController::class, 'markRead'])->name('tasks.read')->middleware('permission:tasks.view');
+        Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
+        Route::post('{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->middleware('permission:tasks.review');
+        Route::post('{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->middleware('permission:tasks.review');
     });
 
     // ---------------- Signataires ----------------
@@ -207,18 +268,14 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/', [UserController::class, 'index'])->name('admin.users.index')->middleware('permission:users.view');
         Route::get('create', [UserController::class, 'create'])->name('admin.users.create')->middleware('permission:users.create');
         Route::post('/', [UserController::class, 'store'])->name('admin.users.store')->middleware('permission:users.create');
-
-        // ↓ show AVANT les routes {user} pour éviter que "create" soit capturé
         Route::get('{user}', [UserController::class, 'show'])->name('admin.users.show')->middleware('permission:users.view');
-
         Route::get('{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
         Route::put('{user}', [UserController::class, 'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
-
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
-
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
+        Route::patch('/admin/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
     });
 
     // ---------------- Roles ----------------
@@ -234,14 +291,24 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
     // ---------------- Corbeille Globale ----------------
     Route::get('/corbeille', [CorbeilleController::class, 'index'])->name('corbeille.index')->middleware('permission:corbeille.view');
 
+    // ---------------- Logs admin ----------------
+    Route::get('/admin/logs', [AdminLogController::class, 'index'])->name('admin.logs.index')->middleware('role:admin');
+
+  Route::delete('/admin/logs/delete', [AdminLogController::class, 'destroy'])
+    ->name('admin.logs.delete')
+    ->middleware('role:admin');
+
+Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
+    ->name('admin.logs.clear')
+    ->middleware('role:admin');
+
     // ---------------- Espace stagiaire ----------------
-    Route::get('/mon-stage', [StudentStageController::class, 'show'])
-        ->name('student.stage');
+    Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
+    Route::put('/mon-stage/theme', [StudentStageController::class, 'updateTheme'])->name('student.theme.update');
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
-        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])
-            ->name('superviseur.dashboard');
+        Route::get('/dashboard', [SuperviseurDashboardController::class, 'index'])->name('superviseur.dashboard');
     });
 
     // ---------------- Presence ----------------
@@ -256,29 +323,35 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
     });
 
-    // ---------------- Rapports journaliers ----------------
-    Route::prefix('reports')->group(function () {
-
-        // accès lecture
-        Route::get('/', [DailyReportController::class, 'index'])
-            ->name('reports.index');
-
-        // détails d'un rapport
-        Route::get('{report}', [DailyReportController::class, 'show'])
-            ->name('reports.show');
-
-        // création (étudiant ou employé autorisé via logique controller)
-        Route::post('/', [DailyReportController::class, 'store'])
-            ->name('reports.store');
-
-        // édition (utilisateur propriétaire uniquement)
-        Route::get('{report}/edit', [DailyReportController::class, 'edit'])
-            ->name('reports.edit');
-
-        // mise à jour (utilisateur propriétaire uniquement)
-        Route::put('{report}', [DailyReportController::class, 'update'])
-            ->name('reports.update');
+    // ---------------- Employes ----------------
+    Route::prefix('admin/employes')->middleware('permission:employes.view')->group(function () {
+        Route::get('/', [EmployeController::class, 'index'])->name('employes.index');
+        Route::get('create', [EmployeController::class, 'create'])->name('employes.create');
+        Route::post('/', [EmployeController::class, 'store'])->name('employes.store');
+        Route::post('{employe}/generate-account', [EmployeController::class, 'generateAccount'])->name('employes.generate-account');
+        Route::get('{employe}/edit', [EmployeController::class, 'edit'])->name('employes.edit');
+        Route::put('{employe}', [EmployeController::class, 'update'])->name('employes.update');
+        Route::delete('{employe}', [EmployeController::class, 'destroy'])->name('employes.destroy');
+        Route::get('{employe}', [EmployeController::class, 'show'])->name('employes.show')->middleware('permission:employes.view');
+        Route::get('corbeille', [EmployeController::class, 'trash'])->name('employes.trash');
+        Route::put('{id}/restore', [EmployeController::class, 'restore'])->name('employes.restore');
+        Route::delete('{id}/force-delete', [EmployeController::class, 'forceDelete'])->name('employes.force-delete');
     });
+
+    // ---------------- Personnels ----------------
+    Route::prefix('admin/personnels')->middleware('permission:personnels.view')->group(function () {
+        Route::get('/', [PersonnelController::class, 'index'])->name('personnels.index');
+        Route::get('create', [PersonnelController::class, 'create'])->name('personnels.create')->middleware('permission:personnels.create');
+        Route::post('/', [PersonnelController::class, 'store'])->name('personnels.store')->middleware('permission:personnels.create');
+        Route::put('{id}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
+        Route::delete('{id}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
+        Route::get('{personnel}', [PersonnelController::class, 'show'])->name('personnels.show')->middleware('permission:personnels.view');
+        Route::get('{personnel}/edit', [PersonnelController::class, 'edit'])->name('personnels.edit')->middleware('permission:personnels.edit');
+        Route::put('{personnel}', [PersonnelController::class, 'update'])->name('personnels.update')->middleware('permission:personnels.edit');
+        Route::delete('{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy')->middleware('permission:personnels.delete');
+        Route::post('{personnel}/generate-account', [PersonnelController::class, 'generateAccount'])->name('personnels.generate-account')->middleware('permission:personnels.edit');
+          });
+
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
@@ -288,35 +361,41 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('/anomalies', [AdminPresenceController::class, 'anomalies'])->name('admin.presence.anomalies');
         Route::get('/pointage-suivi', [AdminPresenceController::class, 'pointageSuivi'])->name('admin.presence.pointage-suivi');
         Route::get('/export-pointages', [AdminPresenceController::class, 'exportPointages'])->name('admin.presence.export-pointages');
-        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])
-            ->name('admin.presence.anomalies.resolve')
-            ->middleware('can:reviewAdminAnomalies');
+        Route::post('/{anomalyId}/resolve', [AdminPresenceController::class, 'resolveAnomaly'])->name('admin.presence.anomalies.resolve')->middleware('can:reviewAdminAnomalies');
         Route::get('/export', [AdminPresenceController::class, 'export'])->name('admin.presence.export');
     });
-    //    route pour impression du suivi des pointages (version épurée pour impression)
-    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])
-        ->name('admin.presence.print');
+    Route::get('/admin/presence/print', [AdminPresenceController::class, 'pointageSuiviPrint'])->name('admin.presence.print');
+
     // ---------------- Suivi des Pointages Admin ----------------
     Route::prefix('admin/attendance-tracking')->middleware('permission:presence.view')->group(function () {
         Route::get('/', [AdminAttendanceTrackingController::class, 'index'])->name('attendance.tracking.index');
         Route::get('/export', [AdminAttendanceTrackingController::class, 'export'])->name('attendance.tracking.export');
         Route::get('/user/{user}/historique', [AdminAttendanceTrackingController::class, 'userHistorique'])->name('attendance.tracking.user.historique');
+        Route::middleware('role:admin|superviseur')->group(function () {
+            Route::post('/user/{user}/exceptions', [AdminAttendanceTrackingController::class, 'storeException'])->name('attendance.tracking.user.exception.store');
+            Route::delete('/user/{user}/exceptions/{exception}', [AdminAttendanceTrackingController::class, 'destroyException'])->name('attendance.tracking.user.exception.destroy');
+        });
+    });
+
+    // ---------------- Suivi des Taches Admin/Superviseur ----------------
+    Route::prefix('admin/tasks-tracking')->middleware('role:admin|superviseur')->group(function () {
+        Route::get('/', [AdminTaskTrackingController::class, 'index'])->name('admin.tasks.tracking')->middleware('permission:tasks.view');
     });
 
     // ---------------- Suivi des Rapports Admin ----------------
-    Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
-        Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
-        Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show');
-        Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
-    });
+ Route::prefix('admin/reports')->middleware('permission:daily_reports.view')->group(function () {
+    Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
+    Route::get('/all', [AdminReportTrackingController::class, 'all'])->name('admin.reports.all');
+    Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show'); // ← Page de détails
+    Route::post('/{id}/send-bilan', [AdminReportTrackingController::class, 'sendWeeklyBilan'])->name('admin.reports.send-bilan');
+    Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
+});
 
     // ---------------- Notifications ----------------
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-
-        // 🔥 API JSON pour menu mobile dynamique
         Route::get('/unread-json', function () {
             $service = app(\App\Services\NotificationService::class);
             return response()->json([
@@ -334,13 +413,11 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
                 })
             ]);
         })->name('notifications.unread.json');
-
         Route::post('/mark-read/{id}', function ($id) {
             $service = app(\App\Services\NotificationService::class);
             $service->markAsRead($id);
             return response()->json(['success' => true]);
         })->name('notifications.mark-read.api');
-
         Route::post('/mark-all-read-api', function () {
             $service = app(\App\Services\NotificationService::class);
             $service->markAllAsRead();
@@ -348,8 +425,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         })->name('notifications.mark-all.api');
     });
 
-    // ---------------- Demandes de permission (Etudiant) ----------------
-    Route::prefix('permissions')->middleware('role:etudiant')->group(function () {
+    // ---------------- Demandes de permission (Etudiant & Employé) ----------------
+    Route::prefix('permissions')->middleware('permission:permissions.view')->group(function () {
         Route::get('/', [PermissionRequestController::class, 'index'])->name('permissions.index');
         Route::post('/', [PermissionRequestController::class, 'store'])->name('permissions.store');
         Route::get('{permission}', [PermissionRequestController::class, 'show'])->name('permissions.show');
@@ -362,4 +439,50 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\DecryptRouteParamete
         Route::get('{permission}', [AdminPermissionRequestController::class, 'show'])->name('admin.permissions.show');
         Route::post('{permission}/decide', [AdminPermissionRequestController::class, 'decide'])->name('admin.permissions.decide');
     });
+
+    // ---------------- Attestation Routes ----------------
+    Route::prefix('attestation')->group(function () {
+        Route::get('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'showSignature'])->name('attestation.sign');
+        Route::post('sign/{attestation}/{signer}/{token}', [AttestationController::class, 'processSignature'])->name('attestation.sign.submit');
+    });
 });
+
+/// =============================================================================
+// ROUTES RAPPORTS SANS DÉCHIFFREMENT (IDs en clair)
+// =============================================================================
+Route::middleware(['auth', 'account_active', 'attendance'])->prefix('reports')->group(function () {
+    Route::get('/', [DailyReportController::class, 'index'])->name('reports.index');
+    Route::get('{report}', [DailyReportController::class, 'show'])->name('reports.show');
+    Route::post('/', [DailyReportController::class, 'store'])->name('reports.store');
+    Route::put('{report}', [DailyReportController::class, 'update'])->name('reports.update');
+    Route::post('{report}/comments', [DailyReportController::class, 'storeComment'])->name('reports.comments.store');
+    Route::patch('comments/{review}', [DailyReportController::class, 'updateComment'])->name('reports.comments.update');
+    Route::delete('comments/{review}', [DailyReportController::class, 'destroyComment'])->name('reports.comments.destroy');
+});
+
+// ---------------- Résumés IA des Rapports ----------------
+Route::middleware(['auth', 'account_active', 'attendance'])->prefix('summaries')->group(function () {
+    Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'index'])->name('summaries.index');
+    Route::get('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'show'])->name('summaries.show');
+    Route::post('generate', [App\Http\Controllers\ReportSummaryController::class, 'generate'])->name('summaries.generate');
+    Route::delete('{summary}', [App\Http\Controllers\ReportSummaryController::class, 'destroy'])->name('summaries.destroy');
+});
+
+// ---------------- Résumés IA (Admin) ----------------
+Route::middleware(['auth', 'role:admin|superviseur', 'account_active', 'attendance'])
+    ->prefix('admin/summaries')
+    ->name('admin.summaries.')
+    ->group(function () {
+        Route::get('/', [App\Http\Controllers\ReportSummaryController::class, 'adminIndex'])->name('index');
+    });
+
+// =============================================================================
+// IMPERSONATION — Connexion admin "en tant que" employé / stagiaire
+// =============================================================================
+Route::middleware(['auth', 'role:admin'])->prefix('admin/impersonate')->group(function () {
+    Route::get('options', [ImpersonateController::class, 'options'])->name('impersonate.options');
+    Route::post('{user}', [ImpersonateController::class, 'store'])->name('impersonate.store');
+});
+
+Route::middleware(['auth'])->post('impersonate/leave', [ImpersonateController::class, 'leave'])
+    ->name('impersonate.leave');

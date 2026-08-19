@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('daily_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('stage_id')->constrained('stages')->cascadeOnDelete();
-            $table->foreignId('etudiant_id')->constrained('etudiants')->cascadeOnDelete();
+            $table->foreignId('stage_id')->nullable()->constrained('stages')->nullOnDelete();
+            $table->foreignId('etudiant_id')->nullable()->constrained('etudiants')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('attendance_day_id')->nullable()->constrained('attendance_days')->nullOnDelete();
             $table->date('report_date');
             $table->string('title')->nullable();
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->unique(['stage_id', 'report_date']);
+            $table->unique(['user_id', 'report_date']);
             $table->index(['etudiant_id', 'report_date']);
             $table->index(['status', 'report_date']);
         });

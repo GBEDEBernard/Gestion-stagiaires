@@ -16,7 +16,9 @@ class DecryptRouteParameter
     {
         // Liste des paramètres à déchiffrer
    // APRÈS
-   $paramsToDecrypt = ['stage', 'etudiant', 'badge', 'service', 'signataire', 'user', 'jour', 'type_stage', 'role', 'domaine','task'];
+    $paramsToDecrypt = ['stage', 'etudiant', 'badge', 'service', 'signataire', 'user',
+        'jour', 'type_stage', 'role', 'domaine','task','report', 'review',
+        'ecole', 'site', 'personnel'];
         foreach ($paramsToDecrypt as $param) {
             if ($request->route($param)) {
                 $value = $request->route($param);
@@ -55,9 +57,9 @@ class DecryptRouteParameter
             return false;
         }
 
-        // Les valeurs chiffrées commencent généralement par "eyJ" (JSON base64)
-        // ou contiennent des caractères spéciaux comme ":" "/" "+" "="
-        return str_starts_with($value, 'eyJ') ||
-            preg_match('/^[A-Za-z0-9+\/=]+$/', $value) === 1;
+        // Les valeurs chiffrées par Crypt::encryptString commencent toujours
+        // par "eyJ" (base64 du payload JSON). Les IDs numériques en clair
+        // ne doivent jamais passer par un déchiffrement.
+        return str_starts_with($value, 'eyJ');
     }
 }

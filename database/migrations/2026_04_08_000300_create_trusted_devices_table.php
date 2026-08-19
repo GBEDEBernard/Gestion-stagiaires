@@ -22,6 +22,7 @@ return new class extends Migration
             $table->timestamp('last_seen_at')->nullable();
             $table->boolean('is_trusted')->default(true);
             $table->timestamp('revoked_at')->nullable();
+            $table->boolean('is_primary')->default(false);
             $table->timestamps();
 
             $table->unique(['user_id', 'device_fingerprint']);

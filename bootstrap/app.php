@@ -17,12 +17,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Ngrok et les proxys HTTPS envoient X-Forwarded-Proto=https.
+        // Sans cette confiance, Laravel croit être en HTTP et génère des
+        // formulaires HTTP, ce qui déclenche l'alerte navigateur.
+        $middleware->trustProxies(at: '*');
+
         // Enregistrer les middlewares Spatie
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'attendance' => \App\Http\Middleware\EnsureDailyAttendance::class,
+            'account_active' => \App\Http\Middleware\EnsureAccountActive::class,
+        ]);
 
+        // Impersonation admin : bascule "en tant que" employé / stagiaire
+        $middleware->web(append: [
+            \App\Http\Middleware\Impersonate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

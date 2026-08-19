@@ -3,10 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\Domaine;
+use App\Models\Employe;
+use App\Models\Personnel;
 use App\Models\User;
 use App\Services\RolePermissionPresetService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class EmployeSeeder extends Seeder
 {
@@ -17,14 +20,18 @@ class EmployeSeeder extends Seeder
 
         $employees = [
             [
-                'name' => 'Employé TFG',
+                'nom' => 'TFG',
+                'prenom' => 'Employe',
                 'email' => 'employe.tfg@tfg.local',
                 'domaine_id' => $tfg?->id,
+                'site_id' => 1,
             ],
             [
-                'name' => 'Employé EPAC',
+                'nom' => 'EPAC',
+                'prenom' => 'Employe',
                 'email' => 'employe.epac@epac.local',
                 'domaine_id' => $epac?->id,
+                'site_id' => 1,
             ],
         ];
 
@@ -33,15 +40,48 @@ class EmployeSeeder extends Seeder
                 continue;
             }
 
-            $user = User::updateOrCreate(
+            $employe = Employe::updateOrCreate(
+                ['personnel_id' => null],
+                [
+                    'domaine_id' => $data['domaine_id'],
+                    'site_id' => $data['site_id'],
+                    'poste' => null,
+                ]
+            );
+
+            $personnel = Personnel::updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name' => $data['name'],
-                    'password' => Hash::make('Password123!'),
-                    'status' => 'actif',
-                    'email_verified_at' => now(),
-                    'domaine_id' => $data['domaine_id'],
+                    'nom' => $data['nom'],
+                    'prenom' => $data['prenom'],
+                    'telephone' => null,
+                    'genre' => null,
+                    'personnable_type' => Employe::class,
+                    'personnable_id' => $employe->id,
+                    'created_by' => null,
                 ]
+            );
+
+            $userAttributes = [
+                'password' => Hash::make('Password123!'),
+                'status' => 'actif',
+                'must_change_password' => true,
+                'temporary_password_created_at' => now(),
+                'email_verified_at' => now(),
+                'domaine_id' => $data['domaine_id'],
+            ];
+
+            if (Schema::hasColumn('users', 'name')) {
+                $userAttributes['name'] = "{$data['prenom']} {$data['nom']}";
+            }
+
+            if (Schema::hasColumn('users', 'email')) {
+                $userAttributes['email'] = $data['email'];
+            }
+
+            $user = User::updateOrCreate(
+                ['personnel_id' => $personnel->id],
+                $userAttributes
             );
 
             $presetService->ensureRoleDefaults($user, ['employe']);

@@ -10,10 +10,11 @@ test('new users can register', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
+        'terms' => 'on',
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $this->assertGuest();
+    $response->assertRedirect(route('verification.pin.show', ['email' => 'test@example.com']));
 });

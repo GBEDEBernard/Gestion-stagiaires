@@ -14,7 +14,6 @@ class Stage extends Model
     protected $fillable = [
         'etudiant_id',
         'typestage_id',
-        'service_id',
         'site_id',
         'supervisor_id',
         'badge_id',
@@ -22,18 +21,62 @@ class Stage extends Model
         'theme',
         'date_debut',
         'date_fin',
+        'duree_mois',
+        'annee_academique',
         'expected_check_in_time',
         'expected_check_out_time',
         'allowed_late_minutes',
         'allowed_early_departure_minutes',
         'presence_mode',
         'follow_up_status',
+        'intitule_poste',
+        'filiere',
+        'niveau_etude',
+        'tuteur_academique',
+        'indemnite',
+        'livrables',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($stage) {
+            if ($stage->date_debut) {
+                $mois = (int) $stage->date_debut->format('n');
+                $annee = (int) $stage->date_debut->format('Y');
+                $stage->annee_academique = $mois >= 9
+                    ? $annee . '-' . ($annee + 1)
+                    : ($annee - 1) . '-' . $annee;
+            }
+        });
+    }
 
     protected $casts = [
         'date_debut' => 'datetime',
         'date_fin' => 'datetime',
+        'livrables' => 'array',
     ];
+
+    /** Options proposées pour le livrable attendu (fiche de poste). */
+    public const LIVERABLES = [
+        'Rapport de stage à déposer',
+        'Soutenance orale devant jury',
+        'Projet / réalisation technique',
+        'Documentation des travaux réalisés',
+    ];
+
+    /** Valeurs par défaut affichées dans le formulaire de fiche de poste. */
+    public const DEFAULT_INTITULE_POSTE = 'Stagiaire académique en développement web';
+    public const DEFAULT_INDEMNITE = 'Non rémunéré';
+
+    /** Description lisible du type de stage pour la fiche de poste. */
+    public function fichePosteTypeStage(): string
+    {
+        return match ($this->typestage?->libelle) {
+            'Académique' => 'Stage académique de fin de formation (obligatoire pour la validation du diplôme)',
+            'Professionnel' => 'Stage professionnel',
+            default => $this->typestage?->libelle ?? 'Stage académique de fin de formation (obligatoire pour la validation du diplôme)',
+        };
+    }
 
     public function etudiant()
     {
@@ -43,11 +86,6 @@ class Stage extends Model
     public function typestage()
     {
         return $this->belongsTo(TypeStage::class, 'typestage_id');
-    }
-
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
     }
 
     public function site()
@@ -73,6 +111,45 @@ class Stage extends Model
     public function jours()
     {
         return $this->belongsToMany(Jour::class, 'stage_jour');
+    }
+
+    /**
+     * Détermine si le stage prévoit une présence à la date donnée.
+     * - Si aucun jour configuré → tous les jours ouvrés sont des jours de travail.
+     * - Sinon → uniquement les jours cochés lors de la création du stage.
+     */
+    public function isWorkDay($date = null): bool
+    {
+        $date = $date ? \Carbon\Carbon::parse($date) : today();
+
+        $jours = $this->jours;
+
+        if ($jours->isEmpty()) {
+            return !$date->isWeekend();
+        }
+
+        $dayName = match ((int) $date->format('N')) {
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche',
+            default => '',
+        };
+
+        return $jours->contains(fn ($jour) => strtolower($jour->jour) === strtolower($dayName));
+    }
+
+    /**
+     * Label lisible des jours de présence du stage (ex. "Lundi, Mardi, Mercredi").
+     */
+    public function workDaysLabel(): string
+    {
+        return $this->jours->isNotEmpty()
+            ? $this->jours->pluck('jour')->implode(', ')
+            : 'Lundi à Vendredi';
     }
 
     public function attendanceEvents()

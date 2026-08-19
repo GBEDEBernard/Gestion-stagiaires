@@ -10,7 +10,7 @@
                 </a>
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Corbeille</h1>
-                    <p class="text-gray-500 dark:text-gray-400 mt-1">Étudiants supprimés</p>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">Stagiaires supprimés</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -30,7 +30,7 @@
             <table class="w-full">
                 <thead class="bg-red-50 dark:bg-red-900/20">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Étudiant</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Stagiaire</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Genre</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">Contact</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">École</th>
@@ -111,7 +111,7 @@
                                     </svg>
                                 </div>
                                 <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">Corbeille vide</p>
-                                <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Aucun étudiant supprimé</p>
+                                <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Aucun stagiaire supprimé</p>
                             </div>
                         </td>
                     </tr>

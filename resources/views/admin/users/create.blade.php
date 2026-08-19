@@ -6,8 +6,8 @@
         $pageTitle = 'Nouvel Employé';
         $pageDescription = 'Création rapide d’un employé du domaine TFG.';
         } elseif ($selectedRoleName === 'etudiant') {
-        $pageTitle = 'Nouvel Étudiant';
-        $pageDescription = 'Formulaire simplifié pour ajouter un étudiant et créer sa fiche stagiaire.';
+        $pageTitle = 'Nouveau Stagiaire';
+        $pageDescription = 'Formulaire simplifié pour ajouter un stagiaire et créer sa fiche.';
         } elseif ($selectedRoleName === 'admin') {
         $pageTitle = 'Nouvel Administrateur';
         $pageDescription = 'Créer un administrateur avec toutes les permissions disponible.';
@@ -16,7 +16,7 @@
         $pageDescription = 'Créer un superviseur avec les permissions appropriées.';
         } else {
         $pageTitle = 'Nouvel Utilisateur';
-        $pageDescription = 'Formulaire unique pour créer un admin, un superviseur ou un étudiant.';
+        $pageDescription = 'Formulaire unique pour créer un admin, un superviseur ou un stagiaire.';
         }
         @endphp
         <div class="mb-8">

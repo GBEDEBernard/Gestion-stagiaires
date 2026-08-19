@@ -15,18 +15,29 @@ class DailyReport extends Model
         'etudiant_id',
         'user_id',
         'attendance_day_id',
+        'task_id',
         'report_date',
         'title',
+        'introduction',
         'summary',
+        'voice_path',
+        'voice_duration',
         'blockers',
         'next_steps',
         'hours_declared',
         'completion_rate',
+        'task_progress_percent',
         'status',
         'submitted_at',
         'reviewed_by',
         'reviewed_at',
         'supervisor_comment',
+        'latitude',
+        'longitude',
+        'accuracy_meters',
+        'distance_to_site_meters',
+        'location_method',
+        'location_verified',
     ];
 
     protected $casts = [
@@ -35,6 +46,12 @@ class DailyReport extends Model
         'reviewed_at' => 'datetime',
         'hours_declared' => 'float',
         'completion_rate' => 'integer',
+        'task_progress_percent' => 'integer',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'accuracy_meters' => 'integer',
+        'distance_to_site_meters' => 'integer',
+        'location_verified' => 'boolean',
     ];
 
     /* =======================
@@ -59,6 +76,12 @@ class DailyReport extends Model
     public function attendanceDay()
     {
         return $this->belongsTo(AttendanceDay::class);
+    }
+
+    /** Tâche documentée par ce rapport (une seule tâche par rapport). */
+    public function task()
+    {
+        return $this->belongsTo(Task::class);
     }
 
     public function items()
@@ -87,6 +110,19 @@ class DailyReport extends Model
         return !is_null($this->etudiant_id);
     }
 
+    /** Rapport déposé sous forme de message vocal (T-005). */
+    public function isVoice(): bool
+    {
+        return !is_null($this->voice_path);
+    }
+
+    public function voiceUrl(): ?string
+    {
+        return $this->voice_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->voice_path)
+            : null;
+    }
+
     /* =======================
        SCOPES
     ======================= */
@@ -104,7 +140,18 @@ class DailyReport extends Model
         }
 
         if ($user->hasRole('etudiant')) {
-            return $query->where('etudiant_id', optional($user->etudiant)->id);
+            // T-008 : ses propres rapports (par son profil étudiant), plus ceux
+            // qu'il a déposés sur une tâche où il est assigné (user_id renseigné).
+            $etudiantId = optional($user->etudiant)->id;
+
+            return $query->where(function ($q) use ($user, $etudiantId) {
+                $q->where('etudiant_id', $etudiantId);
+                if ($etudiantId) {
+                    $q->orWhere(
+                        fn($r) => $r->where('user_id', $user->id)->whereNotNull('task_id')
+                    );
+                }
+            });
         }
 
         return $query->where('user_id', $user->id);

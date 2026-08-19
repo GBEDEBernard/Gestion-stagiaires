@@ -46,12 +46,17 @@ class PermissionRequestService
                 // Send email if signataire has an email
                 if ($signataire->email) {
                     Mail::to($signataire->email)
-                        ->queue(new PermissionRequestNotificationMail($request->load('type', 'user'), $signataire));
+                        ->send(new PermissionRequestNotificationMail($request->load('type', 'user'), $signataire));
                 }
             }
 
-            // Notify admins in-app
-            $admins = User::role('admin')->get();
+            // Notify admins in-app — join `personnels` so we can order by name columns
+            $admins = User::role('admin')
+                ->leftJoin('personnels', 'personnels.id', '=', 'users.personnel_id')
+                ->orderBy('personnels.nom')
+                ->orderBy('personnels.prenom')
+                ->select('users.*')
+                ->get();
             foreach ($admins as $admin) {
                 $this->notifyInApp($admin, [
                     'type'    => 'permission_request',
@@ -140,7 +145,7 @@ class PermissionRequestService
 
             // Send decision email to user
             Mail::to($request->user->email)
-                ->queue(new PermissionDecisionMail($request->load('type', 'decider'), $status));
+                ->send(new PermissionDecisionMail($request->load('type', 'decider'), $status));
 
             return $request->fresh();
         });

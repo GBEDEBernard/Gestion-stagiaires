@@ -9,11 +9,11 @@
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Modifier le Stage</h1>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 ml-14">Ajuste les informations du stage, du site de presence et du responsable de suivi.</p>
+            <p class="text-gray-500 dark:text-gray-400 ml-14">Ajuste les informations du stage, du site de présence et du responsable de suivi.</p>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <form action="{{ encrypted_route('stages.update', $stage) }}" method="POST" class="p-6 space-y-8">
+            <form id="stageFormEdit" action="{{ encrypted_route('stages.update', $stage) }}" method="POST" class="p-6 space-y-8">
                 @csrf
                 @method('PUT')
 
@@ -29,18 +29,18 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="etudiant_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Etudiant <span class="text-red-500">*</span></label>
+                            <label for="etudiant_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stagiaire <span class="text-red-500">*</span></label>
                             <select name="etudiant_id" id="etudiant_id" required
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un etudiant</option>
+                                <option value="">Sélectionner un stagiaire</option>
                                 @foreach($etudiants as $etudiant)
-                                    <option value="{{ $etudiant->id }}" {{ old('etudiant_id', $stage->etudiant_id) == $etudiant->id ? 'selected' : '' }}>
-                                        {{ $etudiant->nom }} {{ $etudiant->prenom }}
-                                    </option>
+                                <option value="{{ $etudiant->id }}" {{ old('etudiant_id', $stage->etudiant_id) == $etudiant->id ? 'selected' : '' }}>
+                                    {{ $etudiant->personnel->nom ?? '' }} {{ $etudiant->personnel->prenom ?? '' }}
+                                </option>
                                 @endforeach
                             </select>
                             @error('etudiant_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -48,11 +48,11 @@
                             <label for="typestage_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de stage</label>
                             <select name="typestage_id" id="typestage_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un type</option>
+                                <option value="">Sélectionner un type</option>
                                 @foreach($typestages as $type)
-                                    <option value="{{ $type->id }}" {{ old('typestage_id', $stage->typestage_id) == $type->id ? 'selected' : '' }}>
-                                        {{ $type->libelle }}
-                                    </option>
+                                <option value="{{ $type->id }}" {{ old('typestage_id', $stage->typestage_id) == $type->id ? 'selected' : '' }}>
+                                    {{ $type->libelle }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
@@ -61,44 +61,44 @@
                             <label for="badge_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Badge</label>
                             <select name="badge_id" id="badge_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un badge</option>
+                                <option value="">Sélectionner un badge</option>
                                 @foreach($badges as $badge)
-                                    <option value="{{ $badge->id }}" {{ old('badge_id', $stage->badge_id) == $badge->id ? 'selected' : '' }}>
-                                        {{ $badge->badge }}
-                                    </option>
+                                <option value="{{ $badge->id }}" {{ old('badge_id', $stage->badge_id) == $badge->id ? 'selected' : '' }}>
+                                    {{ $badge->badge }}
+                                </option>
                                 @endforeach
                             </select>
                             @error('badge_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="service_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service</label>
-                            <select name="service_id" id="service_id"
+                            <label for="domaine_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Directions/Services</label>
+                            <select name="domaine_id" id="domaine_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un service</option>
-                                @foreach($services as $service)
-                                    <option value="{{ $service->id }}" {{ old('service_id', $stage->service_id) == $service->id ? 'selected' : '' }}>
-                                        {{ $service->nom }}
-                                    </option>
+                                <option value="">Sélectionner un domaine</option>
+                                @foreach($domaines as $domaine)
+                                <option value="{{ $domaine->id }}" {{ old('domaine_id', $stage->domaine_id) == $domaine->id ? 'selected' : '' }}>
+                                    {{ $domaine->nom }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div>
-                            <label for="site_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site de presence</label>
+                            <label for="site_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site de présence</label>
                             <select name="site_id" id="site_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un site</option>
+                                <option value="">Sélectionner un site</option>
                                 @foreach($sites as $site)
-                                    <option value="{{ $site->id }}" {{ old('site_id', $stage->site_id) == $site->id ? 'selected' : '' }}>
-                                        {{ $site->name }}{{ $site->city ? ' - ' . $site->city : '' }}
-                                    </option>
+                                <option value="{{ $site->id }}" {{ old('site_id', $stage->site_id) == $site->id ? 'selected' : '' }}>
+                                    {{ $site->name }}{{ $site->city ? ' - ' . $site->city : '' }}
+                                </option>
                                 @endforeach
                             </select>
                             @error('site_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
@@ -106,26 +106,33 @@
                             <label for="supervisor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Superviseur</label>
                             <select name="supervisor_id" id="supervisor_id"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
-                                <option value="">Selectionner un superviseur</option>
+                                <option value="">Sélectionner un superviseur</option>
                                 @foreach($supervisors as $supervisor)
-                                    <option value="{{ $supervisor->id }}" {{ old('supervisor_id', $stage->supervisor_id) == $supervisor->id ? 'selected' : '' }}>
-                                        {{ $supervisor->name }} - {{ $supervisor->getRoleNames()->implode(', ') }}
-                                    </option>
+                                <option value="{{ $supervisor->id }}" {{ old('supervisor_id', $stage->supervisor_id) == $supervisor->id ? 'selected' : '' }}>
+                                    {{ $supervisor->personnel->nom ?? '' }} {{ $supervisor->personnel->prenom ?? '' }}
+                                </option>
                                 @endforeach
                             </select>
                             @error('supervisor_id')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div class="md:col-span-2">
-                            <label for="theme" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Theme du stage</label>
+                            <label for="theme" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Thème du stage</label>
                             <input type="text" name="theme" id="theme" value="{{ old('theme', $stage->theme) }}"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white placeholder-gray-400"
-                                placeholder="Ex: Developpement web, marketing digital...">
+                                placeholder="Ex: Développement web, marketing digital...">
                         </div>
                     </div>
                 </div>
+
+                @php
+                    $oldDebut = $stage->date_debut->format('d/m/Y');
+                    $oldFin = $stage->date_fin->format('d/m/Y');
+                    $oldDiff = $stage->date_debut->diffInDays($stage->date_fin);
+                    $oldMois = max(1, ceil($oldDiff / 30));
+                @endphp
 
                 <div class="pt-6 border-t border-gray-100 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -134,24 +141,46 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        Periode du stage
+                        Période du stage
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {{-- Ancienne période (lecture seule) --}}
+                    <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ancienne période</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
+                            <div><span class="font-medium">Début :</span> {{ $oldDebut }}</div>
+                            <div><span class="font-medium">Durée :</span> {{ $oldMois }} mois</div>
+                            <div><span class="font-medium">Fin :</span> {{ $oldFin }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Nouvelle période (modifiable) --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label for="date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de debut <span class="text-red-500">*</span></label>
+                            <label for="date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début *</label>
                             <input type="date" name="date_debut" id="date_debut" value="{{ old('date_debut', $stage->date_debut->format('Y-m-d')) }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                onchange="calculerFin()">
                             @error('date_debut')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin <span class="text-red-500">*</span></label>
+                            <label for="nombre_mois" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de mois *</label>
+                            <input type="number" name="nombre_mois" id="nombre_mois" min="1" max="24" value="{{ old('nombre_mois', $oldMois) }}" required
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                placeholder="Ex: 3"
+                                oninput="calculerFin()">
+                        </div>
+
+                        <div>
+                            <label for="date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
                             <input type="date" name="date_fin" id="date_fin" value="{{ old('date_fin', $stage->date_fin->format('Y-m-d')) }}" required
-                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white">
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-gray-900 dark:text-white"
+                                placeholder="Calculée automatiquement">
                             @error('date_fin')
-                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -164,18 +193,22 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </div>
-                        Jours de presence
+                        Jours de présence
                     </h3>
                     <div class="flex flex-wrap gap-3">
                         @foreach($jours as $jour)
-                            <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                                <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}"
-                                    {{ in_array($jour->id, old('jours_id', $stage->jours->pluck('id')->toArray())) ? 'checked' : '' }}
-                                    class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
-                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
-                            </label>
+                        <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}"
+                                {{ in_array($jour->id, old('jours_id', $stage->jours->pluck('id')->toArray())) ? 'checked' : '' }}
+                                class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
+                        </label>
                         @endforeach
                     </div>
+                    @error('jours_id')
+                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
+                    @enderror
+                    <p id="joursErrorEdit" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                 </div>
 
                 <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
@@ -188,10 +221,58 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Mettre a jour
+                        Mettre à jour
                     </button>
                 </div>
             </form>
         </div>
     </div>
+    <script>
+        function calculerFin() {
+            const debut = document.getElementById('date_debut');
+            const mois = document.getElementById('nombre_mois');
+            const fin = document.getElementById('date_fin');
+            if (debut.value && mois.value && parseInt(mois.value) > 0) {
+                const d = new Date(debut.value);
+                d.setMonth(d.getMonth() + parseInt(mois.value));
+                d.setDate(d.getDate() - 1);
+                fin.value = d.toISOString().split('T')[0];
+            }
+        }
+
+        function validateJoursSimple(form, errorElementId) {
+            const checkboxes = form.querySelectorAll('input[name="jours_id[]"]');
+            let found = false;
+            checkboxes.forEach(cb => {
+                if (cb.checked) found = true;
+            });
+            const errEl = document.getElementById(errorElementId);
+            if (!found) {
+                if (errEl) errEl.style.display = 'block';
+                return false;
+            }
+            if (errEl) errEl.style.display = 'none';
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const editForm = document.getElementById('stageFormEdit');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    if (!validateJoursSimple(this, 'joursErrorEdit')) {
+                        e.preventDefault();
+                        const firstCb = this.querySelector('input[name="jours_id[]"]');
+                        if (firstCb) firstCb.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                });
+            }
+
+            if (document.getElementById('date_debut') && document.getElementById('nombre_mois')) {
+                calculerFin();
+            }
+        });
+    </script>
 </x-app-layout>

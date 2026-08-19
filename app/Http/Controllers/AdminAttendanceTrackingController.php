@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
+use App\Models\AttendanceException;
 use App\Models\Etudiant;
+use App\Models\Employe;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -29,22 +31,23 @@ class AdminAttendanceTrackingController extends Controller
             default => $this->getDailyData($filterDate),
         };
 
-        $students = Etudiant::with('user')->get()->map(function ($etudiant) {
+        $students = Etudiant::with('user')->get()->filter(function ($etudiant) {
+            return $etudiant->user !== null;
+        })->map(function ($etudiant) {
             return [
                 'id' => $etudiant->user->id,
-                'name' => $etudiant->user->name . ' (Étudiant)',
+                'name' => $etudiant->user->name . ' (Stagiaire)',
                 'type' => 'student'
             ];
         });
 
-        $employees = User::whereNotNull('domaine_id')
-            ->where('status', 'actif')
-            ->where('id', '!=', Auth::id())
+        $employees = $this->employeeUsersQuery()
+            ->with('personnel.personnable')
             ->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'name' => $user->name . ' (Employé - ' . ($user->domaine->nom ?? 'N/A') . ')',
+                    'name' => $user->name . ' (Employé - ' . (optional(optional($user->personnel)->personnable)->domaine->nom ?? 'N/A') . ')',
                     'type' => 'employee'
                 ];
             });
@@ -73,54 +76,52 @@ class AdminAttendanceTrackingController extends Controller
      */
     protected function getDailyData(Carbon $date): array
     {
-        $studentDays = AttendanceDay::whereDate('attendance_date', $date)
+        $studentDays = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
                 'stage.site',
                 'anomalies',
+                'lateAnomaly',
                 'checkInEvent.geofence.site',
             ])
             ->orderBy('etudiant_id')
             ->get();
 
-        $employeeDays = AttendanceDay::whereDate('attendance_date', $date)
+        $employeeDays = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
                 'anomalies',
+                'lateAnomaly',
                 'checkInEvent.geofence.site',
             ])
             ->orderBy('user_id')
             ->get();
 
-        // Calcul des totaux réels (base attendue) - Étudiants en stage complet
+        // Calcul des totaux réels (base attendue) - Étudiants en stage complet avec compte actif
         $activeEtudiantsIds = Etudiant::whereHas('stages', function ($q) use ($date) {
             $q->where('date_debut', '<=', $date)
                 ->where('date_fin', '>=', $date);
-        })->pluck('id');
+        })->whereHas('user', fn ($q) => $q->where('status', 'actif'))->pluck('id');
 
         $studentTotal = $activeEtudiantsIds->count();
 
-        $studentPresentIds = AttendanceDay::whereDate('attendance_date', $date)
+        $studentPresentIds = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereIn('etudiant_id', $activeEtudiantsIds)
             ->whereNotNull('first_check_in_at')
             ->distinct('etudiant_id')
             ->pluck('etudiant_id');
         $studentPresent = $studentPresentIds->count();
 
-        // Employés (utilisateurs sans étudiant)
-        $employeeUsersIds = User::whereNotNull('domaine_id')
-            ->where('status', 'actif')
-            ->where('id', '!=', Auth::id())
-            ->pluck('id');
+        // Employés (utilisateurs avec fiche Employe ou rôle employe)
+        $employeeUsersIds = $this->employeeUsersQuery()->pluck('id');
 
         $employeeTotal = $employeeUsersIds->count();
 
-        $employeePresentIds = AttendanceDay::whereDate('attendance_date', $date)
+        $employeePresentIds = AttendanceDay::forActiveUsers()->whereDate('attendance_date', $date)
             ->whereNull('etudiant_id')
             ->whereIn('user_id', $employeeUsersIds)
             ->whereNotNull('first_check_in_at')
@@ -154,7 +155,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfWeek = $date->clone()->startOfWeek();
         $endOfWeek = $date->clone()->endOfWeek();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -165,10 +166,9 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -218,7 +218,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfMonth = $date->clone()->startOfMonth();
         $endOfMonth = $date->clone()->endOfMonth();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -228,10 +228,9 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -282,7 +281,7 @@ class AdminAttendanceTrackingController extends Controller
         $startOfYear = $date->clone()->startOfYear();
         $endOfYear = $date->clone()->endOfYear();
 
-        $studentDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+        $studentDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('etudiant_id')
             ->with([
                 'etudiant.user',
@@ -293,10 +292,9 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('etudiant_id');
 
-        $employeeDays = AttendanceDay::whereBetween('attendance_date', [$startOfYear, $endOfYear])
+        $employeeDays = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$startOfYear, $endOfYear])
             ->whereNotNull('user_id')
             ->whereNull('etudiant_id')
-            ->where('user_id', '!=', Auth::id())
             ->with([
                 'user',
                 'stage.site',
@@ -422,6 +420,87 @@ class AdminAttendanceTrackingController extends Controller
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user'));
+        // ── Jours d'absence détectés sur le graphe (pour les corriger) ─────────
+        $chart = $userStats['chart_data'] ?? [];
+        $absenceDates = [];
+        foreach ($chart['dates'] ?? [] as $i => $date) {
+            if (isset($chart['absences'][$i]) && (int) $chart['absences'][$i] === 1) {
+                $absenceDates[] = [
+                    'date' => $date,
+                    'label' => Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM YYYY'),
+                ];
+            }
+        }
+
+        // ── Jours déjà corrigés (exceptions) ───────────────────────────────────
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$dateFrom->format('Y-m-d'), now()->format('Y-m-d')])
+            ->with('creator')
+            ->orderByDesc('attendance_date')
+            ->get();
+
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user', 'absenceDates', 'exceptions'));
+    }
+
+    /**
+     * Utilisateurs considérés comme employés (qui doivent pointer) :
+     *  - ceux liés à une fiche personnel de type Employé ;
+     *  - ceux ayant le rôle `employe` (ex. un admin qui a aussi le rôle employe).
+     */
+    protected function employeeUsersQuery()
+    {
+        return User::query()
+            ->where('status', 'actif')
+            ->where(function ($q) {
+                $q->whereHas('personnel', fn($p) => $p->where('personnable_type', Employe::class))
+                    ->orWhereHas('roles', fn($r) => $r->where('name', 'employe'));
+            });
+    }
+
+    /**
+     * Corrige un jour d'absence : le jour n'est plus compté comme absence.
+     */
+    public function storeException(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'attendance_date' => ['required', 'date'],
+            'reason'          => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $date = Carbon::parse($validated['attendance_date'])->toDateString();
+
+        // Refuser si un pointage (check-in) existe déjà ce jour-là
+        $hasCheckIn = AttendanceDay::whereDate('attendance_date', $date)
+            ->whereNotNull('first_check_in_at')
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('etudiant_id', $user->etudiant?->id);
+            })
+            ->exists();
+
+        if ($hasCheckIn) {
+            return back()
+                ->withInput()
+                ->withErrors(['attendance_date' => 'Impossible de corriger ce jour : un pointage existe déjà.']);
+        }
+
+        AttendanceException::updateOrCreate(
+            ['user_id' => $user->id, 'attendance_date' => $date],
+            ['reason' => $validated['reason'] ?? null, 'created_by' => Auth::id()]
+        );
+
+        return back()->with('success', 'Absence du ' . Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM YYYY') . ' corrigée. Ce jour ne sera plus compté comme absence.');
+    }
+
+    /**
+     * Annule une correction d'absence.
+     */
+    public function destroyException(User $user, AttendanceException $exception)
+    {
+        abort_unless($exception->user_id === $user->id, 403);
+
+        $exception->delete();
+
+        return back()->with('success', 'Correction du ' . Carbon::parse($exception->attendance_date)->locale('fr')->isoFormat('dddd D MMMM YYYY') . ' annulée.');
     }
 }

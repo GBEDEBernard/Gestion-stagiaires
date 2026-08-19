@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->date('date_delivrance');
             $table->string('fichier_pdf')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

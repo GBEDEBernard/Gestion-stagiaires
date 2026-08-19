@@ -5,23 +5,20 @@ namespace Database\Seeders;
 use App\Models\Domaine;
 use App\Models\Site;
 use App\Models\SiteGeofence;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DomaineSiteSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::role('admin')->first() ?? User::first();
-
         $tfg = Domaine::updateOrCreate(
             ['nom' => 'TFG'],
-            ['description' => 'Domaine employé TFG', 'created_by' => $admin->id]
+            ['description' => 'Domaine employé TFG']
         );
 
         $epac = Domaine::updateOrCreate(
             ['nom' => 'EPAC'],
-            ['description' => 'Domaine employé EPAC', 'created_by' => $admin->id]
+            ['description' => 'Domaine employé EPAC']
         );
 
         $tfgSite = Site::updateOrCreate(

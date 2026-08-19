@@ -33,4 +33,13 @@ class Domaine extends Model
     {
         return $this->belongsToMany(Site::class, 'domaine_site');
     }
+    public function employes()
+    {
+        return $this->hasMany(Employe::class);
+    }
+
+    public function etudiants()
+    {
+        return $this->hasManyThrough(Etudiant::class, Stage::class, 'domaine_id', 'id', 'id', 'etudiant_id');
+    }
 }

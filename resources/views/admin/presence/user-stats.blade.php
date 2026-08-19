@@ -206,7 +206,7 @@
                 <div class="us-kpi-top">
                     <div class="us-kpi-icon">⚠️</div>
                 </div>
-                <div class="us-kpi-value">{{ $userStats['total_late_minutes'] }}<span style="font-size:1rem;font-weight:500;color:var(--muted);">min</span></div>
+                <div class="us-kpi-value">{{ $userStats['total_late_minutes'] ? formatMinutes($userStats['total_late_minutes']) : '0min' }}</div>
                 <div class="us-kpi-label">Retards Cumulés</div>
                 <div class="us-kpi-sub">{{ $userStats['open_anomalies'] }} anomalies ouvertes</div>
             </div>
@@ -235,7 +235,7 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Type</th>
+                            <th>Problème</th>
                             <th>Sévérité</th>
                             <th style="text-align:right;">Action</th>
                         </tr>
@@ -247,14 +247,18 @@
                                 {{ $anomaly->detected_at->format('d/m/Y H:i') }}
                             </td>
                             <td>
-                                <span class="us-tag type-tag">{{ ucfirst(str_replace('_',' ',$anomaly->anomaly_type)) }}</span>
+                                <div style="font-weight:500;color:#fff;font-size:.84rem;margin-bottom:2px;">{{ $anomaly->type_label }}</div>
+                                <div style="font-size:.75rem;color:var(--muted);line-height:1.3;">{{ $anomaly->type_description }}</div>
                             </td>
                             <td>
                                 @php $sc=['low'=>'sev-low','medium'=>'sev-medium','high'=>'sev-high'][$anomaly->severity??'low']??'sev-low' @endphp
                                 <span class="us-tag {{ $sc }}">{{ ucfirst($anomaly->severity??'low') }}</span>
                             </td>
                             <td style="text-align:right;">
-                                <a href="#" style="font-size:.82rem;font-weight:600;color:var(--emerald);text-decoration:none;">Résoudre →</a>
+                                <a href="{{ route('admin.presence.anomalies') }}"
+                                   style="font-size:.82rem;font-weight:600;color:var(--emerald);text-decoration:none;">
+                                   Voir les anomalies →
+                                </a>
                             </td>
                         </tr>
                         @endforeach
@@ -277,6 +281,35 @@
         const labels = @json($userStats['chart_data']['labels']);
         const worked = @json($userStats['chart_data']['worked_hours']);
         const late   = @json($userStats['chart_data']['late_minutes']);
+        const holidays = @json($userStats['chart_data']['holidays'] ?? []);
+
+        /* Helper : minutes → Xh Ymin */
+        const fmtMin = (m) => {
+            if (!m || m <= 0) return '0min';
+            const h = Math.floor(m / 60), mins = m % 60;
+            if (h === 0) return mins + 'min';
+            if (mins === 0) return h + 'h';
+            return h + 'h ' + mins + 'min';
+        };
+
+        /* Plugin : bandes verticales pour jours fériés */
+        const holidayPlugin = {
+            id: 'holidayBands',
+            beforeDraw(chart) {
+                const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
+                if (!x || !holidays.length) return;
+                const gap = labels.length > 1 ? x.getPixelForValue(1) - x.getPixelForValue(0) : 0;
+                holidays.forEach((isHoliday, i) => {
+                    if (isHoliday) {
+                        const xPos = x.getPixelForValue(i) - gap / 2;
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(139,92,246,0.07)';
+                        ctx.fillRect(xPos, top, gap, bottom - top);
+                        ctx.restore();
+                    }
+                });
+            }
+        };
 
         const grid = { color:'rgba(255,255,255,0.05)', drawBorder:false };
         const commonOpts = {
@@ -302,6 +335,7 @@
         gradW.addColorStop(1,'rgba(59,130,246,0)');
         new Chart(ctxW, {
             type:'line',
+            plugins:[holidayPlugin],
             data:{
                 labels,
                 datasets:[{
@@ -317,6 +351,7 @@
         const ctxL = document.getElementById('lateChart').getContext('2d');
         new Chart(ctxL, {
             type:'bar',
+            plugins:[holidayPlugin],
             data:{
                 labels,
                 datasets:[{
@@ -324,7 +359,7 @@
                     borderRadius:5, borderSkipped:false,
                 }]
             },
-            options:{ ...commonOpts, plugins:{...commonOpts.plugins, tooltip:{...commonOpts.plugins.tooltip, callbacks:{ label:ctx=>`${ctx.parsed.y} min` }}} }
+            options:{ ...commonOpts, plugins:{...commonOpts.plugins, tooltip:{...commonOpts.plugins.tooltip, callbacks:{ label:ctx=>`Retard: ${fmtMin(ctx.parsed.y)}` }}} }
         });
     });
     </script>

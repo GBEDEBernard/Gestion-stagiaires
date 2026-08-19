@@ -12,10 +12,14 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Favicons avec bordures arrondies via SVG -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    
-    <!-- Scripts -->
+    <!-- Favicon -->
+  <!-- Favicon -->
+@if(file_exists(public_path('android-chrome-512x512.png')))
+<link rel="icon" href="{{ asset('android-chrome-512x512.png') }}?v={{ filemtime(public_path('android-chrome-512x512.png')) }}">
+<link rel="shortcut icon" href="{{ asset('android-chrome-512x512.png') }}?v={{ filemtime(public_path('android-chrome-512x512.png')) }}">
+<link rel="apple-touch-icon" href="{{ asset('android-chrome-512x512.png') }}?v={{ filemtime(public_path('android-chrome-512x512.png')) }}">
+@endif <!-- Scripts -->
+    <link rel="stylesheet" href="{{ asset('css/auth-tfg.css') }}?v={{ filemtime(public_path('css/auth-tfg.css')) }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>

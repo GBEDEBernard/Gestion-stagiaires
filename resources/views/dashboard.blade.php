@@ -32,8 +32,7 @@
     </div>
 
     <div class="space-y-5 overflow-x-hidden">
-
-        {{-- ── NOTIFICATIONS ────────────────────────────────────── --}}
+        {{-- ─ NOTIFICATIONS ─ --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -120,7 +119,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                     </div>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold bg-green-100 text-green-700">+12%</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold {{ $evolutionStages30j >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">{{ $evolutionStages30j >= 0 ? '+' : '' }}{{ $evolutionStages30j }}%</span>
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalStages }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Total Stages</p>
@@ -140,7 +139,7 @@
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Stages en cours</p>
             </div>
 
-            {{-- Étudiants --}}
+            {{-- Stagiaires --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
@@ -148,10 +147,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                         </svg>
                     </div>
-                    <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold bg-violet-100 text-violet-700">+8%</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold {{ $evolutionEtudiants30j >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">{{ $evolutionEtudiants30j >= 0 ? '+' : '' }}{{ $evolutionEtudiants30j }}%</span>
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalEtudiants }}</p>
-                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Étudiants inscrits</p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Stagiaires inscrits</p>
             </div>
 
             {{-- Attestations --}}
@@ -276,19 +275,19 @@
                 </div>
             </div>
 
-            {{-- Top services --}}
+            {{-- Top Domaines --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                     <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                         </svg>
-                        Top Services
+                        Top Domaines
                     </h3>
                 </div>
                 <div class="p-4 sm:p-6 space-y-3 sm:space-y-4">
-                    @forelse($topServices as $idx => $svc)
-                    @php $max = $topServices->max('stages_count') ?: 1; @endphp
+                    @forelse($topDomaines as $idx => $dom)
+                    @php $max = $topDomaines->max('stages_count') ?: 1; @endphp
                     <div class="flex items-center gap-2 sm:gap-3">
                         <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0
                             {{ $idx===0 ? 'bg-yellow-100 text-yellow-700' : ($idx===1 ? 'bg-gray-200 text-gray-700' : ($idx===2 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600')) }}">
@@ -296,34 +295,34 @@
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between mb-1">
-                                <span class="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $svc->nom }}</span>
-                                <span class="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400 ml-2 flex-shrink-0">{{ $svc->stages_count }}</span>
+                                <span class="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $dom->nom }}</span>
+                                <span class="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400 ml-2 flex-shrink-0">{{ $dom->stages_count }}</span>
                             </div>
                             <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 sm:h-2">
                                 <div class="h-1.5 sm:h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500"
-                                    style="width:{{ round($svc->stages_count/$max*100) }}%"></div>
+                                    style="width:{{ round($dom->stages_count/$max*100) }}%"></div>
                             </div>
                         </div>
                     </div>
                     @empty
-                    <p class="text-center text-gray-500 text-sm py-6">Aucun service</p>
+                    <p class="text-center text-gray-500 text-sm py-6">Aucun domaine</p>
                     @endforelse
                 </div>
             </div>
         </div>
 
-        {{-- ── CHART 3 : Répartition services ─────── --}}
+        {{-- ── CHART 3 : Répartition domaines ─────── --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                     </svg>
-                    Répartition par service
+                    Répartition par domaine
                 </h3>
             </div>
             <div class="p-4 sm:p-6" style="position:relative;height:220px sm:height:280px">
-                <canvas id="chart-services"></canvas>
+                <canvas id="chart-domaines"></canvas>
             </div>
         </div>
 
@@ -374,7 +373,7 @@
                 <div class="p-4 sm:p-6 space-y-4">
                     @foreach([
                         ['Taux de réussite',$tauxReussite,'from-green-400 to-green-500','text-green-600'],
-                        ['Étudiants actifs',$tauxEtudiantsActifs,'from-blue-400 to-blue-500','text-blue-600'],
+                        ['Stagiaires actifs',$tauxEtudiantsActifs,'from-blue-400 to-blue-500','text-blue-600'],
                         ['Conversion',$tauxConversion,'from-violet-400 to-violet-500','text-violet-600']
                     ] as [$lbl,$val,$grad,$cls])
                     <div>
@@ -416,9 +415,9 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     @foreach([
                         ['Stages',$stagesTrash->count(),'text-purple-600','bg-purple-50 dark:bg-purple-900/20'],
-                        ['Étudiants',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
+                        ['Stagiaires',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
                         ['Badges',$badgesTrash->count(),'text-amber-600','bg-amber-50 dark:bg-amber-900/20'],
-                        ['Services',$servicesTrash->count(),'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
+                        ['Total',$totalTrash,'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
                     ] as [$lbl,$cnt,$cls,$bg])
                     <div class="{{ $bg }} rounded-xl p-3 sm:p-4 text-center hover:opacity-80 transition">
                         <p class="text-2xl sm:text-3xl font-bold {{ $cls }}">{{ $cnt }}</p>
@@ -444,10 +443,10 @@
             typesData:       {!! Js::from($typesData) !!},
             stagesMoisLabels:{!! Js::from($labelsMoisAnnee) !!},
             stagesMoisData:  {!! Js::from($stagesParMois) !!},
-            svcLabels:       {!! Js::from($servicesStats->pluck('service')->values()) !!},
-            svcEnCours:      {!! Js::from($servicesStats->pluck('enCours')->values()) !!},
-            svcTermines:     {!! Js::from($servicesStats->pluck('termines')->values()) !!},
-            svcInscrits:     {!! Js::from($servicesStats->pluck('inscrits')->values()) !!},
+            domLabels:       {!! Js::from($domainesStats->pluck('domaine')->values()) !!},
+            domEnCours:      {!! Js::from($domainesStats->pluck('enCours')->values()) !!},
+            domTermines:     {!! Js::from($domainesStats->pluck('termines')->values()) !!},
+            domInscrits:     {!! Js::from($domainesStats->pluck('inscrits')->values()) !!},
         };
     </script>
 
@@ -528,15 +527,15 @@
             options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:tip() }, scales:xyScales() }
         });
 
-        /* ── 4. SERVICES ── */
-        new Chart(document.getElementById('chart-services')?.getContext('2d'), {
+        /* ── 4. DOMAINES ── */
+        new Chart(document.getElementById('chart-domaines')?.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: safe(D.svcLabels,['Vide']),
+                labels: safe(D.domLabels,['Vide']),
                 datasets: [
-                    { label:'En cours',  data:safe(D.svcEnCours,[0]),  backgroundColor:'#22c55e', borderRadius:3 },
-                    { label:'Terminés',  data:safe(D.svcTermines,[0]), backgroundColor:'#a855f7', borderRadius:3 },
-                    { label:'À venir',   data:safe(D.svcInscrits,[0]), backgroundColor:'#f97316', borderRadius:3 },
+                    { label:'En cours',  data:safe(D.domEnCours,[0]),  backgroundColor:'#22c55e', borderRadius:3 },
+                    { label:'Terminés',  data:safe(D.domTermines,[0]), backgroundColor:'#a855f7', borderRadius:3 },
+                    { label:'À venir',   data:safe(D.domInscrits,[0]), backgroundColor:'#f97316', borderRadius:3 },
                 ]
             },
             options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:TXT, boxWidth:10, padding:8} }, tooltip:tip() }, scales:xyScales() }

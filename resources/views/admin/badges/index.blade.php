@@ -20,26 +20,26 @@
     <div class="bg-white ml-4 dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 dark:bg-gray-900/50">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-400 text-xs uppercase font-semibold tracking-wider">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Numéro de Badge</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Créé le</th>
-                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-900 dark:text-gray-400 uppercase tracking-wider " title="Numéro">N°</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-900 dark:text-gray-400 uppercase tracking-wider">Numéro de Badge</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-900 dark:text-gray-400 uppercase tracking-wider">Créé le</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-900 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($badges as $badge)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                         <td class="px-6 py-4">
-                            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">#{{ $badge->id }}</span>
+                            <span class="text-sm  text-gray-900 font-bold dark:text-gray-400">{{ $loop->iteration }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white font-bold">
                                     {{ $badge->id }}
                                 </div>
-                                <span class="font-semibold text-gray-900 dark:text-white">{{ $badge->badge }}</span>
+                                <span class="font-semibold text-gray-500 dark:text-white">{{ $badge->badge }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">

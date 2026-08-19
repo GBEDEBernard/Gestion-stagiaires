@@ -18,14 +18,19 @@ class BadgeController extends Controller
 
     public function create()
     {
-        return view('admin.badges.create');
+        $nextBadgeNumber = Badge::getNextBadgeNumber();
+        return view('admin.badges.create', compact('nextBadgeNumber'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'badge' => 'required|string|max:255|unique:badges,badge',
+            'badge' => 'nullable|string|max:255|unique:badges,badge',
         ]);
+
+        if (empty($validated['badge'])) {
+            $validated['badge'] = Badge::getNextBadgeNumber();
+        }
 
         $badge = Badge::create($validated);
 
@@ -82,13 +87,13 @@ class BadgeController extends Controller
 
    public function show(Stage $stage)
     {
-        $stage->load('etudiant', 'badge', 'service', 'typestage');
+        $stage->load('etudiant', 'badge', 'domaine', 'typestage');
         return view('admin.stages.badge', compact('stage'));
     }
 
     public function download(Stage $stage)
     {
-        $stage->load('etudiant', 'badge', 'service', 'typestage');
+        $stage->load('etudiant', 'badge', 'domaine', 'typestage');
         $pdf = Pdf::loadView('admin.stages.badge_pdf', compact('stage'))
             ->setPaper([0, 0, 413.3858, 584.252]) // A6 en points
             ->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);

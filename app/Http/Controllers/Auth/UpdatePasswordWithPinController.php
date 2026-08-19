@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use App\Rules\NoForbiddenChars; // ← Importer la règle
+
 
 class UpdatePasswordWithPinController extends Controller
 {
@@ -44,11 +46,17 @@ class UpdatePasswordWithPinController extends Controller
      */
     public function update(Request $request): RedirectResponse
     {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'pin' => ['required', 'numeric', 'digits:6'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+       $request->validate([
+        'email' => ['required', 'email'],
+        'pin'   => ['required', 'numeric', 'digits:6'],
+        'password' => [
+            'required',
+            'string',
+            'min:8',
+            'confirmed',
+            new NoForbiddenChars(), 
+        ],
+    ]);
 
         // Vérifier que le PIN existe et n'a pas expiré
         $pinRecord = DB::table('password_reset_pins')

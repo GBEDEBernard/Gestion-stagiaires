@@ -21,19 +21,10 @@ return new class extends Migration
             $table->unique(['permission_request_id', 'signataire_id'], 'prr_request_signataire_unique');
         });
 
-        // Add email to signataires if not already there
-        if (!Schema::hasColumn('signataires', 'email')) {
-            Schema::table('signataires', function (Blueprint $table) {
-                $table->string('email')->nullable()->after('nom');
-            });
-        }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('permission_request_recipients');
-        Schema::table('signataires', function (Blueprint $table) {
-            $table->dropColumn('email');
-        });
     }
 };

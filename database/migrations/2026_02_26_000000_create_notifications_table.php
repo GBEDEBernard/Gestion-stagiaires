@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('message');
             $table->string('icon')->nullable();
             $table->string('color')->nullable();
-            $table->string('url')->nullable();
+            $table->text('url')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->string('reference_type')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');

@@ -15,7 +15,7 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                     <a href="{{ route('stages.index') }}" class="hover:text-blue-600 dark:hover:text-blue-400 transition">Stages</a>
                     <span class="mx-2">/</span>
-                    <span class="text-gray-700 dark:text-gray-200 font-medium">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</span>
+                    <span class="text-gray-700 dark:text-gray-200 font-medium">{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</span>
                 </p>
             </div>
         </div>
@@ -32,6 +32,7 @@
             </a>
             @endif
 
+            @if($statutEnCours === 'Termine')
             <button onclick="document.getElementById('modalAttestation').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +40,24 @@
                 </svg>
                 Attestation
             </button>
-
+            @else
+            <button onclick="document.getElementById('modalAttestationEnCours').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium hover:bg-violet-200 dark:hover:bg-violet-900/50 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Attestation
+            </button>
+            @endif
+            
+        
+            <a href="{{ encrypted_route('stages.fiche-poste.edit', $stage) }}"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Fiche de poste
+            </a>
             <a href="{{ encrypted_route('stages.edit', $stage) }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,89 +79,117 @@
                     Générer une attestation
                 </h2>
             </div>
-
             <form method="POST" action="{{ encrypted_route('stages.attestation.store', $stage) }}" class="p-6 space-y-4">
                 @csrf
-
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 mb-4">
+                    <svg class="w-5 h-5 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div class="flex-1">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Année académique</span>
+                        <span class="text-sm font-bold text-gray-900 dark:text-white ml-2">{{ $stage->annee_academique }}</span>
+                    </div>
+                </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Sélectionnez les signataires pour cette attestation :</p>
-
-                @forelse($signataires as $signataire)
+                @forelse($eligibleUsers as $user)
                 <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                     <input type="checkbox"
-                        name="signataires[{{ $signataire->id }}][selected]"
+                        name="signataires[{{ $user->id }}][selected]"
                         value="1"
                         class="signataire-checkbox w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                        id="sign_{{ $signataire->id }}"
-                        data-ordre="ordre_{{ $signataire->id }}"
-                        data-parordre="parordre_{{ $signataire->id }}">
-
-                    <label for="sign_{{ $signataire->id }}" class="flex-1 cursor-pointer">
-                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $signataire->nom }}</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $signataire->poste }})</span>
+                        id="sign_{{ $user->id }}"
+                        data-ordre="ordre_{{ $user->id }}"
+                        data-parordre="parordre_{{ $user->id }}"
+                        @if(in_array($user->id, $selectedSignataireIds ?? [])) checked @endif>
+                    <label for="sign_{{ $user->id }}" class="flex-1 cursor-pointer">
+                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $user->personnel->full_name ?? $user->name }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ $user->signerRoleLabel() }})</span>
                     </label>
-
-                    @if(!$signataire->isDG() && $signataire->peut_par_ordre)
+                    @if(!$user->isDG())
                     <div class="flex items-center gap-2">
-                        <input type="number"
-                            name="signataires[{{ $signataire->id }}][ordre]"
-                            min="1" max="2"
-                            placeholder="Ordre"
-                            class="w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
-                            id="ordre_{{ $signataire->id }}"
-                            disabled>
-
-                        <label for="parordre_{{ $signataire->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
-                            <input type="checkbox"
-                                name="signataires[{{ $signataire->id }}][par_ordre]"
-                                value="1"
-                                id="parordre_{{ $signataire->id }}"
-                                class="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                                disabled>
-                            <span>P.O</span>
+                        <input type="number" name="signataires[{{ $user->id }}][ordre]" min="1" max="2" placeholder="Ordre"
+                            class="ordre-input w-14 px-2 py-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring focus:ring-violet-200 dark:focus:ring-violet-800"
+                            id="ordre_{{ $user->id }}" style="opacity: 0.5;" disabled>
+                        <label for="parordre_{{ $user->id }}" class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                            <input type="checkbox" name="signataires[{{ $user->id }}][par_ordre]" value="1" id="parordre_{{ $user->id }}"
+                                class="parordre-checkbox rounded border-gray-300 text-violet-600 focus:ring-violet-500" style="opacity: 0.5;" disabled>
+                            <span>P.O.</span>
                         </label>
                     </div>
                     @endif
                 </div>
                 @empty
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    Aucun signataire disponible
-                </div>
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">Aucun signataire disponible</div>
                 @endforelse
-
                 <div class="pt-4 flex justify-end gap-3">
-                    <button type="button"
-                        onclick="document.getElementById('modalAttestation').classList.add('hidden')"
-                        class="px-5 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                        Annuler
-                    </button>
+                    <button type="button" onclick="document.getElementById('modalAttestation').classList.add('hidden')"
+                        class="px-5 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">Annuler</button>
                     <button type="submit"
-                        class="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:from-violet-700 hover:to-purple-700 transition shadow-lg shadow-violet-600/20">
-                        Valider
-                    </button>
+                        class="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:from-violet-700 hover:to-purple-700 transition shadow-lg shadow-violet-600/20">Valider</button>
                 </div>
             </form>
         </div>
     </div>
 
+    {{-- Modal Stage en cours --}}
+    <div id="modalAttestationEnCours" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-8 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Stage en cours</h2>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    Le stage est encore en cours. L'attestation sera disponible au téléchargement uniquement à la fin du stage.
+                </p>
+                <button type="button" onclick="document.getElementById('modalAttestationEnCours').classList.add('hidden')"
+                    class="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:from-violet-700 hover:to-purple-700 transition shadow-lg shadow-violet-600/20">
+                    Compris
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- Main Content Grid --}}
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
         {{-- Left Column - Profile & Current Stage --}}
         <div class="xl:col-span-2 space-y-6">
-
             {{-- Student Profile Card --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="relative h-32 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600">
+                @php
+                    $etPerso   = $stage->etudiant?->personnel;
+                    $etUser    = $etPerso?->user ?? null;
+                    $etAvatar  = $etUser?->avatar ?? null;
+                    $etHasPhoto = $etAvatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($etAvatar);
+                    $etGenre   = $etPerso?->genre ?? '';
+                    $etPrenom  = $etPerso?->prenom ?? '';
+                    $etNom     = $etPerso?->nom    ?? '';
+                    $etInitials = mb_strtoupper(mb_substr($etPrenom, 0, 1) . mb_substr($etNom, 0, 1)) ?: 'ST';
+                    $isFemme   = in_array($etGenre, ['Femme', 'Féminin', 'F']);
+                @endphp
+
+                {{-- Avatar flottant --}}
+                <div class="relative h-28 bg-gradient-to-r from-violet-400 to-blue-600 dark:from-sky-600 dark:to-blue-800">
                     <div class="absolute -bottom-12 left-6">
-                        <div class="h-24 w-24 rounded-2xl overflow-hidden ring-4 ring-white dark:ring-gray-800 shadow-xl bg-white flex items-center justify-center">
-                            @if($stage->etudiant->genre === 'Masculin')
-                            <svg class="h-14 w-14 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                            </svg>
+                        <div class="h-24 w-24 rounded-2xl overflow-hidden ring-4 ring-white dark:ring-gray-800 shadow-xl
+                                    {{ $etHasPhoto ? '' : 'bg-white dark:bg-gray-800' }} flex items-center justify-center">
+                            @if($etHasPhoto)
+                                <img src="{{ asset('storage/' . $etAvatar) }}"
+                                     alt="{{ $etNom }} {{ $etPrenom }}"
+                                     class="w-full h-full object-cover object-center">
                             @else
-                            <svg class="h-14 w-14 text-pink-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                            </svg>
+                                <div class="w-full h-full flex items-center justify-center
+                                            {{ $isFemme ? 'bg-gradient-to-br from-pink-400 to-rose-500' : 'bg-gradient-to-br from-blue-400 to-indigo-500' }}">
+                                    @if($etInitials !== 'ST')
+                                        <span class="text-white font-bold text-2xl tracking-wide">{{ $etInitials }}</span>
+                                    @else
+                                        <svg class="h-12 w-12 text-white/80" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                        </svg>
+                                    @endif
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -152,12 +198,12 @@
                 <div class="pt-16 pb-6 px-6">
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stage->etudiant->nom }} {{ $stage->etudiant->prenom }}</h2>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $etNom }} {{ $etPrenom }}</h2>
                             <p class="text-gray-500 dark:text-gray-400 mt-1">{{ $stage->etudiant->ecole ?? 'École non renseignée' }}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium
-                                    {{ $stage->etudiant->genre === 'Masculin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' }}">
-                                    {{ $stage->etudiant->genre ?? 'Non spécifié' }}
+                                    {{ $etGenre === 'Masculin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' }}">
+                                    {{ $etGenre ?: 'Genre non spécifié' }}
                                 </span>
                                 <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold
                                     @if($statutEnCours === 'En cours') bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400
@@ -168,13 +214,13 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="mailto:{{ $stage->etudiant->email }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Email">
+                            <a href="mailto:{{ $etPerso?->email ?? '' }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Email">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                             </a>
-                            @if($stage->etudiant->telephone)
-                            <a href="tel:{{ $stage->etudiant->telephone }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Téléphone">
+                            @if($etPerso?->telephone)
+                            <a href="tel:{{ $etPerso->telephone }}" class="p-2.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Téléphone">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
@@ -192,14 +238,12 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Site de presence</p>
-                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->site->name ?? 'Site non defini' }}</p>
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Site de présence</p>
+                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->site->name ?? 'Site non défini' }}</p>
                                 </div>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->site->address ?? 'Adresse non renseignee' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ $stage->site?->city ?? 'Ville non renseignee' }}{{ $stage->site?->country ? ' - ' . $stage->site->country : '' }}
-                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->site->address ?? 'Adresse non renseignée' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $stage->site?->city ?? 'Ville non renseignée' }}{{ $stage->site?->country ? ' - ' . $stage->site->country : '' }}</p>
                         </div>
 
                         <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50/80 dark:bg-gray-900/30">
@@ -211,10 +255,12 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">Superviseur</p>
-                                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $stage->supervisor->name ?? 'Sans superviseur' }}</p>
+                                    <p class="text-base font-semibold text-gray-900 dark:text-white">
+                                        {{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? '' }}
+                                    </p>
                                 </div>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->supervisor->email ?? 'Aucun contact associe' }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $stage->supervisor->email ?? 'Aucun contact associé' }}</p>
                             @if($stage->supervisor)
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $stage->supervisor->getRoleNames()->implode(', ') ?: 'Utilisateur' }}</p>
                             @endif
@@ -233,10 +279,9 @@
                         Stage en cours
                     </h3>
                 </div>
-
                 <div class="p-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {{-- Theme --}}
+                        {{-- Thème --}}
                         <div class="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-violet-100 dark:border-violet-800/30">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="p-1.5 bg-violet-100 dark:bg-violet-900/50 rounded-lg">
@@ -290,7 +335,7 @@
                             </p>
                         </div>
 
-                        {{-- Service --}}
+                        {{-- Domaine --}}
                         <div class="bg-gradient-to-br from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 rounded-xl p-4 border border-cyan-100 dark:border-cyan-800/30">
                             <div class="flex items-center gap-2 mb-2">
                                 <div class="p-1.5 bg-cyan-100 dark:bg-cyan-900/50 rounded-lg">
@@ -298,10 +343,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 </div>
-                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Service</span>
+                                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide">Domaine</span>
                             </div>
-                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->service->nom ?? 'Non défini' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->service->responsable ?? 'Responsable non défini' }}</p>
+                            <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ $stage->domaine->nom ?? 'Non défini' }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $stage->domaine->description ?? 'Aucune description' }}</p>
                         </div>
 
                         {{-- Jours de travail --}}
@@ -339,7 +384,6 @@
                         Historique des stages
                     </h3>
                 </div>
-
                 <div class="divide-y divide-gray-100 dark:divide-gray-700">
                     @foreach($stagesTermines as $stageHist)
                     <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
@@ -353,7 +397,7 @@
                                 <div>
                                     <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $stageHist->theme ?? 'Stage' }}</p>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->service->nom ?? 'Service non défini' }}
+                                        {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->domaine->nom ?? 'Domaine non défini' }}
                                     </p>
                                 </div>
                             </div>
@@ -361,9 +405,7 @@
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
                                     {{ $stageHist->date_debut?->format('d/m/Y') ?? '—' }} - {{ $stageHist->date_fin?->format('d/m/Y') ?? '—' }}
                                 </p>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                                    Terminé
-                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Terminé</span>
                             </div>
                         </div>
                     </div>
@@ -375,7 +417,6 @@
 
         {{-- Right Column - Stats & Attestations --}}
         <div class="space-y-6">
-
             {{-- Statistics Cards --}}
             <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl shadow-xl overflow-hidden text-white">
                 <div class="p-6">
@@ -385,7 +426,6 @@
                         </svg>
                         Statistiques
                     </h3>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                             <p class="text-3xl font-bold">{{ $nombreStages }}</p>
@@ -409,7 +449,6 @@
                         Attestations
                     </h3>
                 </div>
-
                 @if($attestations->count() > 0)
                 <div class="divide-y divide-gray-100 dark:divide-gray-700 max-h-80 overflow-y-auto">
                     @foreach($attestations as $attestation)
@@ -434,9 +473,7 @@
                                 {{ $attestation->date_delivrance?->format('d/m/Y') ?? '—' }}
                             </p>
                             <a href="{{ encrypted_route('stages.attestation.show', $attestation->stage) }}"
-                                class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">
-                                Voir →
-                            </a>
+                                class="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium">Voir</a>
                         </div>
                     </div>
                     @endforeach
@@ -463,7 +500,6 @@
                         Contact
                     </h3>
                 </div>
-
                 <div class="p-6 space-y-4">
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
@@ -473,10 +509,9 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200 truncate">{{ $stage->etudiant->email }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200 truncate">{{ $etPerso?->email ?? 'Non renseigné' }}</p>
                         </div>
                     </div>
-
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                             <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -485,11 +520,10 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Téléphone</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->telephone ?? 'Non défini' }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $etPerso?->telephone ?? 'Non défini' }}</p>
                         </div>
                     </div>
-
-                    @if($stage->etudiant->adresse)
+                    @if($etPerso?->adresse)
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
                             <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,7 +533,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs text-gray-500 dark:text-gray-400">Adresse</p>
-                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $stage->etudiant->adresse }}</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200">{{ $etPerso->adresse }}</p>
                         </div>
                     </div>
                     @endif
@@ -508,18 +542,29 @@
         </div>
     </div>
 
-    {{-- Script gestion des signataires --}}
+    {{-- Script pour les signataires --}}
     <script>
-        document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                const ordreInputId = this.dataset.ordre;
-                const parOrdreId = this.dataset.parordre;
-
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.signataire-checkbox').forEach(function(checkbox) {
+                const ordreInputId = checkbox.dataset.ordre;
+                const parOrdreId = checkbox.dataset.parordre;
                 const ordreInput = document.getElementById(ordreInputId);
                 const parOrdreInput = document.getElementById(parOrdreId);
-
-                if (ordreInput) ordreInput.disabled = !this.checked;
-                if (parOrdreInput) parOrdreInput.disabled = !this.checked;
+                function updateFieldsState(isChecked) {
+                    if (ordreInput) {
+                        ordreInput.disabled = !isChecked;
+                        ordreInput.style.opacity = isChecked ? '1' : '0.5';
+                        ordreInput.style.backgroundColor = isChecked ? 'white' : '#f3f4f6';
+                    }
+                    if (parOrdreInput) {
+                        parOrdreInput.disabled = !isChecked;
+                        parOrdreInput.style.opacity = isChecked ? '1' : '0.5';
+                    }
+                }
+                updateFieldsState(checkbox.checked);
+                checkbox.addEventListener('change', function() {
+                    updateFieldsState(this.checked);
+                });
             });
         });
     </script>

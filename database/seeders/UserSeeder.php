@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Employe;
+use App\Models\Personnel;
 use App\Models\User;
 use App\Services\RolePermissionPresetService;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
@@ -15,46 +18,118 @@ class UserSeeder extends Seeder
         $presetService = app(RolePermissionPresetService::class);
 
         $users = [
+            // ── Votre compte admin ──
             [
-                'name' => 'GBEDE Bernard',
-                'email' => 'gbedebernard60@gmail.com',
-                'password' => Hash::make('VisaBernard6142@'),
-                'status' => 'actif',
-                'role' => 'admin',
+                'prenom'    => 'Bernard',
+                'nom'       => 'GBEDE',
+                'email'     => 'gbedebernard60@gmail.com',
+                'password'  => Hash::make('VisaBernard6142@'),
+                'status'    => 'actif',
+                'role'      => 'admin',
+                'is_signer' => false,
+                'poste'     => 'Administrateur Système',
             ],
+
+            // ── ID 2 — DG (Directeur Général) ──
             [
-                'name' => 'Utilisateur Test1',
-                'email' => 'gbedebernard61@gmail.com',
-                'password' => Hash::make('aqwzsxedc'),
-                'status' => 'actif',
-                'role' => 'etudiant',
+                'prenom'    => 'Appolinaire',
+                'nom'       => 'KONNON',
+                'email'     => 'konnon@tfg.bj',
+                'password'  => Hash::make('DG_TFG_2025@'),
+                'status'    => 'actif',
+                'role'      => 'admin',
+                'is_signer' => true,
+                'poste'     => 'Directeur Général',
             ],
+
+            // ── ID 3 — DT (Directeur Technique) ──
             [
-                'name' => 'Superviseur Test',
-                'email' => 'superviseur@gst.local',
-                'password' => Hash::make('Superviseur123!'),
-                'status' => 'actif',
-                'role' => 'superviseur',
+                'prenom'    => 'Gamaliel',
+                'nom'       => 'GBETIE',
+                'email'     => 'gbetie@tfg.bj',
+                'password'  => Hash::make('DT_TFG_2025@'),
+                'status'    => 'actif',
+                'role'      => 'admin',
+                'is_signer' => true,
+                'poste'     => 'Directeur Technique',
+            ],
+
+            // ── ID 4 — DTA (Directeur Technique Adjoint) ──
+            [
+                'prenom'    => 'Mario',
+                'nom'       => 'AGBELESSESSI',
+                'email'     => 'agbelessessi@tfg.bj',
+                'password'  => Hash::make('DTA_TFG_2025@'),
+                'status'    => 'actif',
+                'role'      => 'admin',
+                'is_signer' => true,
+                'poste'     => 'Directeur Technique Adjoint',
             ],
         ];
 
-        foreach ($users as $userData) {
-            $user = User::updateOrCreate(
+        foreach ($users as $index => $userData) {
+            // 1. Personnel
+            $personnel = Personnel::updateOrCreate(
                 ['email' => $userData['email']],
                 [
-                    'name' => $userData['name'],
-                    'password' => $userData['password'],
-                    'status' => $userData['status'],
-                    'email_verified_at' => Carbon::now(), // <-- ajoute ça
+                    'nom'            => $userData['nom'],
+                    'prenom'         => $userData['prenom'],
+                    'telephone'      => null,
+                    'genre'          => null,
+                    'date_naissance' => null,
+                    'adresse'        => null,
+                    'created_by'     => null,
                 ]
             );
 
-            // Assigner le rôle via Spatie
+            // 2. Employe
+            $employe = Employe::updateOrCreate(
+                ['personnel_id' => $personnel->id],
+                [
+                    'poste'     => $userData['poste'],
+                    'domaine_id' => 1,
+                    'site_id'    => 1,
+                ]
+            );
+
+            $personnel->update([
+                'personnable_type' => Employe::class,
+                'personnable_id'   => $employe->id,
+            ]);
+
+            $user = User::updateOrCreate(
+                ['personnel_id' => $personnel->id],
+                [
+                    'name'                      => trim($userData['prenom'] . ' ' . $userData['nom']),
+                    'email'                     => $userData['email'],
+                    'password'                  => $userData['password'],
+                    'status'                    => $userData['status'],
+                    'email_verified_at'         => Carbon::now(),
+                    'is_signer'                 => $userData['is_signer'],
+                    'signataire_poste'          => $userData['is_signer'] ? $userData['poste'] : null,
+                    'signataire_sigle'          => $userData['is_signer'] ? ($userData['poste'] === 'Directeur Général' ? 'DG' : ($userData['poste'] === 'Directeur Technique' ? 'DT' : 'DTA')) : null,
+                    'signataire_ordre'          => $userData['is_signer'] ? ($userData['poste'] === 'Directeur Général' ? 1 : ($userData['poste'] === 'Directeur Technique' ? 2 : 3)) : null,
+                    'signataire_peut_par_ordre' => $userData['is_signer'] && $userData['poste'] !== 'Directeur Général',
+                ]
+            );
+
+            // 4. Rôles
             $presetService->assignRolesAndPermissions(
                 $user,
                 [$userData['role']],
                 $presetService->permissionsForRoles([$userData['role']])
             );
+
+            // 5. Permission signer_attestation
+            if ($userData['is_signer']) {
+                $user->givePermissionTo('signer_attestation');
+                $this->command->info("✓ Signataire : {$userData['prenom']} {$userData['nom']} ({$userData['poste']})");
+            } else {
+                $this->command->info("✓ Admin : {$userData['prenom']} {$userData['nom']}");
+            }
         }
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        $this->command->info('UserSeeder terminé.');
     }
 }

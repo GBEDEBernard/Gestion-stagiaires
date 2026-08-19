@@ -7,15 +7,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </a>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Modifier l'Utilisateur</h1>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Modifier l'utilisateur</h1>
             </div>
-            <p class="text-gray-500 dark:text-gray-400 ml-14">Mets a jour le compte, ses permissions et sa fiche etudiant si besoin.</p>
+            <p class="text-gray-500 dark:text-gray-400 ml-14">
+                Gérez les informations, rôles et permissions de {{ $formData['user']->name }}
+            </p>
         </div>
 
-        @include('admin.users.partials.form', [
-            'formAction' => encrypted_route('admin.users.update', $user),
-            'formMethod' => 'PUT',
-            'submitLabel' => 'Mettre a jour',
-        ])
+        @include('admin.users.partials.form', array_merge($formData, [
+            'formAction' => encrypted_route('admin.users.update', $formData['user']),
+            'submitLabel' => 'Mettre à jour',
+            'isEdit' => true,
+        ]))
     </div>
 </x-app-layout>
