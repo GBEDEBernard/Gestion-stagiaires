@@ -363,7 +363,7 @@
                     @endif
 
                     @if($isAdmin && !$task->isCompleted())
-                    <a href="{{ route('tasks.assign.form', ['task_id' => $task->id]) }}"
+                    <a href="{{ encrypted_route('tasks.assign.form', $task->id) }}"
                        title="Transférer ou réassigner cette tâche"
                        class="d-btn-ghost h-9 px-3 rounded-xl">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18"/></svg>

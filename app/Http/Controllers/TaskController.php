@@ -38,7 +38,7 @@ public function index(Request $request)
      * occurrence dans le workspace, chaque personne travaille dessus et
      * dépose ses propres rapports.
      */
-    public function assignForm(Request $request)
+    public function assignForm(Request $request, ?string $task = null)
     {
         $user = auth()->user();
 
@@ -71,7 +71,14 @@ public function index(Request $request)
             return [$task->id => $holders];
         });
 
-        return view('tasks.assign', compact('producers', 'tasks', 'taskHolders'));
+        // Pré-sélection de la tâche si un ID chiffré est fourni dans l'URL.
+        $preselectedTaskId = null;
+        if ($task) {
+            $found = $tasks->firstWhere('id', $task);
+            $preselectedTaskId = $found ? (string) $found->id : null;
+        }
+
+        return view('tasks.assign', compact('producers', 'tasks', 'taskHolders', 'preselectedTaskId'));
     }
 
     /**

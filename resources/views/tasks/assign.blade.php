@@ -1,6 +1,6 @@
 @php
     $initialMode = old('mode', 'assign');
-    $preselectedTaskId = (string) (old('task_id', request('task_id', '')));
+    $preselectedTaskId = $preselectedTaskId ?? old('task_id', '');
     $preselectedOwners = old('owner_ids', []);
 @endphp
 

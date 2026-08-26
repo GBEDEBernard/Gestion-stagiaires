@@ -233,7 +233,7 @@ Route::prefix('tasks')->group(function () {
         Route::post('trash/{id}/restore', [TaskController::class, 'restore'])->name('tasks.restore')->middleware('role:admin');
         Route::delete('trash/{id}', [TaskController::class, 'forceDelete'])->name('tasks.force-delete')->middleware('role:admin');
         // Assignation par admin/superviseur (T-006)
-        Route::get('assign/create', [TaskController::class, 'assignForm'])->name('tasks.assign.form')->middleware('permission:tasks.assign');
+        Route::get('assign/create/{task?}', [TaskController::class, 'assignForm'])->name('tasks.assign.form')->middleware('permission:tasks.assign');
         Route::post('assign', [TaskController::class, 'assign'])->name('tasks.assign')->middleware('permission:tasks.assign');
         Route::get('create', [TaskController::class, 'create'])->name('tasks.create')->middleware('permission:tasks.create');
         Route::post('/', [TaskController::class, 'store'])->name('tasks.store')->middleware('permission:tasks.create');
