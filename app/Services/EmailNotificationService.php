@@ -8,27 +8,39 @@ use App\Models\Task;
 use App\Models\User;
 use App\Support\NotificationGreeting;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class EmailNotificationService
 {
     public function __construct(
         protected TaskNotificationRecipients $recipients,
-        protected TaskEmailUrlService $urlService // ← injecter
+        protected TaskEmailUrlService $urlService
     ) {}
 
     public function notifyTaskCreated(Task $task): void
     {
         foreach ($this->recipients->getAllRecipientsForTask($task) as $recipient) {
-            $url = $this->urlService->forRecipient($task, $recipient);
+            $email = $recipient->getEmailForVerification();
 
-            Mail::to($recipient->getEmailForVerification())
-                ->send(new TaskCreatedMail(
-                    $task,
-                    $recipient->name,
-                    NotificationGreeting::civilityForRecipient($recipient),
-                    NotificationGreeting::greetingForNow(),
-                    $url
-                ));
+            if (!$this->isValidEmail($email)) {
+                Log::warning("Email invalide pour l'envoi de tâche : {$email} (user #{$recipient->id})");
+                continue;
+            }
+
+            try {
+                $url = $this->urlService->forRecipient($task, $recipient);
+
+                Mail::to($email)
+                    ->send(new TaskCreatedMail(
+                        $task,
+                        $recipient->name,
+                        NotificationGreeting::civilityForRecipient($recipient),
+                        NotificationGreeting::greetingForNow(),
+                        $url
+                    ));
+            } catch (\Throwable $e) {
+                Log::error("Échec envoi email tâche à {$email}: " . $e->getMessage());
+            }
         }
     }
 
@@ -37,19 +49,44 @@ class EmailNotificationService
         $owner = $task->owner;
 
         if ($owner && $owner->id !== $reviewer->id) {
-            $url = $this->urlService->forRecipient($task, $owner);
+            $email = $owner->getEmailForVerification();
 
-            Mail::to($owner->getEmailForVerification())
-                ->send(new TaskReviewedMail(
-                    $task,
-                    $reviewer,
-                    $action,
-                    $comment,
-                    $owner->name,
-                    NotificationGreeting::civilityForRecipient($owner),
-                    NotificationGreeting::greetingForNow(),
-                    $url
-                ));
+            if (!$this->isValidEmail($email)) {
+                Log::warning("Email invalide pour review : {$email} (user #{$owner->id})");
+                return;
+            }
+
+            try {
+                $url = $this->urlService->forRecipient($task, $owner);
+
+                Mail::to($email)
+                    ->send(new TaskReviewedMail(
+                        $task,
+                        $reviewer,
+                        $action,
+                        $comment,
+                        $owner->name,
+                        NotificationGreeting::civilityForRecipient($owner),
+                        NotificationGreeting::greetingForNow(),
+                        $url
+                    ));
+            } catch (\Throwable $e) {
+                Log::error("Échec envoi email review à {$email}: " . $e->getMessage());
+            }
         }
+    }
+
+    /**
+     * Vérifie que l'email est syntaxiquement correct et que le domaine existe (MX).
+     */
+    protected function isValidEmail(string $email): bool
+    {
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $domain = substr(strrchr($email, '@'), 1);
+
+        return checkdnsrr($domain, 'MX') || checkdnsrr($domain, 'A');
     }
 }
