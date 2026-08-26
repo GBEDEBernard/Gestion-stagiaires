@@ -112,7 +112,7 @@ public function index(Request $request)
                 'task_id.exists'    => 'La tâche sélectionnée est introuvable.',
             ]);
 
-            $owner = User::findOrFail($payload['owner_id']);
+            $owner = User::where('status', 'actif')->findOrFail($payload['owner_id']);
             $task = Task::findOrFail($payload['task_id']);
 
             // La tâche doit être visible (admin : tout ; superviseur : stage supervisé).
@@ -203,6 +203,7 @@ public function index(Request $request)
         }
 
         $targets = User::whereIn('id', array_values(array_unique($payload['owner_ids'])))
+            ->where('status', 'actif')
             ->get();
 
         // Seuls les producteurs (étudiants/employés) ayant un profil sont reçus.
