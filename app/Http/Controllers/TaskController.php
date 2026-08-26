@@ -244,7 +244,9 @@ public function index(Request $request)
                 'clipboard-list',
                 'blue'
             );
+        }
 
+        if (!empty($created)) {
             $this->emailService->notifyTaskCreated($task);
         }
 
