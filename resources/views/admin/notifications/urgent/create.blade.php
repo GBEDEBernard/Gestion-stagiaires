@@ -69,7 +69,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('admin.notifications.urgent.store') }}" method="POST" class="p-6 sm:p-8 space-y-6" @submit.prevent="confirmSubmit($event)">
+            <form action="{{ route('admin.notifications.urgent.store') }}" method="POST" enctype="multipart/form-data" class="p-6 sm:p-8 space-y-6" @submit.prevent="confirmSubmit($event)">
                 @csrf
 
                 {{-- 1. Titre & Modèles rapides --}}
@@ -133,6 +133,38 @@
                                x-model="form.url"
                                placeholder="https://... (ex: lien vers document ou formulaire)" 
                                class="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition text-sm">
+                    </div>
+                </div>
+
+                {{-- 4. Pièce jointe PDF optionnelle --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-900 dark:text-gray-200">
+                        Pièce jointe PDF (optionnel)
+                    </label>
+                    <div class="relative">
+                        <div class="flex items-center gap-3">
+                            <label class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-red-400 dark:hover:border-red-600 transition cursor-pointer group"
+                                   :class="form.attachment ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20' : ''">
+                                <input type="file" 
+                                       name="attachment" 
+                                       accept=".pdf"
+                                       class="sr-only"
+                                       @change="handleAttachment($event)">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition" :class="form.attachment ? 'text-emerald-500' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <span class="text-xs font-semibold" :class="form.attachment ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400 group-hover:text-red-600'" x-text="form.attachment ? form.attachment.name : 'Joindre un fichier PDF'"></span>
+                            </label>
+                            <button x-show="form.attachment" 
+                                    type="button" 
+                                    @click="removeAttachment()"
+                                    class="shrink-0 p-2 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-900/60 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mt-1.5">PDF uniquement — Max. 20 Mo</p>
                     </div>
                 </div>
 
@@ -380,6 +412,15 @@
                                 <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                                     {{ $batch->message }}
                                 </p>
+
+                                @if($batch->attachment_path)
+                                <a href="{{ $batch->attachment_url }}" target="_blank" class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    📎 {{ $batch->attachment_name }}
+                                </a>
+                                @endif
                             </div>
 
                             {{-- Taux de lecture & Barre de progression --}}
@@ -515,7 +556,8 @@
                     url: '',
                     target_type: 'all',
                     target_value: '',
-                    individual_ids: []
+                    individual_ids: [],
+                    attachment: null
                 },
                 recipientCount: {{ $totalActiveUsers }},
                 loadingCount: false,
@@ -539,6 +581,27 @@
                     this.form.target_value = '';
                     this.form.individual_ids = [];
                     this.fetchRecipientCount();
+                },
+
+                handleAttachment(event) {
+                    const file = event.target.files[0];
+                    if (file && file.type === 'application/pdf') {
+                        this.form.attachment = file;
+                    } else if (file) {
+                        Swal.fire({
+                            title: 'Format invalide',
+                            text: 'Seuls les fichiers PDF sont acceptés.',
+                            icon: 'error',
+                            confirmButtonColor: '#ef4444'
+                        });
+                        event.target.value = '';
+                    }
+                },
+
+                removeAttachment() {
+                    this.form.attachment = null;
+                    const input = this.$el.querySelector('input[type="file"]');
+                    if (input) input.value = '';
                 },
 
                 async fetchRecipientCount() {
@@ -595,7 +658,31 @@
                         cancelButtonText: 'Annuler'
                     }).then(r => {
                         if (r.isConfirmed) {
-                            event.target.submit();
+                            const formEl = event.target;
+                            const formData = new FormData(formEl);
+
+                            if (this.form.attachment) {
+                                formData.set('attachment', this.form.attachment);
+                            } else {
+                                formData.delete('attachment');
+                            }
+
+                            fetch(formEl.action, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json'
+                                }
+                            }).then(res => {
+                                if (res.redirected) {
+                                    window.location.href = res.url;
+                                } else {
+                                    window.location.reload();
+                                }
+                            }).catch(() => {
+                                window.location.reload();
+                            });
                         }
                     });
                 }

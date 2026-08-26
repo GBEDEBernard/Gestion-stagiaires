@@ -12,6 +12,7 @@ use App\Models\TypeStage;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class UrgentNotificationService
@@ -196,6 +197,7 @@ class UrgentNotificationService
         $title = trim($data['title']);
         $message = trim($data['message']);
         $url = !empty($data['url']) ? trim($data['url']) : null;
+        $attachment = $data['attachment'] ?? null;
         $now = now();
 
         $notificationsToInsert = [];
@@ -213,6 +215,10 @@ class UrgentNotificationService
                 'icon' => 'exclamation-triangle',
                 'color' => 'red',
                 'url' => $url,
+                'attachment_path' => $attachment['path'] ?? null,
+                'attachment_name' => $attachment['name'] ?? null,
+                'attachment_mime' => $attachment['mime'] ?? null,
+                'attachment_size' => $attachment['size'] ?? null,
                 'reference_id' => null,
                 'reference_type' => null,
                 'user_id' => $recipient->id,
@@ -303,11 +309,13 @@ class UrgentNotificationService
                 'target_value',
                 'url',
                 'sender_id',
+                'attachment_path',
+                'attachment_name',
                 DB::raw('MIN(created_at) as created_at'),
                 DB::raw('COUNT(*) as total_recipients'),
                 DB::raw('COUNT(read_at) as read_count')
             )
-            ->groupBy('batch_id', 'title', 'message', 'target_type', 'target_value', 'url', 'sender_id')
+            ->groupBy('batch_id', 'title', 'message', 'target_type', 'target_value', 'url', 'sender_id', 'attachment_path', 'attachment_name')
             ->orderByDesc('created_at')
             ->take($limit)
             ->get();
@@ -322,6 +330,9 @@ class UrgentNotificationService
                 ? round(($batch->read_count / $batch->total_recipients) * 100)
                 : 0;
             $batch->target_label = $this->formatTargetLabel($batch->target_type, $batch->target_value);
+            $batch->attachment_url = $batch->attachment_path
+                ? Storage::disk('public')->url($batch->attachment_path)
+                : null;
             return $batch;
         });
     }
@@ -350,6 +361,9 @@ class UrgentNotificationService
             'title' => $first->title,
             'message' => $first->message,
             'url' => $first->url,
+            'attachment_path' => $first->attachment_path,
+            'attachment_name' => $first->attachment_name,
+            'attachment_url' => $first->attachment_url,
             'target_type' => $first->target_type,
             'target_value' => $first->target_value,
             'target_label' => $this->formatTargetLabel($first->target_type, $first->target_value),

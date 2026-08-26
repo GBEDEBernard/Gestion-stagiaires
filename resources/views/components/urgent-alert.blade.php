@@ -6,6 +6,8 @@
             'title' => $notif->title,
             'message' => $notif->message,
             'url' => $notif->url,
+            'attachment_name' => $notif->attachment_name,
+            'attachment_url' => $notif->attachment_url,
             'sender_name' => $notif->sender?->name ?? 'La Direction',
             'created_at' => $notif->created_at->format('d/m/Y à H:i'),
         ];
@@ -111,6 +113,21 @@
                         <h4 class="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white leading-snug" x-text="alert.title"></h4>
                         <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mt-1 break-words" x-text="alert.message"></p>
                     </div>
+
+                    {{-- Pièce jointe PDF --}}
+                    <template x-if="alert.attachment_url">
+                        <a :href="alert.attachment_url" 
+                           target="_blank"
+                           class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span x-text="'📎 ' + alert.attachment_name"></span>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </a>
+                    </template>
 
                     {{-- Actions --}}
                     <div class="flex items-center justify-between gap-2 pt-1">

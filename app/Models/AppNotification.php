@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class AppNotification extends Model
 {
@@ -21,6 +22,10 @@ class AppNotification extends Model
         'reference_id',
         'reference_type',
         'url',
+        'attachment_path',
+        'attachment_name',
+        'attachment_mime',
+        'attachment_size',
         'user_id',
         'read_at',
     ];
@@ -29,6 +34,13 @@ class AppNotification extends Model
         'read_at'   => 'datetime',
         'is_urgent' => 'boolean',
     ];
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment_path
+            ? Storage::disk('public')->url($this->attachment_path)
+            : null;
+    }
 
     // Relation avec l'utilisateur destinataire
     public function user()

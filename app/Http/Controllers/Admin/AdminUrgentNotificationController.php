@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\UrgentNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AdminUrgentNotificationController extends Controller
 {
@@ -37,6 +38,7 @@ class AdminUrgentNotificationController extends Controller
             'title' => 'required|string|max:200',
             'message' => 'required|string|max:2000',
             'url' => 'nullable|url|max:500',
+            'attachment' => 'nullable|file|mimes:pdf|max:20480',
             'target_type' => 'required|string|in:all,employes,poste,stagiaires,typestage,domaine,individual',
             'target_value' => 'nullable|string|max:255',
             'individual_ids' => 'nullable|array',
@@ -46,9 +48,27 @@ class AdminUrgentNotificationController extends Controller
             'message.required' => 'Le message détaillé de l\'alerte est obligatoire.',
             'target_type.required' => 'Veuillez sélectionner un groupe cible.',
             'url.url' => 'Le lien d\'action doit être une URL valide (ex: https://...).',
+            'attachment.mimes' => 'Le fichier attaché doit être un PDF.',
+            'attachment.max' => 'Le fichier ne doit pas dépasser 20 Mo.',
         ]);
 
-        $result = $this->urgentService->broadcast($validated, Auth::user());
+        $attachment = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('urgent-attachments', 'public');
+            $attachment = [
+                'path' => $path,
+                'name' => $file->getClientOriginalName(),
+                'mime' => $file->getClientMimeType(),
+                'size' => $file->getSize(),
+            ];
+        }
+
+        $data = $validated;
+        unset($data['attachment']);
+        $data['attachment'] = $attachment;
+
+        $result = $this->urgentService->broadcast($data, Auth::user());
 
         if (!$result['success']) {
             return redirect()->back()
