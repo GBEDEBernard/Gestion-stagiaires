@@ -387,6 +387,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     Route::get('/', [AdminReportTrackingController::class, 'index'])->name('admin.reports.index');
     Route::get('/all', [AdminReportTrackingController::class, 'all'])->name('admin.reports.all');
     Route::get('/{id}', [AdminReportTrackingController::class, 'show'])->name('admin.reports.show'); // ← Page de détails
+    Route::get('/{id}/download-pdf', [AdminReportTrackingController::class, 'downloadPdf'])->name('admin.reports.download-pdf');
     Route::post('/{id}/send-bilan', [AdminReportTrackingController::class, 'sendWeeklyBilan'])->name('admin.reports.send-bilan');
     Route::post('/respond', [AdminReportTrackingController::class, 'respond'])->name('admin.reports.respond');
 });
@@ -396,6 +397,8 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+        Route::post('/acknowledge-all', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'acknowledgeAll'])->name('notifications.acknowledgeAll');
+        Route::post('/{id}/acknowledge', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'acknowledge'])->name('notifications.acknowledge');
         Route::get('/unread-json', function () {
             $service = app(\App\Services\NotificationService::class);
             return response()->json([
@@ -424,6 +427,15 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
             return response()->json(['success' => true]);
         })->name('notifications.mark-all.api');
     });
+
+    // ---------------- Notifications Urgentes (Admin) ----------------
+    Route::prefix('admin/notifications/urgent')->middleware('role:admin')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'index'])->name('admin.notifications.urgent.index');
+        Route::post('/', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'store'])->name('admin.notifications.urgent.store');
+        Route::get('/count-recipients', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'countRecipients'])->name('admin.notifications.urgent.count');
+        Route::get('/batch/{batchId}', [\App\Http\Controllers\Admin\AdminUrgentNotificationController::class, 'batchDetails'])->name('admin.notifications.urgent.batch');
+    });
+
 
     // ---------------- Demandes de permission (Etudiant & Employé) ----------------
     Route::prefix('permissions')->middleware('permission:permissions.view')->group(function () {

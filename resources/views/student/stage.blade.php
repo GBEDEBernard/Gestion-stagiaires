@@ -147,7 +147,18 @@
             <!-- Carte 3 : Rapport du jour -->
             <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
                 <p class="text-sm font-medium text-slate-500">Rapport du jour</p>
-                <p class="mt-2 text-3xl font-bold text-slate-900">{{ $todayReport?->status ?: 'En attente' }}</p>
+                @php
+                    $reportStatusMap = [
+                        'submitted' => 'Soumis',
+                        'reviewed' => 'Validé',
+                        'approved' => 'Approuvé',
+                        'draft' => 'Brouillon',
+                        'pending' => 'En attente',
+                        'rejected' => 'Rejeté',
+                    ];
+                    $todayReportStatus = $todayReport?->status ? ($reportStatusMap[$todayReport->status] ?? ucfirst($todayReport->status)) : 'En attente';
+                @endphp
+                <p class="mt-2 text-3xl font-bold text-slate-900">{{ $todayReportStatus }}</p>
                 <div class="mt-4 space-y-2 text-sm text-slate-500">
                     <div class="flex justify-between">
                         <span>Mise à jour :</span>
@@ -256,7 +267,7 @@
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-500 sm:text-right">
-                                    <div>Priorité : <span class="font-medium text-slate-800">{{ ucfirst($task->priority) }}</span></div>
+                                    <div>Priorité : <span class="font-medium text-slate-800">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Moyenne','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
                                     <div class="col-span-2">Démarré le : <span class="font-medium text-slate-800">{{ $task->started_at?->format('d/m/Y') ?: '--' }}</span></div>
                                     <div>date de fin : <span class="font-medium text-slate-800">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
                                     <div class="col-span-2 mt-1 inline-flex items-center gap-1 font-semibold text-indigo-600">
@@ -301,7 +312,19 @@
                         </div>
                         <div class="flex items-center justify-between py-2.5">
                             <dt>Mode présence</dt>
-                            <dd class="font-medium text-slate-900">{{ $activeStage->presence_mode ?: 'Géolocalisée' }}</dd>
+                            @php
+                                $presenceModeMap = [
+                                    'geolocation_only' => 'Géolocalisée',
+                                    'geolocation' => 'Géolocalisée',
+                                    'badge_only' => 'Badge uniquement',
+                                    'badge' => 'Badge',
+                                    'qr_code' => 'Code QR',
+                                    'manual' => 'Manuel',
+                                    'both' => 'Géolocalisation & Badge',
+                                ];
+                                $presenceModeText = $presenceModeMap[$activeStage->presence_mode] ?? ($activeStage->presence_mode ? ucfirst(str_replace('_', ' ', $activeStage->presence_mode)) : 'Géolocalisée');
+                            @endphp
+                            <dd class="font-medium text-slate-900">{{ $presenceModeText }}</dd>
                         </div>
                         @php
                             $encoreDansPeriode = $activeStage->date_debut?->isPast() && !$activeStage->date_fin?->isPast();

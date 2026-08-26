@@ -26,12 +26,12 @@ class StageController extends Controller
 
         if ($request->filled('statut')) {
             if ($request->statut === 'En cours') {
-                $query->whereDate('date_debut', '<=', now())
-                    ->whereDate('date_fin', '>=', now());
+                $query->whereDate('date_debut', '<=', today())
+                    ->whereDate('date_fin', '>=', today());
             } elseif (in_array($request->statut, ['Termine', 'Terminé'], true)) {
-                $query->whereDate('date_fin', '<', now());
+                $query->whereDate('date_fin', '<', today());
             } elseif (in_array($request->statut, ['A venir', 'À venir'], true)) {
-                $query->whereDate('date_debut', '>', now());
+                $query->whereDate('date_debut', '>', today());
             }
         }
 
@@ -55,20 +55,25 @@ class StageController extends Controller
         $now = now();
         $currentYear = $now->month >= 9 ? $now->year . '-' . ($now->year + 1) : ($now->year - 1) . '-' . $now->year;
 
+        $perPage = (int) $request->get('per_page', 10);
+        if (!in_array($perPage, [5, 10, 20, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
         if ($request->annee_academique === 'all') {
             $stages = $query->orderBy('annee_academique', 'desc')->orderBy('date_debut', 'desc')->get();
             $stagesParAnnee = $stages->groupBy('annee_academique');
         } else {
             $anneeCible = $request->filled('annee_academique') ? $request->annee_academique : $currentYear;
             $query->where('annee_academique', $anneeCible);
-            $stages = $query->orderBy('date_debut', 'desc')->paginate(5)->withQueryString();
+            $stages = $query->orderBy('date_debut', 'desc')->paginate($perPage)->withQueryString();
             $stagesParAnnee = null;
         }
 
         $typestages = TypeStage::all();
         $anneesAcademiques = Stage::distinct()->whereNotNull('annee_academique')->orderBy('annee_academique', 'desc')->pluck('annee_academique');
 
-        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques'));
+        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques', 'perPage'));
     }
 
     public function create()
@@ -235,7 +240,7 @@ class StageController extends Controller
         $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'site', 'supervisor']);
 
         $statutEnCours = $stage->date_debut && $stage->date_fin
-            ? (now()->between($stage->date_debut, $stage->date_fin) ? 'En cours' : (now()->gt($stage->date_fin) ? 'Termine' : 'A venir'))
+            ? (today()->lt($stage->date_debut) ? 'A venir' : (today()->gt($stage->date_fin) ? 'Termine' : 'En cours'))
             : 'A venir';
 
         $signataires = Signataire::orderBy('ordre')->get();

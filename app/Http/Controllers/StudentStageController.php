@@ -25,7 +25,12 @@ class StudentStageController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        if (!$etudiant) {
+            if ($user && $user->hasAnyRole(['admin', 'superviseur'])) {
+                return redirect()->route('dashboard');
+            }
+            abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+        }
 
         $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
         abort_if(!$activeStage, 404, "Aucun stage actif trouve.");
@@ -40,7 +45,13 @@ class StudentStageController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+        if (!$etudiant) {
+            if ($user && $user->hasAnyRole(['admin', 'superviseur'])) {
+                return redirect()->route('dashboard')
+                    ->with('info', "Vous êtes administrateur : redirection vers votre espace de travail.");
+            }
+            abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+        }
 
         $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
         $attendanceDay = $activeStage

@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\VerifyPinController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
+    /*
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
@@ -27,6 +28,7 @@ Route::middleware('guest')->group(function () {
 
     Route::post('resend-register-pin', [RegisterPinVerificationController::class, 'resend'])
         ->name('verification.pin.resend');
+    */
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

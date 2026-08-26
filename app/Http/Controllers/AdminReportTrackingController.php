@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Models\Task;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AdminReportTrackingController extends Controller
 {
@@ -66,69 +68,170 @@ class AdminReportTrackingController extends Controller
         ));
     }
 
-public function show(Request $request, $id)
-{
-    $report = DailyReport::with([
-        'etudiant.user',
-        'etudiant.personnel',
-        'user.personnel',
-        'stage',
-        'reviews.reviewer',
-        'reviews.reviewer.personnel',
-        'task'
-    ])->findOrFail(decrypt_route_param($id) ?? $id);
+    public function show(Request $request, $id)
+    {
+        $report = DailyReport::with([
+            'etudiant.user',
+            'etudiant.personnel',
+            'user.personnel',
+            'user.domaine',
+            'stage.supervisor.personnel',
+            'stage.domaine',
+            'stage.site',
+            'reviews.reviewer',
+            'reviews.reviewer.personnel',
+            'task.assignees.personnel',
+            'task.owner.personnel',
+        ])->findOrFail(decrypt_route_param($id) ?? $id);
 
-    // Vérification des permissions
-    if (!auth()->user()->can('daily_reports.view')) {
-        abort(403);
+        // Vérification des permissions
+        if (!auth()->user()->can('daily_reports.view')) {
+            abort(403);
+        }
+
+        $authorUser = $report->user ?? $report->etudiant?->user;
+        $authorEtudiant = $report->etudiant ?? $authorUser?->etudiant;
+
+        // Récupérer toutes les tâches du stage ou associées à cet utilisateur/étudiant avec leurs rapports
+        $relatedTasks = Task::with([
+            'owner.personnel',
+            'assignees.personnel',
+            'stage',
+            'dailyReports' => function ($q) {
+                $q->with(['user.personnel', 'etudiant.personnel', 'reviews.reviewer.personnel'])
+                  ->orderBy('report_date', 'desc')
+                  ->orderBy('created_at', 'desc');
+            },
+        ])->where(function ($q) use ($report, $authorUser, $authorEtudiant) {
+            if ($report->stage_id) {
+                $q->where('stage_id', $report->stage_id);
+            }
+            if ($authorEtudiant) {
+                $q->orWhere('etudiant_id', $authorEtudiant->id);
+            }
+            if ($authorUser) {
+                $q->orWhere('owner_id', $authorUser->id)
+                  ->orWhereHas('assignees', fn($aq) => $aq->where('users.id', $authorUser->id));
+            }
+        })->distinct()->get();
+
+        // Pour le JSON (si appelé via AJAX)
+        if ($request->wantsJson()) {
+            return response()->json([
+                'report' => [
+                    'id'                    => $report->id,
+                    'summary'               => $report->summary,
+                    'introduction'          => $report->introduction,
+                    'blockers'              => $report->blockers,
+                    'next_steps'            => $report->next_steps,
+                    'hours_declared'        => $report->hours_declared,
+                    'status'                => $report->status,
+                    'author_name'           => $report->user?->personnel?->prenom . ' ' . $report->user?->personnel?->nom ?? $report->user?->name ?? 'N/A',
+                    'author_email'          => $report->user?->email ?? $report->etudiant?->user?->email ?? 'N/A',
+                    'author_type'           => $report->etudiant_id ? 'etudiant' : 'employe',
+                    'stage_theme'           => $report->stage?->theme,
+                    'task_title'            => $report->task?->title,
+                    'task_progress_percent' => $report->task_progress_percent,
+                    'report_date_formatted' => $report->report_date->format('l j F Y'),
+                    'created_at_formatted'  => $report->created_at->diffForHumans(),
+                    'updated_at_formatted'  => $report->updated_at->diffForHumans(),
+                    'created_at_full'       => $report->created_at->format('d/m/Y à H:i'),
+                    'updated_at_full'       => $report->updated_at->format('d/m/Y à H:i'),
+                    'latitude'              => $report->latitude,
+                    'longitude'             => $report->longitude,
+                    'accuracy_meters'       => $report->accuracy_meters,
+                    'location_method'       => $report->location_method,
+                ],
+                'reviews' => $report->reviews->map(function ($review) {
+                    return [
+                        'id'            => $review->id,
+                        'comment'       => $review->comment,
+                        'reviewer_name' => $review->reviewer?->personnel?->prenom . ' ' . $review->reviewer?->personnel?->nom ?? $review->reviewer?->name ?? 'Utilisateur',
+                        'reviewer_id'   => $review->reviewer_id,
+                        'created_at'    => $review->created_at->diffForHumans(),
+                        'created_at_full' => $review->created_at->format('d/m/Y à H:i'),
+                        'action'        => $review->action,
+                        'is_author'     => $review->reviewer_id === $report->user_id || $review->reviewer_id === $report->etudiant?->user?->id,
+                    ];
+                }),
+                'can_send_bilan' => auth()->user()->can('admin.reports.send-bilan'),
+            ]);
+        }
+
+        // Pour la vue HTML (page complète)
+        return view('admin.reports.show', compact('report', 'relatedTasks'));
     }
 
-    // Pour le JSON (si appelé via AJAX)
-    if ($request->wantsJson()) {
-        return response()->json([
-            'report' => [
-                'id'                    => $report->id,
-                'summary'               => $report->summary,
-                'introduction'          => $report->introduction,
-                'blockers'              => $report->blockers,
-                'next_steps'            => $report->next_steps,
-                'hours_declared'        => $report->hours_declared,
-                'status'                => $report->status,
-                'author_name'           => $report->user?->personnel?->prenom . ' ' . $report->user?->personnel?->nom ?? $report->user?->name ?? 'N/A',
-                'author_email'          => $report->user?->email ?? $report->etudiant?->user?->email ?? 'N/A',
-                'author_type'           => $report->etudiant_id ? 'etudiant' : 'employe',
-                'stage_theme'           => $report->stage?->theme,
-                'task_title'            => $report->task?->title,
-                'task_progress_percent' => $report->task_progress_percent,
-                'report_date_formatted' => $report->report_date->format('l j F Y'),
-                'created_at_formatted'  => $report->created_at->diffForHumans(),
-                'updated_at_formatted'  => $report->updated_at->diffForHumans(),
-                'created_at_full'       => $report->created_at->format('d/m/Y à H:i'),
-                'updated_at_full'       => $report->updated_at->format('d/m/Y à H:i'),
-                'latitude'              => $report->latitude,
-                'longitude'             => $report->longitude,
-                'accuracy_meters'       => $report->accuracy_meters,
-                'location_method'       => $report->location_method,
-            ],
-            'reviews' => $report->reviews->map(function ($review) {
-                return [
-                    'id'            => $review->id,
-                    'comment'       => $review->comment,
-                    'reviewer_name' => $review->reviewer?->personnel?->prenom . ' ' . $review->reviewer?->personnel?->nom ?? $review->reviewer?->name ?? 'Utilisateur',
-                    'reviewer_id'   => $review->reviewer_id,
-                    'created_at'    => $review->created_at->diffForHumans(),
-                    'created_at_full' => $review->created_at->format('d/m/Y à H:i'),
-                    'action'        => $review->action,
-                    'is_author'     => $review->reviewer_id === $report->user_id || $review->reviewer_id === $report->etudiant?->user?->id,
-                ];
-            }),
-            'can_send_bilan' => auth()->user()->can('admin.reports.send-bilan'),
-        ]);
-    }
+    /**
+     * Téléchargement du détail complet du rapport en PDF
+     */
+    public function downloadPdf(Request $request, $id)
+    {
+        if (!auth()->user()->can('daily_reports.view')) {
+            abort(403);
+        }
 
-    // Pour la vue HTML (page complète)
-    return view('admin.reports.show', compact('report'));
-}
+        $report = DailyReport::with([
+            'etudiant.user',
+            'etudiant.personnel',
+            'user.personnel',
+            'user.domaine',
+            'stage.supervisor.personnel',
+            'stage.domaine',
+            'stage.site',
+            'stage.etudiant',
+            'reviews.reviewer.personnel',
+            'task.owner.personnel',
+            'task.assignees.personnel',
+            'task.stage',
+        ])->findOrFail(decrypt_route_param($id) ?? $id);
+
+        $authorUser = $report->user ?? $report->etudiant?->user;
+        $authorEtudiant = $report->etudiant ?? $authorUser?->etudiant;
+
+        // Récupérer toutes les tâches du stage ou associées avec tous leurs rapports
+        $relatedTasks = Task::with([
+            'owner.personnel',
+            'assignees.personnel',
+            'stage',
+            'dailyReports' => function ($q) {
+                $q->with(['user.personnel', 'etudiant.personnel', 'reviews.reviewer.personnel'])
+                  ->orderBy('report_date', 'desc')
+                  ->orderBy('created_at', 'desc');
+            },
+        ])->where(function ($q) use ($report, $authorUser, $authorEtudiant) {
+            if ($report->stage_id) {
+                $q->where('stage_id', $report->stage_id);
+            }
+            if ($authorEtudiant) {
+                $q->orWhere('etudiant_id', $authorEtudiant->id);
+            }
+            if ($authorUser) {
+                $q->orWhere('owner_id', $authorUser->id)
+                  ->orWhereHas('assignees', fn($aq) => $aq->where('users.id', $authorUser->id));
+            }
+        })->distinct()->get();
+
+        $logoPath    = public_path('images/TFGLOGO.png');
+        $logoDataUri = file_exists($logoPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+            : '';
+        $isPdf       = true;
+
+        $pdf = Pdf::loadView('admin.reports.report_pdf', compact('report', 'relatedTasks', 'logoDataUri', 'isPdf'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'defaultFont'          => 'sans-serif',
+            ]);
+
+        $authorName = Str::slug($report->user?->personnel?->nom ?? $report->user?->name ?? 'rapport');
+        $dateStr    = $report->report_date->format('Y-m-d');
+        $fileName   = 'rapport_' . $dateStr . '_' . $authorName . '_' . $report->id . '.pdf';
+
+        return $pdf->download($fileName);
+    }
 
     /**
      * Tableau complet de TOUS les rapports (étudiants + employés confondus),

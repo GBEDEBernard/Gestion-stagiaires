@@ -381,9 +381,9 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             ];
         }
 
-        // --- 5) Vérification de la DISTANCE par rapport au site (NOUVEAU seuil 100 m) ---
-        //    On utilise la constante MAX_ALLOWED_DISTANCE_METERS, pas le rayon de la geofence.
-        if ($distance !== null && $distance > self::MAX_ALLOWED_DISTANCE_METERS) {
+        // --- 5) Vérification de la DISTANCE par rapport au site ---
+        $maxDistance = $geofence?->radius_meters ?? self::MAX_ALLOWED_DISTANCE_METERS;
+        if ($distance !== null && $distance > $maxDistance) {
             // Si l'utilisateur est sur le réseau interne, on peut accepter avec un flag
             if ($isInternalNetwork && $accuracy > 300) {
                 return [
@@ -398,7 +398,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             return [
                 'status'      => 'rejected',
                 'reason_code' => 'outside_geofence',
-                'message'     => "Vous êtes à plus de " . self::MAX_ALLOWED_DISTANCE_METERS . " mètres du site autorisé.",
+                'message'     => "Vous êtes à plus de " . $maxDistance . " mètres du site autorisé.",
                 'anomaly'     => 'outside_geofence',
                 'severity'    => 'high',
             ];
@@ -710,8 +710,9 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             ];
         }
 
-        //NOUVEAU : vérification de la distance (max 100 m)
-        if ($distance !== null && $distance > self::MAX_ALLOWED_DISTANCE_METERS) {
+        // Vérification de la distance par rapport au rayon autorisé
+        $maxDistance = $geofence?->radius_meters ?? self::MAX_ALLOWED_DISTANCE_METERS;
+        if ($distance !== null && $distance > $maxDistance) {
             if ($isInternalNetwork && $accuracy > 300) {
                 return [
                     'status'      => 'flagged',
@@ -724,7 +725,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             return [
                 'status'      => 'rejected',
                 'reason_code' => 'outside_geofence',
-                'message'     => "Vous êtes à plus de " . self::MAX_ALLOWED_DISTANCE_METERS . " mètres du site autorisé.",
+                'message'     => "Vous êtes à plus de " . $maxDistance . " mètres du site autorisé.",
                 'anomaly'     => 'outside_geofence',
                 'severity'    => 'high',
             ];
@@ -927,14 +928,15 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             (float) $geofence->center_longitude
         );
 
-        $verified = $distance <= self::MAX_ALLOWED_DISTANCE_METERS;
+        $maxDistance = $geofence->radius_meters ?? self::MAX_ALLOWED_DISTANCE_METERS;
+        $verified = $distance <= $maxDistance;
 
         return [
             'verified'     => $verified,
             'distance_meters' => $distance,
             'message'      => $verified
                 ? "Position validée (à {$distance} m du site)."
-                : "Vous êtes à {$distance} m du site. Maximum autorisé : " . self::MAX_ALLOWED_DISTANCE_METERS . " m.",
+                : "Vous êtes à {$distance} m du site. Maximum autorisé : " . $maxDistance . " m.",
             'geofence_center_lat' => (float) $geofence->center_latitude,
             'geofence_center_lng' => (float) $geofence->center_longitude,
         ];

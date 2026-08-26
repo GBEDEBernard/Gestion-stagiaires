@@ -69,7 +69,7 @@
                         </button>
                     </div>
 
-                    @if(\App\Models\User::count() === 0)
+                    @if(Route::has('register') && \App\Models\User::count() === 0)
                     <div class="mt-2 text-center">
                         <a href="{{ route('register') }}" class="text-sm tfg-link font-semibold">
                             Aucun utilisateur ? Créer le premier compte (Admin)

@@ -60,7 +60,7 @@
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                 {{ $user->status === 'actif' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
-                                {{ ucfirst($user->status ?? 'inactif') }}
+                                {{ ['actif'=>'Actif','inactif'=>'Inactif','active'=>'Actif','inactive'=>'Inactif'][$user->status ?? 'inactif'] ?? ucfirst($user->status ?? 'Inactif') }}
                             </span>
                         </td>
                         <td class="px-6 py-4">

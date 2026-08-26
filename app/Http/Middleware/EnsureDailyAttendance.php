@@ -27,8 +27,13 @@ class EnsureDailyAttendance
 
         $routeName = $request->route()?->getName() ?? '';
 
-        // Les routes du flux de pointage et la déconnexion restent accessibles.
-        if (Str::startsWith($routeName, 'presence.') || $routeName === 'logout') {
+        // Les routes du flux de pointage, impersonation et déconnexion restent accessibles.
+        if (Str::startsWith($routeName, 'presence.') || $routeName === 'logout' || $routeName === 'impersonate.leave') {
+            return $next($request);
+        }
+
+        // En session d'impersonation (admin consultant un compte), ne pas bloquer la navigation.
+        if ($request->session()->has('impersonate_user_id')) {
             return $next($request);
         }
 

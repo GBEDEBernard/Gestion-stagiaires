@@ -735,7 +735,7 @@
                  <h3 class="text-base sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
                      📊 Évolution des statistiques — {{ $allUsers->where('id', $selectedUserId)->first()['name'] ?? 'Utilisateur' }}
                  </h3>
-                 <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Période: {{ ucfirst($period) }}</p>
+                 <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Période: {{ ['today'=>'Aujourd\'hui','week'=>'Cette semaine','month'=>'Ce mois','year'=>'Cette année','day'=>'Jour'][$period] ?? ucfirst($period) }}</p>
              </div>
              <div class="p-3 sm:p-6">
                  <div class="relative h-64 sm:h-80 md:h-96">

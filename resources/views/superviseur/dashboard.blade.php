@@ -1,15 +1,12 @@
-<xai:tool_usage_card>
-    Superviseur Dashboard created: lists supervised stages, today's attendance, pending reports.
-</xai:tool_usage_card>
 @extends('layouts.app')
 
-@section('title', 'Dashboard Superviseur')
+@section('title', 'Tableau de bord Superviseur')
 
 @section('content')
 <div class="p-6">
     <div class="flex flex-col md:flex-row gap-6">
         <div class="flex-1">
-            <h1 class="text-2xl font-bold mb-8">Dashboard Superviseur</h1>
+            <h1 class="text-2xl font-bold mb-8">Tableau de bord Superviseur</h1>
 
             @if($supervisedStages->isEmpty())
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -31,7 +28,11 @@
                         </div>
                         <div class="flex justify-between">
                             <span>Rapport du jour:</span>
-                            <span class="text-green-600">{{ $stage->dailyReports->first()?->status ?? 'Non soumis' }}</span>
+                            @php
+                                $rStatus = $stage->dailyReports->first()?->status;
+                                $rLabel = ['submitted'=>'Soumis','reviewed'=>'Validé','approved'=>'Approuvé','draft'=>'Brouillon'][$rStatus] ?? ($rStatus ? ucfirst($rStatus) : 'Non soumis');
+                            @endphp
+                            <span class="text-green-600">{{ $rLabel }}</span>
                         </div>
                     </div>
                     <a href="{{ encrypted_route('stages.show', $stage) }}" class="btn-primary w-full text-center">Voir stage</a>

@@ -501,6 +501,23 @@ $user = auth()->user();
             {{ session('success') }}
         </div>
         @endif
+
+        @if($errors->any())
+        <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 6000)"
+             class="fixed bottom-5 right-5 z-50 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm font-medium"
+             style="background:#ef4444; color:#fff; box-shadow: 0 4px 24px rgba(0,0,0,.25); max-width: 340px;">
+            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style="background:rgba(255,255,255,.2);">
+                <svg class="h-3.5 w-3.5" style="color:#fff;" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </span>
+            <div class="flex-1">
+                @foreach($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </div>
 
 </x-app-layout>

@@ -337,4 +337,35 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('assigned_at');
     }
 
+    /**
+     * Récupère le domaine de travail de l'utilisateur (direct, via personnel ou fallback).
+     */
+    public function getDomaineAttribute(): ?Domaine
+    {
+        // 1. Directement si domaine_id existe sur users
+        if (!empty($this->attributes['domaine_id'])) {
+            return Domaine::find($this->attributes['domaine_id']);
+        }
+
+        // 2. Via personnel -> employe -> domaine
+        if ($this->personnel && $this->personnel->personnable_type === Employe::class && $this->personnel->personnable) {
+            return $this->personnel->personnable->domaine;
+        }
+
+        // 3. Via personnel -> etudiant -> active stage -> domaine
+        if ($this->personnel && $this->personnel->personnable_type === Etudiant::class && $this->personnel->personnable) {
+            $stage = $this->personnel->personnable->stages()->latest()->first();
+            if ($stage && $stage->domaine) {
+                return $stage->domaine;
+            }
+        }
+
+        // 4. Si administrateur ou superviseur, fallback vers le premier domaine disponible
+        if ($this->hasAnyRole(['admin', 'superviseur'])) {
+            return Domaine::first();
+        }
+
+        return null;
+    }
+
 }

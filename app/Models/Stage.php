@@ -184,20 +184,20 @@ class Stage extends Model
 
     public function getStatutAttribute()
     {
-        $now = now();
+        $today = today();
 
         if (!$this->date_debut || !$this->date_fin) {
             return 'A venir';
         }
 
-        if ($now->lt($this->date_debut)) {
+        if ($today->lt($this->date_debut)) {
             return 'A venir';
         }
 
-        if ($now->between($this->date_debut, $this->date_fin)) {
-            return 'En cours';
+        if ($today->gt($this->date_fin)) {
+            return 'Termine';
         }
 
-        return 'Termine';
+        return 'En cours';
     }
 }

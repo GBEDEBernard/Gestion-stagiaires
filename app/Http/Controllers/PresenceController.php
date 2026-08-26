@@ -42,8 +42,8 @@ class PresenceController extends Controller
 
             // Trouve le stage actif (le plus récent en cours)
             $activeStage = $etudiant->stages()
-                ->where('date_debut', '<=', now())
-                ->where('date_fin', '>=', now())
+                ->whereDate('date_debut', '<=', today())
+                ->whereDate('date_fin', '>=', today())
                 ->with('site', 'typestage')
                 ->orderByDesc('date_debut')
                 ->first();
@@ -81,7 +81,12 @@ class PresenceController extends Controller
             $domaine = $user->domaine;
 
             if (!$domaine) {
-                abort(403, "Votre compte n'est pas rattaché à un domaine de travail.");
+                if ($user->hasAnyRole(['admin', 'superviseur'])) {
+                    return redirect()->route('admin.presence.index')
+                        ->with('info', "En tant qu'administrateur, vous avez accès au suivi global des présences.");
+                }
+                return redirect()->route('dashboard')
+                    ->with('error', "Votre compte n'est pas rattaché à un domaine de travail. Veuillez contacter un administrateur.");
             }
 
             // Query today's attendance for employee
@@ -134,7 +139,12 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
-            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+            if (!$etudiant) {
+                if ($user->hasAnyRole(['admin', 'superviseur'])) {
+                    return redirect()->route('dashboard');
+                }
+                abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+            }
 
             // ✅ Le pointage d'arrivée des stagiaires est ouvert à partir de 07h30 uniquement
             if (now()->format('H:i') < '07:30') {
@@ -211,7 +221,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ]);
 
             $domaine = $user->domaine;
-            abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
+            if (!$domaine) {
+                return redirect()->route('dashboard')->with('error', "Votre compte n'est pas rattaché à un domaine de travail.");
+            }
 
             $previewData = [
                 'user_name' => $user->name,
@@ -285,7 +297,12 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
-            abort_if(!$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+            if (!$etudiant) {
+                if ($user->hasAnyRole(['admin', 'superviseur'])) {
+                    return redirect()->route('dashboard');
+                }
+                abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+            }
 
             $request->validate([
                 'stage_id' => 'required|exists:stages,id',
@@ -358,7 +375,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ]);
 
             $domaine = $user->domaine;
-            abort_if(!$domaine, 403, "Votre compte n'est pas rattaché à un domaine de travail.");
+            if (!$domaine) {
+                return redirect()->route('dashboard')->with('error', "Votre compte n'est pas rattaché à un domaine de travail.");
+            }
 
             $previewData = [
                 'user_name' => $user->name,
@@ -568,7 +587,13 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
     {
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-        abort_if($user->hasRole('etudiant') && !$etudiant, 403, "Votre compte n'est pas encore rattache a une fiche etudiant.");
+
+        if ($user->hasRole('etudiant') && !$etudiant) {
+            if ($user->hasAnyRole(['admin', 'superviseur'])) {
+                return redirect()->route('dashboard');
+            }
+            abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+        }
         $period = $request->get('period', 'month');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');

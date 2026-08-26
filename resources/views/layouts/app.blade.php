@@ -51,6 +51,49 @@
             animation: pulse-ring 1.8s infinite;
         }
 
+        @keyframes urgentTextShimmer {
+            0% {
+                background-position: 200% center;
+                opacity: 0.92;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.03);
+            }
+            100% {
+                background-position: -200% center;
+                opacity: 0.92;
+                transform: scale(1);
+            }
+        }
+
+        .urgent-text-animated {
+            background: linear-gradient(90deg, #fef08a 0%, #ffffff 25%, #fde047 50%, #ffffff 75%, #fef08a 100%);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: urgentTextShimmer 3s ease-in-out infinite;
+            filter: drop-shadow(0 1px 3px rgba(185, 28, 28, 0.8));
+            display: inline-block;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        @keyframes urgentBeacon {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            15% { transform: scale(1.18) rotate(-8deg); }
+            30% { transform: scale(1.18) rotate(8deg); }
+            45% { transform: scale(1.1) rotate(-4deg); }
+            60% { transform: scale(1) rotate(0deg); }
+        }
+
+        .urgent-beacon-icon {
+            animation: urgentBeacon 2.5s ease-in-out infinite;
+        }
+
         @keyframes pulse-ring {
             0% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, .6);
@@ -335,59 +378,64 @@
                         {{ $title }}
                     </h2>
 
-                        {{-- Actions desktop --}}
-                        <div class="hidden lg:flex items-center gap-2" x-data="{ isDark: document.documentElement.classList.contains('dark'), toggleTheme() { this.isDark = !this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('theme', this.isDark ? 'dark' : 'light'); } }">
-                            <button @click="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                <svg x-show="!isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                </svg>
-                                <svg x-show="isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" />
-                                </svg>
-                            </button>
+                        {{-- Actions desktop & Alerte Urgente --}}
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            {{-- Dropdown d'Alerte Urgente dans le Header --}}
+                            <x-urgent-alert />
 
-                            {{-- Dropdown notifications desktop --}}
-                            <div class="relative" x-data="{ open: false, count: {{ $notificationCount ?? 0 }} }">
-                                <button @click="open = !open" class="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            <div class="hidden lg:flex items-center gap-2" x-data="{ isDark: document.documentElement.classList.contains('dark'), toggleTheme() { this.isDark = !this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('theme', this.isDark ? 'dark' : 'light'); } }">
+                                <button @click="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                    <svg x-show="!isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                                     </svg>
-                                    <span x-show="count > 0" x-text="count > 9 ? '9+' : count" class="badge-pulse absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold"></span>
+                                    <svg x-show="isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" />
+                                    </svg>
                                 </button>
 
-                                <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                                    <div class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                        <span class="font-semibold text-gray-800 dark:text-gray-200">Notifications</span>
-                                        <a href="{{ route('notifications.index') }}" @click="open = false" class="text-xs text-indigo-600 hover:underline">Tout voir</a>
-                                    </div>
-                                    <div class="max-h-96 overflow-y-auto">
-                                        @php
-                                        $latestNotifs = \App\Models\AppNotification::where('user_id', Auth::id())->latest()->limit(5)->get();
-                                        @endphp
-                                        @forelse($latestNotifs as $notif)
-                                        <a href="{{ route('notifications.markRead', $notif->id) }}" @click="open = false"
-                                            class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 {{ !$notif->read_at ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
-                                            <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $notif->title }}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $notif->message }}</p>
-                                            <p class="text-xs text-gray-400 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
-                                        </a>
-                                        @empty
-                                        <div class="px-4 py-6 text-center text-gray-500">Aucune notification</div>
-                                        @endforelse
+                                {{-- Dropdown notifications desktop --}}
+                                <div class="relative" x-data="{ open: false, count: {{ $notificationCount ?? 0 }} }">
+                                    <button @click="open = !open" class="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
+                                        <span x-show="count > 0" x-text="count > 9 ? '9+' : count" class="badge-pulse absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold"></span>
+                                    </button>
+
+                                    <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                                        <div class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                            <span class="font-semibold text-gray-800 dark:text-gray-200">Notifications</span>
+                                            <a href="{{ route('notifications.index') }}" @click="open = false" class="text-xs text-indigo-600 hover:underline">Tout voir</a>
+                                        </div>
+                                        <div class="max-h-96 overflow-y-auto">
+                                            @php
+                                            $latestNotifs = \App\Models\AppNotification::where('user_id', Auth::id())->latest()->limit(5)->get();
+                                            @endphp
+                                            @forelse($latestNotifs as $notif)
+                                            <a href="{{ route('notifications.markRead', $notif->id) }}" @click="open = false"
+                                                class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 {{ !$notif->read_at ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
+                                                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $notif->title }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $notif->message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
+                                            </a>
+                                            @empty
+                                            <div class="px-4 py-6 text-center text-gray-500">Aucune notification</div>
+                                            @endforelse
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {{-- Bouton mobile --}}
-                        <button onclick="window.dispatchEvent(new CustomEvent('open-mobile-panel', { detail: { tab: 'notifs' } }))" class="lg:hidden relative p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                            </svg>
-                            @if(isset($notificationCount) && $notificationCount > 0)
-                            <span class="badge-pulse absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{{ $notificationCount > 9 ? '9+' : $notificationCount }}</span>
-                            @endif
-                        </button>
+                            {{-- Bouton mobile menu --}}
+                            <button onclick="window.dispatchEvent(new CustomEvent('open-mobile-panel', { detail: { tab: 'notifs' } }))" class="lg:hidden relative p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                                </svg>
+                                @if(isset($notificationCount) && $notificationCount > 0)
+                                <span class="badge-pulse absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{{ $notificationCount > 9 ? '9+' : $notificationCount }}</span>
+                                @endif
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>

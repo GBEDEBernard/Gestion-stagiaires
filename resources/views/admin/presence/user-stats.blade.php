@@ -252,7 +252,7 @@
                             </td>
                             <td>
                                 @php $sc=['low'=>'sev-low','medium'=>'sev-medium','high'=>'sev-high'][$anomaly->severity??'low']??'sev-low' @endphp
-                                <span class="us-tag {{ $sc }}">{{ ucfirst($anomaly->severity??'low') }}</span>
+                                <span class="us-tag {{ $sc }}">{{ ['low'=>'Faible','medium'=>'Moyenne','high'=>'Élevée','critical'=>'Critique'][$anomaly->severity??'low'] ?? ucfirst($anomaly->severity??'faible') }}</span>
                             </td>
                             <td style="text-align:right;">
                                 <a href="{{ route('admin.presence.anomalies') }}"

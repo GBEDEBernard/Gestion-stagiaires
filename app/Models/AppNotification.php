@@ -9,6 +9,11 @@ class AppNotification extends Model
     protected $fillable = [
         'unique_id',
         'type',
+        'is_urgent',
+        'target_type',
+        'target_value',
+        'batch_id',
+        'sender_id',
         'title',
         'message',
         'icon',
@@ -21,13 +26,35 @@ class AppNotification extends Model
     ];
 
     protected $casts = [
-        'read_at' => 'datetime',
+        'read_at'   => 'datetime',
+        'is_urgent' => 'boolean',
     ];
 
-    // Relation avec l'utilisateur
+    // Relation avec l'utilisateur destinataire
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    // Relation avec l'émetteur (admin)
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    // Scope pour les notifications urgentes
+    public function scopeUrgent($query)
+    {
+        return $query->where('is_urgent', true);
+    }
+
+    // Scope pour la notification urgente non lue active d'un utilisateur
+    public function scopeUrgentUnreadForUser($query, $userId)
+    {
+        $id = $userId instanceof User ? $userId->id : $userId;
+        return $query->where('user_id', $id)
+                     ->where('is_urgent', true)
+                     ->whereNull('read_at');
     }
 
     // Scope pour les notifications non lues
@@ -71,4 +98,11 @@ class AppNotification extends Model
     {
         return $this->read_at !== null;
     }
+
+    // Vérifier si urgente
+    public function isUrgent(): bool
+    {
+        return (bool) $this->is_urgent;
+    }
 }
+

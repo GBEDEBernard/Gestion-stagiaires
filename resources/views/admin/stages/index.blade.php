@@ -23,7 +23,7 @@
         --muted:       #7a8aaa;
     }
 
-    .si-wrap { max-width: 1280px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .si-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
     .si-header {
         display: flex; align-items: flex-start; justify-content: space-between;
@@ -142,6 +142,42 @@
         box-shadow: 0 2px 8px rgba(15,111,255,.28);
     }
 
+    .si-perpage-wrap {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .35rem .75rem;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+    }
+    .si-perpage-label {
+        font-size: .78rem;
+        font-weight: 600;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+    .fi-select-perpage {
+        padding: .3rem 1.75rem .3rem .6rem;
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--text);
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        outline: none;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right .45rem center;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+    .fi-select-perpage:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px rgba(15,111,255,.15);
+    }
+
     /* ── Sections par année ── */
     .si-annee-header {
         display: flex; align-items: center; justify-content: space-between;
@@ -169,7 +205,7 @@
         border-bottom: 1px solid var(--border);
     }
     table.si-table th {
-        padding: .9rem 1.25rem;
+        padding: .75rem .85rem;
         font-size: .72rem; font-weight: 700;
         text-transform: uppercase; letter-spacing: .08em;
         color: var(--muted); text-align: left; white-space: nowrap;
@@ -182,7 +218,7 @@
     }
     table.si-table tbody tr:last-child { border-bottom: none; }
     table.si-table tbody tr:hover { background: var(--surface-alt); }
-    table.si-table td { padding: .9rem 1.25rem; vertical-align: middle; }
+    table.si-table td { padding: .75rem .85rem; vertical-align: middle; }
 
     /* ── Avatars ── */
     .si-avatar {
@@ -199,7 +235,7 @@
     .si-avatar.grad-3 { background: linear-gradient(135deg,#8b5cf6,#ec4899); }
     .si-avatar.grad-4 { background: linear-gradient(135deg,#0f6fff,#06b6d4); }
 
-    .si-person { display: flex; align-items: center; gap: .75rem; min-width: 160px; }
+    .si-person { display: flex; align-items: center; gap: .65rem; }
     .si-person-name { font-size: .875rem; font-weight: 600; color: var(--text); }
     .si-person-sub  { font-size: .78rem; color: var(--muted); margin-top: 1px; }
 
@@ -231,9 +267,9 @@
     .si-period-end   { color: var(--muted); margin-top: 1px; }
     .si-period-arrow { color: var(--muted); margin: 0 2px; }
 
-    .si-org-main { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .si-org-main { font-size: .85rem; font-weight: 600; color: var(--text); word-break: break-word; }
     .si-org-sub  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-    .si-jours { font-size: .78rem; color: var(--muted); max-width: 140px; line-height: 1.4; }
+    .si-jours { font-size: .78rem; color: var(--muted); line-height: 1.4; word-break: break-word; }
 
     /* ── Actions ── */
     .si-actions { display: flex; align-items: center; justify-content: flex-end; gap: .4rem; }
@@ -296,6 +332,8 @@
     <form id="filters-form" method="GET" action="{{ route('stages.index') }}" class="si-filters">
         {{-- Champ caché pour l'année, piloté par les onglets --}}
         <input type="hidden" name="annee_academique" id="annee-academique-input" value="{{ request('annee_academique') }}">
+        {{-- Champ caché pour la pagination par page --}}
+        <input type="hidden" name="per_page" id="per-page-input" value="{{ $perPage ?? 10 }}">
 
         <div class="si-filters-grid">
             <div>
@@ -340,20 +378,51 @@
         </p>
     </form>
 
-    {{-- ── Onglets années académiques ── --}}
-    <div class="si-year-tabs" id="year-tabs">
-        <button type="button"
-            class="si-year-tab {{ !request('annee_academique') ? 'active' : '' }}"
-            data-year="">
-            Toutes les années
-        </button>
-        @foreach($anneesAcademiques as $aa)
-        <button type="button"
-            class="si-year-tab {{ request('annee_academique') == $aa ? 'active' : '' }}"
-            data-year="{{ $aa }}">
-            {{ $aa }}
-        </button>
-        @endforeach
+    {{-- ── Onglets années académiques, statut rapide et pagination par page ── --}}
+    <div class="si-year-tabs" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;" id="quick-filters-container">
+        <div id="year-tabs" style="display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;">
+            <button type="button"
+                class="si-year-tab {{ !request('annee_academique') ? 'active' : '' }}"
+                data-year="">
+                Toutes les années
+            </button>
+            @foreach($anneesAcademiques as $aa)
+            <button type="button"
+                class="si-year-tab {{ request('annee_academique') == $aa ? 'active' : '' }}"
+                data-year="{{ $aa }}">
+                {{ $aa }}
+            </button>
+            @endforeach
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div id="status-tabs" style="display: flex; gap: .4rem; flex-wrap: wrap;">
+                <button type="button"
+                    class="si-year-tab status-tab {{ request('statut') == 'En cours' ? 'active' : '' }}"
+                    data-status="En cours">
+                    En cours
+                </button>
+                <button type="button"
+                    class="si-year-tab status-tab {{ in_array(request('statut'), ['Termine', 'Terminé'], true) ? 'active' : '' }}"
+                    data-status="Termine">
+                    Terminé
+                </button>
+            </div>
+
+            <div class="si-perpage-wrap">
+                <label for="per-page-select" class="si-perpage-label">
+                    Lignes par page :
+                </label>
+                <select id="per-page-select" class="fi-select-perpage" title="Nombre de lignes par page">
+                    <option value="5" {{ ($perPage ?? 10) == 5 ? 'selected' : '' }}>5</option>
+                    <option value="10" {{ ($perPage ?? 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="20" {{ ($perPage ?? 10) == 20 ? 'selected' : '' }}>20</option>
+                    <option value="25" {{ ($perPage ?? 10) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ ($perPage ?? 10) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ ($perPage ?? 10) == 100 ? 'selected' : '' }}>100</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     {{-- ── Contenu du tableau ── --}}
@@ -620,12 +689,6 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
-                @if($stages->hasPages())
-                <div class="si-pagination" style="padding:1rem 1.5rem;border-top:1px solid var(--border);">
-                    {{ $stages->links() }}
-                </div>
-                @endif
             </div>
         @endif
 
@@ -677,6 +740,16 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchAndReplace(buildUrl());
     }
 
+    /* ── Sélecteur de lignes par page ── */
+    const perPageSelect = document.getElementById('per-page-select');
+    const perPageInput  = document.getElementById('per-page-input');
+    if (perPageSelect && perPageInput) {
+        perPageSelect.addEventListener('change', function () {
+            perPageInput.value = this.value;
+            refresh();
+        });
+    }
+
     /* ── Onglets années ── */
     if (yearTabs) {
         yearTabs.querySelectorAll('.si-year-tab').forEach(btn => {
@@ -685,6 +758,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.add('active');
                 yearInput.value = this.dataset.year;
                 refresh();
+            });
+        });
+    }
+
+    /* ── Onglets Statut rapide ── */
+    const statusTabs = document.getElementById('status-tabs');
+    const statutSelect = document.querySelector('select[name="statut"]');
+    if (statusTabs && statutSelect) {
+        statusTabs.querySelectorAll('.status-tab').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const isActive = this.classList.contains('active');
+                statusTabs.querySelectorAll('.status-tab').forEach(b => b.classList.remove('active'));
+                if (isActive) {
+                    statutSelect.value = '';
+                } else {
+                    this.classList.add('active');
+                    statutSelect.value = this.dataset.status;
+                }
+                refresh();
+            });
+        });
+
+        statutSelect.addEventListener('change', function() {
+            statusTabs.querySelectorAll('.status-tab').forEach(b => {
+                if (b.dataset.status === this.value || (this.value === 'Termine' && b.dataset.status === 'Termine')) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
             });
         });
     }

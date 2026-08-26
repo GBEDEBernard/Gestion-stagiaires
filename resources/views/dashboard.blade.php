@@ -32,83 +32,6 @@
     </div>
 
     <div class="space-y-5 overflow-x-hidden">
-        {{-- ─ NOTIFICATIONS ─ --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
-                <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                    <span class="truncate">Notifications</span>
-                </h3>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    @if($notificationCount > 0)
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 whitespace-nowrap">{{ $notificationCount }} non lu(s)</span>
-                    @endif
-                    <a href="{{ route('notifications.index') }}" class="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 whitespace-nowrap">
-                        Voir tout
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-            <div class="max-h-64 sm:max-h-80 overflow-y-auto">
-                @forelse($notifications as $notification)
-                <a href="{{ $notification->url }}"
-                    onclick="event.preventDefault(); document.getElementById('dash-notif-form-{{ $notification->id }}').submit();"
-                    class="flex items-start gap-3 px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
-                    <form id="dash-notif-form-{{ $notification->id }}" action="{{ route('notifications.markRead', $notification->id) }}" method="GET" style="display:none;"></form>
-                    <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mt-0.5
-                        @if($notification->color === 'blue') bg-blue-100 text-blue-600
-                        @elseif($notification->color === 'amber') bg-amber-100 text-amber-600
-                        @else bg-green-100 text-green-600 @endif">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between gap-2">
-                            <p class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{{ $notification->title }}</p>
-                            @if(!$notification->read_at)
-                            <span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-1 sm:line-clamp-2">{{ $notification->message }}</p>
-                        <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
-                    </div>
-                </a>
-                @empty
-                <div class="px-6 py-8 sm:py-12 text-center">
-                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                    <p class="text-gray-500 font-medium text-sm">Aucune notification</p>
-                    <p class="text-xs text-gray-400 mt-1">Vous êtes à jour !</p>
-                </div>
-                @endforelse
-            </div>
-            @if($notificationCount > 0)
-            <div class="px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between gap-3">
-                <form action="{{ route('notifications.markAllRead') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Tout marquer comme lu
-                    </button>
-                </form>
-                <a href="{{ route('notifications.index') }}" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
-                    Voir plus
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </a>
-            </div>
-            @endif
-        </div>
-
         {{-- ── KPI ROW 1 ──────────────────────────────────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {{-- Total Stages --}}
@@ -426,6 +349,83 @@
                     @endforeach
                 </div>
             </div>
+        </div>
+
+        {{-- ─ NOTIFICATIONS (EN BAS) ─ --}}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
+                <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span class="truncate">Notifications</span>
+                </h3>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    @if($notificationCount > 0)
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 whitespace-nowrap">{{ $notificationCount }} non lu(s)</span>
+                    @endif
+                    <a href="{{ route('notifications.index') }}" class="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 whitespace-nowrap">
+                        Voir tout
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div class="max-h-64 sm:max-h-80 overflow-y-auto">
+                @forelse($notifications as $notification)
+                <a href="{{ $notification->url }}"
+                    onclick="event.preventDefault(); document.getElementById('dash-notif-form-{{ $notification->id }}').submit();"
+                    class="flex items-start gap-3 px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition border-b border-gray-100 dark:border-gray-700 last:border-0">
+                    <form id="dash-notif-form-{{ $notification->id }}" action="{{ route('notifications.markRead', $notification->id) }}" method="GET" style="display:none;"></form>
+                    <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mt-0.5
+                        @if($notification->color === 'blue') bg-blue-100 text-blue-600
+                        @elseif($notification->color === 'amber') bg-amber-100 text-amber-600
+                        @else bg-green-100 text-green-600 @endif">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{{ $notification->title }}</p>
+                            @if(!$notification->read_at)
+                            <span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+                            @endif
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-1 sm:line-clamp-2">{{ $notification->message }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                    </div>
+                </a>
+                @empty
+                <div class="px-6 py-8 sm:py-12 text-center">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <p class="text-gray-500 font-medium text-sm">Aucune notification</p>
+                    <p class="text-xs text-gray-400 mt-1">Vous êtes à jour !</p>
+                </div>
+                @endforelse
+            </div>
+            @if($notificationCount > 0)
+            <div class="px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between gap-3">
+                <form action="{{ route('notifications.markAllRead') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Tout marquer comme lu
+                    </button>
+                </form>
+                <a href="{{ route('notifications.index') }}" class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
+                    Voir plus
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+            @endif
         </div>
 
     </div>{{-- /space-y-5 --}}

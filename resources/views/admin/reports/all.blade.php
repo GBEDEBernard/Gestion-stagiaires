@@ -74,17 +74,17 @@
             </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden w-full">
+            <div class="w-full">
+                <table class="w-full table-fixed divide-y divide-slate-200 dark:divide-slate-700 text-xs">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-800">
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Utilisateur</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Statut</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Heures</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Actions</th>
+                            <th class="w-[22%] px-4 py-3.5 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Utilisateur</th>
+                            <th class="w-[36%] px-4 py-3.5 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Description</th>
+                            <th class="w-[10%] px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Statut</th>
+                            <th class="w-[10%] px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Date</th>
+                            <th class="w-[6%] px-2 py-3.5 text-center text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Heures</th>
+                            <th class="w-[16%] px-4 py-3.5 text-right text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -94,49 +94,51 @@
                             $isStudent  = $report->etudiant_id !== null;
                             $summary    = $report->summary ?? $report->introduction ?? '—';
                         @endphp
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-semibold text-slate-900 dark:text-slate-100">{{ $authorName }}</span>
-                                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide {{ $isStudent ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700' }}">
+                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
+                            <td class="px-4 py-3.5 align-middle">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[150px]">{{ $authorName }}</span>
+                                    <span class="inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide {{ $isStudent ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }}">
                                         {{ $isStudent ? 'Stagiaire' : 'Employé' }}
                                     </span>
                                 </div>
                                 @if($report->stage?->theme)
-                                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $report->stage->theme }}</p>
+                                <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate" title="{{ $report->stage->theme }}">{{ $report->stage->theme }}</p>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 max-w-md">
+                            <td class="px-4 py-3.5 align-middle">
                                 @if($report->title)
-                                <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ $report->title }}</p>
+                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{{ $report->title }}</p>
                                 @endif
-                                <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">{{ Str::limit($summary, 180) }}</p>
+                                <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed break-words">{{ $summary }}</p>
                             </td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold
-                                    {{ $report->status === 'submitted' ? 'bg-emerald-100 text-emerald-700' : ($report->status === 'reviewed' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700') }}">
-                                    {{ ucfirst($report->status) }}
+                            <td class="px-3 py-3.5 align-middle">
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold
+                                    {{ $report->status === 'submitted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : ($report->status === 'reviewed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300') }}">
+                                    {{ ['submitted' => 'Soumis', 'reviewed' => 'Validé', 'draft' => 'Brouillon'][$report->status] ?? ucfirst($report->status) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">{{ $report->report_date->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ $report->hours_declared ?? '—' }}</td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="flex items-center gap-2">
+                            <td class="px-3 py-3.5 text-slate-700 dark:text-slate-300 font-medium align-middle whitespace-nowrap">{{ $report->report_date->format('d/m/Y') }}</td>
+                            <td class="px-2 py-3.5 text-slate-900 dark:text-slate-100 font-bold text-center align-middle whitespace-nowrap">{{ $report->hours_declared ? $report->hours_declared . 'h' : '—' }}</td>
+                            <td class="px-4 py-3.5 align-middle">
+                                <div class="flex items-center justify-end gap-1.5 flex-wrap">
                                     <a href="{{ route('admin.reports.show', $report->id) }}" 
-                                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                       class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition"
+                                       title="Consulter les détails">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         Détails
                                     </a>
                                     <button type="button"
-                                        onclick="openBilanModal({{ $report->id }}, '{{ str_replace(["'", "\\"], ["\\'", "\\\\"], $authorName) }}', '{{ $report->report_date->format('d/m/Y') }}')"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-lg hover:bg-emerald-200 dark:text-emerald-300 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 transition-colors">
+                                            onclick="openBilanModal({{ $report->id }}, '{{ str_replace(["'", "\\"], ["\\'", "\\\\"], $authorName) }}', '{{ $report->report_date->format('d/m/Y') }}')"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 rounded-lg transition"
+                                            title="Envoyer le bilan">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l12.429 3.2L3 14.4V8zm14 5.5 3 3-3 3m-3-3h6"/>
                                         </svg>
-                                        Envoyer
+                                        Bilan
                                     </button>
                                 </div>
                             </td>
