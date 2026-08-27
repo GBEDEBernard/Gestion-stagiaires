@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class PermissionRequest extends Model
 {
@@ -74,6 +75,33 @@ class PermissionRequest extends Model
             'cancelled' => 'slate',
             default     => 'slate',
         };
+    }
+
+    /**
+     * Indique si un utilisateur est l'un des destinataires (signataires) désignés
+     * pour cette demande. Seuls ces destinataires peuvent prendre une décision.
+     */
+    public function isRecipient(User $user): bool
+    {
+        $recipients = $this->relationLoaded('recipients')
+            ? $this->recipients
+            : $this->recipients()->with('signataire')->get();
+
+        return $recipients->contains(function ($recipient) use ($user) {
+            $signataire = $recipient->signataire;
+            if (!$signataire) {
+                return false;
+            }
+
+            if ($signataire->user_id && (int) $signataire->user_id === (int) $user->id) {
+                return true;
+            }
+
+            $signataireEmail = (string) $signataire->email;
+
+            return $signataireEmail !== ''
+                && Str::lower($signataireEmail) === Str::lower((string) $user->email);
+        });
     }
 
     /**
