@@ -120,11 +120,12 @@
             <div>
                 <strong class="font-semibold">Permission de départ anticipé approuvée pour aujourd'hui</strong>
                 <p class="text-sm mt-1">
-                    Vous pouvez pointer votre départ avant 18h00
                     @if($earlyDeparturePermission->fields_data['departure_time'] ?? null)
-                    à <strong>{{ $earlyDeparturePermission->fields_data['departure_time'] }}</strong>
+                    Vous pourrez pointer votre départ à partir de <strong>{{ $earlyDeparturePermission->fields_data['departure_time'] }}</strong>.
+                    Cliquez sur « Pointer le départ » dès que cette heure est atteinte.
+                    @else
+                    Vous pouvez pointer votre départ avant 18h00. Cliquez sur « Pointer le départ ».
                     @endif
-                    . Cliquez sur « Pointer le départ ».
                 </p>
             </div>
         </div>

@@ -280,12 +280,22 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
         $approvedDepartureTime = null;
 
         // Départ anticipé (avant 18h00) : une permission approuvée POUR AUJOURD'HUI est obligatoire
+        // ET l'heure de départ demandée doit déjà être atteinte.
         if ($isEarlyDeparture) {
             $approved = $this->getApprovedEarlyDeparturePermission($user);
 
             if ($approved) {
-                $hasApprovedPermission = true;
                 $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
+
+                // L'utilisateur ne peut pointer son départ qu'à partir de l'heure demandée et approuvée.
+                if ($approvedDepartureTime && now()->lt(today()->setTimeFromTimeString($approvedDepartureTime))) {
+                    return redirect()->route('presence.pointage')
+                        ->with('error', "Votre permission de départ anticipé est approuvée pour un départ à "
+                            . $approvedDepartureTime . ". Vous pourrez pointer votre départ à partir de "
+                            . $approvedDepartureTime . ". Veuillez patienter jusqu'à cette heure.");
+                }
+
+                $hasApprovedPermission = true;
             } else {
                 // Refus du pointage : pas de permission valable pour aujourd'hui
                 return redirect()->route('presence.pointage')
@@ -504,14 +514,26 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ]);
 
             // ✅ Départ anticipé avant 18h : permission approuvée requise VÉRIFIÉE côté serveur
+            //    ET l'heure de départ demandée doit déjà être atteinte.
             if ($isEarlyDeparture && $pending['type'] === 'check_out') {
-                if (!$this->getApprovedEarlyDeparturePermission($user)) {
+                $approved = $this->getApprovedEarlyDeparturePermission($user);
+                if (!$approved) {
                     request()->session()->forget('pending_pointage');
 
                     return redirect()->route('presence.pointage')
                         ->with('error', "Pointage refusé : aucune permission de départ anticipé approuvée "
                             . "pour aujourd'hui (" . today()->format('d/m/Y') . "). "
                             . "Il n'est pas encore l'heure de pointer (18h00) ou demandez une permission.");
+                }
+
+                $approvedDepartureTime = $approved->fields_data['departure_time'] ?? null;
+                if ($approvedDepartureTime && now()->lt(today()->setTimeFromTimeString($approvedDepartureTime))) {
+                    request()->session()->forget('pending_pointage');
+
+                    return redirect()->route('presence.pointage')
+                        ->with('error', "Pointage refusé : votre permission de départ anticipé est prévue à "
+                            . $approvedDepartureTime . ". Vous pourrez pointer votre départ à partir de "
+                            . $approvedDepartureTime . ". Veuillez patienter jusqu'à cette heure.");
                 }
             }
 
