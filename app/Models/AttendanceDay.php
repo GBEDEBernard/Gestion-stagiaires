@@ -211,6 +211,7 @@ class AttendanceDay extends Model
                 . 'COUNT(*) as days_count, '
                 . 'AVG(late_minutes) as avg_late')
             ->groupByRaw('COALESCE(etudiant_users.id, direct_users.id), COALESCE(CONCAT(etudiant_personnels.prenom, " ", etudiant_personnels.nom), CONCAT(direct_personnels.prenom, " ", direct_personnels.nom))')
+            ->orderByDesc('days_count')
             ->orderByDesc('total_late')
             ->limit($limit);
     }

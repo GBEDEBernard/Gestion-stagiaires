@@ -1344,9 +1344,9 @@
                             <tr>
                                 <th>#</th>
                                 <th>Utilisateur</th>
+                                <th>Jours de retard</th>
                                 <th>Total</th>
                                 <th>Moy/jour</th>
-                                <th>Jours</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1355,6 +1355,11 @@
                                 <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
                                 <td style="font-weight:500;">{{ $user->user_name ?? $user->name }}</td>
                                 <td>
+                                    <span class="pres-tag tag-amber" title="{{ $user->days_count }} jour(s) de retard">
+                                        {{ $user->days_count }} j
+                                    </span>
+                                </td>
+                                <td>
                                     <span class="pres-tag tag-amber" title="{{ $user->total_late ?? 0 }} min total">
                                         ⏰ {{ formatMinutes($user->total_late ?? 0) }}
                                     </span>
@@ -1362,7 +1367,6 @@
                                 <td style="color:var(--amber);font-family:var(--mono);font-size:.8rem;">
                                     {{ formatMinutes($user->avg_late ?? 0) }}/j
                                 </td>
-                                <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
                             </tr>
                             @empty
                             <tr>
