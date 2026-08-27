@@ -16,6 +16,7 @@ use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -206,6 +207,26 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        // ==================== BORNES DES PÉRIODES (pour la courbe cliquable) ====================
+        $rangesJour = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $rangesJour[] = [$date->format('Y-m-d'), $date->format('Y-m-d')];
+        }
+
+        $rangesSemaine = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $start = Carbon::now()->subWeeks($i)->startOfWeek();
+            $end = Carbon::now()->subWeeks($i)->endOfWeek();
+            $rangesSemaine[] = [$start->format('Y-m-d'), $end->format('Y-m-d')];
+        }
+
+        $rangesMois = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $rangesMois[] = [$date->copy()->startOfMonth()->format('Y-m-d'), $date->copy()->endOfMonth()->format('Y-m-d')];
+        }
+
         // ==================== Distribution par Type de Stage ====================
         $typesStages = TypeStage::withCount('stages')->get();
         $typesLabels = $typesStages->pluck('libelle')->toArray();
@@ -376,6 +397,9 @@ class DashboardController extends Controller
             'labelsSemaine',
             'evolutionMois',
             'labelsMois',
+            'rangesJour',
+            'rangesSemaine',
+            'rangesMois',
 
             'typesLabels',
             'typesData',
@@ -407,5 +431,74 @@ class DashboardController extends Controller
             'todayLate',
             'weekLateMinutes'
         ));
+    }
+
+    /**
+     * Détail des stagiaires inscrits sur une période précise (courbe cliquable).
+     */
+    public function registrationsDetail(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => ['required', 'date'],
+            'to'   => ['required', 'date', 'after_or_equal:from'],
+        ]);
+
+        $from = Carbon::parse($validated['from'])->startOfDay();
+        $to   = Carbon::parse($validated['to'])->endOfDay();
+
+        $perPage = min(max((int) $request->input('per_page', 10), 1), 1000);
+
+        $etudiants = Etudiant::with([
+            'personnel.user',
+            'stages' => fn ($q) => $q->with(['domaine', 'site'])->orderByDesc('date_debut'),
+        ])
+            ->whereBetween('created_at', [$from, $to])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+
+        return response()->json([
+            'from'       => $from->format('Y-m-d'),
+            'to'         => $to->format('Y-m-d'),
+            'total'      => $etudiants->total(),
+            'pagination' => [
+                'current_page' => $etudiants->currentPage(),
+                'last_page'    => $etudiants->lastPage(),
+                'per_page'     => $etudiants->perPage(),
+            ],
+            'data' => $etudiants->map(fn (Etudiant $etudiant) => [
+                'id'          => $etudiant->id,
+                'full_name'   => $etudiant->full_name ?: '—',
+                'email'       => $etudiant->email,
+                'telephone'   => $etudiant->telephone,
+                'genre'       => $etudiant->genre,
+                'ecole'       => $etudiant->ecole,
+                'niveau'      => $etudiant->niveau,
+                'created_at'  => $etudiant->created_at?->format('d/m/Y H:i'),
+                'account'     => $this->accountSummary($etudiant),
+                'stages'      => $etudiant->stages->map(fn (Stage $stage) => [
+                    'theme'       => $stage->theme,
+                    'domaine'     => $stage->domaine?->nom,
+                    'site'        => $stage->site?->nom,
+                    'statut'      => $stage->statut,
+                    'date_debut'  => $stage->date_debut?->format('d/m/Y'),
+                    'date_fin'    => $stage->date_fin?->format('d/m/Y'),
+                ])->values(),
+            ]),
+        ]);
+    }
+
+    private function accountSummary(Etudiant $etudiant): array
+    {
+        $user = $etudiant->personnel?->user;
+
+        if (!$user) {
+            return ['status' => 'none', 'label' => 'Sans compte'];
+        }
+
+        if ($user->email_verified_at) {
+            return ['status' => 'active', 'label' => 'Compte actif'];
+        }
+
+        return ['status' => 'pending', 'label' => 'Compte en attente'];
     }
 }
