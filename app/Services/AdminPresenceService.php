@@ -433,6 +433,7 @@ class AdminPresenceService
             'range_end'          => $endDate,
             'chart_data' => [
                 'labels'       => $chartSeries['labels'],
+                'dates'        => $chartSeries['dates'],
                 'present'      => $chartSeries['present'],
                 'late_minutes' => $chartSeries['late_minutes'],
                 'late_days'    => $chartSeries['late_days'],
@@ -453,6 +454,7 @@ class AdminPresenceService
     private function buildSeries(Collection $dailyStats, Carbon $rangeStart, Carbon $rangeEnd, Carbon $systemStart, array $holidays, Carbon $today, array $employeeStartDates): array
     {
         $labels          = [];
+        $dateKeys        = [];
         $presentData     = [];
         $lateMinutesData = [];
         $lateDaysData    = [];
@@ -479,6 +481,7 @@ class AdminPresenceService
             $exceptionsCount = (int) ($exceptionsByDate[$dateKey] ?? 0);
 
             $labels[]       = $currentDate->format('d/m');
+            $dateKeys[]     = $dateKey;
             $holidayFlags[] = $holiday;
             $futureFlags[]  = $future;
 
@@ -528,6 +531,7 @@ class AdminPresenceService
 
         return [
             'labels'       => $labels,
+            'dates'        => $dateKeys,
             'present'      => $presentData,
             'late_minutes' => $lateMinutesData,
             'late_days'    => $lateDaysData,
@@ -1442,6 +1446,164 @@ class AdminPresenceService
         }
 
         return $blocks->sortBy(fn ($b) => mb_strtolower($b['user']->name))->values();
+    }
+
+    /**
+     * Détail journalier pour un point cliquable des graphiques de la page de
+     * supervision. Reproduit le même calcul que getGlobalStats pour les attendus
+     * (stagiaires actifs + employés entrés en pointage) à une date précise.
+     */
+    public function getChartDayDetails(string $date): array
+    {
+        $day          = Carbon::parse($date)->startOfDay();
+        $dateKey      = $day->format('Y-m-d');
+        $today        = today();
+        $label        = $day->isoFormat('dddd D MMMM YYYY');
+        $weekend      = $day->isWeekend();
+        $future       = $day->gt($today);
+        $systemStart  = $this->systemStartDate();
+        $holiday      = isset($this->getActiveHolidaysInRange($day->copy(), $day->copy())[$dateKey]);
+        $beforeSystem = $day->lt($systemStart);
+
+        $emptySummary = [
+            'total'          => 0,
+            'present'        => 0,
+            'on_time'        => 0,
+            'late'           => 0,
+            'absent'         => 0,
+            'corrected'      => 0,
+            'worked_minutes' => 0,
+            'late_minutes'   => 0,
+        ];
+
+        if ($weekend || $future) {
+            return [
+                'date'          => $dateKey,
+                'label'         => $label,
+                'weekend'       => $weekend,
+                'future'        => $future,
+                'holiday'       => $holiday,
+                'before_system' => $beforeSystem,
+                'summary'       => $emptySummary,
+                'rows'          => [],
+            ];
+        }
+
+        // ── Pointages réels du jour, indexés par clé (e|u + identifiant) ──
+        $attendanceMap = AttendanceDay::forActiveUsers()
+            ->with(['checkInEvent.geofence.site:id,name', 'stage.site:id,name', 'site:id,name', 'etudiant.user', 'user.personnel.personnable.site:id,name'])
+            ->whereDate('attendance_date', $dateKey)
+            ->get()
+            ->mapWithKeys(function (AttendanceDay $ad) {
+                $key = $ad->etudiant_id ? 'e' . $ad->etudiant_id : 'u' . $ad->user_id;
+                return [$key => $ad];
+            });
+
+        // ── Jours corrigés (exceptions) indexés par utilisateur ──
+        $exceptionsByUser = AttendanceException::whereDate('attendance_date', $dateKey)
+            ->get()
+            ->keyBy('user_id');
+
+        $rows = collect();
+
+        // ── Stagiaires attendus ce jour ──
+        $stagesByEtudiant = $this->activeStagesOnDate($dateKey)
+            ->with(['etudiant.user.personnel', 'site:id,name', 'jours'])
+            ->get()
+            ->groupBy('etudiant_id');
+
+        foreach ($stagesByEtudiant as $etudiantId => $etudiantStages) {
+            $etudiant = $etudiantStages->first()->etudiant;
+            $user     = $etudiant?->user;
+            if (!$etudiant || !$user) {
+                continue;
+            }
+
+            // Début effectif borné de la même manière que buildSeries
+            $stageStart = $etudiantStages->map(fn ($s) => Carbon::parse($s->date_debut)->startOfDay())->min();
+            $effectiveStart = $this->debutPointage($user, $stageStart)->max($stageStart);
+            if ($day->lt($effectiveStart)) {
+                continue;
+            }
+
+            $workStage = $etudiantStages->first();
+            $details = $this->buildDetailDay(
+                $attendanceMap->get('e' . $etudiantId),
+                $day,
+                $exceptionsByUser->get($user->id),
+                $workStage->site?->name
+            );
+
+            $rows->push([
+                'id'             => $user->id,
+                'name'           => $etudiant->nom ?? $user->name,
+                'group'          => 'stagiaire',
+                'school'         => $etudiant->ecole ?: null,
+                'site_name'      => $details['site_name'],
+                'status'         => $details['status'],
+                'arrival'        => $details['arrival'],
+                'departure'      => $details['departure'],
+                'worked_minutes' => $details['worked_minutes'],
+                'late_minutes'   => $details['late_minutes'],
+            ]);
+        }
+
+        // ── Employés actifs attendus (hors admin) ──
+        $employees = User::with(['personnel.personnable.site:id,name'])
+            ->whereHas('personnel', fn ($q) => $q->where('personnable_type', Employe::class))
+            ->where('status', 'actif')
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'admin'))
+            ->get()
+            ->filter(fn ($u) => $this->debutPointage($u)->lte($day));
+
+        foreach ($employees as $employee) {
+            $details = $this->buildDetailDay(
+                $attendanceMap->get('u' . $employee->id),
+                $day,
+                $exceptionsByUser->get($employee->id),
+                $employee->personnel?->personnable?->site?->name
+            );
+
+            $rows->push([
+                'id'             => $employee->id,
+                'name'           => $employee->name,
+                'group'          => 'employe',
+                'school'         => null,
+                'site_name'      => $details['site_name'],
+                'status'         => $details['status'],
+                'arrival'        => $details['arrival'],
+                'departure'      => $details['departure'],
+                'worked_minutes' => $details['worked_minutes'],
+                'late_minutes'   => $details['late_minutes'],
+            ]);
+        }
+
+        // Jours fériés / antérieurs à l'activation : seuls les présents réels comptent
+        if ($holiday || $beforeSystem) {
+            $rows = $rows->whereIn('status', ['on_time', 'late']);
+        }
+
+        $rows = $rows->sortBy(fn ($r) => mb_strtolower($r['name']))->values();
+
+        return [
+            'date'          => $dateKey,
+            'label'         => $label,
+            'weekend'       => $weekend,
+            'future'        => $future,
+            'holiday'       => $holiday,
+            'before_system' => $beforeSystem,
+            'summary'       => [
+                'total'          => $rows->count(),
+                'present'        => $rows->whereIn('status', ['on_time', 'late'])->count(),
+                'on_time'        => $rows->where('status', 'on_time')->count(),
+                'late'           => $rows->where('status', 'late')->count(),
+                'absent'         => $rows->where('status', 'absent')->count(),
+                'corrected'      => $rows->where('status', 'corrected')->count(),
+                'worked_minutes' => $rows->sum('worked_minutes'),
+                'late_minutes'   => $rows->sum('late_minutes'),
+            ],
+            'rows'          => $rows->all(),
+        ];
     }
 
     /**
