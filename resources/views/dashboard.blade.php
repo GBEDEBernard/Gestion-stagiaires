@@ -766,9 +766,20 @@
         window.openRegistrationsDetails = function (from, to, label) {
             const el = document.getElementById('registrations-modal');
             if (!el) return;
-            const comp = el.__x && el.__x.$data;
-            if (comp && typeof comp.openDetail === 'function') {
-                comp.openDetail(from, to, label);
+            let data = null;
+
+            if (window.Alpine && typeof window.Alpine.$data === 'function') {
+                try { data = window.Alpine.$data(el); } catch (e) { data = null; }
+            }
+            if (!data && el.__x && el.__x.$data) {
+                data = el.__x.$data;
+            }
+            if (!data) {
+                console.warn('[Registrations] Alpine composant modale non initialisé.');
+                return;
+            }
+            if (typeof data.openDetail === 'function') {
+                data.openDetail(from, to, label);
             }
         };
     </script>
@@ -808,8 +819,15 @@
             if (inscChart) inscChart.destroy();
 
             const clickPoint = (evt, items) => {
-                if (!items || !items.length) return;
-                const idx = items[0].index;
+                let idx = (items && items.length) ? items[0].index : null;
+
+                if (idx === null && inscChart) {
+                    const xScale = inscChart.scales.x;
+                    const estimated = Math.round(xScale.getValueForPixel(evt.x));
+                    if (Number.isFinite(estimated)) idx = estimated;
+                }
+
+                if (idx === null || idx < 0) return;
                 const range = ranges && ranges[idx];
                 if (!range) return;
                 if (typeof window.openRegistrationsDetails === 'function') {
@@ -828,8 +846,9 @@
                         backgroundColor: 'rgba(59,130,246,0.1)',
                         fill: true,
                         tension: 0.4,
-                        pointRadius: 3,
-                        pointHoverRadius: 6,
+                        pointRadius: 4,
+                        pointHitRadius: 15,
+                        pointHoverRadius: 7,
                         pointBackgroundColor: '#3b82f6',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 1.5,

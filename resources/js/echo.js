@@ -15,11 +15,36 @@
 let Echo = null;
 window.Echo = null;
 
+function probeReachable(url, timeoutMs = 2000) {
+    return new Promise((resolve) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        fetch(url, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+            .then(() => resolve(true))
+            .catch(() => resolve(false))
+            .finally(() => clearTimeout(timer));
+    });
+}
+
 async function initEcho() {
     const wsHost = import.meta.env.VITE_REVERB_HOST || import.meta.env.VITE_PUSHER_HOST;
     const wsKey  = import.meta.env.VITE_REVERB_APP_KEY || import.meta.env.VITE_PUSHER_APP_KEY;
     if (!wsHost || !wsKey) {
         console.log('[Echo] Skipped — Reverb host not configured');
+        Echo = null;
+        window.Echo = null;
+        return;
+    }
+
+    const wsScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+    const wsPort   = parseInt(import.meta.env.VITE_REVERB_PORT || '8080', 10);
+
+    // Probes Reverb before instantiating Echo to avoid a flood of failed
+    // WebSocket attempts when the server is not running (falls back to polling).
+    const healthUrl = `${wsScheme}://${wsHost}:${wsPort}/app/health`;
+    const reachable = await probeReachable(healthUrl);
+    if (!reachable) {
+        console.log('[Echo] Skipped — Reverb injoignable, le polling prend le relais.');
         Echo = null;
         window.Echo = null;
         return;
@@ -32,9 +57,6 @@ async function initEcho() {
         ]);
 
         window.Pusher = Pusher.default;
-
-        const wsScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
-        const wsPort   = parseInt(import.meta.env.VITE_REVERB_PORT || '8080', 10);
 
         const echoConfig = {
             broadcaster: 'reverb',
