@@ -495,7 +495,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
 
 
                 <!-- 5. Organisation - AVEC PERSISTANCE -->
-                @if(!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe'))
+                @if(auth()->user()->hasRole('admin') || (!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe')))
                 @canany(['sites.view', 'domaines.view', 'tasks.view'])
                 <div class="mb-4">
                     <button @click="$store.nav.toggle('organisation')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'organisation' ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">

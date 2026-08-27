@@ -35,7 +35,7 @@
         {{-- ── KPI ROW 1 ──────────────────────────────────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {{-- Total Stages --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('stages.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,10 +46,10 @@
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalStages }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Total Stages</p>
-            </div>
+            </a>
 
             {{-- Stages en cours --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('stages.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,10 +60,10 @@
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $enCoursGlobal }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Stages en cours</p>
-            </div>
+            </a>
 
             {{-- Stagiaires --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('etudiants.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
                         <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,10 +74,10 @@
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalEtudiants }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Stagiaires inscrits</p>
-            </div>
+            </a>
 
             {{-- Attestations --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('stages.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="p-2 sm:p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl w-fit mb-3">
                     <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
@@ -85,18 +85,22 @@
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $totalAttestations }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Attestations délivrées</p>
-            </div>
+            </a>
         </div>
 
         {{-- ── KPI ROW 2 ──────────────────────────────────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             @foreach([
-                ['bg-purple-100 dark:bg-purple-900/30','text-purple-600',$terminesGlobal,'Stages terminés'],
-                ['bg-orange-100 dark:bg-orange-900/30','text-orange-600',$inscritsGlobal,'Stages à venir'],
-                ['bg-cyan-100 dark:bg-cyan-900/30','text-cyan-600',$dureeMoyenne.' j','Durée moyenne'],
-                ['bg-rose-100 dark:bg-rose-900/30','text-rose-600',$etudiantsSansStage,'Sans stage'],
-            ] as [$bg,$ic,$val,$lbl])
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+                ['bg-purple-100 dark:bg-purple-900/30','text-purple-600',$terminesGlobal,'Stages terminés',route('stages.index')],
+                ['bg-orange-100 dark:bg-orange-900/30','text-orange-600',$inscritsGlobal,'Stages à venir',route('stages.index')],
+                ['bg-cyan-100 dark:bg-cyan-900/30','text-cyan-600',$dureeMoyenne.' j','Durée moyenne',null],
+                ['bg-rose-100 dark:bg-rose-900/30','text-rose-600',$etudiantsSansStage,'Sans stage',route('etudiants.index')],
+            ] as [$bg,$ic,$val,$lbl,$link])
+            @if($link)
+            <a href="{{ $link }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            @else
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+            @endif
                 <div class="p-2 sm:p-2.5 {{ $bg }} rounded-xl w-fit mb-3">
                     <svg class="w-5 h-5 {{ $ic }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -104,7 +108,11 @@
                 </div>
                 <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $val }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $lbl }}</p>
+            @if($link)
+            </a>
+            @else
             </div>
+            @endif
             @endforeach
         </div>
 
@@ -337,21 +345,21 @@
             <div class="p-4 sm:p-6">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     @foreach([
-                        ['Stages',$stagesTrash->count(),'text-purple-600','bg-purple-50 dark:bg-purple-900/20'],
-                        ['Stagiaires',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20'],
-                        ['Badges',$badgesTrash->count(),'text-amber-600','bg-amber-50 dark:bg-amber-900/20'],
-                        ['Total',$totalTrash,'text-rose-600','bg-rose-50 dark:bg-rose-900/20'],
-                    ] as [$lbl,$cnt,$cls,$bg])
-                    <div class="{{ $bg }} rounded-xl p-3 sm:p-4 text-center hover:opacity-80 transition">
+                        ['Stages',$stagesTrash->count(),'text-purple-600','bg-purple-50 dark:bg-purple-900/20',route('stages.trash')],
+                        ['Stagiaires',$etudiantsTrash->count(),'text-blue-600','bg-blue-50 dark:bg-blue-900/20',route('etudiants.trash')],
+                        ['Badges',$badgesTrash->count(),'text-amber-600','bg-amber-50 dark:bg-amber-900/20',route('stages.trash')],
+                        ['Total',$totalTrash,'text-rose-600','bg-rose-50 dark:bg-rose-900/20',route('stages.trash')],
+                    ] as [$lbl,$cnt,$cls,$bg,$link])
+                    <a href="{{ $link }}" class="{{ $bg }} rounded-xl p-3 sm:p-4 text-center hover:opacity-80 transition block">
                         <p class="text-2xl sm:text-3xl font-bold {{ $cls }}">{{ $cnt }}</p>
                         <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ $lbl }}</p>
-                    </div>
+                    </a>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        {{-- ─ NOTIFICATIONS (EN BAS) ─ --}}
+        <!-- {{-- ─ NOTIFICATIONS (EN BAS) ─ --}}
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3">
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -372,7 +380,7 @@
                     </a>
                 </div>
             </div>
-            <div class="max-h-64 sm:max-h-80 overflow-y-auto">
+             <div class="max-h-64 sm:max-h-80 overflow-y-auto">
                 @forelse($notifications as $notification)
                 <a href="{{ $notification->url }}"
                     onclick="event.preventDefault(); document.getElementById('dash-notif-form-{{ $notification->id }}').submit();"
@@ -424,9 +432,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </a>
-            </div>
+            </div> 
             @endif
-        </div>
+        </div> -->
 
     </div>{{-- /space-y-5 --}}
 

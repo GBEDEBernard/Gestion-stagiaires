@@ -307,7 +307,7 @@
                         <div class="flex items-center justify-between py-2.5">
                             <dt>Horaire attendu</dt>
                             <dd class="font-medium text-slate-900">
-                                {{ $activeStage->expected_check_in_time ?: '08:00' }} - {{ $activeStage->expected_check_out_time ?: '18:00' }}
+                                {{ $activeStage->expected_check_in_time ?: '8h' }} 
                             </dd>
                         </div>
                         <div class="flex items-center justify-between py-2.5">
