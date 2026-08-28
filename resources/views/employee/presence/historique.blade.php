@@ -790,19 +790,38 @@
             @php
             $chartDataSafe = $userStats['chart_data'] ?? [
             'labels' => [],
+            'dates' => [],
             'present' => [],
             'on_time' => [],
             'late_days' => [],
             'absences' => [],
             'late_minutes' => [],
             'worked_hours' => [],
+            'holidays' => [],
+            'future' => [],
             ];
             $hasChartData = !empty($chartDataSafe['labels']);
+
+            // Détails par jour pour la modale des graphiques (mêmes données que le tableau des pointages)
+            $dayRowsByDate = $attendanceDays->mapWithKeys(function ($d) {
+                return [
+                    $d->attendance_date->format('Y-m-d') => [
+                        'date_label'    => $d->attendance_date->locale('fr')->isoFormat('D MMMM YYYY'),
+                        'week_label'    => ucfirst($d->attendance_date->locale('fr')->isoFormat('dddd')),
+                        'arrival'       => $d->first_check_in_at?->format('H:i'),
+                        'departure'     => $d->last_check_out_at?->format('H:i'),
+                        'worked_minutes'=> (int) $d->worked_minutes,
+                        'late_minutes'  => (int) $d->late_minutes,
+                        'observation'   => $d->late_observation,
+                    ],
+                ];
+            })->all();
             @endphp
 
             @if($hasChartData)
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">💡 Cliquez sur un point d'une courbe pour afficher le détail du jour.</div>
                 <div class="pres-card">
                     <div class="chart-legend">
                         <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présent</div>
@@ -986,6 +1005,141 @@
         </div>
     </div>
 
+    {{-- Modal détail d'un jour cliqué sur les graphiques --}}
+    <div id="history-day-modal" x-data="historyDayApp()" x-show="open" x-cloak
+         class="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+        <div x-show="open" x-transition.opacity @click="hide()" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        <div x-show="open" x-transition.duration.200ms @keydown.escape.window="hide()"
+             class="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-10">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">Détail du jour</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <span x-text="info?.fullLabel || ''"></span>
+                            <template x-if="info?.weekday"><span x-text="' — ' + info.weekday"></span></template>
+                        </p>
+                    </div>
+                </div>
+                <button @click="hide()" class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-5 sm:px-6 py-5">
+                <div x-show="info?.future" class="py-10 text-center">
+                    <div class="text-3xl">🚀</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Ce jour n'est pas encore arrivé.</p>
+                </div>
+                <div x-show="info?.holiday" class="py-10 text-center">
+                    <div class="text-3xl">🎉</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour férié — aucune présence attendue.</p>
+                </div>
+
+                <div x-show="!info?.future && !info?.holiday">
+                    <div class="flex justify-center mb-5">
+                        <span x-text="statusBadge(info?.status).label" :class="statusBadge(info?.status).cls"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold">
+                            <span class="w-1.5 h-1.5 rounded-full" :class="statusBadge(info?.status).dot"></span>
+                        </span>
+                    </div>
+
+                    <p x-show="info?.status === 'none'" class="text-center text-sm text-gray-500 dark:text-gray-400">
+                        Aucune activité relevée pour ce jour.
+                    </p>
+
+                    <div x-show="info?.status !== 'none'" class="grid grid-cols-2 gap-3">
+                        <div class="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-3">
+                            <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Arrivée</p>
+                            <p class="mt-1 text-sm font-bold text-gray-900 dark:text-white" x-text="info?.arrival || '—'"></p>
+                        </div>
+                        <div class="rounded-xl bg-gray-50 dark:bg-gray-700/40 p-3">
+                            <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Départ</p>
+                            <p class="mt-1 text-sm font-bold text-gray-900 dark:text-white" x-text="info?.departure || '—'"></p>
+                        </div>
+                        <div class="rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
+                            <p class="text-[11px] uppercase tracking-wide text-blue-400 font-semibold">Heures travaillées</p>
+                            <p class="mt-1 text-sm font-bold text-blue-700 dark:text-blue-300" x-text="fmtHours(info?.worked_minutes)"></p>
+                        </div>
+                        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 p-3">
+                            <p class="text-[11px] uppercase tracking-wide text-amber-500 font-semibold">Retard</p>
+                            <p class="mt-1 text-sm font-bold text-amber-700 dark:text-amber-300" x-text="fmtMin(info?.late_minutes)"></p>
+                        </div>
+                    </div>
+
+                    <div x-show="info?.observation" class="mt-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
+                        <p class="text-[11px] uppercase tracking-wide text-amber-600 dark:text-amber-400 font-semibold">Observation (retard)</p>
+                        <p class="mt-1.5 text-sm text-gray-700 dark:text-gray-200" x-text="info.observation"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function historyDayApp() {
+            return {
+                open: false,
+                info: null,
+
+                show(info) {
+                    this.info = info || {};
+                    this.open = true;
+                },
+                hide() {
+                    this.open = false;
+                },
+
+                statusBadge(status) {
+                    const map = {
+                        on_time: { label: "À l'heure", cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', dot: 'bg-blue-500' },
+                        late:    { label: 'En retard', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', dot: 'bg-amber-500' },
+                        absent:  { label: 'Absent', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300', dot: 'bg-rose-500' },
+                        none:    { label: 'Jour non travaillé', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' },
+                    };
+                    return map[status] || { label: status || '—', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' };
+                },
+
+                fmtMin(m) {
+                    if (!m || m <= 0) return '0min';
+                    const h = Math.floor(m / 60), mins = m % 60;
+                    if (h === 0) return mins + 'min';
+                    if (mins === 0) return h + 'h';
+                    return h + 'h ' + mins + 'min';
+                },
+                fmtHours(m) {
+                    const h = (m || 0) / 60;
+                    return h.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + 'h';
+                },
+            };
+        }
+
+        window.openHistoryDayDetail = function (detail) {
+            const el = document.getElementById('history-day-modal');
+            if (!el) return;
+            let data = null;
+            if (window.Alpine && typeof window.Alpine.$data === 'function') {
+                try { data = window.Alpine.$data(el); } catch (e) { data = null; }
+            }
+            if (!data && el.__x && el.__x.$data) {
+                data = el.__x.$data;
+            }
+            if (!data || typeof data.show !== 'function') {
+                console.warn('[Historique] Alpine composant modale non initialisé.');
+                return;
+            }
+            data.show(detail);
+        };
+    </script>
+
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
@@ -1000,6 +1154,7 @@
 
             const cd = @json($chartDataSafe);
             const labels = cd.labels ?? [];
+            const chartDates = cd.dates ?? [];
             const present = cd.present ?? [];
             const onTime = cd.on_time ?? [];
             const lateDays = cd.late_days ?? [];
@@ -1007,6 +1162,9 @@
             const lateMinutes = cd.late_minutes ?? [];
             const workedHours = cd.worked_hours ?? [];
             const workedMinutes = workedHours.map(v => Math.round(v * 60));
+            const holidayFlags = cd.holidays ?? [];
+            const futureFlags = cd.future ?? [];
+            const dayRowsByDate = @json($dayRowsByDate ?? []);
 
             const fmtMin = (m) => {
                 if (!m || m <= 0) return '0min';
@@ -1033,6 +1191,46 @@
                 bodyColor: isDark ? '#d1d5db' : '#475569',
                 padding: 12,
                 cornerRadius: 10,
+            };
+
+            /* Clic sur un point d'un graphique → ouvrir le détail du jour */
+            const openDayFromChart = (evt, items) => {
+                let idx = (items && items.length) ? items[0].index : null;
+                const chart = evt?.chart;
+                if (idx === null && chart?.scales?.x) {
+                    const estimated = Math.round(chart.scales.x.getValueForPixel(evt.x));
+                    if (Number.isFinite(estimated)) idx = estimated;
+                }
+                if (idx === null || idx < 0 || idx >= labels.length) return;
+                const date = chartDates[idx];
+                if (!date) return;
+
+                if (futureFlags[idx]) { window.openHistoryDayDetail({ future: true, fullLabel: labels[idx] }); return; }
+                if (holidayFlags[idx]) { window.openHistoryDayDetail({ holiday: true, fullLabel: labels[idx] }); return; }
+
+                const presentBit = (present[idx] ?? 0) > 0;
+                const lateBit = (lateDays[idx] ?? 0) > 0;
+                const absentBit = (absences[idx] ?? 0) > 0;
+                const status = presentBit ? (lateBit ? 'late' : 'on_time') : (absentBit ? 'absent' : 'none');
+
+                const extra = dayRowsByDate[date] || {};
+                window.openHistoryDayDetail({
+                    future: false,
+                    holiday: false,
+                    date,
+                    fullLabel: extra.date_label || date.split('-').reverse().join('/'),
+                    weekday: extra.week_label || '',
+                    titleLabel: labels[idx],
+                    status,
+                    arrival: extra.arrival || null,
+                    departure: extra.departure || null,
+                    worked_minutes: extra.worked_minutes != null ? extra.worked_minutes : (workedMinutes[idx] || 0),
+                    late_minutes: extra.late_minutes != null ? extra.late_minutes : (lateMinutes[idx] || 0),
+                    observation: extra.observation || null,
+                });
+            };
+            const chartCursor = (evt, item) => {
+                evt.native.target.style.cursor = item[0] ? 'pointer' : 'default';
             };
 
             // Graphique 1 - Courbes
@@ -1147,6 +1345,8 @@
                             mode: 'index',
                             intersect: false
                         },
+                        onClick: openDayFromChart,
+                        onHover: chartCursor,
                         plugins: {
                             legend: {
                                 display: false
@@ -1274,6 +1474,8 @@
                             mode: 'index',
                             intersect: false
                         },
+                        onClick: openDayFromChart,
+                        onHover: chartCursor,
                         plugins: {
                             legend: {
                                 position: 'top',

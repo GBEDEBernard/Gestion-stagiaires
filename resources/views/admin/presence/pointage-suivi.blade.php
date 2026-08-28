@@ -132,7 +132,13 @@
                     </label>
                     <select name="school" class="w-full px-3 sm:px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 transition">
                         <option value="">Toutes</option>
+                        <option value="__employes__" {{ request('school') == '__employes__' ? 'selected' : '' }}>
+                            👷 Employés
+                        </option>
                         @foreach($schools as $ecole)
+                        @if($ecole === '__employes__')
+                        @continue
+                        @endif
                         <option value="{{ $ecole }}" {{ request('school') == $ecole ? 'selected' : '' }}>
                             {{ $ecole }}
                         </option>

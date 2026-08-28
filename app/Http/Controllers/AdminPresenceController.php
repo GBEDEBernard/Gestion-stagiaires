@@ -320,7 +320,7 @@ class AdminPresenceController extends Controller
             ->orderBy('name')
             ->get();
         $sites = Site::where('is_active', true)->orderBy('name')->get();
-        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
+        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->prepend('__employes__');
 
         return view('admin.presence.pointage-suivi', compact(
             'detail',

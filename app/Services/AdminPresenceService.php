@@ -636,6 +636,9 @@ class AdminPresenceService
     {
         $today = today();
 
+        // ✅ Le graphique s'arrête à aujourd'hui : les jours à venir ne sont pas encore écoulés
+        $endDate = $endDate->copy()->min($today);
+
         $dailyStats = $query
             ->selectRaw('
                 DATE(attendance_date) as date,
@@ -742,6 +745,11 @@ class AdminPresenceService
 
         $today = today()->startOfDay();
 
+        // ✅ Le graphique s'arrête à aujourd'hui : les jours à venir ne sont pas
+        // encore écoulés et ne doivent être ni comptés, ni affichés.
+        // Les KPI restent calculés sur la période réelle (ils excluent déjà les jours futurs).
+        $chartEnd = $endDate->copy()->startOfDay()->min($today);
+
         // ── Plage du graphique ─────────────────────────────────────────────────
         // Même logique que les stats globales : si la plage contient moins de
         // 4 jours ouvrés, on élargit la fenêtre du graphique vers le passé.
@@ -755,23 +763,22 @@ class AdminPresenceService
 
         $chartStart = $startDate->copy();
         if ($weekdaysInPeriod < 4) {
-            $chartLimit = $endDate->copy();
-            if ($chartLimit->gt($today)) $chartLimit = $today->copy();
+            $chartLimit = $chartEnd->copy();
             $chartStart = $chartLimit->subDays(6)->startOfDay();
             if ($chartStart->gt($startDate)) $chartStart = $startDate->copy();
         }
 
         // ✅ La courbe ne commence qu'à la date effective de début de pointage
         $chartStart = $chartStart->max($activationDate);
-        if ($chartStart->gt($endDate->copy()->startOfDay())) {
-            $chartStart = $endDate->copy()->startOfDay();
+        if ($chartStart->gt($chartEnd)) {
+            $chartStart = $chartEnd->copy();
         }
 
         // ✅ Jours fériés actifs sur la plage élargie du graphique
-        $chartHolidays = $this->getActiveHolidaysInRange($chartStart, $endDate);
+        $chartHolidays = $this->getActiveHolidaysInRange($chartStart, $chartEnd);
 
         // ✅ Jours d'absence corrigés (exceptions) — non comptés comme absences
-        $exceptions = $this->getUserExceptions($user->id, $chartStart, $endDate);
+        $exceptions = $this->getUserExceptions($user->id, $chartStart, $chartEnd);
 
         // ── Récupérer les pointages (plage élargie pour le graphique) ──────────
         $query = AttendanceDay::weekdays();
@@ -779,7 +786,7 @@ class AdminPresenceService
         else             $query->where('user_id', $user->id)->whereNull('etudiant_id');
 
         $days = $query
-            ->whereBetween('attendance_date', [$chartStart->toDateString(), $endDate->toDateString()])
+            ->whereBetween('attendance_date', [$chartStart->toDateString(), $chartEnd->toDateString()])
             ->orderBy('attendance_date')
             ->get()
             ->keyBy(fn($d) => Carbon::parse($d->attendance_date)->toDateString());
@@ -787,7 +794,7 @@ class AdminPresenceService
         $labels = $dates = $present = $onTime = $lateDays = $absences = $lateMinutes = $workedHours = $isHoliday = $isFuture = [];
 
         $currentDate = $chartStart->copy()->startOfDay();
-        while ($currentDate->lte($endDate->copy()->startOfDay())) {
+        while ($currentDate->lte($chartEnd)) {
 
             // ✅ Ignorer week-ends (jours non travaillés)
             if ($currentDate->isWeekend()) {
@@ -1309,7 +1316,9 @@ class AdminPresenceService
         if ($userId) {
             $stages = $stages->filter(fn ($s) => ($s->etudiant->user?->id ?? null) === (int) $userId);
         }
-        if ($school) {
+        if ($school === '__employes__') {
+            $stages = collect();
+        } elseif ($school) {
             $stages = $stages->filter(fn ($s) => ($s->etudiant->ecole ?? null) === $school);
         }
         if ($siteId) {
@@ -1331,6 +1340,9 @@ class AdminPresenceService
         }
         if ($siteId) {
             $employees = $employees->filter(fn ($u) => ($u->personnel?->personnable?->site_id ?? null) === (int) $siteId);
+        }
+        if ($school && $school !== '__employes__') {
+            $employees = collect();
         }
 
         // ── Pointages réels de la plage, indexés par clé (etudiant|user):date ──
