@@ -198,7 +198,7 @@
         <span><strong>Période :</strong> {{ match ($period) { 'week' => 'Semaine', 'month' => 'Mois', 'custom' => 'Personnalisée', default => 'Jour' } }}</span>
         <span><strong>Utilisateur :</strong> {{ $userId ? $detail->firstWhere('user.id', (int) $userId)['user']?->name ?? 'Tous' : 'Tous' }}</span>
         <span><strong>Site :</strong> {{ $siteId ?: 'Tous' }}</span>
-        <span><strong>École :</strong> {{ $schoolFilter ?: 'Toutes' }}</span>
+        <span><strong>École :</strong> {{ $schoolFilter === '__employes__' ? 'Employés' : ($schoolFilter ?: 'Toutes') }}</span>
     </div>
 
     <div class="summary-grid">

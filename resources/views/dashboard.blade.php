@@ -171,6 +171,14 @@
                 <div class="p-4 sm:p-6" style="position:relative;height:220px;sm:height:300px">
                     <canvas id="chart-inscriptions"></canvas>
                 </div>
+                <div class="px-4 sm:px-6 pb-4 text-center">
+                    <p class="inline-flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                        </svg>
+                        Cliquez sur un point de la courbe pour voir le détail des inscriptions de la période.
+                    </p>
+                </div>
             </div>
 
             {{-- Par type --}}
@@ -447,6 +455,9 @@
             evolutionSemaine:{!! Js::from($evolutionSemaine) !!},
             labelsMois:      {!! Js::from($labelsMois) !!},
             evolutionMois:   {!! Js::from($evolutionMois) !!},
+            rangesJour:      {!! Js::from($rangesJour) !!},
+            rangesSemaine:   {!! Js::from($rangesSemaine) !!},
+            rangesMois:      {!! Js::from($rangesMois) !!},
             typesLabels:     {!! Js::from($typesLabels) !!},
             typesData:       {!! Js::from($typesData) !!},
             stagesMoisLabels:{!! Js::from($labelsMoisAnnee) !!},
@@ -455,6 +466,321 @@
             domEnCours:      {!! Js::from($domainesStats->pluck('enCours')->values()) !!},
             domTermines:     {!! Js::from($domainesStats->pluck('termines')->values()) !!},
             domInscrits:     {!! Js::from($domainesStats->pluck('inscrits')->values()) !!},
+        };
+    </script>
+
+    {{-- ════════ MODALE : DÉTAIL DES INSCRIPTIONS (courbe cliquable) ════════ --}}
+    <div id="registrations-modal" x-data="registrationsApp()" x-show="open" x-cloak
+        class="fixed inset-0 z-[10000] flex items-start justify-center p-3 sm:p-6 overflow-y-auto">
+        <div x-show="open" x-transition.opacity @click="open=false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        <div x-show="open" x-transition.duration.200ms class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl z-10 my-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            {{-- Header --}}
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-7 py-4 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
+                            Inscriptions — <span x-text="periodLabel"></span>
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <span x-text="total"></span> stagiaire(s) inscrit(s) du
+                            <span x-text="fromLabel"></span> au <span x-text="toLabel"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button @click="exportCsv()" :disabled="csvLoading"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-50">
+                        <svg x-show="!csvLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <svg x-show="csvLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                    <button @click="open=false" class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="px-5 sm:px-7 py-4" @keydown.escape.window="open=false">
+                <div x-show="loading" class="py-16 text-center">
+                    <div class="w-10 h-10 mx-auto rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 font-medium">Chargement des inscriptions…</p>
+                </div>
+
+                <div x-show="!loading && error" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Impossible de charger les données.</p>
+                    <button @click="loadPage(page)" class="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
+                        Réessayer
+                    </button>
+                </div>
+
+                <div x-show="!loading && !error && rows.length === 0" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucune inscription sur cette période.</p>
+                </div>
+
+                <div x-show="!loading && !error && rows.length > 0" class="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700">
+                    <table class="w-full text-sm min-w-[860px]">
+                        <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                            <tr>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Identité</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">École</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Compte</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Inscription</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stages & Domaines</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            <template x-for="r in rows" :key="r.id">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                    <td class="px-5 py-3">
+                                        <div class="font-semibold text-gray-900 dark:text-white" x-text="r.full_name"></div>
+                                        <div class="text-xs text-gray-400 mt-0.5">
+                                            <span x-show="r.genre" x-text="r.genre" class="inline-block px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 uppercase"></span>
+                                            <span x-show="r.niveau" x-text="'Niv : ' + r.niveau" class="ml-1 text-gray-500 dark:text-gray-400"></span>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <div class="text-gray-900 dark:text-white" x-text="r.email || '—'"></div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400" x-text="r.telephone || '—'"></div>
+                                    </td>
+                                    <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="r.ecole || '—'"></td>
+                                    <td class="px-5 py-3">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                                            :class="accountBadgeClass(r)">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="accountDotClass(r)"></span>
+                                            <span x-text="r.account?.label || '—'"></span>
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300" x-text="r.created_at || '—'"></td>
+                                    <td class="px-5 py-3">
+                                        <template x-if="r.stages && r.stages.length">
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="(s, si) in r.stages" :key="s.theme + si">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
+                                                        :title="`${s.theme} — ${s.domaine || 'Sans domaine'} (${s.statut || ''})`">
+                                                        <span x-text="s.theme"></span>
+                                                        <span x-show="s.domaine" class="text-violet-400" x-text="'· ' + s.domaine"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <span x-show="!r.stages || !r.stages.length" class="text-xs text-gray-400 italic">Aucun stage</span>
+                                    </td>
+                                    <td class="px-5 py-3 text-right whitespace-nowrap">
+                                        <a :href="routeShow(r)" class="inline-flex items-center justify-center w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir la fiche">
+                                            <svg class="w-4.5 h-4.5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Pagination --}}
+                <div x-show="!loading && !error && rows.length > 0" class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                    <p class="text-xs text-gray-500 dark:text-gray-400"
+                        x-text="`Page ${page} / ${lastPage} — ${total} stagiaire(s) au total`"></p>
+                    <div class="flex gap-2">
+                        <button @click="loadPage(page - 1)" :disabled="page <= 1"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            ‹ Précédent
+                        </button>
+                        <button @click="loadPage(page + 1)" :disabled="page >= lastPage"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            Suivant ›
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function registrationsApp() {
+            return {
+                open: false,
+                loading: false,
+                error: false,
+                rows: [],
+                total: 0,
+                from: null,
+                to: null,
+                fromLabel: '',
+                toLabel: '',
+                periodLabel: '',
+                page: 1,
+                lastPage: 1,
+                perPage: 10,
+                csvLoading: false,
+
+                init() {},
+
+                async openDetail(from, to, label) {
+                    this.from = from;
+                    this.to = to;
+                    this.periodLabel = label || '';
+                    this.page = 1;
+                    this.rows = [];
+                    this.total = 0;
+                    this.lastPage = 1;
+                    this.error = false;
+                    this.open = true;
+                    await this.loadPage(1);
+                },
+
+                async loadPage(page) {
+                    if (page < 1) return;
+                    this.loading = true;
+                    this.error = false;
+                    try {
+                        const url = `/admin/dashboard/inscriptions/details?from=${encodeURIComponent(this.from)}&to=${encodeURIComponent(this.to)}&page=${page}&per_page=${this.perPage}`;
+                        const resp = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const data = await resp.json();
+                        this.rows = data.data || [];
+                        this.total = data.total || 0;
+                        this.page = data.pagination?.current_page || page;
+                        this.lastPage = data.pagination?.last_page || 1;
+                        this.setLabels(data.from, data.to);
+                    } catch (e) {
+                        this.error = true;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                setLabels(from, to) {
+                    const fmt = (iso) => {
+                        if (!iso) return '';
+                        const [y, m, d] = iso.split('-');
+                        return `${d}/${m}/${y}`;
+                    };
+                    this.fromLabel = fmt(from);
+                    this.toLabel = fmt(to);
+                },
+
+                accountBadgeClass(r) {
+                    const map = {
+                        active: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+                        pending: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+                        none: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+                    };
+                    return map[r.account?.status] || map.none;
+                },
+
+                accountDotClass(r) {
+                    const map = { active: 'bg-emerald-500', pending: 'bg-amber-500', none: 'bg-gray-400' };
+                    return map[r.account?.status] || map.none;
+                },
+
+                routeShow(r) {
+                    return `/admin/etudiants/${r.id}`;
+                },
+
+                async exportCsv() {
+                    if (this.csvLoading || !this.from || !this.to) return;
+                    this.csvLoading = true;
+                    try {
+                        const url = `/admin/dashboard/inscriptions/details?from=${encodeURIComponent(this.from)}&to=${encodeURIComponent(this.to)}&page=1&per_page=1000`;
+                        const resp = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const data = await resp.json();
+                        const rows = data.data || [];
+                        const header = ['Identité', 'Email', 'Téléphone', 'Genre', 'École', 'Niveau', 'Inscrit le', 'Compte', 'Stages'];
+                        const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+                        const csv = [
+                            header.join(';'),
+                            ...rows.map(r => [
+                                r.full_name,
+                                r.email,
+                                r.telephone,
+                                r.genre,
+                                r.ecole,
+                                r.niveau,
+                                r.created_at,
+                                r.account?.label,
+                                (r.stages || []).map(s => s.theme + (s.domaine ? ' — ' + s.domaine : '') + (s.statut ? ' (' + s.statut + ')' : '')).join(' | '),
+                            ].map(esc).join(';')),
+                        ].join('\n');
+                        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `inscriptions_${this.from}_au_${this.to}.csv`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        URL.revokeObjectURL(link.href);
+                    } catch (e) {
+                        this.error = true;
+                    } finally {
+                        this.csvLoading = false;
+                    }
+                },
+            };
+        }
+
+        window.openRegistrationsDetails = function (from, to, label) {
+            const el = document.getElementById('registrations-modal');
+            if (!el) return;
+            let data = null;
+
+            if (window.Alpine && typeof window.Alpine.$data === 'function') {
+                try { data = window.Alpine.$data(el); } catch (e) { data = null; }
+            }
+            if (!data && el.__x && el.__x.$data) {
+                data = el.__x.$data;
+            }
+            if (!data) {
+                console.warn('[Registrations] Alpine composant modale non initialisé.');
+                return;
+            }
+            if (typeof data.openDetail === 'function') {
+                data.openDetail(from, to, label);
+            }
         };
     </script>
 
@@ -485,17 +811,63 @@
 
         /* ── 1. INSCRIPTIONS ── */
         let inscChart;
-        function buildInscriptions(labels, data) {
+        let currentPeriod = 'jour';
+
+        function buildInscriptions(labels, data, ranges) {
             const canvas = document.getElementById('chart-inscriptions');
             if (!canvas) return;
             if (inscChart) inscChart.destroy();
+
+            const clickPoint = (evt, items) => {
+                let idx = (items && items.length) ? items[0].index : null;
+
+                if (idx === null && inscChart) {
+                    const xScale = inscChart.scales.x;
+                    const estimated = Math.round(xScale.getValueForPixel(evt.x));
+                    if (Number.isFinite(estimated)) idx = estimated;
+                }
+
+                if (idx === null || idx < 0) return;
+                const range = ranges && ranges[idx];
+                if (!range) return;
+                if (typeof window.openRegistrationsDetails === 'function') {
+                    window.openRegistrationsDetails(range[0], range[1], labels[idx]);
+                }
+            };
+
             inscChart = new Chart(canvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: safe(labels, ['—']),
-                    datasets: [{ label:'Inscriptions', data:safe(data,[0]), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.4 }]
+                    datasets: [{
+                        label: 'Inscriptions',
+                        data: safe(data, [0]),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHitRadius: 15,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                    }]
                 },
-                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:tip() }, scales:xyScales() }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: true, mode: 'nearest' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tip()
+                    },
+                    scales: xyScales(),
+                    onClick: clickPoint,
+                    onHover: (evt, item) => {
+                        evt.native.target.style.cursor = item[0] ? 'pointer' : 'default';
+                    }
+                }
             });
         }
 
@@ -505,15 +877,21 @@
                 semaine: [D.labelsSemaine, D.evolutionSemaine],
                 mois:    [D.labelsMois,    D.evolutionMois],
             };
+            const ranges = {
+                jour:    D.rangesJour,
+                semaine: D.rangesSemaine,
+                mois:    D.rangesMois,
+            };
             document.querySelectorAll('[id^="btn-"]').forEach(b => {
                 b.classList.remove('bg-blue-500','text-white');
                 b.classList.add('text-gray-600');
             });
             const btn = document.getElementById('btn-'+period);
             if (btn) { btn.classList.add('bg-blue-500','text-white'); btn.classList.remove('text-gray-600'); }
-            buildInscriptions(...map[period]);
+            currentPeriod = period;
+            buildInscriptions(map[period][0], map[period][1], ranges[period]);
         };
-        buildInscriptions(D.labelsJour, D.evolutionJour);
+        buildInscriptions(D.labelsJour, D.evolutionJour, D.rangesJour);
 
         /* ── 2. TYPES ── */
         new Chart(document.getElementById('chart-types')?.getContext('2d'), {

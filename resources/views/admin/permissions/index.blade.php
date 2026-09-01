@@ -185,6 +185,7 @@
                     $tc = $typeColorBg[$req->type->color] ?? 'bg-slate-500/10 text-slate-500 border-slate-500/20';
                     $sc = $statusConf[$req->status] ?? $statusConf['cancelled'];
                     $typeIcons = ['calendar-x'=>'📅','clock'=>'⏰','log-out'=>'🚪','gift'=>'🎁'];
+                    $canDecide = $req->isRecipient(auth()->user());
                     @endphp
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-150 group">
                         {{-- Stagiaire --}}
@@ -258,8 +259,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </button>
-                                {{-- Approuver / Refuser si pending --}}
-                                @if($req->isPending())
+                                {{-- Approuver / Refuser si pending ET je suis le destinataire --}}
+                                @if($req->isPending() && $canDecide)
                                 <button @click="openDecide({{ $req->id }}, '{{ addslashes($req->user->name) }}', '{{ addslashes($req->type->name) }}')"
                                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 transition-all duration-150">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,6 +268,14 @@
                                     </svg>
                                     Décider
                                 </button>
+                                @elseif($req->isPending())
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                                    title="Vous êtes en consultation seule : seul le destinataire désigné peut décider.">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    Lecture seule
+                                </span>
                                 @else
                                 <span class="text-[10px] text-slate-400 italic px-2">
                                     {{ $req->decided_at?->diffForHumans() }}
@@ -298,6 +307,7 @@
             @php
             $sc2 = $statusConf[$req->status] ?? $statusConf['cancelled'];
             $tc2 = $typeColorBg[$req->type->color] ?? 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+            $canDecide = $req->isRecipient(auth()->user());
             @endphp
             <div class="p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3">
@@ -340,11 +350,19 @@
                             class="p-2 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </button>
-                        @if($req->isPending())
+                        @if($req->isPending() && $canDecide)
                         <button @click="openDecide({{ $req->id }}, '{{ addslashes($req->user->name) }}', '{{ addslashes($req->type->name) }}')"
                             class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md">
                             Décider
                         </button>
+                        @elseif($req->isPending())
+                        <span class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                            title="Consultation seule : seul le destinataire désigné peut décider.">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Lecture seule
+                        </span>
                         @endif
                     </div>
                 </div>
@@ -417,6 +435,17 @@
                             'bg-red-100 text-red-700': detail.status==='rejected',
                             'bg-slate-100 text-slate-600': detail.status==='cancelled'
                         }" x-text="detail.status_label"></span>
+                </div>
+
+                {{-- Consultation seule pour les non-destinataires --}}
+                <div x-show="detail.status==='pending' && detail.can_decide === false"
+                    class="flex items-start gap-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3">
+                    <svg class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Vous consultez cette demande en <strong>lecture seule</strong>. Seul le destinataire désigné peut l'approuver ou la refuser.
+                    </p>
                 </div>
 
                 {{-- Champs dynamiques --}}

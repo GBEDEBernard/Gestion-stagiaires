@@ -1207,6 +1207,7 @@
             @if($hasChartData)
             <div class="mt-6">
                 <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">💡 Cliquez sur un point d'une courbe pour afficher le détail du jour.</div>
                 <div class="pres-card">
                     <div class="chart-legend">
                         <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présents</div>
@@ -1343,9 +1344,9 @@
                             <tr>
                                 <th>#</th>
                                 <th>Utilisateur</th>
+                                <th>Jours de retard</th>
                                 <th>Total</th>
                                 <th>Moy/jour</th>
-                                <th>Jours</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1354,6 +1355,11 @@
                                 <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
                                 <td style="font-weight:500;">{{ $user->user_name ?? $user->name }}</td>
                                 <td>
+                                    <span class="pres-tag tag-amber" title="{{ $user->days_count }} jour(s) de retard">
+                                        {{ $user->days_count }} j
+                                    </span>
+                                </td>
+                                <td>
                                     <span class="pres-tag tag-amber" title="{{ $user->total_late ?? 0 }} min total">
                                         ⏰ {{ formatMinutes($user->total_late ?? 0) }}
                                     </span>
@@ -1361,7 +1367,6 @@
                                 <td style="color:var(--amber);font-family:var(--mono);font-size:.8rem;">
                                     {{ formatMinutes($user->avg_late ?? 0) }}/j
                                 </td>
-                                <td style="color:var(--muted);font-family:var(--mono);font-size:.8rem;">{{ $user->days_count }}j</td>
                             </tr>
                             @empty
                             <tr>
@@ -1428,6 +1433,330 @@
         </div>
     </div>
 
+    {{-- Modale détail d'un jour cliqué sur les graphiques --}}
+    <div id="presence-day-modal" x-data="presenceDayApp()" x-show="open" x-cloak
+         class="fixed inset-0 z-[10000] flex items-start justify-center p-3 sm:p-6 overflow-y-auto">
+        <div x-show="open" x-transition.opacity @click="open=false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        <div x-show="open" x-transition.duration.200ms class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl z-10 my-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            {{-- Header --}}
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-7 py-4 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
+                            Détail du jour — <span x-text="prefixLabel"></span>
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <span x-text="fullDateLabel"></span>
+                            (<span x-text="summary.total || 0"></span> personne(s) attendue(s))
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button @click="exportCsv()" :disabled="csvLoading"
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-50">
+                        <svg x-show="!csvLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <svg x-show="csvLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                    <button @click="open=false" class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Résumé --}}
+            <div x-show="!loading && !error && allRows.length > 0" class="px-5 sm:px-7 pt-4 flex flex-wrap gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                    Pr&eacute;sents <span x-text="summary.present || 0"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                    &Agrave; l'heure <span x-text="summary.on_time || 0"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                    En retard <span x-text="summary.late || 0"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300">
+                    Absents <span x-text="summary.absent || 0"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300" x-show="summary.corrected">
+                    Corrig&eacute;s <span x-text="summary.corrected || 0"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    Heures <span x-text="fmtHours(summary.worked_minutes)"></span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    Retard <span x-text="fmtMin(summary.late_minutes)"></span>
+                </span>
+            </div>
+
+            {{-- Body --}}
+            <div class="px-5 sm:px-7 py-4" @keydown.escape.window="open=false">
+                <div x-show="loading" class="py-16 text-center">
+                    <div class="w-10 h-10 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-amber-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 font-medium">Chargement du jour…</p>
+                </div>
+
+                <div x-show="!loading && error" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Impossible de charger les données.</p>
+                    <button @click="loadDay()" class="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition">
+                        R&eacute;essayer
+                    </button>
+                </div>
+
+                <div x-show="!loading && !error && flags.future" class="py-16 text-center">
+                    <div class="text-3xl">🚀</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Ce jour n'est pas encore arriv&eacute;.</p>
+                </div>
+                <div x-show="!loading && !error && flags.weekend" class="py-16 text-center">
+                    <div class="text-3xl">🌴</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour de week-end — aucune pr&eacute;sence attendue.</p>
+                </div>
+                <div x-show="!loading && !error && flags.holiday" class="py-16 text-center">
+                    <div class="text-3xl">🎉</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour f&eacute;ri&eacute; — aucune pr&eacute;sence attendue.</p>
+                </div>
+                <div x-show="!loading && !error && flags.before_system" class="py-16 text-center">
+                    <div class="text-3xl">🗓️</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour ant&eacute;rieur &agrave; l'activation du syst&egrave;me.</p>
+                </div>
+                <div x-show="!loading && !error && !flags.future && !flags.weekend && !flags.holiday && !flags.before_system && allRows.length === 0" class="py-16 text-center">
+                    <div class="text-3xl">📭</div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucune donn&eacute;e de pr&eacute;sence pour ce jour.</p>
+                </div>
+
+                <div x-show="!loading && !error && allRows.length > 0" class="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700">
+                    <table class="w-full text-sm min-w-[860px]">
+                        <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                            <tr>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Utilisateur</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Site</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Statut</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Entr&eacute;e</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sortie</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Heures</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Retard</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            <template x-for="r in rows" :key="r.id + '-' + r.group">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                    <td class="px-5 py-3">
+                                        <div class="font-semibold text-gray-900 dark:text-white" x-text="r.name"></div>
+                                        <div class="text-xs text-gray-400 mt-0.5" x-show="r.school" x-text="r.school"></div>
+                                    </td>
+                                    <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="groupLabel(r.group)"></td>
+                                    <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="r.site_name || '—'"></td>
+                                    <td class="px-5 py-3">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                                            :class="statusBadge(r.status).cls">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="statusBadge(r.status).dot"></span>
+                                            <span x-text="statusBadge(r.status).label"></span>
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300" x-text="r.arrival || '—'"></td>
+                                    <td class="px-5 py-3 whitespace-nowrap text-right text-gray-700 dark:text-gray-300" x-text="r.departure || '—'"></td>
+                                    <td class="px-5 py-3 whitespace-nowrap text-right text-gray-700 dark:text-gray-300" x-text="fmtHours(r.worked_minutes)"></td>
+                                    <td class="px-5 py-3 whitespace-nowrap text-right" x-text="fmtMin(r.late_minutes)" :class="r.late_minutes > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-400'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Pagination --}}
+                <div x-show="!loading && !error && allRows.length > 0" class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                    <p class="text-xs text-gray-500 dark:text-gray-400"
+                       x-text="`Page ${page} / ${lastPage} — ${allRows.length} personne(s) au total`"></p>
+                    <div class="flex gap-2">
+                        <button @click="prevPage()" :disabled="page <= 1"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            ‹ Pr&eacute;c&eacute;dent
+                        </button>
+                        <button @click="nextPage()" :disabled="page >= lastPage"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            Suivant ›
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function presenceDayApp() {
+            return {
+                open: false,
+                loading: false,
+                error: false,
+                date: null,
+                fullDateLabel: '',
+                flags: { weekend: false, future: false, holiday: false, before_system: false },
+                summary: { total: 0, present: 0, on_time: 0, late: 0, absent: 0, corrected: 0, worked_minutes: 0, late_minutes: 0 },
+                allRows: [],
+                rows: [],
+                page: 1,
+                perPage: 10,
+                csvLoading: false,
+                prefixLabel: '',
+
+                async openDetail(date, label) {
+                    this.date = date;
+                    this.prefixLabel = label || '';
+                    this.fullDateLabel = '';
+                    this.page = 1;
+                    this.allRows = [];
+                    this.rows = [];
+                    this.error = false;
+                    this.open = true;
+                    await this.loadDay();
+                },
+
+                async loadDay() {
+                    if (!this.date) return;
+                    this.loading = true;
+                    this.error = false;
+                    try {
+                        const url = `/admin/presence/chart-detail?date=${encodeURIComponent(this.date)}`;
+                        const resp = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const data = await resp.json();
+                        this.flags = {
+                            weekend: !!data.weekend,
+                            future: !!data.future,
+                            holiday: !!data.holiday,
+                            before_system: !!data.before_system,
+                        };
+                        this.summary = Object.assign({}, this.summary, data.summary || {});
+                        this.allRows = data.rows || [];
+                        this.fullDateLabel = data.label || '';
+                        this.page = 1;
+                        this.applyPage();
+                    } catch (e) {
+                        this.error = true;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                applyPage() {
+                    const start = (this.page - 1) * this.perPage;
+                    this.rows = this.allRows.slice(start, start + this.perPage);
+                },
+
+                prevPage() { if (this.page > 1) { this.page--; this.applyPage(); } },
+                nextPage() { if (this.page < this.lastPage) { this.page++; this.applyPage(); } },
+                get lastPage() { return Math.max(1, Math.ceil(this.allRows.length / this.perPage)); },
+
+                statusBadge(status) {
+                    const map = {
+                        on_time:   { label: "À l'heure", cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', dot: 'bg-blue-500' },
+                        late:      { label: 'En retard', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', dot: 'bg-amber-500' },
+                        present:   { label: 'Présent', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', dot: 'bg-emerald-500' },
+                        absent:    { label: 'Absent', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300', dot: 'bg-rose-500' },
+                        corrected: { label: 'Corrigé', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300', dot: 'bg-violet-500' },
+                    };
+                    return map[status] || { label: status || '—', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' };
+                },
+
+                groupLabel(group) {
+                    return group === 'employe' ? 'Employé' : 'Stagiaire';
+                },
+
+                fmtMin(m) {
+                    if (!m || m <= 0) return '0min';
+                    const h = Math.floor(m / 60), mins = m % 60;
+                    if (h === 0) return mins + 'min';
+                    if (mins === 0) return h + 'h';
+                    return h + 'h ' + mins + 'min';
+                },
+
+                fmtHours(m) {
+                    const h = (m || 0) / 60;
+                    return h.toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + 'h';
+                },
+
+                async exportCsv() {
+                    if (this.csvLoading || !this.allRows.length) return;
+                    this.csvLoading = true;
+                    try {
+                        const header = ['Utilisateur', 'Type', 'Site', 'Statut', 'Entrée', 'Sortie', 'Heures', 'Retard'];
+                        const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+                        const csv = [
+                            header.join(';'),
+                            ...this.allRows.map(r => [
+                                r.name,
+                                this.groupLabel(r.group),
+                                r.site_name || '',
+                                this.statusBadge(r.status).label,
+                                r.arrival || '',
+                                r.departure || '',
+                                this.fmtHours(r.worked_minutes),
+                                this.fmtMin(r.late_minutes),
+                            ].map(esc).join(';')),
+                        ].join('\n');
+                        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `presence_${this.date || 'detail'}.csv`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    } catch (e) {
+                        this.error = true;
+                    } finally {
+                        this.csvLoading = false;
+                    }
+                },
+            };
+        }
+
+        window.openPresenceDayDetails = function (date, label) {
+            const el = document.getElementById('presence-day-modal');
+            if (!el) return;
+            let data = null;
+            if (window.Alpine && typeof window.Alpine.$data === 'function') {
+                try { data = window.Alpine.$data(el); } catch (e) { data = null; }
+            }
+            if (!data && el.__x && el.__x.$data) {
+                data = el.__x.$data;
+            }
+            if (!data || typeof data.openDetail !== 'function') {
+                console.warn('[Presence] Alpine composant modale non initialisé.');
+                return;
+            }
+            data.openDetail(date, label);
+        };
+    </script>
+
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -1451,6 +1780,7 @@
             };
 
             const labels = @json($globalStats['chart_data']['labels'] ?? []);
+            const chartDates = @json($globalStats['chart_data']['dates'] ?? []);
             const present = @json($globalStats['chart_data']['present'] ?? []);
             const lateMinutes = @json($globalStats['chart_data']['late_minutes'] ?? []);
             const lateDays = @json($globalStats['chart_data']['late_days'] ?? []);
@@ -1479,6 +1809,25 @@
                         }
                     });
                 }
+            };
+
+            /* Clic sur un point d'un graphique → ouvrir le détail du jour */
+            const openDayFromChart = (evt, items) => {
+                let idx = (items && items.length) ? items[0].index : null;
+                const chart = evt?.chart;
+                if (idx === null && chart?.scales?.x) {
+                    const estimated = Math.round(chart.scales.x.getValueForPixel(evt.x));
+                    if (Number.isFinite(estimated)) idx = estimated;
+                }
+                if (idx === null || idx < 0 || idx >= chartDates.length) return;
+                const date = chartDates[idx];
+                if (!date) return;
+                if (typeof window.openPresenceDayDetails === 'function') {
+                    window.openPresenceDayDetails(date, labels[idx]);
+                }
+            };
+            const chartCursor = (evt, item) => {
+                evt.native.target.style.cursor = item[0] ? 'pointer' : 'default';
             };
 
             const absenceModalBackdrop = document.getElementById('absenceModalBackdrop');
@@ -1674,6 +2023,8 @@
                             mode: 'index',
                             intersect: false
                         },
+                        onClick: openDayFromChart,
+                        onHover: chartCursor,
                         plugins: {
                             legend: {
                                 display: false
@@ -1801,6 +2152,8 @@
                             mode: 'index',
                             intersect: false
                         },
+                        onClick: openDayFromChart,
+                        onHover: chartCursor,
                         plugins: {
                             legend: {
                                 position: 'top',

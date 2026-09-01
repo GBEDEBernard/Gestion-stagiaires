@@ -81,6 +81,9 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/admin/dashboard/inscriptions/details', [DashboardController::class, 'registrationsDetail'])
+        ->name('dashboard.registrations.detail')
+        ->middleware('permission:etudiants.view');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
@@ -366,6 +369,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
+        Route::get('/chart-detail', [AdminPresenceController::class, 'chartDayDetail'])->name('admin.presence.chart-detail');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');
         Route::get('/user-stats/{user}', [AdminPresenceController::class, 'userStats'])->name('admin.presence.user-stats');

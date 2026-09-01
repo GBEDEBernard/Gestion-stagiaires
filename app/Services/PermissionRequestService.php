@@ -12,6 +12,7 @@ use App\Models\Signataire;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class PermissionRequestService
 {
@@ -80,7 +81,15 @@ class PermissionRequestService
     public function decide(PermissionRequest $request, User $decider, string $decision, ?string $comment = null): PermissionRequest
     {
         if (!$request->isPending()) {
-            return $request;
+            throw ValidationException::withMessages(['decision' => 'Cette demande a déjà été traitée.']);
+        }
+
+        // 🔒 Seul un destinataire désigné (signataire choisi) peut prendre une décision.
+        if (!$request->isRecipient($decider)) {
+            throw ValidationException::withMessages([
+                'decision' => "Vous n'êtes pas désigné comme destinataire de cette demande. "
+                    . "Seul le responsable choisi par l'employé peut l'approuver ou la refuser.",
+            ]);
         }
 
         return DB::transaction(function () use ($request, $decider, $decision, $comment) {

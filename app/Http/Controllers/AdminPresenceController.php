@@ -105,6 +105,22 @@ class AdminPresenceController extends Controller
     }
 
     /**
+     * Détail journalier pour un point des graphiques de la page de supervision.
+     */
+    public function chartDayDetail(Request $request)
+    {
+        $date = $request->get('date');
+
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return response()->json(['error' => 'Paramètre date invalide.'], 422);
+        }
+
+        return response()->json(
+            $this->presenceService->getChartDayDetails($date)
+        );
+    }
+
+    /**
      * Dashboard stats globales avec graphs.
      */
     public function dashboardStats(Request $request)
@@ -304,7 +320,7 @@ class AdminPresenceController extends Controller
             ->orderBy('name')
             ->get();
         $sites = Site::where('is_active', true)->orderBy('name')->get();
-        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort();
+        $schools = Etudiant::whereNotNull('ecole')->distinct()->pluck('ecole')->sort()->prepend('__employes__');
 
         return view('admin.presence.pointage-suivi', compact(
             'detail',

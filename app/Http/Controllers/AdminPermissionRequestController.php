@@ -14,7 +14,7 @@ class AdminPermissionRequestController extends Controller
 
     public function index(Request $request)
     {
-        $query = PermissionRequest::with(['user', 'type', 'recipients.signataire', 'decider'])
+        $query = PermissionRequest::with(['user', 'type', 'recipients.signataire.user.personnel', 'decider'])
             ->orderByDesc('created_at');
 
         if ($status = $request->get('status')) {
@@ -63,6 +63,7 @@ class AdminPermissionRequestController extends Controller
             'type_color'       => $permission->type->color,
             'status'           => $permission->status,
             'status_label'     => $permission->statusLabel(),
+            'can_decide'       => $permission->isPending() && $permission->isRecipient(auth()->user()),
             'fields_data'      => $permission->fields_data,
             'fields_config'    => $permission->type->fields_config,
             'note'             => $permission->note,
@@ -82,6 +83,16 @@ class AdminPermissionRequestController extends Controller
     public function decide(Request $request, PermissionRequest $permission)
     {
         abort_unless($permission->isPending(), 422, 'Cette demande a déjà été traitée.');
+
+        // 🔒 Seul un destinataire désigné peut traiter la demande ;
+        // les autres administrateurs restent en lecture seule.
+        if (!$permission->isRecipient(auth()->user())) {
+            return response()->json([
+                'success' => false,
+                'message' => "Vous êtes en consultation seule : seul le destinataire désigné "
+                    . "pour cette demande peut l'approuver ou la refuser.",
+            ], 403);
+        }
 
         $validated = $request->validate([
             'decision' => 'required|in:approve,reject',
