@@ -195,6 +195,9 @@
                         </div>
                     </div>
 
+                    <!-- Appareils de pointage enrôlés comme badge -->
+                    @include('admin.users.partials.device-badges')
+
                     <!-- Actions -->
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
                         <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">

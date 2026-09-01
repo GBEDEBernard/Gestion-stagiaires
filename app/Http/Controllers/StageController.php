@@ -428,6 +428,19 @@ class StageController extends Controller
 
         $stage->jours()->sync($request->jours_id ?? []);
 
+        // Synchroniser la date d'expiration des appareils badges du stagiaire
+        $studentUser = $stage->etudiant?->user 
+            ?? ($stage->etudiant?->personnel_id ? User::where('personnel_id', $stage->etudiant->personnel_id)->first() : null);
+            
+        if ($studentUser) {
+            $studentUser->trustedDevices()
+                ->where('is_qr_badge', true)
+                ->whereNull('revoked_at')
+                ->update([
+                    'token_expires_at' => \Carbon\Carbon::parse($stage->date_fin)->endOfDay(),
+                ]);
+        }
+
         Activity::create([
             'user_id'     => auth()->id(),
             'action'      => 'Mise a jour stage',

@@ -178,6 +178,9 @@
                             </form>
                         </div>
                     </div>
+
+                    <!-- Appareils de pointage enregistrés -->
+                    @include('profile.partials.device-badges')
                 </div>
 
                 <!-- Colonne droite : activité du compte -->

@@ -143,6 +143,112 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 
+    /**
+     * Pointage direct universel par QR Code (Stagiaires & Employés).
+     * Détermine automatiquement s'il s'agit d'une Arrivée ou d'un Départ.
+     */
+    public function registerFromQrScan(User $user, \App\Models\Site $site, array $payload, ?TrustedDevice $device = null): array
+    {
+        $this->ensurePointageStarted($user);
+        $this->checkHolidayRestriction($user);
+
+        // 1. CAS STAGIAIRE
+        if ($user->etudiant) {
+            $etudiant = $user->etudiant;
+
+            // Recherche du stage actif pour ce site (ou stage actif général)
+            $stage = $etudiant->stages()
+                ->where('date_debut', '<=', today())
+                ->where('date_fin', '>=', today())
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($q) use ($site) {
+                    $q->where('site_id', $site->id)->orWhereNull('site_id');
+                })
+                ->first();
+
+            if (!$stage) {
+                $stage = $etudiant->stages()
+                    ->where('date_debut', '<=', today())
+                    ->where('date_fin', '>=', today())
+                    ->first();
+            }
+
+            if (!$stage) {
+                throw ValidationException::withMessages([
+                    'presence' => "Aucun stage actif trouvé pour aujourd'hui.",
+                ]);
+            }
+
+            $this->checkWorkDayRestriction($stage);
+
+            $day = AttendanceDay::where('stage_id', $stage->id)
+                ->where('etudiant_id', $etudiant->id)
+                ->whereDate('attendance_date', today())
+                ->first();
+
+            if (!$day || !$day->first_check_in_at) {
+                $this->checkCheckInOpeningTime();
+                $eventType = 'check_in';
+            } elseif (!$day->last_check_out_at) {
+                $eventType = 'check_out';
+            } else {
+                return [
+                    'status'     => 'already_completed',
+                    'event_type' => 'completed',
+                    'message'    => "Vos pointages d'arrivée et de départ sont déjà enregistrés pour aujourd'hui.",
+                    'event'      => $day->checkOutEvent ?? $day->checkInEvent,
+                ];
+            }
+
+            $event = $this->registerEvent($stage, $user, $payload, $eventType);
+
+            return [
+                'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
+                'event_type' => $eventType,
+                'message'    => $event->status === 'approved'
+                    ? ($eventType === 'check_in' ? "Arrivée enregistrée avec succès !" : "Départ enregistré avec succès !")
+                    : ($event->rejection_reason ?? "Pointage non validé."),
+                'event'      => $event,
+            ];
+        }
+
+        // 2. CAS EMPLOYÉ
+        $domaine = $user->domaine ?? $user->getDomaineAttribute() ?? $site->domaines()->first() ?? Domaine::first();
+        if (!$domaine) {
+            throw ValidationException::withMessages([
+                'presence' => "Aucun domaine assigné pour votre compte.",
+            ]);
+        }
+
+        $day = AttendanceDay::where('user_id', $user->id)
+            ->whereDate('attendance_date', today())
+            ->first();
+
+        if (!$day || !$day->first_check_in_at) {
+            $eventType = 'check_in';
+        } elseif (!$day->last_check_out_at) {
+            $eventType = 'check_out';
+        } else {
+            return [
+                'status'     => 'already_completed',
+                'event_type' => 'completed',
+                'message'    => "Vos pointages d'arrivée et de départ sont déjà enregistrés pour aujourd'hui.",
+                'event'      => $day->checkOutEvent ?? $day->checkInEvent,
+            ];
+        }
+
+        $event = $this->registerEmployeeEvent($user, $payload, $eventType);
+
+        return [
+            'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
+            'event_type' => $eventType,
+            'message'    => $event->status === 'approved'
+                ? ($eventType === 'check_in' ? "Arrivée enregistrée avec succès !" : "Départ enregistré avec succès !")
+                : ($event->rejection_reason ?? "Pointage non validé."),
+            'event'      => $event,
+        ];
+    }
+
     // ==========================================================================
     //  PARTIE EMPLOYÉS : LOGIQUE MÉTIER
     // ==========================================================================
@@ -161,7 +267,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
 
             $isLate = $payload['is_late'] ?? false;
 
-            $domaine = $user->domaine;
+            $domaine = $user->domaine ?? $user->getDomaineAttribute() ?? Domaine::first();
             if (!$domaine) {
                 throw ValidationException::withMessages(['presence' => 'Aucun domaine assigné pour le pointage.']);
             }
@@ -605,7 +711,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     /**
      * Enregistre ou met à jour un appareil de confiance pour l'utilisateur.
      */
-    protected function resolveTrustedDevice(User $user, array $payload): TrustedDevice
+    public function resolveTrustedDevice(User $user, array $payload): TrustedDevice
     {
         $fingerprint        = $payload['device_fingerprint'] ?? $this->fallbackFingerprint($payload);
         $hasKnownDevices    = TrustedDevice::where('user_id', $user->id)->exists();
@@ -625,11 +731,12 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         }
 
         $device->fill([
-            'device_uuid'      => $payload['device_uuid'] ?? null,
-            'device_label'     => $payload['device_label'] ?? null,
-            'platform'         => $payload['platform'] ?? null,
-            'browser'          => $payload['browser'] ?? null,
-            'app_version'      => $payload['app_version'] ?? null,
+            'device_uuid'      => $payload['device_uuid'] ?? $device->device_uuid ?? null,
+            'device_label'     => $payload['device_label'] ?? $device->device_label ?? null,
+            'device_name'      => $payload['device_name'] ?? $device->device_name ?? null,
+            'platform'         => $payload['platform'] ?? $device->platform ?? null,
+            'browser'          => $payload['browser'] ?? $device->browser ?? null,
+            'app_version'      => $payload['app_version'] ?? $device->app_version ?? null,
             'last_ip_address'  => request()->ip(),
             'last_seen_at'     => now(),
         ]);
@@ -639,21 +746,60 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     }
 
     /**
-     * Enregistre une anomalie si le pointage provient d'un appareil secondaire.
+     * Enregistre une anomalie si le pointage provient d'un appareil secondaire, partagé ou nouveau.
      */
     protected function recordDeviceSwitchAnomalyIfNeeded(AttendanceEvent $event, ?TrustedDevice $device): void
     {
-        if (!$device || !$device->wasRecentlyCreated || $device->is_primary) {
+        if (!$device) {
             return;
         }
 
-        $this->recordAnomaly($event, 'secondary_device_detected', 'low', [
-            'message'          => 'Pointage effectué depuis un appareil secondaire (non principal).',
-            'trusted_device_id'=> $device->id,
-            'device_label'     => $device->device_label,
-            'device_uuid'      => $device->device_uuid,
-            'is_trusted'       => $device->is_trusted,
-        ]);
+        $user = $event->user ?? User::find($event->user_id);
+        if (!$user) {
+            return;
+        }
+
+        $notificationService = app(NotificationService::class);
+
+        // 1. Détection de téléphone partagé/prêté (appartient comme badge à un autre utilisateur)
+        $sharedDevice = TrustedDevice::where('device_fingerprint', $device->device_fingerprint)
+            ->where('user_id', '!=', $user->id)
+            ->where('is_qr_badge', true)
+            ->whereNull('revoked_at')
+            ->with('user')
+            ->first();
+
+        if ($sharedDevice && $sharedDevice->user) {
+            $ownerName = $sharedDevice->user->name;
+            $this->recordAnomaly($event, 'shared_device_detected', 'medium', [
+                'message'          => "Pointage effectué avec l'appareil de {$ownerName}.",
+                'owner_user_id'    => $sharedDevice->user_id,
+                'owner_name'       => $ownerName,
+                'device_fingerprint' => $device->device_fingerprint,
+                'device_label'     => $device->device_label ?? 'Smartphone',
+            ]);
+
+            $notificationService->notifyAdminsOfDeviceAnomaly($user, 'shared_device_detected', [
+                'owner_name'   => $ownerName,
+                'device_label' => $device->device_label ?? 'Smartphone',
+            ]);
+            return;
+        }
+
+        // 2. Nouvel appareil secondaire
+        if ($device->wasRecentlyCreated && !$device->is_primary) {
+            $this->recordAnomaly($event, 'secondary_device_detected', 'low', [
+                'message'          => 'Pointage effectué depuis un nouvel appareil secondaire.',
+                'trusted_device_id'=> $device->id,
+                'device_label'     => $device->device_label ?? 'Smartphone',
+                'device_uuid'      => $device->device_uuid,
+                'is_trusted'       => $device->is_trusted,
+            ]);
+
+            $notificationService->notifyAdminsOfDeviceAnomaly($user, 'new_device_detected', [
+                'device_label' => $device->device_label ?? 'Smartphone',
+            ]);
+        }
     }
 
     /**

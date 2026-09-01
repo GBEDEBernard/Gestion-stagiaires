@@ -99,6 +99,23 @@ class SiteController extends Controller
         return redirect()->route('sites.index')->with('success', 'Site supprime.');
     }
 
+    /**
+     * Affiche l'affiche A4 imprimable avec le QR Code de pointage du site.
+     */
+    public function qrPoster(Site $site)
+    {
+        if (empty($site->qr_token)) {
+            $prefix = !empty($site->code) ? \Illuminate\Support\Str::slug($site->code) : 'site';
+            $site->update([
+                'qr_token' => \Illuminate\Support\Str::lower($prefix) . '-' . \Illuminate\Support\Str::random(24),
+            ]);
+        }
+
+        $pointageUrl = route('presence.qr.scan', ['site_token' => $site->qr_token]);
+
+        return view('admin.sites.qr-poster', compact('site', 'pointageUrl'));
+    }
+
     protected function validatePayload(Request $request, ?int $siteId = null): array
     {
         return $request->validate([

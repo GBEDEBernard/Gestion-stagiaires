@@ -249,6 +249,94 @@ class NotificationService
     }
 
     /**
+     * Notifie les administrateurs et superviseurs lors d'une anomalie d'appareil (changement / partage).
+     */
+    public function notifyAdminsOfDeviceAnomaly(\App\Models\User $user, string $type, array $details): void
+    {
+        $userName = $user->name ?? 'Utilisateur';
+        $timeStr  = now()->format('d/m/Y à H:i');
+        $url      = route('admin.presence.anomalies');
+
+        if ($type === 'shared_device_detected') {
+            $ownerName = $details['owner_name'] ?? 'un collègue';
+            $title     = "⚠️ Pointage sur appareil partagé";
+            $message   = "{$userName} a effectué son pointage avec le téléphone de {$ownerName} le {$timeStr}.";
+            $color     = 'amber';
+        } else {
+            $deviceLabel = $details['device_label'] ?? 'inconnu';
+            $title       = "🔔 Pointage depuis un nouvel appareil";
+            $message     = "{$userName} a effectué son pointage depuis un nouvel appareil ({$deviceLabel}) le {$timeStr}.";
+            $color       = 'blue';
+        }
+
+        // Récupérer les admins et superviseurs
+        $admins = \App\Models\User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['admin', 'superviseur']);
+        })->get();
+
+        foreach ($admins as $admin) {
+            $this->push(
+                $admin->id,
+                'device_anomaly',
+                $title,
+                $message,
+                $url,
+                'smartphone',
+                $color
+            );
+        }
+    }
+
+    /**
+     * Alerte les administrateurs lorsqu'un utilisateur révoque lui-même l'un de
+     * ses appareils de pointage. Une révocation est souvent le signal d'un
+     * téléphone perdu ou volé : l'équipe doit pouvoir la relier à un incident.
+     */
+    public function notifyAdminsOfDeviceRevocation(\App\Models\User $owner, \App\Models\TrustedDevice $device): void
+    {
+        $deviceName = $device->device_name ?: ($device->device_label ?: 'Smartphone');
+        $ownerName  = $owner->name ?? 'Utilisateur';
+
+        $admins = \App\Models\User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['admin', 'superviseur']);
+        })->get();
+
+        foreach ($admins as $admin) {
+            $this->push(
+                $admin->id,
+                'device_revoked',
+                "Badge de pointage révoqué",
+                "{$ownerName} a révoqué son appareil « {$deviceName} » le " . now()->format('d/m/Y à H:i') . ". Cet appareil ne peut plus servir à pointer.",
+                encrypted_route('admin.users.show', $owner),
+                'smartphone',
+                'amber'
+            );
+        }
+    }
+
+    /**
+     * Prévient l'utilisateur qu'un administrateur a coupé l'un de ses appareils,
+     * pour qu'il comprenne pourquoi son téléphone ne pointe plus.
+     */
+    public function notifyUserOfDeviceRevokedByAdmin(
+        \App\Models\User $owner,
+        \App\Models\TrustedDevice $device,
+        \App\Models\User $admin
+    ): void {
+        $deviceName = $device->device_name ?: ($device->device_label ?: 'Smartphone');
+
+        $this->push(
+            $owner->id,
+            'device_revoked',
+            "Votre badge de pointage a été révoqué",
+            "L'appareil « {$deviceName} » ne peut plus servir à pointer. Reconnectez-vous depuis le téléphone concerné pour le réactiver, ou rapprochez-vous de votre administrateur.",
+            route('profile.edit'),
+            'smartphone',
+            'amber'
+        );
+    }
+
+    /**
      * Marquer une notification comme lue.
      */
     public function markAsRead($notificationId)

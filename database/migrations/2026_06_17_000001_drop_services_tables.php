@@ -11,12 +11,16 @@ return new class extends Migration
     {
         Schema::table('stages', function (Blueprint $table) {
             if (Schema::hasColumn('stages', 'service_id')) {
-                $foreignKey = 'stages_service_id_foreign';
-                $hasForeignKey = collect(DB::select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [DB::getDatabaseName(), 'stages', $foreignKey]))->isNotEmpty();
-
-                if ($hasForeignKey) {
-                    $table->dropForeign(['service_id']);
+                if (DB::getDriverName() === 'mysql') {
+                    $foreignKey = 'stages_service_id_foreign';
+                    $hasForeignKey = collect(DB::select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [DB::getDatabaseName(), 'stages', $foreignKey]))->isNotEmpty();
+                    if ($hasForeignKey) {
+                        $table->dropForeign(['service_id']);
+                    }
                 }
+                try {
+                    $table->dropIndex(['service_id']);
+                } catch (\Throwable $e) {}
                 $table->dropColumn('service_id');
             }
         });

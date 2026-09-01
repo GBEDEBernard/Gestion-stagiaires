@@ -14,6 +14,7 @@ class Site extends Model
 
     protected $fillable = [
         'code',
+        'qr_token',
         'name',
         'contact_person',
         'contact_phone',
@@ -25,6 +26,21 @@ class Site extends Model
         'is_active',
         'notes',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($site) {
+            if (empty($site->qr_token)) {
+                $prefix = !empty($site->code) ? \Illuminate\Support\Str::slug($site->code) : 'site';
+                $site->qr_token = \Illuminate\Support\Str::lower($prefix) . '-' . \Illuminate\Support\Str::random(24);
+            }
+        });
+    }
+
+    public function getPointageUrl(): string
+    {
+        return route('presence.qr.scan', ['site_token' => $this->qr_token]);
+    }
 
     protected $casts = [
         'latitude' => 'decimal:7',

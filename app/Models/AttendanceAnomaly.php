@@ -105,6 +105,8 @@ class AttendanceAnomaly extends Model
             'stage_inactive'            => 'Stage inactif',
             'retard_arrivee'            => "Retard à l'arrivée",
             'secondary_device_detected' => 'Appareil secondaire détecté',
+            'shared_device_detected'    => "Téléphone d'un collègue utilisé",
+            'new_device_detected'       => 'Nouvel appareil détecté',
         ];
         return $labels[$this->anomaly_type] ?? ucfirst(str_replace('_', ' ', $this->anomaly_type));
     }
@@ -122,6 +124,8 @@ class AttendanceAnomaly extends Model
             'stage_inactive'            => "Le stage de l'étudiant n'est pas actif (hors période de stage). Le pointage ne devrait pas être autorisé.",
             'retard_arrivee'            => "L'utilisateur est arrivé après l'heure de référence (retard constaté).",
             'secondary_device_detected' => "Un pointage a été détecté depuis un appareil différent de celui habituellement utilisé par l'utilisateur.",
+            'shared_device_detected'    => "L'utilisateur a pointé en utilisant l'appareil enregistré d'un autre utilisateur (téléphone partagé/prêté).",
+            'new_device_detected'       => "L'utilisateur a pointé depuis un nouvel appareil non encore enregistré comme badge de confiance.",
         ];
         return $descriptions[$this->anomaly_type] ?? 'Aucune description disponible pour ce type d\'anomalie.';
     }
@@ -139,6 +143,8 @@ class AttendanceAnomaly extends Model
             'stage_inactive'            => "1. Vérifier les dates du stage dans Admin > Stages.\n2. Prolonger le stage si nécessaire.\n3. Si le stage est bien expiré, contacter l'étudiant et son responsable.",
             'retard_arrivee'            => "1. Consulter l'observation laissée par l'utilisateur dans le payload.\n2. Apprécier le motif du retard (valable ou non).\n3. Si le motif est recevable, marquer comme résolu. Sinon, appliquer les règles de ponctualité.",
             'secondary_device_detected' => "1. Vérifier auprès de l'utilisateur s'il a changé d'appareil.\n2. Si c'est un nouvel appareil autorisé, mettre à jour l'appareil principal.\n3. Marquer comme résolu.",
+            'shared_device_detected'    => "1. Vérifier si le prêt d'appareil était légitime (panne de batterie, oubli).\n2. Rappeler à l'utilisateur que chaque membre doit utiliser son propre appareil.\n3. Marquer comme résolu si le motif est vérifié.",
+            'new_device_detected'       => "1. Vérifier avec l'utilisateur s'il s'agit bien de son nouveau téléphone.\n2. Si oui, l'enrôler comme badge autorisé dans son profil.\n3. Marquer comme résolu.",
         ];
         return $solutions[$this->anomaly_type] ?? 'Aucune procédure définie. Vérifier manuellement et marquer comme résolu si approprié.';
     }

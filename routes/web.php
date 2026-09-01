@@ -37,10 +37,10 @@ use App\Http\Controllers\EtudiantsPresenceController;
 use App\Http\Controllers\SiteGeofenceController;
 use App\Http\Controllers\TacheController;
 use App\Http\Controllers\TacheController as ControllersTacheController;
-use App\Http\Controllers\AttestationSignatureController;
 use App\Http\Controllers\Admin\AdminHolidayController;
 use App\Http\Controllers\Admin\AdminLogController;
 use App\Http\Controllers\ImpersonateController;
+use App\Http\Controllers\QrPointageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +49,13 @@ use App\Http\Controllers\ImpersonateController;
 */
 
 Route::get('/', fn() => redirect()->route('login'));
+
+// ---------------- Pointage QR Code Public (Porte) ----------------
+Route::prefix('p')->middleware('throttle:60,1')->group(function () {
+    Route::get('/{site_token}', [QrPointageController::class, 'scan'])->name('presence.qr.scan');
+    Route::post('/{site_token}/process', [QrPointageController::class, 'processPointage'])->name('presence.qr.process');
+    Route::get('/{site_token}/post-login', [QrPointageController::class, 'postLogin'])->name('presence.qr.post-login')->middleware('auth');
+});
 
 require __DIR__ . '/auth.php';
 
@@ -217,6 +224,7 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::get('{site}/edit', [SiteController::class, 'edit'])->name('sites.edit')->middleware('permission:sites.edit');
         Route::put('{site}', [SiteController::class, 'update'])->name('sites.update')->middleware('permission:sites.edit');
         Route::delete('{site}', [SiteController::class, 'destroy'])->name('sites.destroy')->middleware('permission:sites.delete');
+        Route::get('{site}/qr-poster', [SiteController::class, 'qrPoster'])->name('sites.qr-poster')->middleware('permission:sites.view');
     });
 
     // ---------------- API: Domaines par Site ----------------
@@ -272,6 +280,7 @@ Route::prefix('tasks')->group(function () {
         Route::get('{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit')->middleware('permission:users.edit');
         Route::put('{user}', [UserController::class, 'update'])->name('admin.users.update')->middleware('permission:users.edit');
         Route::delete('{user}', [UserController::class, 'destroy'])->name('admin.users.destroy')->middleware('permission:users.delete');
+        Route::delete('{user}/devices/{device}', [QrPointageController::class, 'adminRevokeDevice'])->name('admin.users.devices.revoke')->middleware('permission:users.edit');
         Route::post('permissions', [UserController::class, 'createPermission'])->name('admin.permissions.store')->middleware('permission:users.create');
         Route::put('{id}/restore', [CorbeilleController::class, 'restoreUser'])->name('users.restore')->middleware('permission:users.restore');
         Route::delete('{id}/force-delete', [CorbeilleController::class, 'forceDeleteUser'])->name('users.forceDelete')->middleware('permission:users.force-delete');
@@ -321,6 +330,8 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
+        Route::post('/devices/enroll', [QrPointageController::class, 'enrollCurrentDevice'])->name('presence.devices.enroll');
+        Route::delete('/devices/{device}', [QrPointageController::class, 'revokeDevice'])->name('presence.devices.revoke');
     });
 
     // ---------------- Employes ----------------

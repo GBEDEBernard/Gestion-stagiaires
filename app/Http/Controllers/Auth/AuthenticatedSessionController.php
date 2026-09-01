@@ -23,6 +23,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        // Si l'utilisateur est arrivé via un scan QR code
+        if ($request->session()->has('pending_qr_site')) {
+            $siteToken = $request->session()->pull('pending_qr_site');
+            return redirect()->route('presence.qr.post-login', ['site_token' => $siteToken]);
+        }
+
         // Redirection directe vers le tableau de bord du rôle (admin,
         // superviseur, étudiant, employé) sans passer par une vérification d'email.
 
