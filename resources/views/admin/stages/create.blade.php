@@ -125,18 +125,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Jours de présence</label>
-                            <div class="flex flex-wrap gap-2">
-                                @foreach($jours as $jour)
-                                <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-100">
-                                    <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}" class="w-4 h-4 text-blue-600 rounded">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                            @error('jours_id')
-                            <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                            @enderror
+                            @include('admin.stages.partials.horaires', ['stage' => null, 'jours' => $jours])
                             <p id="joursErrorModal" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
                         </div>
                     </div>
@@ -298,23 +287,8 @@
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-gray-100 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Jours de présence</h3>
-                    <div class="flex flex-wrap gap-3">
-                        @foreach($jours as $jour)
-                        <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-100">
-                            <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}"
-                                {{ in_array($jour->id, old('jours_id', [])) ? 'checked' : '' }}
-                                class="w-4 h-4 text-blue-600 rounded">
-                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                    @error('jours_id')
-                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                    <p id="joursError" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
-                </div>
+                @include('admin.stages.partials.horaires', ['stage' => null, 'jours' => $jours])
+                <p id="joursError" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
 
                 <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
                     <a href="{{ route('stages.index') }}"

@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
+use Illuminate\Validation\ValidationException;
+use App\Services\AttendanceCorrectionService;
+use App\Models\Activity;
+use App\Models\AttendanceCorrection;
 use App\Models\AttendanceException;
 use App\Models\Etudiant;
 use App\Models\Employe;
@@ -490,6 +494,61 @@ class AdminAttendanceTrackingController extends Controller
         );
 
         return back()->with('success', 'Absence du ' . Carbon::parse($date)->locale('fr')->isoFormat('dddd D MMMM YYYY') . ' corrigée. Ce jour ne sera plus compté comme absence.');
+    }
+
+    /**
+     * Rétablit l'heure d'arrivée réelle d'une journée où le pointage a échoué.
+     * Le retard cesse de compter, mais l'heure constatée reste consultable.
+     */
+    public function storeTimeCorrection(Request $request, User $user, AttendanceDay $day)
+    {
+        // Deux nulls ne prouvent pas une appartenance : comparer directement
+        // etudiant_id laissait passer la journée d'un employé sous l'identifiant
+        // d'un autre, et la correction aurait été inscrite au mauvais nom.
+        $etudiantId = $user->etudiant?->id;
+        $belongsToUser = ($day->user_id !== null && $day->user_id === $user->id)
+            || ($etudiantId !== null && $day->etudiant_id === $etudiantId);
+
+        if (!$belongsToUser) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'time'   => ['required', 'string'],
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'reason.required' => "Le motif est obligatoire : une ponctualité corrigée sans justification serait indéfendable.",
+            'reason.min'      => "Le motif doit être un minimum explicite.",
+        ]);
+
+        try {
+            app(AttendanceCorrectionService::class)
+                ->apply($user, $day, $validated['time'], $validated['reason'], $request->user());
+        } catch (ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors());
+        }
+
+        Activity::create([
+            'user_id'     => $request->user()->id,
+            'action'      => 'Correction heure arrivee',
+            'description' => "Journée du {$day->attendance_date->format('d/m/Y')} pour {$user->name} : heure rétablie à {$validated['time']}.",
+        ]);
+
+        return back()->with('success', "Heure d'arrivée rétablie. Ce jour n'est plus compté comme un retard.");
+    }
+
+    /**
+     * Annule une correction d'heure et restitue le pointage constaté.
+     */
+    public function destroyTimeCorrection(User $user, AttendanceCorrection $correction)
+    {
+        if ($correction->user_id !== $user->id) {
+            abort(404);
+        }
+
+        app(AttendanceCorrectionService::class)->revert($correction);
+
+        return back()->with('success', "Correction annulée. Le pointage constaté est rétabli.");
     }
 
     /**

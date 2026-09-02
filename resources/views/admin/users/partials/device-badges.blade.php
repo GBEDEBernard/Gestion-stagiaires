@@ -53,7 +53,11 @@
 
                         <form method="POST"
                               action="{{ route('admin.users.devices.revoke', [$user, $dev]) }}"
-                              onsubmit="return confirm('Révoquer cet appareil ? {{ $user->name }} ne pourra plus pointer avec ce téléphone tant qu\'il ne l\'aura pas réenrôlé.')">
+                              data-swal-title="Révoquer cet appareil ?"
+                              data-swal-text="{{ $user->name }} ne pourra plus pointer avec ce téléphone tant qu'il ne l'aura pas réenrôlé."
+                              data-swal-icon="warning"
+                              data-swal-color="#dc2626"
+                              data-swal-confirm="Oui, révoquer">
                             @csrf @method('DELETE')
                             <button type="submit"
                                     class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/50 transition text-xs font-medium">

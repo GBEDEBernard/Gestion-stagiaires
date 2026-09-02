@@ -41,6 +41,10 @@ use App\Http\Controllers\Admin\AdminHolidayController;
 use App\Http\Controllers\Admin\AdminLogController;
 use App\Http\Controllers\ImpersonateController;
 use App\Http\Controllers\QrPointageController;
+use App\Http\Controllers\StageReportController;
+use App\Http\Controllers\EvaluationCriterionController;
+use App\Http\Controllers\StageEvaluationController;
+use App\Http\Controllers\WorkScheduleSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +158,16 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::get('{stage}/edit', [StageController::class, 'edit'])->name('stages.edit')->middleware('permission:stages.edit');
         Route::put('{stage}', [StageController::class, 'update'])->name('stages.update')->middleware('permission:stages.edit');
         Route::delete('{stage}', [StageController::class, 'destroy'])->name('stages.destroy')->middleware('permission:stages.delete');
+        Route::get('{stage}/rapport', [StageReportController::class, 'show'])->name('stages.rapport')->middleware('permission:presence.view');
+        Route::get('{stage}/rapport/pdf', [StageReportController::class, 'pdf'])->name('stages.rapport.pdf')->middleware('permission:presence.view')->defaults('type', 'download');
+        Route::get('{stage}/rapport/print', [StageReportController::class, 'pdf'])->name('stages.rapport.print')->middleware('permission:presence.view')->defaults('type', 'print');
+        // Notation : admin uniquement, décision verrouillée.
+        Route::get('{stage}/evaluation', [StageEvaluationController::class, 'edit'])->name('stages.evaluation.edit')->middleware('role:admin');
+        Route::put('{stage}/evaluation', [StageEvaluationController::class, 'update'])->name('stages.evaluation.update')->middleware('role:admin');
+        Route::post('{stage}/evaluation/grille', [StageEvaluationController::class, 'saveGrid'])->name('stages.evaluation.grid.save')->middleware('role:admin');
+        Route::post('{stage}/evaluation/grille/modifier', [StageEvaluationController::class, 'editGrid'])->name('stages.evaluation.grid.edit')->middleware('role:admin');
+        Route::post('{stage}/evaluation/finalize', [StageEvaluationController::class, 'finalize'])->name('stages.evaluation.finalize')->middleware('role:admin');
+        Route::post('{stage}/evaluation/reopen', [StageEvaluationController::class, 'reopen'])->name('stages.evaluation.reopen')->middleware('role:admin');
         Route::get('{stage}/badge', [BadgeController::class, 'show'])->name('admin.stages.badge.show')->middleware('permission:badges.view');
         Route::get('{stage}/badge/download', [BadgeController::class, 'download'])->name('stages.badge.download')->middleware('permission:badges.download');
         Route::get('{stage}/attestation', [AttestationController::class, 'showStageAttestation'])->name('stages.attestation.show')->middleware('permission:attestation.view');
@@ -290,6 +304,23 @@ Route::prefix('tasks')->group(function () {
         Route::patch('/admin/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('admin.users.toggle-status');
     });
 
+    // ---------------- Horaire de référence de l'entreprise ----------------
+    // Admin seul : l'heure d'arrivée définit le retard de tout le monde.
+    Route::prefix('admin/presence/horaire')->middleware('role:admin')->group(function () {
+        Route::get('/', [WorkScheduleSettingController::class, 'edit'])->name('admin.presence.horaire.edit');
+        Route::put('/', [WorkScheduleSettingController::class, 'update'])->name('admin.presence.horaire.update');
+    });
+
+    // ---------------- Grilles d'évaluation de stage ----------------
+    // Réservé à l'admin : c'est lui qui décide ce qu'un stage doit mesurer.
+    Route::prefix('admin/evaluations/criteres')->middleware('role:admin')->group(function () {
+        Route::get('/', [EvaluationCriterionController::class, 'index'])->name('admin.evaluations.criteres.index');
+        Route::post('/', [EvaluationCriterionController::class, 'store'])->name('admin.evaluations.criteres.store');
+        Route::put('{criterion}', [EvaluationCriterionController::class, 'update'])->name('admin.evaluations.criteres.update');
+        Route::post('{criterion}/toggle', [EvaluationCriterionController::class, 'toggle'])->name('admin.evaluations.criteres.toggle');
+        Route::delete('{criterion}', [EvaluationCriterionController::class, 'destroy'])->name('admin.evaluations.criteres.destroy');
+    });
+
     // ---------------- Roles ----------------
     Route::prefix('admin/roles')->group(function () {
         Route::get('/', [RoleController::class, 'index'])->name('admin.roles.index')->middleware('permission:roles.view');
@@ -389,6 +420,9 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::middleware('role:admin|superviseur')->group(function () {
             Route::post('/user/{user}/exceptions', [AdminAttendanceTrackingController::class, 'storeException'])->name('attendance.tracking.user.exception.store');
             Route::delete('/user/{user}/exceptions/{exception}', [AdminAttendanceTrackingController::class, 'destroyException'])->name('attendance.tracking.user.exception.destroy');
+            // Correction d'une heure d'arrivée mal enregistrée (scan impossible).
+            Route::post('/user/{user}/days/{day}/correction', [AdminAttendanceTrackingController::class, 'storeTimeCorrection'])->name('attendance.tracking.user.correction.store');
+            Route::delete('/user/{user}/corrections/{correction}', [AdminAttendanceTrackingController::class, 'destroyTimeCorrection'])->name('attendance.tracking.user.correction.destroy');
         });
     });
 

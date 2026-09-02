@@ -14,6 +14,7 @@ class AttendanceException extends Model
         'attendance_date',
         'reason',
         'created_by',
+        'permission_request_id',
     ];
 
     protected $casts = [
@@ -28,5 +29,16 @@ class AttendanceException extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function permissionRequest()
+    {
+        return $this->belongsTo(PermissionRequest::class);
+    }
+
+    /** Journée excusée automatiquement par une permission approuvée. */
+    public function isAutomatic(): bool
+    {
+        return $this->permission_request_id !== null;
     }
 }

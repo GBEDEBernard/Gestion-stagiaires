@@ -27,6 +27,7 @@ class Stage extends Model
         'expected_check_out_time',
         'allowed_late_minutes',
         'allowed_early_departure_minutes',
+        'break_minutes',
         'presence_mode',
         'follow_up_status',
         'intitule_poste',
@@ -110,7 +111,10 @@ class Stage extends Model
 
     public function jours()
     {
-        return $this->belongsToMany(Jour::class, 'stage_jour');
+        // withPivot : sans cela l'horaire propre au jour reste invisible et la
+        // demi-journée du mercredi ne s'applique jamais.
+        return $this->belongsToMany(Jour::class, 'stage_jour')
+            ->withPivot('start_time', 'end_time', 'break_minutes');
     }
 
     /**
@@ -175,6 +179,11 @@ class Stage extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function evaluation()
+    {
+        return $this->hasOne(StageEvaluation::class);
     }
 
     public function attestation()

@@ -508,6 +508,32 @@
         })();
 
         document.addEventListener('click', function(e) {
+            // === CONFIRMATION GÉNÉRIQUE ===
+            // Les deux gestionnaires ci-dessous portent des textes figés. Celui-ci
+            // laisse chaque écran écrire le sien, sans retomber sur le confirm()
+            // natif du navigateur qui jure avec le reste de l'interface.
+            const swalForm = e.target.closest('form[data-swal-text]');
+            if (swalForm && e.target.closest('button[type="submit"]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                Swal.fire({
+                    title: swalForm.dataset.swalTitle || 'Confirmer',
+                    text: swalForm.dataset.swalText,
+                    icon: swalForm.dataset.swalIcon || 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: swalForm.dataset.swalColor || '#3b82f6',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: swalForm.dataset.swalConfirm || 'Confirmer',
+                    cancelButtonText: 'Annuler'
+                }).then(r => {
+                    if (r.isConfirmed) {
+                        swalForm.removeAttribute('data-swal-text');
+                        swalForm.submit();
+                    }
+                });
+                return;
+            }
+
             // === HANDLE DELETE CONFIRMATION ===
             const deleteForm = e.target.closest('form[data-confirm-delete]');
             if (deleteForm) {

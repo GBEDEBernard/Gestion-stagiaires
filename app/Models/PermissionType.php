@@ -6,7 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class PermissionType extends Model
 {
-    protected $fillable = ['name', 'slug', 'icon', 'color', 'description', 'fields_config', 'active', 'sort_order'];
+    protected $fillable = [
+        'name', 'slug', 'icon', 'color', 'description', 'fields_config', 'active', 'sort_order',
+        'attendance_effect', 'date_from_field', 'date_to_field',
+    ];
+
+    /** Le type excuse-t-il des journées entières de présence ? */
+    public function excusesFullDays(): bool
+    {
+        return $this->attendance_effect === 'excuses_day';
+    }
 
     protected $casts = [
         'fields_config' => 'array',

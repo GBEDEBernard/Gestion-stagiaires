@@ -176,6 +176,10 @@ test('multi-user device cookie displays user choice view', function () {
 });
 
 test('processing attendance returns standalone result view without redirection', function () {
+    // Ces tests portent sur le résultat du pointage, pas sur le retard : on se
+    // place avant l'heure d'arrivée pour ne pas déclencher l'écran d'observation.
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 07:45:00'));
+
     $site = createQrTestSite();
     $user = createQrTestUser('employe');
     $domaine = Domaine::create(['nom' => 'Développement']);
@@ -211,9 +215,15 @@ test('processing attendance returns standalone result view without redirection',
     $response->assertViewIs('presence.qr.result');
     $response->assertViewHas('status', 'approved');
     $response->assertViewHas('eventType', 'check_in');
+
+    \Carbon\Carbon::setTestNow();
 });
 
 test('shared device generates shared_device_detected anomaly and notifies admins', function () {
+    // Ces tests portent sur le résultat du pointage, pas sur le retard : on se
+    // place avant l'heure d'arrivée pour ne pas déclencher l'écran d'observation.
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 07:45:00'));
+
     $site = createQrTestSite();
     $admin = createQrTestUser('admin');
     $user1 = createQrTestUser('employe'); // Sarah
@@ -255,6 +265,8 @@ test('shared device generates shared_device_detected anomaly and notifies admins
         'user_id' => $admin->id,
         'type'    => 'device_anomaly',
     ]);
+
+    \Carbon\Carbon::setTestNow();
 });
 
 test('stage date_fin update synchronizes device token expiration', function () {
@@ -302,6 +314,10 @@ test('stage date_fin update synchronizes device token expiration', function () {
         'date_debut'   => $stage->date_debut->toDateString(),
         'date_fin'     => $newDateFin,
         'jours_id'     => [$jour->id],
+        // Le formulaire de stage porte désormais l'horaire, qui détermine le
+        // seuil de retard : il est requis à l'enregistrement.
+        'expected_check_in_time'  => '08:30',
+        'expected_check_out_time' => '17:30',
     ]);
 
     $response->assertRedirect();
@@ -436,4 +452,120 @@ test('the admin user sheet lists the enrolled badges with a revoke control', fun
         ->assertSee('Appareils de pointage')
         ->assertSee('Galaxy A54')
         ->assertSee(route('admin.users.devices.revoke', [$user, TrustedDevice::first()]), false);
+});
+
+test('clearing cookies and re-enrolling the same phone does not consume a slot', function () {
+    $user = createQrTestUser('employe');
+
+    // Deux appareils déjà enrôlés : le plafond est atteint
+    foreach (['fp_phone_a', 'fp_phone_b'] as $fingerprint) {
+        $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
+            'device_fingerprint' => $fingerprint,
+            'device_name'        => 'Tel ' . $fingerprint,
+        ])->assertStatus(200);
+    }
+
+    // L'utilisateur vide ses cookies sur le téléphone A et rescanne : son
+    // empreinte est inchangée, il doit pouvoir récupérer son badge.
+    $this->actingAs($user)
+        ->postJson(route('presence.devices.enroll'), [
+            'device_fingerprint' => 'fp_phone_a',
+            'device_name'        => 'Tel fp_phone_a',
+        ])
+        ->assertStatus(200)
+        ->assertJson(['success' => true]);
+
+    // Toujours deux appareils, pas trois
+    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(2);
+
+    // En revanche un troisième téléphone reste refusé
+    $this->actingAs($user)
+        ->postJson(route('presence.devices.enroll'), [
+            'device_fingerprint' => 'fp_phone_c',
+            'device_name'        => 'Troisieme',
+        ])
+        ->assertStatus(422);
+});
+
+test('a late qr check-in asks for an observation before recording anything', function () {
+    $site    = createQrTestSite();
+    $user    = createQrTestUser('employe');
+    $domaine = Domaine::create(['nom' => 'Support']);
+    $domaine->sites()->attach($site->id);
+
+    \App\Models\Employe::create([
+        'personnel_id' => $user->personnel_id,
+        'domaine_id'   => $domaine->id,
+        'site_id'      => $site->id,
+        'poste'        => 'Agent',
+    ]);
+
+    // Horaire d'entreprise à 08:00 ; on scanne à 09:30
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00']);
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 09:30:00'));
+
+    $payload = [
+        'latitude'           => 6.3654,
+        'longitude'          => 2.4183,
+        'accuracy_meters'    => 10,
+        'device_fingerprint' => 'fp_retard',
+    ];
+
+    $response = $this->actingAs($user)->post(route('presence.qr.process', ['site_token' => $site->qr_token]), $payload);
+
+    // On demande le motif, et surtout rien n'est encore écrit
+    $response->assertOk()->assertViewIs('presence.qr.observation');
+    expect(\App\Models\AttendanceDay::count())->toBe(0);
+
+    // Un motif trop court ne passe pas non plus
+    $this->actingAs($user)
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]), $payload + ['observation_message' => 'trop'])
+        ->assertViewIs('presence.qr.observation');
+
+    expect(\App\Models\AttendanceDay::count())->toBe(0);
+
+    // Avec un motif suffisant, le pointage est enregistré et le motif conservé
+    $this->actingAs($user)
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]),
+            $payload + ['observation_message' => 'Embouteillage sur la voie de Godomey.'])
+        ->assertViewIs('presence.qr.result');
+
+    $day = \App\Models\AttendanceDay::first();
+    expect($day)->not->toBeNull()
+        ->and($day->arrival_status)->toBe('late')
+        ->and($day->late_observation)->toContain('Godomey');
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('an on time qr check-in never asks for an observation', function () {
+    $site    = createQrTestSite();
+    $user    = createQrTestUser('employe');
+    $domaine = Domaine::create(['nom' => 'Support']);
+    $domaine->sites()->attach($site->id);
+
+    \App\Models\Employe::create([
+        'personnel_id' => $user->personnel_id,
+        'domaine_id'   => $domaine->id,
+        'site_id'      => $site->id,
+        'poste'        => 'Agent',
+    ]);
+
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00']);
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 07:50:00'));
+
+    $this->actingAs($user)
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+            'latitude'           => 6.3654,
+            'longitude'          => 2.4183,
+            'accuracy_meters'    => 10,
+            'device_fingerprint' => 'fp_a_lheure',
+        ])
+        ->assertViewIs('presence.qr.result');
+
+    expect(\App\Models\AttendanceDay::first()->arrival_status)->toBe('ontime');
+
+    \Carbon\Carbon::setTestNow();
 });

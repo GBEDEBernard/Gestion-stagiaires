@@ -21,6 +21,9 @@ class PermissionTypeSeeder extends Seeder
                     ['key' => 'end_date', 'label' => 'Date de fin', 'type' => 'date', 'required' => true],
                     ['key' => 'motif', 'label' => 'Motif detaille', 'type' => 'textarea', 'required' => true],
                 ],
+                'attendance_effect' => 'excuses_day',
+                'date_from_field'   => 'start_date',
+                'date_to_field'     => 'end_date',
                 'sort_order' => 1,
             ],
             [
@@ -35,6 +38,9 @@ class PermissionTypeSeeder extends Seeder
                     ['key' => 'end_time', 'label' => "Heure d'arrivee effective", 'type' => 'time', 'required' => true],
                     ['key' => 'motif', 'label' => 'Motif du retard', 'type' => 'textarea', 'required' => true],
                 ],
+                'attendance_effect' => 'excuses_late',
+                'date_from_field'   => 'date',
+                'date_to_field'     => null,
                 'sort_order' => 2,
             ],
             [
@@ -48,6 +54,9 @@ class PermissionTypeSeeder extends Seeder
                     ['key' => 'departure_time', 'label' => 'Heure de depart souhaitee', 'type' => 'time', 'required' => true],
                     ['key' => 'motif', 'label' => 'Motif', 'type' => 'textarea', 'required' => true],
                 ],
+                'attendance_effect' => 'excuses_early_departure',
+                'date_from_field'   => 'date',
+                'date_to_field'     => null,
                 'sort_order' => 3,
             ],
             [
@@ -61,6 +70,9 @@ class PermissionTypeSeeder extends Seeder
                     ['key' => 'end_date', 'label' => 'Date de fin', 'type' => 'date', 'required' => true],
                     ['key' => 'motif', 'label' => 'Motif et justification', 'type' => 'textarea', 'required' => true],
                 ],
+                'attendance_effect' => 'excuses_day',
+                'date_from_field'   => 'start_date',
+                'date_to_field'     => 'end_date',
                 'sort_order' => 4,
             ],
         ];

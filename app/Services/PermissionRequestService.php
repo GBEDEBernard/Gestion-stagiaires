@@ -102,6 +102,13 @@ class PermissionRequestService
                 'decision_comment' => $comment,
             ]);
 
+            // Une permission approuvée doit cesser d'être comptée comme une
+            // absence : sans cela, l'assiduité — et donc la note de stage —
+            // pénalise ceux qui ont pourtant suivi la procédure.
+            if ($status === 'approved') {
+                app(PermissionAttendanceSync::class)->sync($request->fresh()->load('type'));
+            }
+
             // Find the acting recipient (if decider matches a signataire by email)
             $actingRecipient = null;
             foreach ($request->recipients as $recipient) {
@@ -165,7 +172,16 @@ class PermissionRequestService
      */
     public function cancel(PermissionRequest $request): PermissionRequest
     {
+        $wasApproved = $request->status === 'approved';
+
         $request->update(['status' => 'cancelled']);
+
+        // Les jours excusés par cette permission redeviennent des absences.
+        // Les exceptions saisies à la main par un administrateur ne bougent pas.
+        if ($wasApproved) {
+            app(PermissionAttendanceSync::class)->remove($request);
+        }
+
         return $request;
     }
 

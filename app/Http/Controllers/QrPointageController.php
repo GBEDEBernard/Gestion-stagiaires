@@ -139,6 +139,7 @@ class QrPointageController extends Controller
             'browser'            => 'nullable|string',
             'user_id'            => 'nullable|integer',
             'device_token'       => 'nullable|string',
+            'observation_message'=> 'nullable|string|max:500',
         ]);
 
         $user = null;
@@ -184,9 +185,36 @@ class QrPointageController extends Controller
             ]);
         }
 
-        // 2. Exécution du pointage via PresenceService
+        // 2. Un retard exige une observation, comme dans le pointage classique.
+        //    On la demande AVANT d'écrire la journée : constater le retard après
+        //    coup laisserait la personne sans moyen de s'expliquer.
+        $observation = trim((string) ($validated['observation_message'] ?? ''));
+
         try {
-            $result = $this->presenceService->registerFromQrScan($user, $site, $validated, $device);
+            $preflight = $this->presenceService->qrPreflight($user, $site);
+        } catch (\Exception $e) {
+            $preflight = ['is_late' => false, 'event_type' => 'check_in', 'expected' => null];
+        }
+
+        if ($preflight['is_late'] && mb_strlen($observation) < 10) {
+            return view('presence.qr.observation', [
+                'site'      => $site,
+                'user'      => $user,
+                'expected'  => $preflight['expected'],
+                'payload'   => $validated,
+                'tooShort'  => $observation !== '',
+            ]);
+        }
+
+        // 3. Exécution du pointage via PresenceService
+        try {
+            $result = $this->presenceService->registerFromQrScan(
+                $user,
+                $site,
+                $validated,
+                $device,
+                $observation !== '' ? $observation : null
+            );
 
             return view('presence.qr.result', [
                 'status'    => $result['status'],
@@ -265,15 +293,6 @@ class QrPointageController extends Controller
             return response()->json(['success' => false, 'message' => 'Non authentifié.'], 401);
         }
 
-        // Vérification de la limite de 2 appareils max
-        $activeBadgesCount = $user->trustedDevices()->activeQrBadges()->count();
-        if ($activeBadgesCount >= 2) {
-            return response()->json([
-                'success' => false,
-                'message' => "Vous avez déjà atteint le plafond de 2 appareils configurés comme badge. Vous pouvez gérer ou révoquer vos appareils dans votre profil.",
-            ], 422);
-        }
-
         $validated = $request->validate([
             'device_fingerprint' => 'required|string',
             'device_uuid'        => 'nullable|string',
@@ -282,6 +301,26 @@ class QrPointageController extends Controller
             'platform'           => 'nullable|string',
             'browser'            => 'nullable|string',
         ]);
+
+        // L'appareil est résolu avant de compter, car le plafond ne doit
+        // s'appliquer qu'à un téléphone réellement nouveau. Quelqu'un qui vide
+        // ses cookies et réenrôle le même appareil ne consomme pas de place :
+        // le compter reviendrait à lui refuser son propre téléphone.
+        $device = TrustedDevice::firstOrNew([
+            'user_id'            => $user->id,
+            'device_fingerprint' => $validated['device_fingerprint'],
+        ]);
+
+        $otherActiveBadges = $user->trustedDevices()->activeQrBadges()
+            ->when($device->exists, fn($q) => $q->whereKeyNot($device->getKey()))
+            ->count();
+
+        if ($otherActiveBadges >= 2) {
+            return response()->json([
+                'success' => false,
+                'message' => "Vous avez déjà atteint le plafond de 2 appareils configurés comme badge. Vous pouvez gérer ou révoquer vos appareils dans votre profil.",
+            ], 422);
+        }
 
         // Génération d'un jeton aléatoire sécurisé
         $rawToken = Str::random(64);
@@ -296,12 +335,7 @@ class QrPointageController extends Controller
             }
         }
 
-        // Créer ou mettre à jour le TrustedDevice
-        $device = TrustedDevice::firstOrNew([
-            'user_id'            => $user->id,
-            'device_fingerprint' => $validated['device_fingerprint'],
-        ]);
-
+        // L'appareil a été résolu plus haut, pour le contrôle du plafond.
         $device->pointage_token_hash = $tokenHash;
         $device->is_qr_badge         = true;
         $device->device_uuid         = $validated['device_uuid'] ?? $device->device_uuid ?? Str::uuid()->toString();

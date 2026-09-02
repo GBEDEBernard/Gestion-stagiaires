@@ -147,7 +147,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
      * Pointage direct universel par QR Code (Stagiaires & Employés).
      * Détermine automatiquement s'il s'agit d'une Arrivée ou d'un Départ.
      */
-    public function registerFromQrScan(User $user, \App\Models\Site $site, array $payload, ?TrustedDevice $device = null): array
+    public function registerFromQrScan(User $user, \App\Models\Site $site, array $payload, ?TrustedDevice $device = null, ?string $observation = null): array
     {
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
@@ -200,7 +200,12 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
                 ];
             }
 
-            $event = $this->registerEvent($stage, $user, $payload, $eventType);
+            // Le retard est calculé ici, à partir de l'horaire du stage : le
+            // navigateur n'a pas à en décider.
+            $payload['is_late'] = $eventType === 'check_in'
+                && now()->greaterThan(app(WorkScheduleResolver::class)->expectedArrival($stage, now()));
+
+            $event = $this->registerEvent($stage, $user, $payload, $eventType, $observation);
 
             return [
                 'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
@@ -237,7 +242,10 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             ];
         }
 
-        $event = $this->registerEmployeeEvent($user, $payload, $eventType);
+        $payload['is_late'] = $eventType === 'check_in'
+            && now()->greaterThan(app(WorkScheduleResolver::class)->expectedArrival(null, now()));
+
+        $event = $this->registerEmployeeEvent($user, $payload, $eventType, $observation);
 
         return [
             'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
@@ -246,6 +254,59 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
                 ? ($eventType === 'check_in' ? "Arrivée enregistrée avec succès !" : "Départ enregistré avec succès !")
                 : ($event->rejection_reason ?? "Pointage non validé."),
             'event'      => $event,
+        ];
+    }
+
+    /**
+     * Ce que le scan va produire, sans rien enregistrer.
+     *
+     * Permet de demander l'observation de retard avant le pointage, comme le
+     * fait le formulaire classique, plutôt que de constater le retard une fois
+     * la journée écrite.
+     *
+     * @return array{event_type: string, is_late: bool, expected: string}
+     */
+    public function qrPreflight(User $user, \App\Models\Site $site): array
+    {
+        $resolver = app(WorkScheduleResolver::class);
+        $stage    = null;
+
+        if ($user->etudiant) {
+            $stage = $user->etudiant->stages()
+                ->where('date_debut', '<=', today())
+                ->where('date_fin', '>=', today())
+                ->where(function ($q) use ($site) {
+                    $q->where('site_id', $site->id)->orWhereNull('site_id');
+                })
+                ->first()
+                ?: $user->etudiant->stages()
+                    ->where('date_debut', '<=', today())
+                    ->where('date_fin', '>=', today())
+                    ->first();
+
+            $day = $stage
+                ? AttendanceDay::where('stage_id', $stage->id)
+                    ->whereDate('attendance_date', today())->first()
+                : null;
+        } else {
+            $day = AttendanceDay::where('user_id', $user->id)
+                ->whereDate('attendance_date', today())->first();
+        }
+
+        if (!$day || !$day->first_check_in_at) {
+            $eventType = 'check_in';
+        } elseif (!$day->last_check_out_at) {
+            $eventType = 'check_out';
+        } else {
+            $eventType = 'completed';
+        }
+
+        $expected = $resolver->expectedArrival($stage, now());
+
+        return [
+            'event_type' => $eventType,
+            'is_late'    => $eventType === 'check_in' && now()->greaterThan($expected),
+            'expected'   => $expected->format('H:i'),
         ];
     }
 
@@ -576,7 +637,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             $day->check_out_event_id = $event->id;
             $day->last_check_out_at  = $event->occurred_at;
             $day->worked_minutes     = $day->first_check_in_at
-                ? max(0, $day->first_check_in_at->diffInMinutes($event->occurred_at))
+                ? app(WorkScheduleResolver::class)->workedMinutes(null, $day->first_check_in_at, $event->occurred_at)
                 : 0;
             $day->early_departure_minutes = 0;
         }
@@ -937,7 +998,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             $day->check_in_event_id = $event->id;
             $day->first_check_in_at = $event->occurred_at;
             $day->late_minutes      = $this->computeLateMinutes($stage, $event->occurred_at);
-            $day->arrival_status    = $this->computeArrivalStatus($event->occurred_at);
+            $day->arrival_status    = $this->computeArrivalStatus($event->occurred_at, $stage);
             $day->day_status        = match ($day->arrival_status) {
                 'late'    => 'late',
                 'warning' => 'warning',
@@ -951,7 +1012,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             $day->check_out_event_id       = $event->id;
             $day->last_check_out_at        = $event->occurred_at;
             $day->worked_minutes           = $day->first_check_in_at
-                ? max(0, $day->first_check_in_at->diffInMinutes($event->occurred_at))
+                ? app(WorkScheduleResolver::class)->workedMinutes($stage, $day->first_check_in_at, $event->occurred_at)
                 : 0;
             $day->early_departure_minutes  = $this->computeEarlyDepartureMinutes($stage, $event->occurred_at);
 
@@ -1007,7 +1068,8 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
      */
     protected function computeLateMinutes(?Stage $stage, $occurredAt): int
     {
-        $expected = $occurredAt->copy()->setTime(8, 0);
+        $expected = app(WorkScheduleResolver::class)->expectedArrival($stage, $occurredAt);
+
         return $occurredAt->greaterThan($expected) ? $expected->diffInMinutes($occurredAt) : 0;
     }
 
@@ -1016,22 +1078,22 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
      */
     protected function computeEarlyDepartureMinutes(Stage $stage, $occurredAt): int
     {
-        if (!$stage->expected_check_out_time) {
-            return 0;
-        }
-        $expected        = $occurredAt->copy()->setTimeFromTimeString($stage->expected_check_out_time);
-        $grace           = (int) ($stage->allowed_early_departure_minutes ?? 0);
-        $effectiveExpected = $expected->copy()->subMinutes($grace);
-        return $occurredAt->lessThan($effectiveExpected) ? $occurredAt->diffInMinutes($effectiveExpected) : 0;
+        $expected = app(WorkScheduleResolver::class)->expectedDeparture($stage, $occurredAt);
+
+        return $occurredAt->lessThan($expected) ? $occurredAt->diffInMinutes($expected) : 0;
     }
 
     /**
      * Détermine le statut d'arrivée : "ontime" (avant 8h) ou "late".
      */
-    protected function computeArrivalStatus($occurredAt): string
+    protected function computeArrivalStatus($occurredAt, ?Stage $stage = null): string
     {
-        $threshold = $occurredAt->copy()->setTime(8, 0);
-        return $occurredAt->lessThan($threshold) ? 'ontime' : 'late';
+        // L'heure attendue vient de l'horaire du jour, du stage, ou de la
+        // configuration. Avant, un 08:00 en dur déclarait en retard un stagiaire
+        // arrivé à 08:20 pour un stage commençant à 08:30.
+        $threshold = app(WorkScheduleResolver::class)->expectedArrival($stage, $occurredAt);
+
+        return $occurredAt->greaterThan($threshold) ? 'late' : 'ontime';
     }
 
     /**

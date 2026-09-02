@@ -201,17 +201,6 @@
         .qr-frame svg,
         .qr-frame img { display: block; width: 330px; height: 330px; }
 
-        .qr-caption {
-            margin: 14px 0 0;
-            font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-            font-size: 10px;
-            color: var(--ink-faint);
-            letter-spacing: .02em;
-            word-break: break-all;
-            text-align: center;
-            max-width: 120mm;
-        }
-
         /* ---------- Instructions ---------- */
 
         .steps {
@@ -334,7 +323,8 @@
             <div class="qr-frame">
                 {!! SimpleSoftwareIO\QrCode\Facades\QrCode::size(330)->margin(0)->generate($pointageUrl) !!}
             </div>
-            <p class="qr-caption">{{ $pointageUrl }}</p>
+            {{-- L'adresse n'est pas imprimée : le jeton du site vit dans le code,
+                 pas en clair sous une affiche accrochée à une porte. --}}
         </div>
 
         <div class="steps">
@@ -361,10 +351,11 @@
         </p>
 
         <div class="company">
-            <p>TFG SARL : Capital de 1.000.000 FCFA - RCCM : RB/ABT/18 B 2111 - N°IFU : 3201810222368
-                Siège : M/ GAUTHE Gabriel - Allègléta | Godomey-Togoudo (Abomey-Calavi)
-                Site Web : www.tfgbusiness.com
-                Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03 - 09 BP 791 (St-Michel | Cotonou)</p>
+            {{-- Ni capital, ni RCCM, ni IFU, ni adresse personnelle du gérant :
+                 une affiche de porte est vue par tous les visiteurs. --}}
+            <p>TECHNOLOGY FOREVER GROUP SARL
+                &nbsp;·&nbsp; www.tfgbusiness.com
+                &nbsp;·&nbsp; Tél : (+229) 01 65 10 39 59 / 01 69 58 06 03</p>
             <p class="generated">Affiche générée le {{ now()->format('d/m/Y') }}</p>
         </div>
 

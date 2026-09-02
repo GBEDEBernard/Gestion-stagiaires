@@ -186,30 +186,7 @@
                     </div>
                 </div>
 
-                <div class="pt-6 border-t border-gray-100 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        Jours de présence
-                    </h3>
-                    <div class="flex flex-wrap gap-3">
-                        @foreach($jours as $jour)
-                        <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                            <input type="checkbox" name="jours_id[]" value="{{ $jour->id }}"
-                                {{ in_array($jour->id, old('jours_id', $stage->jours->pluck('id')->toArray())) ? 'checked' : '' }}
-                                class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
-                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ $jour->jour }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                    @error('jours_id')
-                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                    <p id="joursErrorEdit" class="mt-2 text-sm text-red-500" style="display:none">Veuillez sélectionner au moins un jour de présence.</p>
-                </div>
+                @include('admin.stages.partials.horaires', ['stage' => $stage, 'jours' => $jours])
 
                 <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 dark:border-gray-700">
                     <a href="{{ route('stages.index') }}"

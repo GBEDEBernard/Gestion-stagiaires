@@ -826,7 +826,7 @@
     </style>
 
     {{-- ICI : on met le x-data sur .pres-wrap pour que les modals (placés après .pres-page) soient dans la portée --}}
-    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''">
+    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '', timeModal: false, timeDayId: null, timeLabel: '', timeCurrent: '', timeValue: '', timeReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''" @open-time-correction.window="timeModal = true; timeDayId = $event.detail.id; timeLabel = $event.detail.label; timeCurrent = $event.detail.current; timeValue = ''; timeReason = ''">
 
         <div class="pres-header">
             <div class="pres-header-left">
@@ -1073,6 +1073,23 @@
                                     @if($day->first_check_in_at)
                                     @if($day->arrival_status === 'late')
                                     <span class="pres-tag tag-amber">En retard</span>
+                                    @isset($user)
+                                    {{-- Arrivé à l'heure mais scan impossible : l'heure réelle peut être rétablie. --}}
+                                    <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;"
+                                        onclick="openTimeCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->first_check_in_at->format('H:i') }}')">Corriger l'heure</button>
+                                    @endisset
+                                    @elseif($day->correction)
+                                    <span class="pres-tag tag-emerald">À l'heure</span>
+                                    <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="{{ $day->correction->reason }}">
+                                        corrigé · {{ $day->correction->original_check_in_at?->format('H:i') }}
+                                    </span>
+                                    @isset($user)
+                                    <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correction]) }}" style="display:inline;"
+                                          onsubmit="return confirm('Annuler cette correction ? Le pointage constaté sera rétabli et le retard recomptera.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="corr-btn corr-btn-sm" style="margin-left:.35rem;">Annuler</button>
+                                    </form>
+                                    @endisset
                                     @else
                                     <span class="pres-tag tag-emerald">À l'heure</span>
                                     @endif
@@ -1236,6 +1253,58 @@
                 </form>
             </div>
         </div>
+
+        {{-- Rétablissement d'une heure d'arrivée mal enregistrée --}}
+        <div x-show="timeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="timeModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Rétablir l'heure d'arrivée</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="timeLabel ? 'Jour : ' + timeLabel : ''"></p>
+                    </div>
+                    <button @click="timeModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">✕</button>
+                </div>
+
+                <form method="POST" :action="timeDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + timeDayId + '/correction' : '#'">
+                    @csrf
+
+                    <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+                        À utiliser quand la personne est bien arrivée à l'heure mais n'a pas pu pointer —
+                        lecteur en panne, téléphone déchargé, GPS introuvable. Le retard cessera de compter,
+                        mais l'heure enregistrée restera consultable.
+                    </p>
+
+                    <div class="mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">Heure enregistrée :</span>
+                        <strong class="text-slate-800 dark:text-slate-100" x-text="timeCurrent"></strong>
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Heure réelle d'arrivée</label>
+                        <input type="time" name="time" x-model="timeValue" required
+                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Motif <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea name="reason" x-model="timeReason" rows="3" required minlength="5"
+                            placeholder="Ex : lecteur QR hors service à l'entrée, arrivée constatée par le responsable de site"
+                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Obligatoire : la ponctualité entre dans la note de stage, une correction sans
+                            justification serait indéfendable.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button" @click="timeModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
+                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Rétablir l'heure</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         @endisset
 
     </div> {{-- fin de .pres-wrap --}}
@@ -1246,6 +1315,10 @@
         @isset($user)
         function openCorrection(date, label) {
             window.dispatchEvent(new CustomEvent('open-correction', { detail: { date, label } }));
+        }
+
+        function openTimeCorrection(id, label, current) {
+            window.dispatchEvent(new CustomEvent('open-time-correction', { detail: { id, label, current } }));
         }
         @endisset
 

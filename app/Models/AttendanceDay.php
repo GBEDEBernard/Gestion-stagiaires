@@ -56,6 +56,11 @@ class AttendanceDay extends Model
         return $this->belongsTo(Stage::class);
     }
     // Relation avec étudiant pour filtrer les présences par étudiant (pour stagiaires)
+    public function correction()
+    {
+        return $this->hasOne(AttendanceCorrection::class);
+    }
+
     public function etudiant()
     {
         return $this->belongsTo(Etudiant::class);
