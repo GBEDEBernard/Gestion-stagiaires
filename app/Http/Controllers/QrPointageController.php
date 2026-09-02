@@ -278,12 +278,12 @@ class QrPointageController extends Controller
             'site'              => $site,
             'user'              => $user,
             'activeBadgesCount' => $activeBadgesCount,
-            'canEnroll'         => $activeBadgesCount < 2,
+            'canEnroll'         => $activeBadgesCount < 1,
         ]);
     }
 
     /**
-     * Enrôler l'appareil courant comme Badge de scan direct (limite max 2 appareils).
+     * Enrôler l'appareil courant comme badge : un utilisateur, un téléphone.
      * POST /presence/devices/enroll
      */
     public function enrollCurrentDevice(Request $request)
@@ -315,10 +315,26 @@ class QrPointageController extends Controller
             ->when($device->exists, fn($q) => $q->whereKeyNot($device->getKey()))
             ->count();
 
-        if ($otherActiveBadges >= 2) {
+        // Un utilisateur, un seul téléphone badge.
+        if ($otherActiveBadges >= 1) {
             return response()->json([
                 'success' => false,
-                'message' => "Vous avez déjà atteint le plafond de 2 appareils configurés comme badge. Vous pouvez gérer ou révoquer vos appareils dans votre profil.",
+                'message' => "Un seul téléphone peut servir de badge. Révoquez l'appareil actuel depuis votre profil avant d'en enregistrer un autre.",
+            ], 422);
+        }
+
+        // Et un téléphone ne peut porter qu'un seul compte : sans cela, deux
+        // personnes partageant un appareil pointeraient chacune depuis le même,
+        // ce qui vide la notion de badge personnel de son sens.
+        $claimedByOther = TrustedDevice::where('device_fingerprint', $validated['device_fingerprint'])
+            ->where('user_id', '!=', $user->id)
+            ->activeQrBadges()
+            ->exists();
+
+        if ($claimedByOther) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ce téléphone sert déjà de badge à un autre compte. Son propriétaire doit le révoquer depuis son profil.",
             ], 422);
         }
 

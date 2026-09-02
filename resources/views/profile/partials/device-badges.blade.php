@@ -11,7 +11,7 @@
             <span>Mes Badges de Pointage par QR</span>
         </h3>
         <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $enrolledDevices->count() >= 2 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' }}">
-            {{ $enrolledDevices->count() }}/2 appareil(s)
+            {{ $enrolledDevices->count() }}/1 appareil
         </span>
     </div>
 
@@ -40,7 +40,12 @@
                             </div>
                         </div>
 
-                        <form action="{{ route('presence.devices.revoke', $dev) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir révoquer cet appareil ? Il faudra vous reconnecter pour pointer depuis celui-ci.');">
+                        <form action="{{ route('presence.devices.revoke', $dev) }}" method="POST"
+                              data-swal-title="Révoquer ce téléphone ?"
+                              data-swal-text="Il ne pourra plus pointer par QR code. Vous devrez vous reconnecter depuis ce téléphone pour le réenregistrer."
+                              data-swal-icon="warning"
+                              data-swal-color="#dc2626"
+                              data-swal-confirm="Oui, révoquer">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold transition flex items-center gap-1">

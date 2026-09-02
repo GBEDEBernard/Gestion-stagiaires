@@ -68,39 +68,41 @@ test('guest without device token is redirected to login when scanning qr', funct
     expect(session('pending_qr_site'))->toBe($site->qr_token);
 });
 
-test('user can enroll up to 2 devices as qr badges and 3rd is rejected', function () {
+test('a user can enroll one phone as a badge, a second is rejected', function () {
     $user = createQrTestUser('employe');
 
-    // 1er appareil
-    $response1 = $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
+    $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
         'device_fingerprint' => 'fp_phone_1',
         'device_name'        => 'iPhone 14 Pro',
-        'platform'           => 'iOS',
-        'browser'            => 'Safari',
-    ]);
+    ])->assertStatus(200)->assertJson(['success' => true]);
 
-    $response1->assertStatus(200)->assertJson(['success' => true]);
     expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(1);
 
-    // 2ème appareil
-    $response2 = $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
+    // Un utilisateur, un téléphone : le second est refusé
+    $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
         'device_fingerprint' => 'fp_phone_2',
-        'device_name'        => 'iPad Air',
-        'platform'           => 'iOS',
-        'browser'            => 'Safari',
-    ]);
-
-    $response2->assertStatus(200)->assertJson(['success' => true]);
-    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(2);
-
-    // 3ème appareil (rejeté avec 422)
-    $response3 = $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
-        'device_fingerprint' => 'fp_phone_3',
         'device_name'        => 'Android Galaxy',
-    ]);
+    ])->assertStatus(422)->assertJson(['success' => false]);
 
-    $response3->assertStatus(422)->assertJson(['success' => false]);
-    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(2);
+    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(1);
+});
+
+test('a phone already used as a badge cannot be claimed by a second account', function () {
+    $premier = createQrTestUser('employe');
+    $second  = createQrTestUser('employe');
+
+    $this->actingAs($premier)->postJson(route('presence.devices.enroll'), [
+        'device_fingerprint' => 'fp_telephone_partage',
+        'device_name'        => 'Le telephone',
+    ])->assertStatus(200);
+
+    // Un téléphone, un badge : le second compte est refusé sur le même appareil
+    $this->actingAs($second)->postJson(route('presence.devices.enroll'), [
+        'device_fingerprint' => 'fp_telephone_partage',
+        'device_name'        => 'Le meme telephone',
+    ])->assertStatus(422);
+
+    expect(TrustedDevice::where('user_id', $second->id)->where('is_qr_badge', true)->count())->toBe(0);
 });
 
 test('user can revoke an enrolled device from profile', function () {
@@ -454,37 +456,25 @@ test('the admin user sheet lists the enrolled badges with a revoke control', fun
         ->assertSee(route('admin.users.devices.revoke', [$user, TrustedDevice::first()]), false);
 });
 
-test('clearing cookies and re-enrolling the same phone does not consume a slot', function () {
+test('clearing cookies and re-enrolling the same phone keeps working', function () {
     $user = createQrTestUser('employe');
 
-    // Deux appareils déjà enrôlés : le plafond est atteint
-    foreach (['fp_phone_a', 'fp_phone_b'] as $fingerprint) {
-        $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
-            'device_fingerprint' => $fingerprint,
-            'device_name'        => 'Tel ' . $fingerprint,
-        ])->assertStatus(200);
-    }
+    $this->actingAs($user)->postJson(route('presence.devices.enroll'), [
+        'device_fingerprint' => 'fp_phone_a',
+        'device_name'        => 'Mon telephone',
+    ])->assertStatus(200);
 
-    // L'utilisateur vide ses cookies sur le téléphone A et rescanne : son
-    // empreinte est inchangée, il doit pouvoir récupérer son badge.
+    // L'utilisateur vide ses cookies et rescanne : son empreinte est inchangée,
+    // il doit récupérer son badge sans se heurter à son propre plafond.
     $this->actingAs($user)
         ->postJson(route('presence.devices.enroll'), [
             'device_fingerprint' => 'fp_phone_a',
-            'device_name'        => 'Tel fp_phone_a',
+            'device_name'        => 'Mon telephone',
         ])
         ->assertStatus(200)
         ->assertJson(['success' => true]);
 
-    // Toujours deux appareils, pas trois
-    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(2);
-
-    // En revanche un troisième téléphone reste refusé
-    $this->actingAs($user)
-        ->postJson(route('presence.devices.enroll'), [
-            'device_fingerprint' => 'fp_phone_c',
-            'device_name'        => 'Troisieme',
-        ])
-        ->assertStatus(422);
+    expect(TrustedDevice::where('user_id', $user->id)->where('is_qr_badge', true)->count())->toBe(1);
 });
 
 test('a late qr check-in asks for an observation before recording anything', function () {

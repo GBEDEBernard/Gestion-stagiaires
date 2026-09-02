@@ -63,7 +63,18 @@ class PresenceController extends Controller
             $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
             $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
 
+            // Horaires attendus : la page les affiche en grand, et le retard
+            // comme le blocage du départ en découlent.
+            $resolver   = app(\App\Services\WorkScheduleResolver::class);
+            $expectedIn  = $resolver->expectedArrival($activeStage, now());
+            $expectedOut = $resolver->expectedDeparture($activeStage, now());
+
             return view('presence.pointage', [
+                'expectedIn'             => $expectedIn,
+                'expectedOut'            => $expectedOut,
+                'isLateNow'              => now()->greaterThan($expectedIn),
+                'canCheckOutNow'         => now()->greaterThanOrEqualTo($expectedOut)
+                                            || $earlyDeparturePermission !== null,
                 'activeStage'            => $activeStage,
                 'attendanceDay'          => $attendanceDay,
                 'todayHoliday'           => $todayHoliday,
@@ -100,7 +111,17 @@ class PresenceController extends Controller
             $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
             $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
 
+            // Les employés suivent l'horaire de référence de l'entreprise.
+            $resolver    = app(\App\Services\WorkScheduleResolver::class);
+            $expectedIn  = $resolver->expectedArrival(null, now());
+            $expectedOut = $resolver->expectedDeparture(null, now());
+
             return view('employee.presence.pointage', [
+                'expectedIn'               => $expectedIn,
+                'expectedOut'              => $expectedOut,
+                'isLateNow'                => now()->greaterThan($expectedIn),
+                'canCheckOutNow'           => now()->greaterThanOrEqualTo($expectedOut)
+                                              || $earlyDeparturePermission !== null,
                 'attendanceDay'            => $attendanceDay,
                 'user'                     => $user,
                 'todayHoliday'             => $todayHoliday,
@@ -210,7 +231,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ];
             session(['pending_pointage' => $pendingData]);
 
-            return view('presence.validate', $previewData);
+            // Plus d'écran de validation intermédiaire : le pointage est
+            // enregistré dans la foulée, comme au scan du QR code.
+            return $this->confirm($request);
         } else {
             // Logique pour employé
             $request->validate([
@@ -255,7 +278,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ];
             session(['pending_pointage' => $pendingData]);
 
-            return view('presence.validate', $previewData);
+            // Plus d'écran de validation intermédiaire : le pointage est
+            // enregistré dans la foulée, comme au scan du QR code.
+            return $this->confirm($request);
         }
     }
 
@@ -374,7 +399,11 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
                 'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
-            return view('presence.validate', $previewData);
+            // Plus d'écran de validation intermédiaire : le pointage est
+
+            // enregistré dans la foulée, comme au scan du QR code.
+
+            return $this->confirm($request);
         } else {
             // Logique pour employé
             $request->validate([
@@ -422,80 +451,27 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
                 'approved_departure_time' => $approvedDepartureTime,
             ]]);
 
-            return view('presence.validate', $previewData);
+            // Plus d'écran de validation intermédiaire : le pointage est
+
+            // enregistré dans la foulée, comme au scan du QR code.
+
+            return $this->confirm($request);
         }
     }
 
     /**
      * Affiche la page de validation (récupère depuis session).
      */
+    /**
+     * L'écran de validation intermédiaire a été supprimé : le pointage est
+     * enregistré directement, comme au scan du QR code. La route est conservée
+     * en redirection pour les onglets encore ouverts sur l'ancienne adresse.
+     */
     public function showValidation(Request $request)
     {
-        $pending = session('pending_pointage');
-        if (!$pending) {
-            return redirect()->route('presence.pointage')->with('error', 'Aucune donnée de pointage en attente.');
-        }
-
-        $user = $request->user();
-        $isLate = $pending['is_late'] ?? false;
-
-        if ($pending['user_type'] === 'etudiant') {
-            // Logique pour stagiaire
-            $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
-            $stage = $etudiant->stages()->findOrFail($pending['stage_id']);
-
-            $previewData = [
-                'etudiant_name' => $etudiant->nom . ' ' . $etudiant->prenom,
-                'site_name' => $stage->site?->name ?? 'Site principal',
-                'theme' => $stage->theme,
-                'latitude' => $pending['latitude'],
-                'longitude' => $pending['longitude'],
-                'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
-                'form_data' => $pending,
-                'is_late' => $isLate,
-                'is_early_departure' => $pending['is_early_departure'] ?? false,
-            ];
-
-            // Distance
-            $geofence = $stage->site?->geofences()->where('is_active', true)->first();
-            if ($geofence) {
-                $distance = $this->calculateDistance(
-                    $pending['latitude'],
-                    $pending['longitude'],
-                    $geofence->center_latitude,
-                    $geofence->center_longitude
-                );
-                $previewData['distance'] = $distance;
-            }
-        } else {
-            // Logique pour employé
-            $domaine = $user->domaine;
-
-            $previewData = [
-                'user_name' => $user->name,
-                'domaine_name' => $domaine->nom,
-                'site_name' => 'Site principal',
-                'latitude' => $pending['latitude'],
-                'longitude' => $pending['longitude'],
-                'accuracy' => $pending['accuracy_meters'] ?? 'N/A',
-                'pointage_time' => now()->format('H:i'),
-                'type' => $pending['type'] === 'check_in' ? 'arrivée' : 'départ',
-                'form_data' => $pending,
-                'is_late' => $isLate,
-                'is_early_departure' => $pending['is_early_departure'] ?? false,
-            ];
-
-            // No geofence preview for employees
-        }
-
-        return view('presence.validate', $previewData);
+        return redirect()->route('presence.pointage');
     }
 
-    /**
-     * Confirme et enregistre le pointage depuis session.
-     */
     public function confirm(Request $request)
     {
         $pending = session('pending_pointage');

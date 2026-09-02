@@ -183,21 +183,11 @@
                     @include('profile.partials.device-badges')
                 </div>
 
-                <!-- Colonne droite : activité du compte -->
+                <!-- Colonne droite -->
                 <div class="space-y-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                        <div class="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                Activité du compte
-                            </h3>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Membre depuis</span><span class="font-medium text-gray-800 dark:text-white">{{ $user->created_at->format('d/m/Y') }}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Dernière connexion</span><span class="font-medium text-gray-800 dark:text-white">{{ $user->updated_at->format('d/m/Y à H:i') }}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400">Rôle(s)</span><div class="flex flex-wrap gap-1">@foreach($user->getRoleNames() as $role)<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded">{{ $role }}</span>@endforeach</div></div>
-                        </div>
-                    </div>
+                    {{-- La carte « Activité du compte » a été retirée : date de
+                         création, dernière connexion et rôles n'apprennent rien
+                         d'utile à l'intéressé et exposent son paramétrage. --}}
 
                     {{-- ZONE DANGEREUSE - Visible UNIQUEMENT par les admins --}}
                     @if(auth()->user()->hasRole('admin'))

@@ -113,10 +113,78 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     /**
      * Enregistre le départ (check-out) d'un stagiaire.
      */
+    /**
+     * Interdit le départ avant l'heure prévue.
+     *
+     * Le départ anticipé n'était jusqu'ici qu'une anomalie constatée après coup :
+     * la journée était déjà écrite. Ici on refuse le pointage.
+     *
+     * Seule une permission « départ anticipé » approuvée POUR CE JOUR précis lève
+     * l'interdiction — et seulement à partir de l'heure qu'elle autorise. Une
+     * permission accordée un autre jour ne vaut pas laissez-passer permanent.
+     */
+    protected function checkDepartureTime(?Stage $stage, User $user): void
+    {
+        $expected = app(WorkScheduleResolver::class)->expectedDeparture($stage, now());
+
+        if (now()->greaterThanOrEqualTo($expected)) {
+            return;
+        }
+
+        $permission = $this->approvedEarlyDepartureForToday($user);
+
+        if (!$permission) {
+            throw ValidationException::withMessages([
+                'presence' => "La journée n'est pas terminée. Votre départ est prévu à {$expected->format('H:i')}.",
+            ]);
+        }
+
+        // La permission autorise un départ à une heure donnée, pas n'importe quand.
+        $allowed = $permission->fields_data['departure_time'] ?? null;
+
+        if ($allowed) {
+            try {
+                $allowedAt = today()->setTimeFromTimeString($allowed);
+            } catch (\Throwable $e) {
+                return; // heure illisible : on s'en tient à la permission accordée
+            }
+
+            if (now()->lessThan($allowedAt)) {
+                throw ValidationException::withMessages([
+                    'presence' => "Votre permission autorise un départ à partir de {$allowedAt->format('H:i')}.",
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Permission de départ anticipé approuvée pour aujourd'hui, et pour aujourd'hui
+     * seulement : on compare la date portée par la demande à la date du jour.
+     */
+    protected function approvedEarlyDepartureForToday(User $user): ?\App\Models\PermissionRequest
+    {
+        $type = \App\Models\PermissionType::where('slug', 'depart-anticipe')->first();
+
+        if (!$type) {
+            return null;
+        }
+
+        return \App\Models\PermissionRequest::where('user_id', $user->id)
+            ->where('permission_type_id', $type->id)
+            ->where('status', 'approved')
+            ->latest('decided_at')
+            ->get()
+            ->first(function ($p) {
+                $date = $p->fields_data['date'] ?? null;
+                return $date && \Carbon\Carbon::parse($date)->isSameDay(today());
+            });
+    }
+
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
+        $this->checkDepartureTime($stage, $user);
         return $this->registerEvent($stage, $user, $payload, 'check_out');
     }
 
@@ -140,6 +208,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     public function registerEmployeeCheckOut(User $user, array $payload): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
+        $this->checkDepartureTime(null, $user);
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 
@@ -190,6 +259,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
                 $this->checkCheckInOpeningTime();
                 $eventType = 'check_in';
             } elseif (!$day->last_check_out_at) {
+                $this->checkDepartureTime($stage, $user);
                 $eventType = 'check_out';
             } else {
                 return [
@@ -232,6 +302,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         if (!$day || !$day->first_check_in_at) {
             $eventType = 'check_in';
         } elseif (!$day->last_check_out_at) {
+            $this->checkDepartureTime(null, $user);
             $eventType = 'check_out';
         } else {
             return [
