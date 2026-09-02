@@ -349,11 +349,12 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::put('{id}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
         Route::delete('{id}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
         Route::get('{personnel}', [PersonnelController::class, 'show'])->name('personnels.show')->middleware('permission:personnels.view');
+        Route::get('{personnel}/badge', [PersonnelController::class, 'badge'])->name('admin.personnels.badge.show')->middleware('permission:badges.view');
         Route::get('{personnel}/edit', [PersonnelController::class, 'edit'])->name('personnels.edit')->middleware('permission:personnels.edit');
         Route::put('{personnel}', [PersonnelController::class, 'update'])->name('personnels.update')->middleware('permission:personnels.edit');
         Route::delete('{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy')->middleware('permission:personnels.delete');
         Route::post('{personnel}/generate-account', [PersonnelController::class, 'generateAccount'])->name('personnels.generate-account')->middleware('permission:personnels.edit');
-          });
+    });
 
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {

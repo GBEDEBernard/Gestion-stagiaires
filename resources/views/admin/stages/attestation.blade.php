@@ -354,6 +354,7 @@
         // Type de stage
         $typeStage = $stage->typestage->libelle ?? 'stage';
         $typeStageLower = strtolower($typeStage);
+        $isProfessionnel = str_contains($typeStageLower, 'professionnel') || str_contains($typeStageLower, 'pro');
         @endphp
 
         <div class="a4-container">
@@ -378,14 +379,24 @@
             <h1 class="title">ATTESTATION DE STAGE</h1>
 
             <div class="content">
+                @if($isProfessionnel)
                 <p>
                     Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>TECHNOLOGY FOREVER GROUP (TFG) SARL</b>,
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
-                  a effectué un stage {{ $typeStageLower }} de  {{ $dureeTexte }}  
+                    a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }} 
+                    dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage a eu lieu du
+                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.
+                </p>
+                @else
+                <p>
+                    Je soussigné <b>Appolinaire KONNON</b>, Directeur Général de la société <b>TECHNOLOGY FOREVER GROUP (TFG) SARL</b>,
+                    atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
+                    a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }} 
                     dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
                     <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.
                 </p>
+                @endif
                 <p>
                     {{ $texteTheme }}
                 </p>

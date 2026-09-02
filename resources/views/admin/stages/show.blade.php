@@ -419,21 +419,21 @@
         <div class="space-y-6">
             {{-- Statistics Cards --}}
             <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl shadow-xl overflow-hidden text-white">
-                <div class="p-6">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                <div class="p-4 sm:p-5">
+                    <h3 class="text-base sm:text-lg font-bold mb-3 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                         Statistiques
                     </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <p class="text-3xl font-bold">{{ $nombreStages }}</p>
-                            <p class="text-sm text-white/70">Stage(s)</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 min-w-0">
+                            <p class="text-xl sm:text-2xl font-bold tracking-tight truncate">{{ $nombreStages }}</p>
+                            <p class="text-xs text-white/80 truncate">Stage(s)</p>
                         </div>
-                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <p class="text-3xl font-bold">{{ $dureeTotale }}</p>
-                            <p class="text-sm text-white/70">Jour(s)</p>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 min-w-0">
+                            <p class="text-xl sm:text-2xl font-bold tracking-tight truncate">{{ $dureeTotale }}</p>
+                            <p class="text-xs text-white/80 truncate">Jour(s)</p>
                         </div>
                     </div>
                 </div>

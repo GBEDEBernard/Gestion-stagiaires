@@ -581,13 +581,6 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('admin.notifications.urgent.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.notifications.urgent.*') ? 'bg-slate-800/60 text-white border-l-2 border-red-500 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
-                            <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                            <span class="text-red-300 font-semibold">Alertes urgentes</span>
-                            @if(request()->routeIs('admin.notifications.urgent.*'))
-                            <span class="ml-auto w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
-                            @endif
-                        </a>
                     </div>
                 </div>
                 @endrole
