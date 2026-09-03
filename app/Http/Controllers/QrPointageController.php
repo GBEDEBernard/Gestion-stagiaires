@@ -20,7 +20,8 @@ class QrPointageController extends Controller
 {
     public function __construct(
         protected PresenceService $presenceService,
-        protected NotificationService $notificationService
+        protected NotificationService $notificationService,
+        protected \App\Services\PointageState $pointageState
     ) {}
 
     /**
@@ -39,15 +40,13 @@ class QrPointageController extends Controller
             $rawTokens = is_array($decoded) ? $decoded : [$cookieData];
         }
 
-        // Si l'utilisateur est actuellement connecté via session
+        // Déjà connecté : la page de pointage de l'application est exactement
+        // cet écran. Inutile d'en servir une copie hors session.
         if (Auth::check()) {
-            $user = Auth::user();
-            return view('presence.qr.scan', [
-                'site'         => $site,
-                'user'         => $user,
-                'device_token' => null,
-                'is_enrolled'  => $user->trustedDevices()->activeQrBadges()->exists(),
-            ]);
+            return redirect()->route('presence.pointage')->with(
+                'info',
+                "Site « {$site->name} » reconnu. Vous pouvez pointer ci-dessous."
+            );
         }
 
         if (empty($rawTokens)) {
@@ -89,12 +88,24 @@ class QrPointageController extends Controller
             }
         }
 
-        return view('presence.qr.scan', [
-            'site'         => $site,
-            'user'         => $user,
-            'device_token' => $matchingRawToken,
-            'is_enrolled'  => true,
-        ]);
+        return $this->cartePointage($site, $user, $matchingRawToken);
+    }
+
+    /**
+     * La carte de pointage servie à la porte : même écran que dans
+     * l'application, mais hors session — le badge autorise à pointer, pas à
+     * entrer dans le compte.
+     */
+    protected function cartePointage(Site $site, User $user, ?string $deviceToken)
+    {
+        $etat = $this->pointageState->forUser($user, $site);
+
+        return view('presence.qr.pointage', array_merge($etat, [
+            'site'        => $site,
+            'user'        => $user,
+            'deviceToken' => $deviceToken,
+            'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
+        ]));
     }
 
     /**

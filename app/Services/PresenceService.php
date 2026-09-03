@@ -180,7 +180,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
      * Permission de départ anticipé approuvée pour aujourd'hui, et pour aujourd'hui
      * seulement : on compare la date portée par la demande à la date du jour.
      */
-    protected function approvedEarlyDepartureForToday(User $user): ?\App\Models\PermissionRequest
+    public function approvedEarlyDepartureForToday(User $user): ?\App\Models\PermissionRequest
     {
         $type = \App\Models\PermissionType::where('slug', 'depart-anticipe')->first();
 

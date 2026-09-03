@@ -141,7 +141,7 @@ test('scanning qr with enrolled device cookie displays scan page', function () {
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]));
 
     $response->assertStatus(200);
-    $response->assertViewIs('presence.qr.scan');
+    $response->assertViewIs('presence.qr.pointage');
     $response->assertViewHas('user');
 });
 
@@ -169,7 +169,35 @@ test('a phone carrying an old second profile still lands on a single scan screen
     $this->withCookie('pointage_device_tokens', json_encode([$token1, $token2]))
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
         ->assertOk()
-        ->assertViewIs('presence.qr.scan');
+        ->assertViewIs('presence.qr.pointage');
+});
+
+test('the scan screen is the pointage card itself', function () {
+    // L'unification tient à ceci : le badge tombe sur la carte de pointage,
+    // avec son bouton d'action, et poste sur la route du scan.
+    \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 07:45:00'));
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    $raw  = Str::random(64);
+
+    TrustedDevice::create([
+        'user_id'             => $user->id,
+        'device_fingerprint'  => 'fp_carte_unifiee',
+        'pointage_token_hash' => hash('sha256', $raw),
+        'is_qr_badge'         => true,
+        'is_trusted'          => true,
+    ]);
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee('Pointer mon arrivée', false)
+        ->assertSee(route('presence.qr.process', ['site_token' => $site->qr_token]), false)
+        // Hors session, le badge n'ouvre pas le compte : pas de lien historique.
+        ->assertDontSee('Mon historique');
+
+    \Carbon\Carbon::setTestNow();
 });
 
 test('processing attendance returns standalone result view without redirection', function () {

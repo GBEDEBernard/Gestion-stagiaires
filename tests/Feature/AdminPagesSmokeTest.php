@@ -242,14 +242,15 @@ test('the attendance tracking history renders', function () {
         ->assertOk();
 });
 
-test('the qr scan screen renders for an enrolled phone', function () {
+test('a scan by a logged-in user lands on the application pointage page', function () {
+    // Le scan n'a plus d'écran à lui : connecté, on repart sur la page de
+    // pointage de l'application, qui porte exactement la même carte.
     $user = smokeUser('employe');
     $site = smokeSite();
 
     $this->actingAs($user)
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
-        ->assertOk()
-        ->assertSee('Bonjour');
+        ->assertRedirect(route('presence.pointage'));
 });
 
 test('a late arrival asks for the reason in a modal, not inline', function () {
