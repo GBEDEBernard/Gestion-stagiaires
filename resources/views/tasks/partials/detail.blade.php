@@ -6,6 +6,14 @@
     $isReviewer    = $user->hasAnyRole(['admin', 'superviseur']) && !$isParticipant;
     $canComment    = $isParticipant || $isReviewer;
 
+    // Réassignation des sous-tâches : admin, superviseur ou propriétaire de la tâche.
+    $canReassignSubtask = $user->hasAnyRole(['admin', 'superviseur']) || $isOwner;
+
+    // Participants de la tâche éligibles à la réassignation d'une sous-tâche.
+    $reassignCandidates = isset($group)
+        ? $group->merge($task->subtasks->pluck('assignedTo')->filter())->unique('id')->values()
+        : collect([$task->owner])->filter();
+
     $myReports = $task->dailyReports->filter(fn($r) => $r->user_id === (int) $user->id);
     $isFirstReport = $myReports->isEmpty();
 
@@ -587,6 +595,24 @@
                                 </span>
                             @endif
 
+                            @if(!$st->is_completed && $canReassignSubtask)
+                            <form method="POST" action="{{ route('tasks.subtasks.assign', [$task, $st]) }}" x-data onchange="this.submit()">
+                                @csrf
+                                <select name="assigned_to_user_id"
+                                        title="Réassigner cette sous-tâche"
+                                        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-900 px-2 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400/30 outline-none transition"
+                                        @if($reassignCandidates->isEmpty()) disabled @endif>
+                                    <option value="">— Non attribuée —</option>
+                                    @foreach($reassignCandidates as $cand)
+                                    <option value="{{ $cand->id }}"
+                                            {{ (int) $st->assigned_to_user_id === (int) $cand->id ? 'selected' : '' }}>
+                                        {{ $cand->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </form>
+                            @endif
+
                             @if($isAdmin && $st->is_completed)
                             <form method="POST" action="{{ route('tasks.subtasks.reopen', [$task, $st]) }}" onsubmit="return confirm('Réouvrir cette sous-tâche ?')">
                                 @csrf
@@ -599,11 +625,12 @@
                     </div>
 
                     {{-- ── ITEMS PERSONNELS (niveau 2) ── --}}
-                    @if($isMySubtask || $isAdmin || $task->owner_id === $user->id)
+                    @if($itemsCount > 0 || ($isMySubtask && !$st->is_completed))
                     <div class="mt-3 ml-8 space-y-1.5">
                         @forelse($st->items as $item)
                         <div class="flex items-center justify-between gap-2 py-1 px-2.5 rounded-lg hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition group">
                             <div class="flex items-center gap-2 min-w-0">
+                                @if($isMySubtask)
                                 <form method="POST" action="{{ route('tasks.subtask_items.toggle', [$task, $st, $item]) }}" class="shrink-0">
                                     @csrf
                                     <button type="submit" class="flex h-4 w-4 items-center justify-center rounded {{ $item->is_completed ? 'bg-emerald-500 text-white' : 'border border-blue-400 dark:border-blue-400 text-transparent hover:border-blue-600' }} transition">
@@ -612,11 +639,18 @@
                                         @endif
                                     </button>
                                 </form>
+                                @else
+                                <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded {{ $item->is_completed ? 'bg-emerald-500 text-white' : 'border border-slate-300 dark:border-slate-600 text-transparent' }}">
+                                    @if($item->is_completed)
+                                    <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                    @endif
+                                </span>
+                                @endif
                                 <p class="text-xs font-medium text-black/70 dark:text-white/70 {{ $item->is_completed ? 'line-through opacity-50' : '' }}">
                                     {{ $item->title }}
                                 </p>
                             </div>
-                            @if(!$st->is_completed && ($isMySubtask || $isAdmin))
+                            @if(!$st->is_completed && $isMySubtask)
                             <form method="POST" action="{{ route('tasks.subtask_items.destroy', [$task, $st, $item]) }}" class="opacity-0 group-hover:opacity-100 transition shrink-0" onsubmit="return confirm('Supprimer cet item ?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="text-red-400 hover:text-red-600 transition">
@@ -628,21 +662,34 @@
                         @empty
                         @endforelse
 
-                        {{-- Formulaire ajout item --}}
-                        @if(!$st->is_completed && ($isMySubtask || $isAdmin))
-                        <div x-data="{ open: false, title: '' }" class="pt-1">
+                        {{-- Formulaire ajout item — uniquement pour l'utilisateur assigné --}}
+                        @if(!$st->is_completed && $isMySubtask)
+                        <div x-data="{ open: false, title: '', saving: false,
+                            addItem() {
+                                if (!this.title.trim() || this.saving) return;
+                                this.saving = true;
+                                fetch('{{ route('tasks.subtask_items.store', [$task, $st]) }}', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                                    body: JSON.stringify({ title: this.title })
+                                }).then(async (r) => {
+                                    let d = { success: false, message: '' };
+                                    const ct = r.headers.get('content-type') || '';
+                                    if (ct.includes('application/json')) {
+                                        d = await r.json();
+                                    } else {
+                                        d = { success: r.ok };
+                                    }
+                                    if (!r.ok && !d.message) d.message = 'Erreur lors de l\'ajout.';
+                                    if (d.success || d.message) location.reload();
+                                }).catch(() => { location.reload(); });
+                            }
+                        }" class="pt-1">
                             <button x-show="!open" @click="open = true" type="button" class="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                                 Ajouter un item
                             </button>
-                            <form x-show="open" @submit.prevent="
-                                fetch('{{ route('tasks.subtask_items.store', [$task, $st]) }}', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                                    body: JSON.stringify({ title: title })
-                                }).then(r => r.json()).then(d => { if(d.success || d.message) location.reload(); });
-                                open = false; title = '';
-                            " class="flex items-center gap-2 mt-1">
+                            <form x-show="open" @submit.prevent="addItem(); open = false; title = '';" class="flex items-center gap-2 mt-1">
                                 <input x-model="title" type="text" required placeholder="Titre de l'item..." class="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 text-black dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
                                 <button type="submit" class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 px-2">Ajouter</button>
                                 <button type="button" @click="open = false" class="text-[11px] text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60">✕</button>
@@ -821,10 +868,13 @@
         <div class="d-divider"></div>
 
         @php
-            // Collecter tous les items personnels de l'utilisateur
+            // Collecter les items de l'utilisateur : uniquement ceux des sous-tâches
+            // qui lui sont assignées + les sous-tâches libres (jamais celles d'autrui).
             $myItems = collect();
             foreach ($task->subtasks as $st) {
-                if ((int) $st->assigned_to_user_id === (int) $user->id || $isAdmin || $isOwner) {
+                $isMine = (int) $st->assigned_to_user_id === (int) $user->id;
+                $isFree = is_null($st->assigned_to_user_id);
+                if ($isMine || $isFree) {
                     foreach ($st->items as $item) {
                         $myItems->push([
                             'id' => $item->id,
@@ -837,22 +887,27 @@
                 }
             }
 
-            // Fallback : si pas d'items, utiliser les subtasks directement
+            // Fallback : si pas d'items, utiliser les sous-tâches directement —
+            // restreint aux sous-tâches de l'utilisateur + libres uniquement.
             $useItems = $myItems->isNotEmpty();
             if (!$useItems) {
-                $subtasksPayload = $task->subtasks->map(fn($st) => [
-                    'id' => $st->id,
-                    'title' => $st->title,
-                    'is_completed' => (bool) $st->is_completed,
-                    'is_mine' => (int) $st->assigned_to_user_id === (int) $user->id,
-                    'assigned_name' => $st->assignedTo?->name,
-                    'assigned_to_user_id' => $st->assigned_to_user_id,
-                ])->values();
+                $subtasksPayload = $task->subtasks
+                    ->filter(fn($st) => (int) $st->assigned_to_user_id === (int) $user->id || is_null($st->assigned_to_user_id))
+                    ->map(fn($st) => [
+                        'id' => $st->id,
+                        'title' => $st->title,
+                        'is_completed' => (bool) $st->is_completed,
+                        'is_mine' => (int) $st->assigned_to_user_id === (int) $user->id,
+                        'assigned_name' => $st->assignedTo?->name,
+                        'assigned_to_user_id' => $st->assigned_to_user_id,
+                    ])->values();
             } else {
                 $subtasksPayload = $myItems->values();
             }
-            $subtasksTotal = $useItems ? $myItems->count() : $task->subtasks->count();
-            $subtasksDone = $useItems ? $myItems->where('is_completed', true)->count() : $task->subtasks->where('is_completed', true)->count();
+            $subtasksTotal = $useItems ? $myItems->count() : $subtasksPayload->count();
+            $subtasksDone = $useItems ? $myItems->where('is_completed', true)->count() : $subtasksPayload->where('is_completed', true)->count();
+            // Rien à valider : l'utilisateur n'a ni items ni sous-tâches à sa charge.
+            $hasNothingToValidate = $subtasksTotal === 0;
         @endphp
 
         <div class="px-6 py-5" x-data="{
@@ -963,7 +1018,21 @@
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
 
                             {{-- Validation des items / sous-tâches --}}
-                            @if($myItems->isNotEmpty() || $task->subtasks->isNotEmpty())
+                            @if($hasNothingToValidate)
+                            <div class="d-field">
+                                <div class="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/40 dark:border-indigo-900/30 dark:bg-indigo-950/10 px-4 py-4">
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                        <span class="text-indigo-500">☑</span>
+                                        Aucune sous-tâche ni item à valider pour vous
+                                    </p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                        Vous n'êtes assigné à aucune sous-tâche libre, et il n'y a pas d'item vous concernant sur cette tâche.
+                                        Créez une nouvelle tâche, ou réassignez des sous-tâches à de nouveaux collaborateurs depuis la page
+                                        « Assigner une tâche ».
+                                    </p>
+                                </div>
+                            </div>
+                            @elseif($myItems->isNotEmpty() || $task->subtasks->isNotEmpty())
                             <div class="d-field">
                                 <div class="flex items-center justify-between mb-2">
                                     <label class="d-field-label mb-0 flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
