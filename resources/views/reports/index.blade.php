@@ -62,17 +62,39 @@
                             <!-- Tâche concernée + Sous-tâches -->
                             @php
                                 $tasksMap = ($activeTasks ?? collect())->mapWithKeys(function($t) {
-                                    return [$t->id => [
-                                        'id' => $t->id,
-                                        'title' => $t->title,
-                                        'subtasks' => $t->subtasks->map(fn($st) => [
+                                    // A-t-on des items personnels ? (niveau 2).
+                                    $myItems = collect();
+                                    foreach ($t->subtasks as $st) {
+                                        if ((int) $st->assigned_to_user_id === (int) auth()->id()) {
+                                            foreach ($st->items as $item) {
+                                                $myItems->push([
+                                                    'id' => $item->id,
+                                                    'title' => $item->title,
+                                                    'is_completed' => (bool) $item->is_completed,
+                                                    'subtask_title' => $st->title,
+                                                    'is_mine' => true,
+                                                ]);
+                                            }
+                                        }
+                                    }
+
+                                    if ($myItems->isNotEmpty()) {
+                                        $subtasksPayload = $myItems->values();
+                                    } else {
+                                        $subtasksPayload = $t->subtasks->map(fn($st) => [
                                             'id' => $st->id,
                                             'title' => $st->title,
                                             'is_completed' => (bool) $st->is_completed,
                                             'assigned_to_user_id' => $st->assigned_to_user_id,
                                             'is_mine' => (int) $st->assigned_to_user_id === (int) auth()->id(),
                                             'assigned_name' => $st->assignedTo?->name,
-                                        ])->values(),
+                                        ])->values();
+                                    }
+
+                                    return [$t->id => [
+                                        'id' => $t->id,
+                                        'title' => $t->title,
+                                        'subtasks' => $subtasksPayload,
                                     ]];
                                 });
                             @endphp
@@ -89,10 +111,10 @@
                                     return this.currentTask() ? this.currentTask().subtasks : [];
                                 },
                                 mySubtasks() {
-                                    return this.subtasks().filter(s => s.is_mine || !s.assigned_to_user_id);
+                                    return this.subtasks().filter(s => s.is_mine);
                                 },
                                 otherSubtasks() {
-                                    return this.subtasks().filter(s => !s.is_mine && s.assigned_to_user_id);
+                                    return this.subtasks().filter(s => !s.is_mine);
                                 },
                                 computedProgress() {
                                     const total = this.subtasks().length;
@@ -137,6 +159,7 @@
                                                        class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                                                 <div class="min-w-0 flex-1">
                                                     <span class="text-sm font-medium" :class="st.is_completed ? 'line-through text-emerald-700' : 'text-slate-800'" x-text="st.title"></span>
+                                                    <span x-show="st.subtask_title" class="ml-1 text-[10px] text-slate-400" x-text="'↳ ' + st.subtask_title"></span>
                                                     <span x-show="st.is_completed" class="ml-1 text-[10px] font-bold text-emerald-600">(Déjà validée)</span>
                                                 </div>
                                             </label>

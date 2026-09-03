@@ -361,22 +361,20 @@ public function index(Request $request)
             'due_date'    => 'nullable|date|after_or_equal:start_date',
             'pdf'         => 'nullable|file|mimes:pdf|max:10240',
 
-            // Sous-tâches obligatoires (au moins 1).
-            'subtasks'              => 'required|array|min:1',
-            'subtasks.*.title'      => 'required|string|max:255',
+            // Sous-tâches optionnelles.
+            'subtasks'              => 'nullable|array',
+            'subtasks.*.title'      => 'required_with:subtasks|string|max:255',
             'subtasks.*.start_date' => 'nullable|date',
             'subtasks.*.end_date'   => 'nullable|date|after_or_equal:subtasks.*.start_date',
             'subtasks.*.assigned_to_user_id' => 'nullable|integer|exists:users,id',
         ], [
-            'subtasks.required'         => 'Vous devez créer au moins une sous-tâche.',
-            'subtasks.min'              => 'Vous devez créer au moins une sous-tâche.',
-            'subtasks.*.title.required' => 'Chaque sous-tâche doit avoir un titre.',
+            'subtasks.*.title.required_with' => 'Chaque sous-tâche doit avoir un titre.',
         ]);
 
         // Validation des dates des sous-tâches vs tâche principale (backend).
         $taskStart = $payload['start_date'] ?? null;
         $taskEnd   = $payload['due_date']   ?? null;
-        foreach ($payload['subtasks'] as $i => $st) {
+        foreach ($payload['subtasks'] ?? [] as $i => $st) {
             if ($taskStart && !empty($st['start_date']) && $st['start_date'] < $taskStart) {
                 return back()->withErrors(["subtasks.{$i}.start_date" => "La date de début de la sous-tâche «{$st['title']}» est antérieure à la tâche principale."])->withInput();
             }
@@ -412,20 +410,24 @@ public function index(Request $request)
         ]);
 
         // Création des sous-tâches.
-        foreach ($payload['subtasks'] as $i => $st) {
-            $task->subtasks()->create([
-                'title'               => $st['title'],
-                'start_date'          => $st['start_date'] ?? null,
-                'end_date'            => $st['end_date']   ?? null,
-                'assigned_to_user_id' => $st['assigned_to_user_id'] ?? null,
-                'display_order'       => $i,
-            ]);
+        if (!empty($payload['subtasks'])) {
+            foreach ($payload['subtasks'] as $i => $st) {
+                $task->subtasks()->create([
+                    'title'               => $st['title'],
+                    'start_date'          => $st['start_date'] ?? null,
+                    'end_date'            => $st['end_date']   ?? null,
+                    'assigned_to_user_id' => $st['assigned_to_user_id'] ?? null,
+                    'display_order'       => $i,
+                ]);
+            }
         }
+
+        $subtaskCount = $task->subtasks()->count();
 
         Activity::create([
             'user_id'     => $user->id,
             'action'      => 'Creation tache',
-            'description' => "Tache {$task->title} creee avec " . count($payload['subtasks']) . ' sous-tache(s)',
+            'description' => "Tache {$task->title} creee avec " . $subtaskCount . ' sous-tache(s)',
         ]);
 
         $url = encrypted_route('tasks.show', $task);
@@ -493,6 +495,7 @@ public function index(Request $request)
         'messages.user',
         'subtasks.assignedTo',
         'subtasks.completedBy',
+        'subtasks.items',
     ]);
 
     return view('tasks.workspace', $this->workspaceData($request, $task));

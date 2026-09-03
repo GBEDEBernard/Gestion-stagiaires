@@ -50,6 +50,12 @@ class Subtask extends Model
         return $this->belongsTo(User::class, 'completed_by');
     }
 
+    /** Items personnels créés par l'utilisateur assigné (niveau 2). */
+    public function items()
+    {
+        return $this->hasMany(SubtaskItem::class)->orderBy('display_order');
+    }
+
     /* =======================
        HELPERS
     ======================= */
@@ -70,7 +76,7 @@ class Subtask extends Model
     public function markComplete(int $userId): void
     {
         if ($this->is_completed) {
-            return; // Déjà terminée — verrou.
+            return;
         }
 
         $this->update([
@@ -79,7 +85,64 @@ class Subtask extends Model
             'completed_by' => $userId,
         ]);
 
-        // Recalcule la progression de la tâche parente.
+        $this->task->syncProgressFromSubtasks();
+    }
+
+    /**
+     * Nombre d'items terminés pour cette sous-tâche.
+     */
+    public function completedItemsCount(): int
+    {
+        return $this->items()->where('is_completed', true)->count();
+    }
+
+    /**
+     * Nombre total d'items pour cette sous-tâche.
+     */
+    public function totalItemsCount(): int
+    {
+        return $this->items()->count();
+    }
+
+    /**
+     * Progression personnelle de l'utilisateur sur cette sous-tâche.
+     * Basée sur les subtask_items créés par l'utilisateur.
+     * Si pas d'items → 0% (fallback manuel).
+     */
+    public function personalProgress(): int
+    {
+        $total = $this->totalItemsCount();
+        if ($total === 0) {
+            return $this->is_completed ? 100 : 0;
+        }
+        return round(($this->completedItemsCount() / $total) * 100);
+    }
+
+    /**
+     * Recalcule is_completed basé sur les items.
+     * Si tous les items sont terminés → sous-tâche terminée.
+     * Si un item est dé-terminé → sous-tâche rouverte (seul admin peut rouvrir).
+     */
+    public function syncProgressFromItems(): void
+    {
+        $total = $this->totalItemsCount();
+        if ($total === 0) {
+            return;
+        }
+
+        $completed = $this->completedItemsCount();
+        $progress = round(($completed / $total) * 100);
+
+        // Si tous les items sont terminés, marquer la sous-tâche terminée
+        if ($progress >= 100 && !$this->is_completed) {
+            $this->update([
+                'is_completed' => true,
+                'completed_at' => now(),
+                'completed_by' => $this->assigned_to_user_id,
+            ]);
+        }
+
+        // Recalcule la progression de la tâche parente
         $this->task->syncProgressFromSubtasks();
     }
 }

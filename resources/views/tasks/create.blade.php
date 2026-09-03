@@ -176,16 +176,16 @@
                             </div>
                         </section>
 
-                        {{-- §2 Sous-tâches (OBLIGATOIRES) --}}
+                        {{-- §2 Sous-tâches (OPTIONNELLES) --}}
                         <section class="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-950/[0.03] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
                             <div class="border-b border-slate-200/70 p-5 dark:border-white/10 sm:p-6">
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Étapes de travail</p>
                                         <h2 class="mt-1 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                                            Sous-tâches <span class="text-rose-500">*</span>
+                                            Sous-tâches
                                         </h2>
-                                        <p class="mt-1 text-xs text-slate-500">Au moins une sous-tâche est requise. La progression sera calculée automatiquement.</p>
+                                        <p class="mt-1 text-xs text-slate-500">Optionnel — Les étapes (niveau 1) seront assignées aux participants, qui ajouteront ensuite leurs items personnels.</p>
                                     </div>
                                     <button type="button" @click="addSubtask()"
                                         class="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
@@ -198,10 +198,10 @@
                             <div class="p-5 sm:p-6 space-y-3">
                                 {{-- Message si aucune sous-tâche --}}
                                 <div x-show="subtasks.length === 0" x-cloak
-                                    class="rounded-2xl border border-dashed border-rose-300 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
-                                    <svg class="mx-auto mb-2 h-8 w-8 text-rose-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-                                    <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">Aucune sous-tâche ajoutée</p>
-                                    <p class="mt-1 text-xs text-rose-500">Cliquez sur « Ajouter » pour créer les étapes de la tâche.</p>
+                                    class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                                    <svg class="mx-auto mb-2 h-8 w-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/></svg>
+                                    <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Aucune sous-tâche ajoutée</p>
+                                    <p class="mt-1 text-xs text-slate-400">Facultatif. Vous pouvez créer la tâche puis ajouter les sous-tâches et leurs items plus tard.</p>
                                 </div>
 
                                 {{-- Liste des sous-tâches --}}
@@ -274,8 +274,8 @@
                                 Annuler
                             </a>
                             <button type="submit"
-                                :disabled="subtasks.length === 0 || hasDateErrors"
-                                :class="subtasks.length === 0 || hasDateErrors ? 'opacity-40 cursor-not-allowed' : ''"
+                                :disabled="hasDateErrors"
+                                :class="hasDateErrors ? 'opacity-40 cursor-not-allowed' : ''"
                                 class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
                                 Créer la tâche

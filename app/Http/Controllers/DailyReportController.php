@@ -41,7 +41,7 @@ class DailyReportController extends Controller
         $activeTasks = Task::query()
             ->visibleTo($user)
             ->where('status', '!=', 'completed')
-            ->with(['subtasks.assignedTo', 'subtasks.completedBy'])
+            ->with(['subtasks.assignedTo', 'subtasks.completedBy', 'subtasks.items'])
             ->latest()
             ->get();
 
@@ -157,7 +157,7 @@ class DailyReportController extends Controller
             'report_date'           => 'nullable|date',
             'task_id'               => 'nullable|integer|exists:tasks,id',
             'completed_subtask_ids' => 'nullable|array',
-            'completed_subtask_ids.*' => 'integer|exists:subtasks,id',
+            'completed_subtask_ids.*' => 'integer',
             'task_progress_percent' => 'nullable|integer|min:0|max:100',
         ]);
 
@@ -179,17 +179,38 @@ class DailyReportController extends Controller
             $task = Task::find($data['task_id']);
             if ($task && $task->isParticipant($user->id) && $task->status !== 'completed') {
                 if (!empty($completedSubtaskIds)) {
-                    $subtasksToComplete = $task->subtasks()
-                        ->whereIn('id', $completedSubtaskIds)
-                        ->where('is_completed', false)
-                        ->get();
+                    // Les IDs peuvent être des items (niveau 2) ou, en repli,
+                    // des sous-tâches (niveau 1) s'il n'y a aucun item.
+                    $itemCount = \App\Models\SubtaskItem::whereIn('id', $completedSubtaskIds)->count();
 
-                    foreach ($subtasksToComplete as $st) {
-                        $canComplete = $st->isAssignedTo($user->id)
-                            || (int) $task->owner_id === (int) $user->id
-                            || $user->hasAnyRole(['admin', 'superviseur']);
-                        if ($canComplete) {
-                            $st->markComplete($user->id);
+                    if ($itemCount > 0) {
+                        $items = \App\Models\SubtaskItem::whereIn('id', $completedSubtaskIds)
+                            ->where('is_completed', false)
+                            ->whereHas('subtask', fn($q) => $q->where('task_id', $task->id))
+                            ->get();
+
+                        foreach ($items as $item) {
+                            $st = $item->subtask;
+                            $canComplete = $st->isAssignedTo($user->id)
+                                || (int) $task->owner_id === (int) $user->id
+                                || $user->hasAnyRole(['admin', 'superviseur']);
+                            if ($canComplete) {
+                                $item->markComplete($user->id);
+                            }
+                        }
+                    } else {
+                        $subtasksToComplete = $task->subtasks()
+                            ->whereIn('id', $completedSubtaskIds)
+                            ->where('is_completed', false)
+                            ->get();
+
+                        foreach ($subtasksToComplete as $st) {
+                            $canComplete = $st->isAssignedTo($user->id)
+                                || (int) $task->owner_id === (int) $user->id
+                                || $user->hasAnyRole(['admin', 'superviseur']);
+                            if ($canComplete) {
+                                $st->markComplete($user->id);
+                            }
                         }
                     }
                 }

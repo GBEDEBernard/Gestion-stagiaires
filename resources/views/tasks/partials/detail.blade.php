@@ -501,7 +501,7 @@
                         Progression calculée automatiquement sur l'ensemble des sous-tâches.
                     </p>
                 </div>
-                @if($task->owner_id === $user->id || $user->hasRole('admin'))
+                @if($task->owner_id === $user->id || $user->hasAnyRole(['admin', 'superviseur']) || $task->assignees->contains($user->id))
                 <a href="{{ encrypted_route('tasks.edit', $task) }}" class="text-xs font-semibold text-blue-600 hover:underline">
                     Gérer les sous-tâches →
                 </a>
@@ -512,77 +512,145 @@
                 @forelse($task->subtasks as $st)
                 @php
                     $isMySubtask = (int) $st->assigned_to_user_id === (int) $user->id;
+                    $itemsCount = $st->items()->count();
+                    $itemsDone = $st->items()->where('is_completed', true)->count();
+                    $personalProg = $st->personalProgress();
                 @endphp
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition
+                <div class="flex flex-col p-3.5 rounded-xl border transition
                             {{ $st->is_completed ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/30 dark:bg-emerald-950/10' : ($isMySubtask ? 'border-blue-200 bg-blue-50/30 ring-1 ring-blue-500/20 dark:border-blue-900/30 dark:bg-blue-950/10' : 'border-black/6 bg-black/2.5 dark:border-white/10 dark:bg-white/[0.02]') }}">
 
-                    <div class="flex items-start gap-3 min-w-0">
-                        <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full {{ $st->is_completed ? 'bg-emerald-500 text-white' : 'border-2 border-blue-400 dark:border-blue-400 text-transparent' }}">
-                            @if($st->is_completed)
-                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            @else
-                            <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-                            @endif
-                        </div>
-
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p class="text-sm font-semibold text-black dark:text-white {{ $st->is_completed ? 'line-through opacity-60' : '' }}">
-                                    {{ $st->title }}
-                                </p>
-
-                                @if($isMySubtask)
-                                    <span class="rounded-md bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[11px] font-bold">
-                                        👤 Attribuée à vous
-                                    </span>
-                                @elseif($st->assignedTo)
-                                    <span class="rounded-md bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60 px-2 py-0.5 text-[11px] font-medium">
-                                        👤 {{ $st->assignedTo->name }}
-                                    </span>
-                                @else
-                                    <span class="rounded-md border border-dashed border-black/20 dark:border-white/20 px-2 py-0.5 text-[11px] text-black/40 dark:text-white/40">
-                                        Non attribuée
-                                    </span>
-                                @endif
-
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full {{ $st->is_completed ? 'bg-emerald-500 text-white' : 'border-2 border-blue-400 dark:border-blue-400 text-transparent' }}">
                                 @if($st->is_completed)
-                                    <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                                        Terminée le {{ $st->completed_at?->format('d/m') }} {{ $st->completedBy ? 'par ' . $st->completedBy->name : '' }}
-                                    </span>
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                @else
+                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
                                 @endif
                             </div>
 
-                            @if($st->start_date || $st->end_date)
-                            <p class="text-xs text-black/40 dark:text-white/40 mt-1">
-                                📅 {{ $st->start_date?->format('d/m/Y') ?? '?' }} → {{ $st->end_date?->format('d/m/Y') ?? '?' }}
-                            </p>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="text-sm font-semibold text-black dark:text-white {{ $st->is_completed ? 'line-through opacity-60' : '' }}">
+                                        {{ $st->title }}
+                                    </p>
+
+                                    @if($isMySubtask)
+                                        <span class="rounded-md bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[11px] font-bold">
+                                            👤 Attribuée à vous
+                                        </span>
+                                    @elseif($st->assignedTo)
+                                        <span class="rounded-md bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60 px-2 py-0.5 text-[11px] font-medium">
+                                            👤 {{ $st->assignedTo->name }}
+                                        </span>
+                                    @else
+                                        <span class="rounded-md border border-dashed border-black/20 dark:border-white/20 px-2 py-0.5 text-[11px] text-black/40 dark:text-white/40">
+                                            Non attribuée
+                                        </span>
+                                    @endif
+
+                                    @if($st->is_completed)
+                                        <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                            Terminée le {{ $st->completed_at?->format('d/m') }} {{ $st->completedBy ? 'par ' . $st->completedBy->name : '' }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if($st->start_date || $st->end_date)
+                                <p class="text-xs text-black/40 dark:text-white/40 mt-1">
+                                    📅 {{ $st->start_date?->format('d/m/Y') ?? '?' }} → {{ $st->end_date?->format('d/m/Y') ?? '?' }}
+                                </p>
+                                @endif
+
+                                {{-- Barre de progression personnelle --}}
+                                @if($itemsCount > 0)
+                                <div class="mt-2 flex items-center gap-2">
+                                    <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full transition-all duration-300 {{ $personalProg >= 100 ? 'bg-emerald-500' : 'bg-blue-500' }}" style="width: {{ $personalProg }}%"></div>
+                                    </div>
+                                    <span class="text-[11px] font-semibold {{ $personalProg >= 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400' }}">{{ $personalProg }}%</span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            @if($st->is_completed)
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-3 py-1 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40">
+                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    Terminée
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1 text-xs font-semibold border border-blue-200 dark:border-blue-800/40">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                    En cours
+                                </span>
+                            @endif
+
+                            @if($isAdmin && $st->is_completed)
+                            <form method="POST" action="{{ route('tasks.subtasks.reopen', [$task, $st]) }}" onsubmit="return confirm('Réouvrir cette sous-tâche ?')">
+                                @csrf
+                                <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition" title="Réouvrir (Admin)">
+                                    🔓 Réouvrir
+                                </button>
+                            </form>
                             @endif
                         </div>
                     </div>
 
-                    {{-- Statut : En cours (par défaut) ou Terminée --}}
-                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                        @if($st->is_completed)
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-3 py-1 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40">
-                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                Terminée
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1 text-xs font-semibold border border-blue-200 dark:border-blue-800/40">
-                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                En cours
-                            </span>
-                        @endif
+                    {{-- ── ITEMS PERSONNELS (niveau 2) ── --}}
+                    @if($isMySubtask || $isAdmin || $task->owner_id === $user->id)
+                    <div class="mt-3 ml-8 space-y-1.5">
+                        @forelse($st->items as $item)
+                        <div class="flex items-center justify-between gap-2 py-1 px-2.5 rounded-lg hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition group">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <form method="POST" action="{{ route('tasks.subtask_items.toggle', [$task, $st, $item]) }}" class="shrink-0">
+                                    @csrf
+                                    <button type="submit" class="flex h-4 w-4 items-center justify-center rounded {{ $item->is_completed ? 'bg-emerald-500 text-white' : 'border border-blue-400 dark:border-blue-400 text-transparent hover:border-blue-600' }} transition">
+                                        @if($item->is_completed)
+                                        <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                        @endif
+                                    </button>
+                                </form>
+                                <p class="text-xs font-medium text-black/70 dark:text-white/70 {{ $item->is_completed ? 'line-through opacity-50' : '' }}">
+                                    {{ $item->title }}
+                                </p>
+                            </div>
+                            @if(!$st->is_completed && ($isMySubtask || $isAdmin))
+                            <form method="POST" action="{{ route('tasks.subtask_items.destroy', [$task, $st, $item]) }}" class="opacity-0 group-hover:opacity-100 transition shrink-0" onsubmit="return confirm('Supprimer cet item ?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-red-400 hover:text-red-600 transition">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                        @empty
+                        @endforelse
 
-                        @if($isAdmin && $st->is_completed)
-                        <form method="POST" action="{{ route('tasks.subtasks.reopen', [$task, $st]) }}" onsubmit="return confirm('Réouvrir cette sous-tâche ?')">
-                            @csrf
-                            <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition" title="Réouvrir (Admin)">
-                                🔓 Réouvrir
+                        {{-- Formulaire ajout item --}}
+                        @if(!$st->is_completed && ($isMySubtask || $isAdmin))
+                        <div x-data="{ open: false, title: '' }" class="pt-1">
+                            <button x-show="!open" @click="open = true" type="button" class="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                Ajouter un item
                             </button>
-                        </form>
+                            <form x-show="open" @submit.prevent="
+                                fetch('{{ route('tasks.subtask_items.store', [$task, $st]) }}', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                                    body: JSON.stringify({ title: title })
+                                }).then(r => r.json()).then(d => { if(d.success || d.message) location.reload(); });
+                                open = false; title = '';
+                            " class="flex items-center gap-2 mt-1">
+                                <input x-model="title" type="text" required placeholder="Titre de l'item..." class="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-900 text-black dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                                <button type="submit" class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 px-2">Ajouter</button>
+                                <button type="button" @click="open = false" class="text-[11px] text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60">✕</button>
+                            </form>
+                        </div>
                         @endif
                     </div>
+                    @endif
                 </div>
                 @empty
                 <p class="text-xs text-black/40 py-2">Aucune sous-tâche pour le moment.</p>
@@ -753,21 +821,44 @@
         <div class="d-divider"></div>
 
         @php
-            $subtasksPayload = $task->subtasks->map(fn($st) => [
-                'id' => $st->id,
-                'title' => $st->title,
-                'is_completed' => (bool) $st->is_completed,
-                'is_mine' => (int) $st->assigned_to_user_id === (int) $user->id,
-                'assigned_name' => $st->assignedTo?->name,
-                'assigned_to_user_id' => $st->assigned_to_user_id,
-            ])->values();
-            $subtasksTotal = $task->subtasks->count();
-            $subtasksDone = $task->subtasks->where('is_completed', true)->count();
+            // Collecter tous les items personnels de l'utilisateur
+            $myItems = collect();
+            foreach ($task->subtasks as $st) {
+                if ((int) $st->assigned_to_user_id === (int) $user->id || $isAdmin || $isOwner) {
+                    foreach ($st->items as $item) {
+                        $myItems->push([
+                            'id' => $item->id,
+                            'title' => $item->title,
+                            'is_completed' => (bool) $item->is_completed,
+                            'subtask_id' => $st->id,
+                            'subtask_title' => $st->title,
+                        ]);
+                    }
+                }
+            }
+
+            // Fallback : si pas d'items, utiliser les subtasks directement
+            $useItems = $myItems->isNotEmpty();
+            if (!$useItems) {
+                $subtasksPayload = $task->subtasks->map(fn($st) => [
+                    'id' => $st->id,
+                    'title' => $st->title,
+                    'is_completed' => (bool) $st->is_completed,
+                    'is_mine' => (int) $st->assigned_to_user_id === (int) $user->id,
+                    'assigned_name' => $st->assignedTo?->name,
+                    'assigned_to_user_id' => $st->assigned_to_user_id,
+                ])->values();
+            } else {
+                $subtasksPayload = $myItems->values();
+            }
+            $subtasksTotal = $useItems ? $myItems->count() : $task->subtasks->count();
+            $subtasksDone = $useItems ? $myItems->where('is_completed', true)->count() : $task->subtasks->where('is_completed', true)->count();
         @endphp
 
         <div class="px-6 py-5" x-data="{
             open: {{ $isFirstReport ? 'true' : 'false' }},
             edit: false,
+            useItems: {{ $useItems ? 'true' : 'false' }},
             subtasks: @js($subtasksPayload),
             checkedSubtasks: [],
             subtasksTotal: {{ $subtasksTotal }},
@@ -779,14 +870,7 @@
                 return Math.min(100, Math.round((countDone / this.subtasksTotal) * 100));
             },
             get mySubtasks() {
-                const isOwnerOrAdmin = {{ ($isOwner || $isAdmin) ? 'true' : 'false' }};
-                if (isOwnerOrAdmin) return this.subtasks;
-                return this.subtasks.filter(s => s.is_mine || !s.assigned_to_user_id);
-            },
-            get otherSubtasks() {
-                const isOwnerOrAdmin = {{ ($isOwner || $isAdmin) ? 'true' : 'false' }};
-                if (isOwnerOrAdmin) return [];
-                return this.subtasks.filter(s => !s.is_mine && s.assigned_to_user_id);
+                return this.subtasks;
             },
             get nextStepTitle() {
                 const checked = this.checkedSubtasks.map(Number);
@@ -878,19 +962,28 @@
                             <input type="hidden" name="status_action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
 
-                            {{-- Validation des sous-tâches (remplace l'introduction) --}}
-                            @if($task->subtasks->isNotEmpty())
+                            {{-- Validation des items / sous-tâches --}}
+                            @if($myItems->isNotEmpty() || $task->subtasks->isNotEmpty())
                             <div class="d-field">
                                 <div class="flex items-center justify-between mb-2">
                                     <label class="d-field-label mb-0 flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
-                                        <span class="text-indigo-600">☑</span> Sous-tâches de la tâche
+                                        <span class="text-indigo-600">☑</span>
+                                        @if($useItems)
+                                            Mes items à valider
+                                        @else
+                                            Sous-tâches de la tâche
+                                        @endif
                                     </label>
                                     <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/30"
                                           x-text="(subtasksDone + checkedSubtasks.length) + ' / ' + subtasksTotal + ' terminées'">
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                                    Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                    @if($useItems)
+                                        Cochez les items que vous avez terminés aujourd'hui. Ils seront validés à l'envoi du rapport.
+                                    @else
+                                        Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                    @endif
                                 </p>
 
                                 <div class="space-y-2">
@@ -909,6 +1002,10 @@
                                                     <span class="text-sm font-semibold"
                                                           :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
                                                           x-text="st.title"></span>
+                                                    @if($useItems)
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500"
+                                                          x-text="'↳ ' + st.subtask_title"></span>
+                                                    @endif
                                                     <template x-if="st.is_completed">
                                                         <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                                                             ✓ Déjà validée
@@ -923,18 +1020,6 @@
                                                 </div>
                                             </div>
                                         </label>
-                                    </template>
-
-                                    {{-- Sous-tâches des autres personnes --}}
-                                    <template x-for="st in otherSubtasks" :key="st.id">
-                                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 text-xs dark:bg-white/[0.01] dark:border-white/5 dark:text-slate-400">
-                                            <div class="flex items-center gap-2 min-w-0">
-                                                <span x-text="st.is_completed ? '✅' : '⏳'"></span>
-                                                <span class="truncate" :class="st.is_completed ? 'line-through opacity-60' : ''" x-text="st.title"></span>
-                                            </div>
-                                            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300"
-                                                  x-text="'Attribuée à ' + (st.assigned_name || 'Autre')"></span>
-                                        </div>
                                     </template>
                                 </div>
                             </div>
@@ -1074,19 +1159,28 @@
                             <input type="hidden" name="accuracy_meters" id="report-accuracy" value="">
                             <input type="hidden" name="location_method" id="report-location-method" value="">
 
-                            {{-- Validation des sous-tâches (remplace l'introduction) --}}
-                            @if($task->subtasks->isNotEmpty())
+                            {{-- Validation des items (remplace l'ancien bloc sous-tâches) --}}
+                            @if($myItems->isNotEmpty() || $task->subtasks->isNotEmpty())
                             <div class="d-field">
                                 <div class="flex items-center justify-between mb-2">
                                     <label class="d-field-label mb-0 flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
-                                        <span class="text-indigo-600">☑</span> Sous-tâches de la tâche
+                                        <span class="text-indigo-600">☑</span>
+                                        @if($useItems)
+                                            Mes items à valider
+                                        @else
+                                            Sous-tâches de la tâche
+                                        @endif
                                     </label>
                                     <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/30"
                                           x-text="(subtasksDone + checkedSubtasks.length) + ' / ' + subtasksTotal + ' terminées'">
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                                    Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                    @if($useItems)
+                                        Cochez les items que vous avez terminés aujourd'hui. Ils seront validés à l'envoi du rapport.
+                                    @else
+                                        Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                    @endif
                                 </p>
 
                                 <div class="space-y-2">
@@ -1105,6 +1199,10 @@
                                                     <span class="text-sm font-semibold"
                                                           :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
                                                           x-text="st.title"></span>
+                                                    @if($useItems)
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500"
+                                                          x-text="'↳ ' + st.subtask_title"></span>
+                                                    @endif
                                                     <template x-if="st.is_completed">
                                                         <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                                                             ✓ Déjà validée
@@ -1119,18 +1217,6 @@
                                                 </div>
                                             </div>
                                         </label>
-                                    </template>
-
-                                    {{-- Sous-tâches des autres personnes --}}
-                                    <template x-for="st in otherSubtasks" :key="st.id">
-                                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 text-xs dark:bg-white/[0.01] dark:border-white/5 dark:text-slate-400">
-                                            <div class="flex items-center gap-2 min-w-0">
-                                                <span x-text="st.is_completed ? '✅' : '⏳'"></span>
-                                                <span class="truncate" :class="st.is_completed ? 'line-through opacity-60' : ''" x-text="st.title"></span>
-                                            </div>
-                                            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300"
-                                                  x-text="'Attribuée à ' + (st.assigned_name || 'Autre')"></span>
-                                        </div>
                                     </template>
                                 </div>
                             </div>

@@ -262,6 +262,12 @@ Route::prefix('tasks')->group(function () {
         Route::delete('{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy')->middleware('permission:tasks.create');
         Route::post('{task}/subtasks/{subtask}/complete', [SubtaskController::class, 'complete'])->name('tasks.subtasks.complete')->middleware('permission:tasks.view');
         Route::post('{task}/subtasks/{subtask}/reopen', [SubtaskController::class, 'reopen'])->name('tasks.subtasks.reopen')->middleware('role:admin');
+
+        // ── Items des sous-tâches (niveau 2) ──
+        Route::post('{task}/subtasks/{subtask}/items', [\App\Http\Controllers\SubtaskItemController::class, 'store'])->name('tasks.subtask_items.store')->middleware('permission:tasks.view');
+        Route::put('{task}/subtasks/{subtask}/items/{item}', [\App\Http\Controllers\SubtaskItemController::class, 'update'])->name('tasks.subtask_items.update')->middleware('permission:tasks.view');
+        Route::delete('{task}/subtasks/{subtask}/items/{item}', [\App\Http\Controllers\SubtaskItemController::class, 'destroy'])->name('tasks.subtask_items.destroy')->middleware('permission:tasks.view');
+        Route::post('{task}/subtasks/{subtask}/items/{item}/toggle', [\App\Http\Controllers\SubtaskItemController::class, 'toggle'])->name('tasks.subtask_items.toggle')->middleware('permission:tasks.view');
     });
 
     // ---------------- Signataires ----------------

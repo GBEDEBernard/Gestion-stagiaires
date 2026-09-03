@@ -6,6 +6,8 @@ use App\Models\AttendanceDay;
 use App\Models\DailyReport;
 use App\Models\Etudiant;
 use App\Models\Stage;
+use App\Models\Subtask;
+use App\Models\SubtaskItem;
 use App\Models\Task;
 use App\Models\TaskUpdate;
 use App\Models\User;
@@ -93,17 +95,41 @@ class DailyReportService
             // ── Traitement des sous-tâches cochées ──
             if ($task && !empty($payload['completed_subtask_ids'])) {
                 $completedIds = (array) $payload['completed_subtask_ids'];
-                $subtasksToComplete = $task->subtasks()
-                    ->whereIn('id', $completedIds)
-                    ->where('is_completed', false)
-                    ->get();
 
-                foreach ($subtasksToComplete as $st) {
-                    $canComplete = $st->isAssignedTo($user->id)
-                        || (int) $task->owner_id === (int) $user->id
-                        || $user->hasAnyRole(['admin', 'superviseur']);
-                    if ($canComplete) {
-                        $st->markComplete($user->id);
+                // Les IDs fournis peuvent être des items (niveau 2) ou, en
+                // repli, des sous-tâches (niveau 1) s'il n'y a aucun item.
+                $itemCount = SubtaskItem::whereIn('id', $completedIds)->count();
+
+                if ($itemCount > 0) {
+                    // Cas items : ne compléter que les items de l'utilisateur.
+                    $items = SubtaskItem::whereIn('id', $completedIds)
+                        ->where('is_completed', false)
+                        ->whereHas('subtask', fn($q) => $q->where('task_id', $task->id))
+                        ->get();
+
+                    foreach ($items as $item) {
+                        $st = $item->subtask;
+                        $canComplete = $st->isAssignedTo($user->id)
+                            || (int) $task->owner_id === (int) $user->id
+                            || $user->hasAnyRole(['admin', 'superviseur']);
+                        if ($canComplete) {
+                            $item->markComplete($user->id);
+                        }
+                    }
+                } else {
+                    // Cas repli : sous-tâches (niveau 1).
+                    $subtasksToComplete = $task->subtasks()
+                        ->whereIn('id', $completedIds)
+                        ->where('is_completed', false)
+                        ->get();
+
+                    foreach ($subtasksToComplete as $st) {
+                        $canComplete = $st->isAssignedTo($user->id)
+                            || (int) $task->owner_id === (int) $user->id
+                            || $user->hasAnyRole(['admin', 'superviseur']);
+                        if ($canComplete) {
+                            $st->markComplete($user->id);
+                        }
                     }
                 }
             }

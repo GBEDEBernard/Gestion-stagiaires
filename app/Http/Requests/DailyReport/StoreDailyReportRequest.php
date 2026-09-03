@@ -23,7 +23,7 @@ class StoreDailyReportRequest extends FormRequest
             'completion_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
             'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
             'completed_subtask_ids' => ['nullable', 'array'],
-            'completed_subtask_ids.*' => ['integer', 'exists:subtasks,id'],
+            'completed_subtask_ids.*' => ['integer'],
             'task_progress_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],

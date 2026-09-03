@@ -125,25 +125,56 @@ class Task extends Model
     ======================= */
 
     /**
-     * Calcule la progression à partir des sous-tâches terminées.
-     * Si aucune sous-tâche → retourne last_progress_percent (compatibilité).
+     * Calcule la progression à partir des sous-tâches.
+     * Si des items existent → moyenne des progresses individuelles par utilisateur.
+     * Sinon → fallback done/total ou last_progress_percent.
      */
     public function computeProgressFromSubtasks(): int
     {
-        $total = $this->subtasks()->count();
-        if ($total === 0) {
+        $subtasks = $this->subtasks()->get();
+        if ($subtasks->isEmpty()) {
             return (int) $this->last_progress_percent;
         }
-        $done = $this->subtasks()->where('is_completed', true)->count();
-        return (int) round($done / $total * 100);
+
+        // Grouper les sous-tâches par utilisateur assigné
+        $userProgresses = $subtasks->filter(fn($st) => $st->assigned_to_user_id)
+            ->groupBy('assigned_to_user_id')
+            ->map(function ($userSubtasks) {
+                $totalItems = $userSubtasks->sum(fn($st) => $st->totalItemsCount());
+                $completedItems = $userSubtasks->sum(fn($st) => $st->completedItemsCount());
+
+                if ($totalItems > 0) {
+                    return round(($completedItems / $totalItems) * 100);
+                }
+
+                // Si pas d'items → fallback sur is_completed de la sous-tâche
+                $totalSt = $userSubtasks->count();
+                $doneSt = $userSubtasks->where('is_completed', true)->count();
+                return round(($doneSt / $totalSt) * 100);
+            });
+
+        if ($userProgresses->isEmpty()) {
+            return (int) $this->last_progress_percent;
+        }
+
+        return (int) round($userProgresses->avg());
     }
 
     /**
-     * Retourne le titre de la première sous-tâche non terminée (prochaine étape).
-     * Null si toutes les sous-tâches sont terminées ou qu'il n'y en a pas.
+     * Retourne le titre de la prochaine étape non terminée.
+     * Priorité : premier item non terminé > première sous-tâche non terminée.
      */
     public function nextStepLabel(): ?string
     {
+        // Chercher d'abord dans les items des sous-tâches
+        $nextItem = \App\Models\SubtaskItem::whereHas('subtask', fn($q) => $q->where('task_id', $this->id))
+            ->where('is_completed', false)
+            ->orderBy('display_order')
+            ->value('title');
+        if ($nextItem) {
+            return $nextItem;
+        }
+
         return $this->subtasks()
             ->where('is_completed', false)
             ->orderBy('display_order')

@@ -147,13 +147,16 @@ class SubtaskController extends Controller
     ======================= */
 
     /**
-     * Seul le propriétaire de la tâche ou l'admin peuvent gérer les sous-tâches.
+     * Seul le propriétaire de la tâche, un assigné ou l'admin peuvent gérer les sous-tâches.
      */
     protected function authorizeManage(Task $task): void
     {
         $user = auth()->user();
+        $isAssignee = $task->assignees()->where('users.id', $user->id)->exists();
         abort_unless(
-            $user->hasRole('admin') || (int) $task->owner_id === $user->id,
+            $user->hasAnyRole(['admin', 'superviseur'])
+            || (int) $task->owner_id === $user->id
+            || $isAssignee,
             403,
             'Action non autorisée.'
         );
