@@ -77,7 +77,7 @@
 
             <label class="field-label" for="observation">Motif du retard</label>
             <textarea id="observation" name="observation_message" required minlength="10" maxlength="500"
-                placeholder="Ex. : embouteillage sur la voie de Godomey, parti à 07h15."
+                
                 autofocus></textarea>
 
             @if($tooShort)

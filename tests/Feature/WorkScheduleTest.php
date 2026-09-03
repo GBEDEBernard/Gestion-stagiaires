@@ -279,3 +279,63 @@ test('an empty break field means inherit, not zero', function () {
 
     expect($stage->fresh()->break_minutes)->toBeNull();
 });
+
+test('the recalculation clears a lateness that never was one', function () {
+    // Stage à 08:30, arrivée à 08:20 : l'ancienne règle du 08:00 en dur avait
+    // enregistré vingt minutes de retard sur une arrivée en avance.
+    $stage = schedStage(['expected_check_in_time' => '08:30:00', 'expected_check_out_time' => '17:30:00']);
+
+    $jour = \App\Models\AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'attendance_date'   => today(),
+        'first_check_in_at' => today()->setTime(8, 20),
+        'arrival_status'    => 'late',
+        'late_minutes'      => 20,
+    ]);
+
+    $this->artisan('presence:recalculer-retards', ['--stage' => $stage->id])
+        ->assertSuccessful();
+
+    $jour->refresh();
+
+    expect($jour->arrival_status)->toBe('ontime')
+        ->and($jour->late_minutes)->toBe(0);
+});
+
+test('the dry run changes nothing', function () {
+    $stage = schedStage(['expected_check_in_time' => '08:30:00', 'expected_check_out_time' => '17:30:00']);
+
+    $jour = \App\Models\AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'attendance_date'   => today(),
+        'first_check_in_at' => today()->setTime(8, 20),
+        'arrival_status'    => 'late',
+        'late_minutes'      => 20,
+    ]);
+
+    $this->artisan('presence:recalculer-retards', ['--stage' => $stage->id, '--dry-run' => true])
+        ->assertSuccessful();
+
+    expect($jour->fresh()->arrival_status)->toBe('late');
+});
+
+test('a genuine lateness keeps its exact minutes', function () {
+    $stage = schedStage(['expected_check_in_time' => '08:00:00', 'expected_check_out_time' => '18:00:00']);
+
+    $jour = \App\Models\AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'attendance_date'   => today(),
+        'first_check_in_at' => today()->setTime(9, 15),
+        'arrival_status'    => 'late',
+        'late_minutes'      => 75,
+    ]);
+
+    $this->artisan('presence:recalculer-retards', ['--stage' => $stage->id])->assertSuccessful();
+
+    // Rien ne doit bouger : le retard était déjà juste
+    expect($jour->fresh()->arrival_status)->toBe('late')
+        ->and($jour->fresh()->late_minutes)->toBe(75);
+});
