@@ -69,7 +69,7 @@ class SubtaskController extends Controller
      */
     public function update(Request $request, Task $task, Subtask $subtask)
     {
-        $this->authorizeManage($task);
+        $this->authorizeEditSubtask($task, $subtask);
         abort_unless((int) $subtask->task_id === $task->id, 404);
 
         $taskStart = $task->start_date;
@@ -264,6 +264,22 @@ class SubtaskController extends Controller
             || $isAssignee,
             403,
             'Action non autorisée.'
+        );
+    }
+
+    /**
+     * Modification d'une sous-tâche : admin (tout), propriétaire de la
+     * tâche, ou la personne à qui la sous-tâche est assignée.
+     */
+    protected function authorizeEditSubtask(Task $task, Subtask $subtask): void
+    {
+        $user = auth()->user();
+        abort_unless(
+            $user->hasRole('admin')
+            || (int) $task->owner_id === $user->id
+            || $subtask->isAssignedTo((int) $user->id),
+            403,
+            'Vous ne pouvez modifier que les sous-tâches qui vous sont assignées.'
         );
     }
 

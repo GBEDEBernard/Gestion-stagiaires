@@ -299,7 +299,7 @@
                             <!-- Liste des sous-tâches actuelles -->
                             <div class="space-y-2.5">
                                 @forelse($task->subtasks as $st)
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border p-4 transition duration-150 {{ $st->is_completed ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/5' : 'border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.02]' }}">
+                                <div x-data="{ edit: false }" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border p-4 transition duration-150 {{ $st->is_completed ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/5' : 'border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.02]' }}">
                                     <div class="flex items-start gap-3 min-w-0">
                                         <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $st->is_completed ? 'bg-emerald-600 text-white' : 'border-2 border-slate-300 text-transparent dark:border-white/20' }}">
                                             @if($st->is_completed)
@@ -346,6 +346,13 @@
                                         </form>
                                         @endif
 
+                                        @unless($st->is_completed)
+                                        <button type="button" @click="edit = !edit"
+                                                class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200" title="Modifier">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l.72-3.95c.07-.39.26-.74.54-1.02L16.3 3.94a1.5 1.5 0 0 1 2.12 0l1.64 1.64a1.5 1.5 0 0 1 0 2.12L9.03 18.74c-.28.28-.63.47-1.02.54L4 20Z"/></svg>
+                                        </button>
+                                        @endunless
+
                                         <form method="POST" action="{{ route('tasks.subtasks.destroy', [$task, $st]) }}" onsubmit="return confirm('Supprimer cette sous-tâche ?')">
                                             @csrf
                                             @method('DELETE')
@@ -355,6 +362,39 @@
                                         </form>
                                     </div>
                                 </div>
+
+                                {{-- Formulaire inline de modification de la sous-tâche --}}
+                                @unless($st->is_completed)
+                                <form x-show="edit" x-cloak method="POST" action="{{ route('tasks.subtasks.update', [$task, $st]) }}" class="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                                        @csrf @method('PUT')
+                                        <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">Modifier la sous-tâche</p>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Titre</label>
+                                                <input type="text" name="title" required value="{{ $st->title }}"
+                                                       class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                            </div>
+                                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Date début</label>
+                                                    <input type="date" name="start_date" value="{{ $st->start_date?->toDateString() }}"
+                                                           class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                                </div>
+                                                <div>
+                                                    <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Date fin</label>
+                                                    <input type="date" name="end_date" value="{{ $st->end_date?->toDateString() }}"
+                                                           class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-end gap-2 pt-1">
+                                                <button type="button" @click="edit = false"
+                                                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/[0.04]">Annuler</button>
+                                                <button type="submit"
+                                                        class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-white dark:text-slate-900">Enregistrer</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                @endunless
                                 @empty
                                 <div class="rounded-2xl border border-dashed border-rose-300 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
                                     <p class="text-sm font-semibold text-rose-700 dark:text-rose-400">Aucune sous-tâche pour le moment</p>
