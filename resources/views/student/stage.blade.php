@@ -239,87 +239,78 @@
                         $progressPercent = min(100, max(0, $task->last_progress_percent ?? $task->base_progress_percent ?? 0));
                     @endphp
 
-                    {{-- CARTE DE TÂCHE PROFESSIONNELLE & COMPACTE --}}
-                    <div class="group relative rounded-xl border border-slate-200/80 dark:border-gray-700 bg-white dark:bg-gray-800/90 p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all">
+                    {{-- CARTE DE TÂCHE : Disposition exacte selon la capture --}}
+                    <div class="group rounded-2xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
                         <a href="{{ encrypted_route('tasks.show', $task) }}" class="block">
-                            <div class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                 
-                                {{-- En-tête : Titre & Badges --}}
-                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                    <div class="flex items-center gap-2 min-w-0 flex-1">
-                                        <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate break-all">
-                                            {{ $task->title }}
-                                        </h3>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset {{ $statusMeta[1] }}">
+                                {{-- Colonne Gauche : Titre, Badges, Description, Progression, Rapports --}}
+                                <div class="flex-1 min-w-0 md:pr-4">
+                                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                                        {{ $task->title }}
+                                    </h3>
+
+                                    <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium ring-1 ring-inset {{ $statusMeta[1] }}">
                                             {{ $statusMeta[0] }}
                                         </span>
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset {{ $priorityMeta[1] }}">
+                                        <span class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium ring-1 ring-inset {{ $priorityMeta[1] }}">
                                             {{ $priorityMeta[0] }}
                                         </span>
                                         @if ($task->owner_id === $user->id)
-                                        <span class="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-500/20">
+                                        <span class="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-3 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-500/20">
                                             Créée par toi
                                         </span>
                                         @else
-                                        <span class="inline-flex items-center rounded-full bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/20">
+                                        <span class="inline-flex items-center rounded-full bg-sky-50 dark:bg-sky-950/40 px-3 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/20">
                                             Assignée à toi
                                         </span>
                                         @endif
                                     </div>
+
+                                    <p class="mt-2 text-sm text-slate-500 dark:text-gray-400 line-clamp-2 break-words leading-relaxed">
+                                        {{ $task->description ?: 'Aucune description fournie.' }}
+                                    </p>
+
+                                    {{-- Barre de progression --}}
+                                    <div class="mt-3 flex max-w-xs items-center gap-2.5">
+                                        <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden">
+                                            <div class="h-1.5 rounded-full {{ $task->status === 'completed' ? 'bg-emerald-500' : 'bg-indigo-600' }}"
+                                                 style="width: {{ $progressPercent }}%"></div>
+                                        </div>
+                                        <span class="text-xs font-medium text-slate-600 dark:text-gray-400">{{ $progressPercent }}%</span>
+                                    </div>
+
+                                    {{-- Rapports récents déposés par l'étudiant --}}
+                                    @if ($myReports->isNotEmpty())
+                                    <div class="mt-4 pt-1">
+                                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Tes rapports déposés</p>
+                                        <div class="mt-2 space-y-1.5">
+                                            @foreach ($myReports as $report)
+                                            <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-400">
+                                                <svg class="h-4 w-4 shrink-0 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span class="font-medium text-slate-700 dark:text-gray-200">{{ $report->report_date->isoFormat('DD MMM') }}</span>
+                                                <span>·</span>
+                                                <span class="font-medium">{{ $report->task_progress_percent ?? 0 }}%</span>
+                                                <span>·</span>
+                                                <span class="truncate max-w-sm text-slate-500 dark:text-gray-400">{{ $report->summary ?: 'Rapport déposé' }}</span>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
 
-                                {{-- Description limitée à 2 lignes (ne casse plus jamais la mise en page) --}}
-                                <p class="text-xs sm:text-sm text-slate-600 dark:text-gray-300 line-clamp-2 leading-relaxed break-words">
-                                    {{ $task->description ?: 'Aucune description fournie.' }}
-                                </p>
-
-                                {{-- Barre de progression --}}
-                                <div class="space-y-1.5 pt-1">
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-[11px] font-semibold text-slate-500 dark:text-gray-400">Progression</span>
-                                        <span class="font-bold text-slate-800 dark:text-gray-200">{{ $progressPercent }}%</span>
-                                    </div>
-                                    <div class="h-2 w-full rounded-full bg-slate-100 dark:bg-gray-700 overflow-hidden">
-                                        <div class="h-full rounded-full transition-all duration-500 {{ $task->status === 'completed' ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-blue-600' }}"
-                                             style="width: {{ $progressPercent }}%"></div>
-                                    </div>
-                                </div>
-
-                                {{-- Rapports récents déposés par l'étudiant sur cette tâche (aperçu propre) --}}
-                                @if ($myReports->isNotEmpty())
-                                <div class="rounded-lg bg-slate-50 dark:bg-gray-900/40 p-2.5 space-y-1 border border-slate-100 dark:border-gray-700/60">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400">Derniers rapports déposés</p>
-                                    @foreach ($myReports as $report)
-                                    <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-300">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                        <span class="font-semibold text-slate-700 dark:text-gray-200 shrink-0">{{ $report->report_date->isoFormat('DD MMM') }}</span>
-                                        <span class="text-slate-400">·</span>
-                                        <span class="font-medium shrink-0">{{ $report->task_progress_percent ?? 0 }}%</span>
-                                        <span class="text-slate-400">·</span>
-                                        <span class="truncate text-slate-500 dark:text-gray-400">{{ $report->summary ?: 'Rapport validé' }}</span>
-                                    </div>
-                                    @endforeach
-                                </div>
-                                @endif
-
-                                {{-- Pied de carte : Dates & Lien vers l'espace de travail --}}
-                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-slate-100 dark:border-gray-700/60 text-xs text-slate-500 dark:text-gray-400 gap-2">
-                                    <div class="flex items-center gap-3">
-                                        @if($task->due_date)
-                                        <span class="inline-flex items-center gap-1">
-                                            <svg class="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" /></svg>
-                                            Échéance : <strong class="text-slate-700 dark:text-gray-200 font-semibold">{{ $task->due_date->format('d/m/Y') }}</strong>
-                                        </span>
-                                        @else
-                                        <span>Sans date d'échéance</span>
-                                        @endif
-                                    </div>
-
-                                    <div class="inline-flex items-center gap-1.5 font-bold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
-                                        <span>Accéder à la tâche</span>
-                                        <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                {{-- Colonne Droite : Priorité, Démarrage, Date de fin, Lien --}}
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-gray-400 sm:text-right shrink-0 mt-2 md:mt-0">
+                                    <div>Priorité : <span class="font-medium text-slate-800 dark:text-gray-200">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Normale','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
+                                    <div>Démarré le : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->started_at?->format('d/m/Y') ?: ($task->created_at?->format('d/m/Y') ?: '--') }}</span></div>
+                                    <div class="col-span-2">date de fin : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
+                                    <div class="col-span-2 mt-2 inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 sm:justify-end transition-colors">
+                                        Ouvrir l'espace de travail
+                                        <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                                         </svg>
                                     </div>

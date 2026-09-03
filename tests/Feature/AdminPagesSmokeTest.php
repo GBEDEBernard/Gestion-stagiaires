@@ -350,5 +350,5 @@ test('the student stage page renders with tasks and reports', function () {
         ->assertSee('Mon stage')
         ->assertSee('Tâches du stage')
         ->assertSee('Intégration SuiteCRM')
-        ->assertSee('Accéder à la tâche');
+        ->assertSee("Ouvrir l'espace de travail", false);
 });
