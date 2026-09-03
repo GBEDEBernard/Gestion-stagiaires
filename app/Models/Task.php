@@ -22,6 +22,7 @@ class Task extends Model
         'priority',
         'status',
         'due_date',
+        'pdf_path',
         'last_progress_percent',
         'base_progress_percent',
         'started_at',
@@ -113,9 +114,99 @@ class Task extends Model
         return $this->hasMany(TaskMessage::class)->orderBy('created_at');
     }
 
+    /** Sous-tâches de cette tâche, ordonnées. */
+    public function subtasks()
+    {
+        return $this->hasMany(Subtask::class)->orderBy('display_order');
+    }
+
     /* =======================
        HELPERS
     ======================= */
+
+    /**
+     * Calcule la progression à partir des sous-tâches.
+     * Si des items existent → moyenne des progresses individuelles par utilisateur.
+     * Sinon → fallback done/total ou last_progress_percent.
+     */
+    public function computeProgressFromSubtasks(): int
+    {
+        $subtasks = $this->subtasks()->get();
+        if ($subtasks->isEmpty()) {
+            return (int) $this->last_progress_percent;
+        }
+
+        // Grouper les sous-tâches par utilisateur assigné
+        $userProgresses = $subtasks->filter(fn($st) => $st->assigned_to_user_id)
+            ->groupBy('assigned_to_user_id')
+            ->map(function ($userSubtasks) {
+                $totalItems = $userSubtasks->sum(fn($st) => $st->totalItemsCount());
+                $completedItems = $userSubtasks->sum(fn($st) => $st->completedItemsCount());
+
+                if ($totalItems > 0) {
+                    return round(($completedItems / $totalItems) * 100);
+                }
+
+                // Si pas d'items → fallback sur is_completed de la sous-tâche
+                $totalSt = $userSubtasks->count();
+                $doneSt = $userSubtasks->where('is_completed', true)->count();
+                return round(($doneSt / $totalSt) * 100);
+            });
+
+        if ($userProgresses->isEmpty()) {
+            return (int) $this->last_progress_percent;
+        }
+
+        return (int) round($userProgresses->avg());
+    }
+
+    /**
+     * Retourne le titre de la prochaine étape non terminée.
+     * Priorité : premier item non terminé > première sous-tâche non terminée.
+     */
+    public function nextStepLabel(): ?string
+    {
+        // Chercher d'abord dans les items des sous-tâches
+        $nextItem = \App\Models\SubtaskItem::whereHas('subtask', fn($q) => $q->where('task_id', $this->id))
+            ->where('is_completed', false)
+            ->orderBy('display_order')
+            ->value('title');
+        if ($nextItem) {
+            return $nextItem;
+        }
+
+        return $this->subtasks()
+            ->where('is_completed', false)
+            ->orderBy('display_order')
+            ->value('title');
+    }
+
+    /**
+     * Met à jour last_progress_percent depuis les sous-tâches et
+     * ajuste le statut automatiquement.
+     */
+    public function syncProgressFromSubtasks(): void
+    {
+        $total = $this->subtasks()->count();
+        if ($total === 0) {
+            return; // Rien à recalculer sans sous-tâches.
+        }
+
+        $progress = $this->computeProgressFromSubtasks();
+        $originalStatus = $this->status;
+
+        $updates = ['last_progress_percent' => $progress];
+
+        if ($progress >= 100 && !$this->isCompleted()) {
+            $updates['status'] = 'awaiting_validation';
+            $updates['completed_at'] = $this->completed_at ?: now();
+        } elseif ($progress > 0 && in_array($originalStatus, ['pending', 'changes_requested'], true)) {
+            $updates['status'] = 'in_progress';
+            $updates['started_at'] = $this->started_at ?: now();
+        }
+
+        $this->update($updates);
+    }
 
     public function isCompleted(): bool
     {

@@ -176,7 +176,7 @@ button {
         <!-- Infos stagiaire -->
         <div class="infos">
             <h2>Stagiaire</h2>
-            <div class="badge-number">{{ str_pad($stage->badge->badge ?? '000000', 6, '0', STR_PAD_LEFT) }}</div>
+            <div class="badge-number">{{ \Illuminate\Support\Str::startsWith($stage->badge->badge ?? '', 'TFG') ? $stage->badge->badge : ('TFG' . str_pad((string)(preg_replace('/\D/', '', $stage->badge->badge ?? '1') ?: '1'), 4, '0', STR_PAD_LEFT)) }}</div>
             <p><b>Nom :</b> {{ $stage->etudiant->nom ?? '—' }}</p>
             <p><b>Prénom :</b> {{ $stage->etudiant->prenom ?? '—' }}</p>
             <p><b>École :</b> {{ $stage->etudiant->ecole ?? '—' }}</p>

@@ -334,8 +334,8 @@
                         @error('telephone')<p class="pc-field-error">{{ $message }}</p>@enderror
                     </div>
                     <div class="pc-field">
-                        <label>Genre</label>
-                        <select name="genre" class="pc-select">
+                        <label>Genre <span class="req">*</span></label>
+                        <select name="genre" class="pc-select" required>
                             <option value="">— Sélectionner —</option>
                             <option value="Homme" {{ old('genre', $personnel->genre) == 'Homme' ? 'selected' : '' }}>Homme</option>
                             <option value="Femme" {{ old('genre', $personnel->genre) == 'Femme' ? 'selected' : '' }}>Femme</option>

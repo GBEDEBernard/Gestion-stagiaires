@@ -13,12 +13,27 @@
                     <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">Tableau de Bord</h1>
                     <p class="text-violet-200 text-sm sm:text-base">Bienvenue ! Voici l'état de votre plateforme</p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10 self-start">
-                    <div class="flex items-center gap-2 text-white">
-                        <svg class="w-4 h-4 text-violet-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                <div class="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+                    @role('admin')
+                    <a href="{{ route('admin.notifications.urgent.index') }}"
+                       class="inline-flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-300 transform hover:-translate-y-0.5 group border border-white/20">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+                        </span>
+                        <svg class="w-4 h-4 text-white group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
-                        <span class="font-medium text-sm">{{ now()->locale('fr')->isoFormat('DD MMMM YYYY') }}</span>
+                        <span>Alertes urgentes</span>
+                    </a>
+                    @endrole
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-3.5 py-2.5 border border-white/10">
+                        <div class="flex items-center gap-2 text-white">
+                            <svg class="w-4 h-4 text-violet-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span class="font-medium text-sm">{{ now()->locale('fr')->isoFormat('DD MMMM YYYY') }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,6 +162,44 @@
             </div>
         </div>
         @endcan
+
+        {{-- ── CERCLES STATISTIQUES UTILISATEURS ──────────────────────────── --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {{-- Cercle 1 : Répartition des Utilisateurs (Cliquable -> /admin/stages?per_page=10) --}}
+            <a href="{{ url('/admin/stages?per_page=10') }}"
+               class="group block bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all">
+                <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-white dark:from-gray-800 dark:to-gray-800 flex items-center justify-between">
+                    <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        Répartition des Utilisateurs
+                    </h3>
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform bg-blue-100/60 dark:bg-blue-900/30 px-2.5 py-1 rounded-full">
+                        Voir les stages
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </span>
+                </div>
+                <div class="p-4 sm:p-6" style="position:relative;height:260px">
+                    <canvas id="chart-users-roles"></canvas>
+                </div>
+            </a>
+
+            {{-- Cercle 2 : Statut des Comptes (Actifs / Inactifs) --}}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Statut des Comptes
+                    </h3>
+                </div>
+                <div class="p-4 sm:p-6" style="position:relative;height:260px">
+                    <canvas id="chart-users-status"></canvas>
+                </div>
+            </div>
+        </div>
 
         {{-- ── CHARTS ROW 1 ──────────────────────────────── --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -926,6 +979,130 @@
             },
             options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:TXT, boxWidth:10, padding:8} }, tooltip:tip() }, scales:xyScales() }
         });
+
+        /* ── CERCLE 1 : RÉPARTITION UTILISATEURS ── */
+        (function() {
+            const el = document.getElementById('chart-users-roles');
+            if (!el) return;
+            const totalUsers = {{ $totalUsers }};
+            const dataRoles = [{{ $usersStagiaires }}, {{ $usersEmployes }}, {{ $usersAdmins }} @if($usersAutres > 0), {{ $usersAutres }} @endif];
+            const labelsRoles = ['Stagiaires', 'Employés', 'Admins / Superviseurs' @if($usersAutres > 0), 'Autres' @endif];
+            const colorsRoles = ['#06b6d4', '#8b5cf6', '#f59e0b', '#9ca3af'];
+
+            const drawCenterText = (ctx, cx, cy, mainTxt, subTxt) => {
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 26px sans-serif';
+                ctx.fillStyle = isDark ? '#f9fafb' : '#111827';
+                ctx.fillText(mainTxt, cx, cy - 8);
+                ctx.font = '11px sans-serif';
+                ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+                ctx.fillText(subTxt, cx, cy + 14);
+                ctx.restore();
+            };
+
+            const drawSlicePct = (ctx, chart, dsData) => {
+                const total = dsData.reduce((a, b) => a + (b || 0), 0);
+                if (!total) return;
+                chart.getDatasetMeta(0).data.forEach((arc, i) => {
+                    const val = dsData[i];
+                    if (!val) return;
+                    const pct = val / total * 100;
+                    if (pct < 5) return;
+                    const pos = arc.tooltipPosition();
+                    ctx.save();
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    ctx.shadowBlur = 3;
+                    ctx.fillText(pct.toFixed(1) + '%', pos.x, pos.y);
+                    ctx.restore();
+                });
+            };
+
+            const pluginRoles = {
+                id: 'pluginRoles',
+                afterDraw(chart) {
+                    const { ctx, chartArea } = chart;
+                    const cx = (chartArea.left + chartArea.right) / 2;
+                    const cy = (chartArea.top + chartArea.bottom) / 2;
+                    drawCenterText(ctx, cx, cy, totalUsers, 'Utilisateurs');
+                    drawSlicePct(ctx, chart, dataRoles);
+                }
+            };
+
+            new Chart(el.getContext('2d'), {
+                type: 'doughnut',
+                plugins: [pluginRoles],
+                data: {
+                    labels: labelsRoles,
+                    datasets: [{ data: dataRoles, backgroundColor: colorsRoles, borderWidth: 2, borderColor: isDark ? '#1f2937' : '#fff' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { color: TXT, boxWidth: 10, padding: 8 } }, tooltip: tip() } }
+            });
+        })();
+
+        /* ── CERCLE 2 : STATUT COMPTES ── */
+        (function() {
+            const el = document.getElementById('chart-users-status');
+            if (!el) return;
+            const totalUsers = {{ $totalUsers }};
+            const dataStatus = [{{ $usersActifs }}, {{ $usersInactifs }}];
+            const labelsStatus = ['Actifs', 'Inactifs'];
+            const colorsStatus = ['#10b981', '#ef4444'];
+
+            const pluginStatus = {
+                id: 'pluginStatus',
+                afterDraw(chart) {
+                    const { ctx, chartArea } = chart;
+                    const cx = (chartArea.left + chartArea.right) / 2;
+                    const cy = (chartArea.top + chartArea.bottom) / 2;
+                    // Centre
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.fillStyle = isDark ? '#f9fafb' : '#111827';
+                    ctx.fillText(totalUsers, cx, cy - 8);
+                    ctx.font = '11px sans-serif';
+                    ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+                    ctx.fillText('Comptes', cx, cy + 14);
+                    ctx.restore();
+                    // Pourcentages sur tranches
+                    const total = dataStatus.reduce((a, b) => a + (b || 0), 0);
+                    if (!total) return;
+                    chart.getDatasetMeta(0).data.forEach((arc, i) => {
+                        const val = dataStatus[i];
+                        if (!val) return;
+                        const pct = val / total * 100;
+                        if (pct < 5) return;
+                        const pos = arc.tooltipPosition();
+                        ctx.save();
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.fillStyle = '#fff';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                        ctx.shadowBlur = 3;
+                        ctx.fillText(pct.toFixed(1) + '%', pos.x, pos.y);
+                        ctx.restore();
+                    });
+                }
+            };
+
+            new Chart(el.getContext('2d'), {
+                type: 'doughnut',
+                plugins: [pluginStatus],
+                data: {
+                    labels: labelsStatus,
+                    datasets: [{ data: dataStatus, backgroundColor: colorsStatus, borderWidth: 2, borderColor: isDark ? '#1f2937' : '#fff' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { color: TXT, boxWidth: 10, padding: 8 } }, tooltip: tip() } }
+            });
+        })();
 
     });
     </script>

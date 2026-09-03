@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class StudentStageController extends Controller
 {
@@ -38,6 +39,36 @@ class StudentStageController extends Controller
         $activeStage->update(['theme' => $validated['theme']]);
 
         return back()->with('success', 'Theme du stage mis a jour avec succes.');
+    }
+
+    public function uploadFinalReport(Request $request)
+    {
+        $user = $request->user();
+        $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
+
+        if (!$etudiant) {
+            abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
+        }
+
+        $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
+        abort_if(!$activeStage, 404, "Aucun stage actif trouve.");
+
+        $validated = $request->validate([
+            'final_report' => 'required|file|mimes:pdf|max:10240',
+        ]);
+
+        if ($activeStage->final_report_path) {
+            Storage::disk('public')->delete($activeStage->final_report_path);
+        }
+
+        $path = $request->file('final_report')->store('final_reports', 'public');
+
+        $activeStage->update([
+            'final_report_path' => $path,
+            'final_report_uploaded_at' => now(),
+        ]);
+
+        return back()->with('success', 'Rapport de fin de stage depose avec succes.');
     }
 
     public function show(Request $request)

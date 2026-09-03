@@ -13,6 +13,7 @@ use App\Models\AppNotification;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Task;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -361,6 +362,18 @@ class DashboardController extends Controller
         $weekLateMinutes = AttendanceDay::forActiveUsers()->whereBetween('attendance_date', [$weekStart, $weekEnd])
             ->sum('late_minutes');
 
+        // ==================== STATISTIQUES UTILISATEURS (CERCLES) ====================
+        $totalUsers = User::count();
+        $usersActifs = User::where('status', 'actif')->count();
+        $usersInactifs = User::where('status', '!=', 'actif')->count();
+        $pctActifs = $totalUsers > 0 ? round(($usersActifs / $totalUsers) * 100, 1) : 0;
+        $pctInactifs = $totalUsers > 0 ? round(($usersInactifs / $totalUsers) * 100, 1) : 0;
+
+        $usersStagiaires = User::role('etudiant')->count();
+        $usersEmployes = User::role('employe')->count();
+        $usersAdmins = User::role(['admin', 'superviseur'])->count();
+        $usersAutres = max(0, $totalUsers - ($usersStagiaires + $usersEmployes + $usersAdmins));
+
         // ==================== Retour à la Vue ====================
         return view('dashboard', compact(
             // Notifications
@@ -429,7 +442,18 @@ class DashboardController extends Controller
             'todayAttendance',
             'todayPresent',
             'todayLate',
-            'weekLateMinutes'
+            'weekLateMinutes',
+
+            // Statistiques utilisateurs (cercles)
+            'totalUsers',
+            'usersActifs',
+            'usersInactifs',
+            'pctActifs',
+            'pctInactifs',
+            'usersStagiaires',
+            'usersEmployes',
+            'usersAdmins',
+            'usersAutres'
         ));
     }
 

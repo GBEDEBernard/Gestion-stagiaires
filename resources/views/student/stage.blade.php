@@ -361,6 +361,54 @@
                 </div>
 
                 <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+                    <h2 class="text-lg font-semibold text-slate-900">Rapport de fin de stage</h2>
+                    <p class="mt-1 text-sm text-slate-500">Dépose ici ton rapport de fin de stage au format PDF.</p>
+
+                    @if($activeStage->final_report_path)
+                        <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 flex-shrink-0 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-semibold text-emerald-700">{{ $activeStage->final_report_name }}</p>
+                                    <p class="text-xs text-emerald-600">
+                                        Déposé le {{ $activeStage->final_report_uploaded_at?->format('d/m/Y à H:i') }}
+                                    </p>
+                                </div>
+                                <a href="{{ $activeStage->final_report_url }}" target="_blank" class="inline-flex flex-shrink-0 items-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 transition-colors">
+                                    Voir
+                                </a>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="text-sm font-medium text-amber-700">Aucun rapport déposé pour le moment.</p>
+                            <p class="mt-0.5 text-xs text-amber-600">Ton rapport n'est pas encore transmis à l'administration.</p>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('student.final_report.upload') }}" enctype="multipart/form-data" class="mt-4 space-y-3">
+                        @csrf
+                        <label class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition-colors hover:border-indigo-400 hover:bg-indigo-50/50">
+                            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <span class="text-sm font-medium text-slate-600">Choisir un fichier PDF…</span>
+                            <input type="file" name="final_report" accept=".pdf,application/pdf" class="sr-only" @change="this.previousElementSibling.textContent = this.files[0] ? this.files[0].name : 'Choisir un fichier PDF…'">
+                        </label>
+                        @error('final_report')
+                            <p class="text-sm text-rose-600">{{ $message }}</p>
+                        @enderror
+                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-colors">
+                            {{ $activeStage->final_report_path ? 'Remplacer le rapport' : 'Déposer le rapport' }}
+                        </button>
+                    </form>
+                </div>
+
+                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
                     <h2 class="text-lg font-semibold text-slate-900">Rappels utiles</h2>
                     <ul class="mt-3 space-y-2 text-sm text-slate-500">
                         <li class="flex items-start gap-2">

@@ -41,8 +41,9 @@ class DailyReportController extends Controller
         $activeTasks = Task::query()
             ->visibleTo($user)
             ->where('status', '!=', 'completed')
+            ->with(['subtasks.assignedTo', 'subtasks.completedBy', 'subtasks.items'])
             ->latest()
-            ->get(['id', 'title', 'last_progress_percent']);
+            ->get();
 
         $query = DailyReport::query()
             ->visibleTo($user)
@@ -147,15 +148,17 @@ class DailyReportController extends Controller
         }
 
         $data = $request->validate([
-            'status_action'        => 'nullable|in:draft,submit',
-            'introduction'         => 'nullable|string|max:5000',
-            'summary'              => 'required|string',
-            'blockers'             => 'nullable|string',
-            'next_steps'           => 'nullable|string',
-            'hours_declared'       => 'nullable|numeric|min:0|max:24',
-            'report_date'          => 'nullable|date',
-            'task_id'              => 'nullable|integer|exists:tasks,id',
-            'task_progress_percent'=> 'nullable|integer|min:0|max:100',
+            'status_action'         => 'nullable|in:draft,submit',
+            'introduction'          => 'nullable|string|max:5000',
+            'summary'               => 'required|string',
+            'blockers'              => 'nullable|string',
+            'next_steps'            => 'nullable|string',
+            'hours_declared'        => 'nullable|numeric|min:0|max:24',
+            'report_date'           => 'nullable|date',
+            'task_id'               => 'nullable|integer|exists:tasks,id',
+            'completed_subtask_ids' => 'nullable|array',
+            'completed_subtask_ids.*' => 'integer',
+            'task_progress_percent' => 'nullable|integer|min:0|max:100',
         ]);
 
         $statusAction = $data['status_action'] ?? null;
@@ -168,17 +171,65 @@ class DailyReportController extends Controller
             $data['status'] = 'draft';
         }
 
+        $completedSubtaskIds = $data['completed_subtask_ids'] ?? [];
+        unset($data['completed_subtask_ids']);
+
+        // Répercuter la complétion des sous-tâches et recalculer la progression
+        if (!empty($data['task_id'])) {
+            $task = Task::find($data['task_id']);
+            if ($task && $task->isParticipant($user->id) && $task->status !== 'completed') {
+                if (!empty($completedSubtaskIds)) {
+                    // Les IDs peuvent être des items (niveau 2) ou, en repli,
+                    // des sous-tâches (niveau 1) s'il n'y a aucun item.
+                    $itemCount = \App\Models\SubtaskItem::whereIn('id', $completedSubtaskIds)->count();
+
+                    if ($itemCount > 0) {
+                        $items = \App\Models\SubtaskItem::whereIn('id', $completedSubtaskIds)
+                            ->where('is_completed', false)
+                            ->whereHas('subtask', fn($q) => $q->where('task_id', $task->id))
+                            ->get();
+
+                        foreach ($items as $item) {
+                            $st = $item->subtask;
+                            $canComplete = $st->isAssignedTo($user->id)
+                                || (int) $task->owner_id === (int) $user->id
+                                || $user->hasAnyRole(['admin', 'superviseur']);
+                            if ($canComplete) {
+                                $item->markComplete($user->id);
+                            }
+                        }
+                    } else {
+                        $subtasksToComplete = $task->subtasks()
+                            ->whereIn('id', $completedSubtaskIds)
+                            ->where('is_completed', false)
+                            ->get();
+
+                        foreach ($subtasksToComplete as $st) {
+                            $canComplete = $st->isAssignedTo($user->id)
+                                || (int) $task->owner_id === (int) $user->id
+                                || $user->hasAnyRole(['admin', 'superviseur']);
+                            if ($canComplete) {
+                                $st->markComplete($user->id);
+                            }
+                        }
+                    }
+                }
+
+                if ($task->subtasks()->count() > 0) {
+                    $data['task_progress_percent'] = $task->computeProgressFromSubtasks();
+                    if (empty($data['next_steps'])) {
+                        $data['next_steps'] = $task->nextStepLabel();
+                    }
+                }
+            }
+        }
+
         $report->update($data);
 
         // Répercuter la progression sur la tâche si rattachée.
         if (!empty($data['task_id'])) {
             $task = Task::find($data['task_id']);
             if ($task && $task->isParticipant($user->id) && $task->status !== 'completed') {
-                $report->forceFill([
-                    'task_id'              => $task->id,
-                    'task_progress_percent'=> $data['task_progress_percent'] ?? $task->last_progress_percent,
-                ])->save();
-
                 $this->dailyReportService->syncTaskProgress(
                     $report->fresh(),
                     $task,

@@ -138,7 +138,7 @@ class PersonnelController extends Controller
             'prenom'         => 'required|string|max:255',
             'email'          => 'required|email|unique:personnels,email',
             'telephone'      => 'nullable|string|max:20',
-            'genre'          => 'nullable|string|max:50',
+            'genre'          => 'required|string|in:Homme,Femme,Autre',
             'date_naissance' => 'nullable|date',
             'adresse'        => 'nullable|string|max:1000',
             'date_inscription'     => 'nullable|date',
@@ -215,7 +215,7 @@ class PersonnelController extends Controller
             'prenom'         => 'required|string|max:255',
             'email'          => ['required', 'email', Rule::unique('personnels', 'email')->ignore($personnel->id)],
             'telephone'      => 'nullable|string|max:20',
-            'genre'          => 'nullable|string|max:50',
+            'genre'          => 'required|string|in:Homme,Femme,Autre',
             'date_naissance' => 'nullable|date',
             'adresse'        => 'nullable|string|max:1000',
             'date_inscription'    => 'nullable|date',
@@ -419,4 +419,57 @@ class PersonnelController extends Controller
 
     return back()->with('success', "Compte généré pour {$personnel->full_name}.");
 }
+
+    public function badge(Personnel $personnel)
+    {
+        $personnel->load(['personnable', 'user']);
+        $profil = $personnel->personnable;
+
+        $typeTitle = 'Personnel';
+        $typeLabel = $personnel->type_label;
+        $specialInfoLabel = null;
+        $specialInfoValue = null;
+        $rawBadge = null;
+        $datesText = null;
+
+        if ($profil instanceof Etudiant) {
+            $typeTitle = 'Stagiaire';
+            $specialInfoLabel = 'École';
+            $specialInfoValue = $profil->ecole ?? '—';
+            $lastStage = $profil->stages()->with('badge')->latest()->first();
+            if ($lastStage) {
+                $rawBadge = $lastStage->badge?->badge;
+                if ($lastStage->date_debut && $lastStage->date_fin) {
+                    $datesText = $lastStage->date_debut->format('d/m/Y') . ' - ' . $lastStage->date_fin->format('d/m/Y');
+                }
+            }
+        } elseif ($profil instanceof Employe) {
+            $typeTitle = 'Employé';
+            $specialInfoLabel = 'Poste';
+            $specialInfoValue = $profil->poste ?? optional($profil->domaine)->nom ?? '—';
+        }
+
+        if ($rawBadge) {
+            $badgeNumber = \Illuminate\Support\Str::startsWith($rawBadge, 'TFG') 
+                ? $rawBadge 
+                : 'TFG' . str_pad((string)(preg_replace('/\D/', '', $rawBadge) ?: $rawBadge), 4, '0', STR_PAD_LEFT);
+        } else {
+            $code = 'TFG' . str_pad((string)$personnel->id, 4, '0', STR_PAD_LEFT);
+            if (Badge::where('badge', $code)->exists()) {
+                $badgeNumber = Badge::getNextBadgeNumber();
+            } else {
+                $badgeNumber = $code;
+            }
+        }
+
+        return view('admin.personnels.badge', compact(
+            'personnel',
+            'typeTitle',
+            'typeLabel',
+            'specialInfoLabel',
+            'specialInfoValue',
+            'badgeNumber',
+            'datesText'
+        ));
+    }
 }

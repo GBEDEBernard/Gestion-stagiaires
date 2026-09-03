@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
 use App\Http\Controllers\AdminTaskTrackingController;
 use App\Http\Controllers\SuperviseurDashboardController;
+use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\DomaineController;
 use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\AdminPermissionRequestController;
@@ -275,6 +276,20 @@ Route::prefix('tasks')->group(function () {
         Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
         Route::post('{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->middleware('permission:tasks.review');
         Route::post('{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->middleware('permission:tasks.review');
+
+        // ── Sous-tâches ──
+        Route::post('{task}/subtasks', [SubtaskController::class, 'store'])->name('tasks.subtasks.store')->middleware('permission:tasks.create');
+        Route::put('{task}/subtasks/{subtask}', [SubtaskController::class, 'update'])->name('tasks.subtasks.update')->middleware('permission:tasks.create');
+        Route::delete('{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy')->middleware('permission:tasks.create');
+        Route::post('{task}/subtasks/{subtask}/complete', [SubtaskController::class, 'complete'])->name('tasks.subtasks.complete')->middleware('permission:tasks.view');
+        Route::post('{task}/subtasks/{subtask}/reopen', [SubtaskController::class, 'reopen'])->name('tasks.subtasks.reopen')->middleware('role:admin');
+        Route::post('{task}/subtasks/{subtask}/assign', [SubtaskController::class, 'assign'])->name('tasks.subtasks.assign')->middleware('permission:tasks.create');
+
+        // ── Items des sous-tâches (niveau 2) ──
+        Route::post('{task}/subtasks/{subtask}/items', [\App\Http\Controllers\SubtaskItemController::class, 'store'])->name('tasks.subtask_items.store')->middleware('permission:tasks.view');
+        Route::put('{task}/subtasks/{subtask}/items/{item}', [\App\Http\Controllers\SubtaskItemController::class, 'update'])->name('tasks.subtask_items.update')->middleware('permission:tasks.view');
+        Route::delete('{task}/subtasks/{subtask}/items/{item}', [\App\Http\Controllers\SubtaskItemController::class, 'destroy'])->name('tasks.subtask_items.destroy')->middleware('permission:tasks.view');
+        Route::post('{task}/subtasks/{subtask}/items/{item}/toggle', [\App\Http\Controllers\SubtaskItemController::class, 'toggle'])->name('tasks.subtask_items.toggle')->middleware('permission:tasks.view');
     });
 
     // ---------------- Signataires ----------------
@@ -347,6 +362,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     // ---------------- Espace stagiaire ----------------
     Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
     Route::put('/mon-stage/theme', [StudentStageController::class, 'updateTheme'])->name('student.theme.update');
+    Route::post('/mon-stage/final-report', [StudentStageController::class, 'uploadFinalReport'])->name('student.final_report.upload');
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {
@@ -391,11 +407,12 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::put('{id}/restore', [PersonnelController::class, 'restore'])->name('personnels.restore')->middleware('permission:personnels.restore');
         Route::delete('{id}/force-delete', [PersonnelController::class, 'forceDelete'])->name('personnels.force-delete')->middleware('permission:personnels.force-delete');
         Route::get('{personnel}', [PersonnelController::class, 'show'])->name('personnels.show')->middleware('permission:personnels.view');
+        Route::get('{personnel}/badge', [PersonnelController::class, 'badge'])->name('admin.personnels.badge.show')->middleware('permission:badges.view');
         Route::get('{personnel}/edit', [PersonnelController::class, 'edit'])->name('personnels.edit')->middleware('permission:personnels.edit');
         Route::put('{personnel}', [PersonnelController::class, 'update'])->name('personnels.update')->middleware('permission:personnels.edit');
         Route::delete('{personnel}', [PersonnelController::class, 'destroy'])->name('personnels.destroy')->middleware('permission:personnels.delete');
         Route::post('{personnel}/generate-account', [PersonnelController::class, 'generateAccount'])->name('personnels.generate-account')->middleware('permission:personnels.edit');
-          });
+    });
 
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
