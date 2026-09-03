@@ -323,6 +323,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     // ---------------- Espace stagiaire ----------------
     Route::get('/mon-stage', [StudentStageController::class, 'show'])->name('student.stage');
     Route::put('/mon-stage/theme', [StudentStageController::class, 'updateTheme'])->name('student.theme.update');
+    Route::post('/mon-stage/final-report', [StudentStageController::class, 'uploadFinalReport'])->name('student.final_report.upload');
 
     // ---------------- Dashboard Superviseur ----------------
     Route::prefix('superviseur')->middleware('role:superviseur')->group(function () {

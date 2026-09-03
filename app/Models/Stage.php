@@ -35,6 +35,8 @@ class Stage extends Model
         'tuteur_academique',
         'indemnite',
         'livrables',
+        'final_report_path',
+        'final_report_uploaded_at',
     ];
 
     protected static function booted()
@@ -54,6 +56,7 @@ class Stage extends Model
         'date_debut' => 'datetime',
         'date_fin' => 'datetime',
         'livrables' => 'array',
+        'final_report_uploaded_at' => 'datetime',
     ];
 
     /** Options proposées pour le livrable attendu (fiche de poste). */
@@ -180,6 +183,20 @@ class Stage extends Model
     public function attestation()
     {
         return $this->hasOne(Attestation::class);
+    }
+
+    public function getFinalReportUrlAttribute(): ?string
+    {
+        return $this->final_report_path
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->final_report_path)
+            : null;
+    }
+
+    public function getFinalReportNameAttribute(): ?string
+    {
+        return $this->final_report_path
+            ? basename($this->final_report_path)
+            : null;
     }
 
     public function getStatutAttribute()
