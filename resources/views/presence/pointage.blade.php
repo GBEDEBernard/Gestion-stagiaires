@@ -17,6 +17,10 @@
     $late       = ($isLateNow ?? false) && !$checkedIn;
 
     $etat = !$checkedIn ? 'arrivee' : (!$checkedOut ? 'depart' : 'termine');
+
+    $moi     = auth()->user();
+    $prenom  = $moi?->personnel?->prenom ?: ($moi?->prenom ?: $moi?->name);
+    $salut   = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
 @endphp
 
 <x-app-layout>
@@ -64,7 +68,8 @@
         <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
 
             <div class="px-6 pt-6 pb-5 text-center border-b border-gray-100 dark:border-gray-700">
-                <p class="text-xs uppercase tracking-wide text-gray-400">{{ $activeStage->site?->name ?? 'Site' }}</p>
+                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $salut }}, {{ $prenom }}</p>
+                <p class="mt-0.5 text-xs uppercase tracking-wide text-gray-400">{{ $activeStage->site?->name ?? 'Site' }}</p>
                 <p class="mt-3 text-5xl font-semibold tabular-nums text-gray-900 dark:text-white"
                    x-data="{ h: '' }" x-init="h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
                                               setInterval(() => h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 10000)"
@@ -113,7 +118,7 @@
                 @else
                     <form method="POST"
                           action="{{ $etat === 'arrivee' ? route('presence.checkin') : route('presence.checkout') }}"
-                          x-data="pointageForm()" @submit.prevent="submit($el)">
+                          x-data="pointageForm({{ $late ? 'true' : 'false' }})" @submit.prevent="submit($el)">
                         @csrf
                         <input type="hidden" name="stage_id" value="{{ $activeStage->id }}">
                         <input type="hidden" name="latitude" x-ref="lat">
@@ -126,23 +131,7 @@
                         <input type="hidden" name="browser" x-ref="browser">
 
                         @if($late)
-                            {{-- Motif demandé sur place, comme au scan. L'anneau rouge
-                                 signale que ce champ conditionne l'enregistrement. --}}
-                            <div class="mb-5 p-4 rounded-xl bg-red-50/60 dark:bg-red-900/10 ring-2 ring-red-500/40">
-                                <label for="observation_message" class="block text-sm font-semibold text-red-700 dark:text-red-400 mb-1.5">
-                                    Vous arrivez après {{ $expIn?->format('H:i') }}
-                                </label>
-                                <p class="text-xs text-red-700/80 dark:text-red-400/80 mb-2.5">
-                                    Expliquez brièvement ce qui s'est passé pour enregistrer votre arrivée.
-                                </p>
-                                <textarea id="observation_message" name="observation_message" rows="3" required minlength="10" maxlength="500"
-                                    placeholder="Ex. : embouteillage sur la voie de Godomey."
-                                    class="w-full rounded-lg border-red-300 dark:border-red-800/60 bg-white dark:bg-gray-900 dark:text-white
-                                           focus:border-red-500 focus:ring-2 focus:ring-red-500/40 shadow-sm text-sm"></textarea>
-                                <p class="mt-1.5 text-xs text-red-700/70 dark:text-red-400/70">
-                                    Dix caractères minimum. Il sera lu par votre responsable.
-                                </p>
-                            </div>
+                            @include('presence.partials.retard-modal', ['heurePrevue' => $expIn?->format('H:i')])
                         @endif
 
                         @if($etat === 'depart' && !($canCheckOutNow ?? true))

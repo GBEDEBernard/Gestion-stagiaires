@@ -191,7 +191,9 @@ test('the student pointage page renders', function () {
         ->get(route('presence.pointage'))
         ->assertOk()
         ->assertSee('Arrivée')
-        ->assertSee('Pointer mon arrivée');
+        ->assertSee('Pointer mon arrivée')
+        // La page accueille par le prénom
+        ->assertSee('Bonjour, Etudiant');
 });
 
 test('the employee pointage page renders', function () {
@@ -217,7 +219,8 @@ test('the employee pointage page renders', function () {
     $this->actingAs($user)
         ->get(route('presence.pointage'))
         ->assertOk()
-        ->assertSee('Pointer mon arrivée');
+        ->assertSee('Pointer mon arrivée')
+        ->assertSee('Bonjour, Employe');
 });
 
 test('the profile page renders without the account activity card', function () {
@@ -246,4 +249,32 @@ test('the qr scan screen renders for an enrolled phone', function () {
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
         ->assertOk()
         ->assertSee('Bonjour');
+});
+
+test('a late arrival asks for the reason in a modal, not inline', function () {
+    Carbon::setTestNow(today()->setTime(10, 30));
+
+    $student = smokeUser('etudiant');
+    smokeStage($student, smokeSite());
+
+    $html = $this->actingAs($student)
+        ->get(route('presence.pointage'))
+        ->assertOk()
+        ->assertSee('Vous arrivez après 08:00')
+        ->getContent();
+
+    // Le champ vit dans la modale, pas dans le flux de la page
+    expect($html)->toContain('modalRetard')
+        ->and($html)->toContain("pointageForm(true)");
+});
+
+test('an on time arrival carries no late modal at all', function () {
+    $student = smokeUser('etudiant');
+    smokeStage($student, smokeSite());
+
+    $this->actingAs($student)
+        ->get(route('presence.pointage'))
+        ->assertOk()
+        ->assertDontSee('Vous arrivez après')
+        ->assertSee('pointageForm(false)', false);
 });

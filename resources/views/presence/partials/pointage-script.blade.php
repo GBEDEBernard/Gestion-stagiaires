@@ -6,11 +6,29 @@
 @once
 @push('scripts')
 <script>
-    function pointageForm() {
+    function pointageForm(enRetard = false) {
         return {
             busy: false,
             etape: '',
             erreur: '',
+
+            // Le motif de retard se saisit en modale : la page reste lisible et
+            // le champ n'apparaît qu'au moment où il conditionne l'enregistrement.
+            enRetard: enRetard,
+            modalRetard: false,
+            motif: '',
+            motifTropCourt: false,
+
+            validerMotif() {
+                if (this.motif.trim().length < 10) {
+                    this.motifTropCourt = true;
+                    return;
+                }
+                this.motifTropCourt = false;
+                this.modalRetard = false;
+                // x-data est porté par le <form> : $root est ce formulaire.
+                this.capturer(this.$root);
+            },
 
             deviceUuid() {
                 let uuid = localStorage.getItem('tfg_device_uuid');
@@ -55,6 +73,18 @@
             },
 
             submit(form) {
+                if (this.busy) return;
+
+                // En retard sans motif : on demande d'abord, on enregistre ensuite.
+                if (this.enRetard && this.motif.trim().length < 10) {
+                    this.modalRetard = true;
+                    return;
+                }
+
+                this.capturer(form);
+            },
+
+            capturer(form) {
                 if (this.busy) return;
 
                 this.erreur = '';
