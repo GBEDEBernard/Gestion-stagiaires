@@ -192,8 +192,9 @@ test('the student pointage page renders', function () {
         ->assertOk()
         ->assertSee('Arrivée')
         ->assertSee('Pointer mon arrivée')
-        // La page accueille par le prénom
-        ->assertSee('Bonjour, Etudiant');
+        // Le prénom est dans sa propre balise : on vérifie l'ordre, pas une
+        // chaîne continue qui n'existe pas dans le HTML.
+        ->assertSeeInOrder(['Bonjour,', 'Etudiant']);
 });
 
 test('the employee pointage page renders', function () {
@@ -220,7 +221,7 @@ test('the employee pointage page renders', function () {
         ->get(route('presence.pointage'))
         ->assertOk()
         ->assertSee('Pointer mon arrivée')
-        ->assertSee('Bonjour, Employe');
+        ->assertSeeInOrder(['Bonjour,', 'Employe']);
 });
 
 test('the profile page renders without the account activity card', function () {
@@ -277,4 +278,44 @@ test('an on time arrival carries no late modal at all', function () {
         ->assertOk()
         ->assertDontSee('Vous arrivez après')
         ->assertSee('pointageForm(false)', false);
+});
+
+test('a public holiday says whether pointage is open or closed', function () {
+    $student = smokeUser('etudiant');
+    smokeStage($student, smokeSite());
+
+    \App\Models\Holiday::create([
+        'date'      => today()->toDateString(),
+        'label'     => 'Fête du Travail',
+        'is_active' => true,
+    ]);
+
+    // Sans autorisation : la personne doit lire que le pointage est fermé
+    $this->actingAs($student)
+        ->get(route('presence.pointage'))
+        ->assertOk()
+        ->assertSee('Fête du Travail')
+        ->assertSee('Le pointage est désactivé', false);
+});
+
+test('an exempted user is told the holiday does not block them', function () {
+    $student = smokeUser('etudiant');
+    smokeStage($student, smokeSite());
+
+    \App\Models\Holiday::create([
+        'date'      => today()->toDateString(),
+        'label'     => 'Fête du Travail',
+        'is_active' => true,
+    ]);
+
+    \App\Models\HolidayEmergencyExemption::create([
+        'user_id'    => $student->id,
+        'holiday_id' => \App\Models\Holiday::first()->id,
+        'granted_by' => smokeUser('admin')->id,
+    ]);
+
+    $this->actingAs($student)
+        ->get(route('presence.pointage'))
+        ->assertOk()
+        ->assertSee('appelé en urgence', false);
 });

@@ -38,7 +38,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
     <button
         x-show="!sidebarOpen"
         @click="sidebarOpen = true"
-        class="lg:hidden fixed top-4 left-2 z-[60] bg-gray-900 p-1 text-white rounded flex mr-2"
+        class="lg:hidden fixed top-4 left-2 z-[60] bg-slate-900 p-1 text-white rounded flex mr-2"
         x-transition>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 16 16">
             <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5zM3 3H2v1h1z" />
@@ -63,8 +63,8 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
         </button>
 
         <!-- Logo et Titre -->
-        <div class="flex-shrink-0 border-b border-gray-800/40">
-            <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-5 py-5 group hover:bg-gray-800/20 transition">
+        <div class="flex-shrink-0 border-b border-slate-800/40">
+            <a href="{{ $homeRoute }}" class="flex items-center gap-3 px-5 py-5 group hover:bg-slate-800/20 transition">
                 <div class="relative">
                     <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG" class="w-10 h-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105">
                     <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
@@ -73,7 +73,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                     <h1 class="text-base font-semibold text-white tracking-tight">
                         @if(auth()->user()->hasRole('admin')) Gestions @else Gestions @endif
                     </h1>
-                    <p class="text-xs text-gray-400">
+                    <p class="text-xs text-slate-400">
                         @if(auth()->user()->hasRole('admin')) Administrative TFG @else Pointage et rapports TFG @endif
                     </p>
                 </div>
@@ -156,12 +156,12 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
 
             <!-- ================= MENU NON-ÉTUDIANT (Admin, Superviseur, Employé) ================= -->
             @unlessrole('etudiant')
-            <div class="mb-6 rounded-3xl bg-gradient-to-br from-gray-900/60 to-gray-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
+            <div class="mb-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/40 p-5 shadow-2xl shadow-emerald-950/20 backdrop-blur-sm">
 
                 <!-- 1. Tableau de bord -->
                 @can('dashboard.view')
                 <div class="mb-4">
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-gray-300 hover:bg-cyan-800/60 hover:text-white transition-all duration-300 group {{ request()->routeIs('dashboard') ? 'bg-cyan-800/60 text-white border-l-2 border-cyan-300 shadow-inner shadow-black/20' : '' }}">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-300 hover:bg-cyan-800/60 hover:text-white transition-all duration-300 group {{ request()->routeIs('dashboard') ? 'bg-cyan-800/60 text-white border-l-2 border-cyan-300 shadow-inner shadow-black/20' : '' }}">
                         <div class="p-2 rounded-xl bg-cyan-500/20">
                             <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -178,29 +178,29 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 {{-- Mon espace : pointage personnel de l'admin/superviseur employé --}}
                 @if($hasMonEspace)
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('espace')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'espace' ? 'bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white shadow-lg shadow-fuchsia-600/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('espace')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'espace' ? 'bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white shadow-lg shadow-fuchsia-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'espace' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'espace' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5" :class="$store.nav.open === 'espace' ? 'text-white' : 'text-fuchsia-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                             </div>
                             <span>Mon espace</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'espace' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'espace' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'espace'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
-                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('presence.pointage') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.pointage') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Mon pointage</span>
                             @if(request()->routeIs('presence.pointage'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('presence.historique') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.historique') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             <span>Historique de mes pointages</span>
                             @if(request()->routeIs('presence.historique'))
@@ -208,7 +208,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                             @endif
                         </a>
                         @if(!auth()->user()->hasRole('admin'))
-                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('permissions.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('permissions.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
                             <span>Mes permissions</span>
                             @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
@@ -223,31 +223,31 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
 
                 <!-- 2. Suivi & Présence - AVEC PERSISTANCE -->
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('presence')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'presence' ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('presence')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'presence' ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'presence' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'presence' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5" :class="$store.nav.open === 'presence' ? 'text-white' : 'text-emerald-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                             <span>Suivi & Présence</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'presence' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'presence' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'presence'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superviseur'))
                         @can('presence.view')
-                        <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('attendance.tracking.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('attendance.tracking.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('attendance.tracking.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover:bg-blue-400"></div>
                             <span>Pointages journalières</span>
                             @if(request()->routeIs('attendance.tracking.*'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.pointage-suivi') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.presence.pointage-suivi') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.pointage-suivi') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 group-hover:bg-emerald-400"></div>
                             <span>Historique général</span>
                             @if(request()->routeIs('admin.presence.pointage-suivi'))
@@ -256,7 +256,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('daily_reports.view')
-                        <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.anomalies') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.presence.anomalies') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.anomalies') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:bg-rose-400"></div>
                             <span>Anomalies de présence</span>
                             @if(request()->routeIs('admin.presence.anomalies'))
@@ -265,7 +265,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @role('admin|superviseur')
-                        <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.permissions.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.permissions.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                             <span>Permissions</span>
                             @if(request()->routeIs('admin.permissions.*'))
@@ -275,7 +275,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         @endrole
 
                          @role('admin|superviseur')
-                         <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-teal-500 group-hover:bg-teal-400"></div>
                              <span>Espace de travail</span>
                              @if(request()->routeIs('tasks.*'))
@@ -284,7 +284,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                          </a>
                          @endrole
                          @role('admin|superviseur')
-                         <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.tasks.tracking') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('admin.tasks.tracking') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.tasks.tracking') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                              <span>Suivi des tâches</span>
                              @if(request()->routeIs('admin.tasks.tracking'))
@@ -293,7 +293,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                          </a>
                          @endrole
                          @role('admin|superviseur')
-                         <a href="{{ route('admin.summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.summaries.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('admin.summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.summaries.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-amber-500 group-hover:bg-amber-400"></div>
                              <span>Résumés IA</span>
                              @if(request()->routeIs('admin.summaries.*'))
@@ -302,7 +302,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                          </a>
                          @endrole
                           @role('admin|superviseur')
-                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.index') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('admin.presence.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.presence.index') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-violet-500 group-hover:bg-violet-400"></div>
                              <span>Statistiques Globales</span>
                              @if(request()->routeIs('admin.presence.index'))
@@ -311,7 +311,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                          </a>
                          @endrole
                          @can('holidays.view')
-                         <a href="{{ route('admin.holidays.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.holidays.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('admin.holidays.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.holidays.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:bg-purple-400"></div>
                              <span>Jours fériés</span>
                              @if(request()->routeIs('admin.holidays.*'))
@@ -321,21 +321,21 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                          @endcan
                         @else
                         {{-- Employé simple --}}
-                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('presence.pointage') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('presence.pointage') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.pointage') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Pointage</span>
                             @if(request()->routeIs('presence.pointage'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('presence.historique') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('presence.historique') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('presence.historique') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             <span>Historique</span>
                             @if(request()->routeIs('presence.historique'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('permissions.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('permissions.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('permissions.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
                             <span>Permissions</span>
                             @php $pendingCount = auth()->user()->permissionRequests()->where('status','pending')->count(); @endphp
@@ -343,7 +343,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                             <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/30 text-violet-200">{{ $pendingCount }}</span>
                             @endif
                         </a>
-                      <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-2 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                      <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-2 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('tasks.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="p-1 rounded-xl bg-teal-500/10">
                              <svg class="w-3 h-3 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -354,7 +354,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                              <span class="ml-auto w-1.5 h-1.5 rounded-full bg-teal-300 animate-pulse"></span>
                              @endif
                          </a>
-                         <a href="{{ route('summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('summaries.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                         <a href="{{ route('summaries.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('summaries.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                              <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                              <span>Résumés IA</span>
                              @if(request()->routeIs('summaries.*'))
@@ -368,23 +368,23 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 @if(!auth()->user()->hasRole('etudiant'))
                 @canany(['etudiants.view', 'employes.view', 'personnels.view', 'badges.view'])
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('personnes')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'personnes' ? 'bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg shadow-gray-900/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('personnes')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'personnes' ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'personnes' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'personnes' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
                                 </svg>
                             </div>
                             <span class="relative z-10">Gestions <br>personnels</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'personnes' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'personnes' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'personnes'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('personnels.view')
-                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('personnels.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('personnels.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('personnels.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                             <span>Personnels</span>
                             @if(request()->routeIs('personnels.*'))
@@ -393,19 +393,19 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         <!-- @can('etudiants.view')
-                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('etudiants.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Stagiaires</span>
                         </a>
                         @endcan
                         @role('admin|superviseur')
-                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group">
+                        <a href="{{ route('employes.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Employés</span>
                         </a>
                         @endrole -->
                         @can('badges.view')
-                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('badges.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('badges.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('badges.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Badges</span>
                             @if(request()->routeIs('badges.*'))
@@ -421,23 +421,23 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 @role('admin')
                 @canany(['stages.view', 'type_stages.view', 'signataires.view', 'jour_stage.view', 'ecoles.view'])
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('stages')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'stages' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('stages')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'stages' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'stages' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'stages' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5" :class="$store.nav.open === 'stages' ? 'text-white' : 'text-blue-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
                             <span>Stages</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'stages' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'stages' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'stages'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('stages.view')
-                        <a href="{{ route('stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('stages.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('stages.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             <span>Liste des stages</span>
                             @if(request()->routeIs('stages.*'))
@@ -446,7 +446,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('type_stages.view')
-                        <a href="{{ route('type_stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('type_stages.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('type_stages.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('type_stages.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Types de stage</span>
                             @if(request()->routeIs('type_stages.*'))
@@ -455,7 +455,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('ecoles.view')
-                        <a href="{{ route('ecoles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('ecoles.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('ecoles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('ecoles.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span>Écoles de provenance</span>
                             @if(request()->routeIs('ecoles.*'))
@@ -464,7 +464,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('signataires.view')
-                        <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('signataires.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('signataires.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('signataires.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                             <span>Signataires</span>
                             @if(request()->routeIs('signataires.*'))
@@ -473,7 +473,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('jour_stage.view')
-                        <a href="{{ route('jours.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('jours.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('jours.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('jours.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
                             <span>jours</span>
                             @if(request()->routeIs('jours.*'))
@@ -498,23 +498,23 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 @if(auth()->user()->hasRole('admin') || (!auth()->user()->hasRole('etudiant') && !auth()->user()->hasRole('employe')))
                 @canany(['sites.view', 'domaines.view', 'tasks.view'])
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('organisation')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'organisation' ? 'bg-gradient-to-r from-gray-700 to-gray-900 text-white shadow-lg shadow-gray-900/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('organisation')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'organisation' ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-lg shadow-slate-900/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'organisation' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'organisation' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z" />
                                 </svg>
                             </div>
                             <span>Organisation</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'organisation' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'organisation' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'organisation'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
                         @can('sites.view')
-                        <a href="{{ route('sites.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('sites.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('sites.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('sites.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
                             <span>Sites</span>
                             @if(request()->routeIs('sites.*'))
@@ -523,7 +523,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         @can('domaines.view')
-                        <a href="{{ route('domaines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('domaines.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('domaines.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('domaines.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
                             <span>Directions/Services</span>
                             @if(request()->routeIs('domaines.*'))
@@ -532,7 +532,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </a>
                         @endcan
                         <!-- @role('admin')
-                        <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group hover:translate-x-1">
+                        <a href="{{ route('tasks.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group hover:translate-x-1">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Suivi des tâches</span>
                         </a>
@@ -545,43 +545,43 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 <!-- 6Accès & Sécurité (admin uniquement) - AVEC PERSISTANCE -->
                 @role('admin')
                 <div class="mb-4">
-                    <button @click="$store.nav.toggle('access')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'access' ? 'bg-gradient-to-r from-indigo-700 to-indigo-800 text-white shadow-lg shadow-indigo-800/40' : 'text-gray-300 hover:bg-gray-800/60 hover:text-white'">
+                    <button @click="$store.nav.toggle('access')" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden" :class="$store.nav.open === 'access' ? 'bg-gradient-to-r from-indigo-700 to-indigo-800 text-white shadow-lg shadow-indigo-800/40' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'">
                         <div class="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div class="flex items-center gap-3 relative z-10">
-                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'access' ? 'bg-white/20' : 'bg-gray-700/50'">
+                            <div class="p-2 rounded-xl bg-white/10 backdrop-blur-sm" :class="$store.nav.open === 'access' ? 'bg-white/20' : 'bg-slate-700/50'">
                                 <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zm0 1c-3.31 0-6 2.69-6 6v1h12v-1c0-3.31-2.69-6-6-6z" />
                                 </svg>
                             </div>
                             <span>Accès & Sécurité</span>
                         </div>
-                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'access' ? 'rotate-180 text-white' : 'text-gray-400'" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-5 h-5 transform transition-transform duration-300 relative z-10" :class="$store.nav.open === 'access' ? 'rotate-180 text-white' : 'text-slate-400'" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" />
                         </svg>
                     </button>
                     <div x-show="$store.nav.open === 'access'" x-collapse class="mt-3 ml-4 space-y-2 overflow-hidden">
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.users.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.users.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                             <span>Utilisateurs</span>
                             @if(request()->routeIs('admin.users.*'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-orange-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.roles.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.roles.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.roles.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                             <span>Rôles</span>
                             @if(request()->routeIs('admin.roles.*'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-purple-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('admin.logs.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.logs.*') ? 'bg-gray-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.logs.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.logs.*') ? 'bg-slate-800/60 text-white border-l-2 border-indigo-400 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                             <span>Logs système</span>
                             @if(request()->routeIs('admin.logs.*'))
                             <span class="ml-auto w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
                             @endif
                         </a>
-                        <a href="{{ route('admin.notifications.urgent.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/60 transition-all duration-200 group {{ request()->routeIs('admin.notifications.urgent.*') ? 'bg-gray-800/60 text-white border-l-2 border-red-500 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
+                        <a href="{{ route('admin.notifications.urgent.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200 group {{ request()->routeIs('admin.notifications.urgent.*') ? 'bg-slate-800/60 text-white border-l-2 border-red-500 pl-3 font-semibold shadow-inner shadow-black/20' : '' }}">
                             <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
                             <span class="text-red-300 font-semibold">Alertes urgentes</span>
                             @if(request()->routeIs('admin.notifications.urgent.*'))
@@ -629,7 +629,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
         </div>
 
         <!-- Profil Utilisateur — pied de page (popup enrichie) -->
-        <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-gray-400/10 shadow-[0_-8px_32px_0_rgba(0,0,0,0.32)]"
+        <div class="flex-shrink-0 px-3 pb-3 pt-2 border-t border-slate-400/10 shadow-[0_-8px_32px_0_rgba(0,0,0,0.32)]"
              x-data="{ open: false }">
 
             {{-- Overlay transparent pour fermer au clic dehors --}}
@@ -666,8 +666,8 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                         </div>
                         @endif
                         <div class="min-w-0 flex-1">
-                            <p class="text-[13px] font-semibold text-gray-100 truncate leading-tight">{{ Auth::user()->name }}</p>
-                            <p class="text-[11px] text-gray-400/60 truncate mt-0.5 leading-tight">{{ Auth::user()->email }}</p>
+                            <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                            <p class="text-[11px] text-slate-400/60 truncate mt-0.5 leading-tight">{{ Auth::user()->email }}</p>
                         </div>
                     </div>
                 </div>
@@ -675,7 +675,7 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 {{-- Actions --}}
                 <div class="p-1.5">
                     <a href="{{ route('profile.edit') }}"
-                       class="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-gray-300/90 hover:text-gray-200 hover:bg-indigo-500/[0.13] transition-colors">
+                       class="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-slate-300/90 hover:text-slate-200 hover:bg-indigo-500/[0.13] transition-colors">
                         <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/[0.14] flex-shrink-0">
                             <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -723,11 +723,11 @@ if (request()->routeIs('attendance.tracking.index') || request()->routeIs('admin
                 @endif
 
                 <div class="flex-1 min-w-0 text-left">
-                    <p class="text-[13px] font-semibold text-gray-100 truncate leading-tight">{{ Auth::user()->name }}</p>
-                    <p class="text-[11px] text-gray-400/55 truncate leading-snug">{{ Auth::user()->email }}</p>
+                    <p class="text-[13px] font-semibold text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                    <p class="text-[11px] text-slate-400/55 truncate leading-snug">{{ Auth::user()->email }}</p>
                 </div>
 
-                <svg class="w-[15px] h-[15px] flex-shrink-0 text-gray-400/45" fill="currentColor" viewBox="0 0 16 16">
+                <svg class="w-[15px] h-[15px] flex-shrink-0 text-slate-400/45" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M11.47 4.72a.75.75 0 0 1 1.06 1.06L8 10.31 3.47 5.78a.75.75 0 0 1 1.06-1.06L8 8.19l3.47-3.47ZM11.47 9.28a.75.75 0 0 0 1.06-1.06L8 3.69 3.47 8.22a.75.75 0 0 0 1.06 1.06L8 5.81l3.47 3.47Z"/>
                 </svg>
             </button>

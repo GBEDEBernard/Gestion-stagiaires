@@ -44,19 +44,56 @@
             </div>
         @endif
 
+        {{-- Trois situations distinctes derrière un même jour férié : dire
+             seulement « c'est férié » laisserait la personne sans savoir si
+             elle peut pointer ou non. --}}
         @if($todayHoliday ?? null)
-            <div class="mb-5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm text-amber-800 dark:text-amber-300">
-                {{ $todayHoliday->label }} — jour férié.
-                @if($canBypassHoliday || $isEmergencyExempted) Le pointage vous reste ouvert. @endif
+            @php
+                $ouvert = ($canBypassHoliday ?? false) || ($isEmergencyExempted ?? false);
+                $ton    = $ouvert ? 'amber' : 'violet';
+            @endphp
+            <div class="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl
+                        bg-{{ $ton }}-50 dark:bg-{{ $ton }}-900/20
+                        border border-{{ $ton }}-200 dark:border-{{ $ton }}-800/50">
+                <svg class="w-5 h-5 shrink-0 mt-0.5 text-{{ $ton }}-600 dark:text-{{ $ton }}-400"
+                     fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-{{ $ton }}-800 dark:text-{{ $ton }}-300">
+                        Jour férié — {{ $todayHoliday->label }}
+                    </p>
+                    <p class="mt-0.5 text-sm text-{{ $ton }}-700/85 dark:text-{{ $ton }}-400/85">
+                        @if($isEmergencyExempted ?? false)
+                            Vous avez été appelé en urgence : vous pouvez pointer normalement.
+                        @elseif($canBypassHoliday ?? false)
+                            Vous disposez d'une autorisation de pointer aujourd'hui.
+                        @else
+                            Le pointage est désactivé. En cas d'urgence, votre responsable peut vous contacter.
+                        @endif
+                    </p>
+                </div>
             </div>
         @endif
 
         <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
 
             <div class="px-6 pt-6 pb-5 text-center border-b border-gray-100 dark:border-gray-700">
-                <p class="text-base font-semibold text-gray-900 dark:text-white">{{ $salut }}, {{ $prenom }}</p>
-                <p class="mt-0.5 text-xs uppercase tracking-wide text-gray-400">{{ $user->domaine?->nom ?? 'Poste' }}</p>
-                <p class="mt-3 text-5xl font-semibold tabular-nums text-gray-900 dark:text-white"
+                {{-- Le lieu en pastille, la salutation en tête : on sait à qui
+                     s'adresse l'écran avant de lire l'heure. --}}
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
+                             bg-gray-100 dark:bg-gray-700/60 text-xs font-medium text-gray-600 dark:text-gray-300">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {{ $user->domaine?->nom ?? 'Poste' }}
+                </span>
+
+                <p class="mt-3.5 text-xl text-gray-500 dark:text-gray-400">
+                    {{ $salut }}, <span class="font-semibold text-gray-900 dark:text-white">{{ $prenom }}</span>
+                </p>
+
+                <p class="mt-4 text-5xl font-semibold tabular-nums text-gray-900 dark:text-white"
                    x-data="{ h: '' }" x-init="h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
                                               setInterval(() => h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 10000)"
                    x-text="h">--:--</p>
