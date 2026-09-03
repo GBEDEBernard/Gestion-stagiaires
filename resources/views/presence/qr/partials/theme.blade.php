@@ -63,6 +63,7 @@
         border-radius: var(--radius);
         box-shadow: var(--shadow);
         padding: 28px 24px 24px;
+        text-align: center;
         animation: card-in 340ms cubic-bezier(.2, .8, .2, 1) both;
     }
 
@@ -80,7 +81,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 18px;
+        margin: 0 auto 18px;
         animation: badge-in 380ms 60ms cubic-bezier(.2, .8, .2, 1) both;
     }
     .badge svg { width: 22px; height: 22px; stroke-width: 1.75; }
@@ -122,6 +123,7 @@
     .eyebrow {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         margin-bottom: 20px;
         font-size: 12px;
