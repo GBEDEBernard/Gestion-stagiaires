@@ -83,23 +83,20 @@ test('there is no tolerance: one minute late is late', function () {
         ->and($uneMin->greaterThan($expected))->toBeTrue();
 });
 
-test('a day can override the stage schedule for a half day', function () {
-    $stage    = schedStage();
-    $mercredi = Jour::create(['jour' => 'Mercredi']);
-    $lundi    = Jour::create(['jour' => 'Lundi']);
+test('a stage keeps the same schedule on every one of its days', function () {
+    // L'horaire par jour a été retiré : 08:00–12:30 sur le stage vaut pour
+    // lundi comme pour mercredi.
+    $stage = schedStage(['expected_check_in_time' => '08:00:00', 'expected_check_out_time' => '12:30:00']);
 
     $stage->jours()->sync([
-        $lundi->id    => ['start_time' => null, 'end_time' => null, 'break_minutes' => null],
-        $mercredi->id => ['start_time' => '08:30', 'end_time' => '12:30', 'break_minutes' => 0],
+        Jour::firstOrCreate(['jour' => 'Lundi'])->id    => [],
+        Jour::firstOrCreate(['jour' => 'Mercredi'])->id => [],
     ]);
-
     $stage->load('jours');
 
-    // Lundi suit l'horaire du stage
-    expect($this->resolver->forStage($stage, '2026-09-07')['end'])->toBe('17:30');
-
-    // Mercredi est une demi-journée
-    expect($this->resolver->forStage($stage, '2026-09-09')['end'])->toBe('12:30');
+    foreach (['2026-09-07', '2026-09-09'] as $jour) {
+        expect($this->resolver->forStage($stage, $jour)['end'])->toBe('12:30');
+    }
 });
 
 test('the break is deducted from presence to give worked time', function () {
@@ -120,20 +117,6 @@ test('a day shorter than the break keeps its presence time rather than falling t
 
     // Une heure de présence : retirer deux heures de pause n'aurait aucun sens
     expect($this->resolver->workedMinutes($stage, $in, $out))->toBe(60);
-});
-
-test('a day break overrides the stage break', function () {
-    $stage    = schedStage(['break_minutes' => 120]);
-    $mercredi = Jour::create(['jour' => 'Mercredi']);
-
-    $stage->jours()->sync([$mercredi->id => ['start_time' => '08:30', 'end_time' => '12:30', 'break_minutes' => 0]]);
-    $stage->load('jours');
-
-    $in  = Carbon::parse('2026-09-09 08:30');
-    $out = Carbon::parse('2026-09-09 12:30');
-
-    // Pas de pause sur une demi-journée : les 4 h comptent en entier
-    expect($this->resolver->workedMinutes($stage, $in, $out))->toBe(240);
 });
 
 test('without a stage the company schedule from the database applies', function () {
@@ -160,9 +143,9 @@ test('an admin can change the company schedule and it takes effect', function ()
 
     $this->actingAs($admin)
         ->put(route('admin.presence.horaire.update'), [
-            'start_time'    => '07:30',
-            'end_time'      => '16:30',
-            'break_minutes' => 60,
+            'start_time'  => '07:30',
+            'end_time'    => '16:30',
+            'break_hours' => 1,
         ])
         ->assertRedirect();
 
@@ -186,7 +169,7 @@ test('only an admin can change the company schedule', function () {
     }
 });
 
-test('the stage form records the schedule and the per day overrides', function () {
+test('the stage form records the schedule, the break in hours and the days', function () {
     $admin    = schedUser('admin');
     $stage    = schedStage();
     $lundi    = Jour::create(['jour' => 'Lundi']);
@@ -204,27 +187,16 @@ test('the stage form records the schedule and the per day overrides', function (
             'jours_id'     => [$lundi->id, $mercredi->id],
             'expected_check_in_time'  => '09:00',
             'expected_check_out_time' => '18:00',
-            'break_minutes'           => 60,
-            'jour_schedule' => [
-                $lundi->id    => ['start_time' => '', 'end_time' => '', 'break_minutes' => ''],
-                $mercredi->id => ['start_time' => '09:00', 'end_time' => '13:00', 'break_minutes' => 0],
-            ],
+            'break_hours'             => 1,
         ])
         ->assertRedirect();
 
     $stage->refresh()->load('jours');
 
+    // La pause se saisit en heures et se range en minutes
     expect(substr($stage->expected_check_in_time, 0, 5))->toBe('09:00')
-        ->and($stage->break_minutes)->toBe(60);
-
-    // Les champs vides restent NULL : le jour suit l'horaire du stage
-    $pivotLundi = $stage->jours->firstWhere('id', $lundi->id)->pivot;
-    expect($pivotLundi->start_time)->toBeNull()
-        ->and($pivotLundi->break_minutes)->toBeNull();
-
-    $pivotMercredi = $stage->jours->firstWhere('id', $mercredi->id)->pivot;
-    expect(substr($pivotMercredi->end_time, 0, 5))->toBe('13:00')
-        ->and($pivotMercredi->break_minutes)->toBe(0);
+        ->and($stage->break_minutes)->toBe(60)
+        ->and($stage->jours)->toHaveCount(2);
 });
 
 test('a departure time before the arrival time is refused', function () {
@@ -246,4 +218,64 @@ test('a departure time before the arrival time is refused', function () {
             'expected_check_out_time' => '09:00',
         ])
         ->assertSessionHasErrors('expected_check_out_time');
+});
+
+test('the company break defaults to two hours', function () {
+    \App\Models\WorkScheduleSetting::query()->delete();
+
+    // Table vide : le repli du modèle doit lui aussi valoir 120
+    expect(app(WorkScheduleResolver::class)->forStage(null)['break_minutes'])->toBe(120);
+});
+
+test('a stage without its own break follows the company one', function () {
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00', 'break_minutes' => 120]);
+
+    // NULL, pas 0 : sans cela le stage écraserait toujours la référence
+    $stage = schedStage(['break_minutes' => null]);
+
+    expect(app(WorkScheduleResolver::class)->forStage($stage)['break_minutes'])->toBe(120);
+});
+
+test('a stage can still declare no break at all', function () {
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00', 'break_minutes' => 120]);
+
+    // 0 explicite : la personne ne prend pas de pause, et ça doit tenir
+    $stage = schedStage(['break_minutes' => 0]);
+
+    expect(app(WorkScheduleResolver::class)->forStage($stage)['break_minutes'])->toBe(0);
+});
+
+test('the creation form proposes the company break', function () {
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00', 'break_minutes' => 120]);
+
+    $this->actingAs(schedUser('admin'))
+        ->get(route('stages.create'))
+        ->assertOk()
+        // Saisie en heures : deux heures, pas cent vingt minutes
+        ->assertSee('name="break_hours" value="2"', false);
+});
+
+test('an empty break field means inherit, not zero', function () {
+    $admin = schedUser('admin');
+    $stage = schedStage(['break_minutes' => 90]);
+    $lundi = Jour::firstOrCreate(['jour' => 'Lundi']);
+
+    $this->actingAs($admin)->put(route('stages.update', $stage), [
+        'etudiant_id'  => $stage->etudiant_id,
+        'typestage_id' => $stage->typestage_id,
+        'domaine_id'   => $stage->domaine_id,
+        'site_id'      => $stage->site_id,
+        'theme'        => $stage->theme,
+        'date_debut'   => '2026-09-01',
+        'date_fin'     => '2026-12-31',
+        'jours_id'     => [$lundi->id],
+        'expected_check_in_time'  => '08:00',
+        'expected_check_out_time' => '18:00',
+        'break_minutes'           => '',
+    ])->assertRedirect();
+
+    expect($stage->fresh()->break_minutes)->toBeNull();
 });

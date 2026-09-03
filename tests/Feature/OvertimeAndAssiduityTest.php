@@ -28,7 +28,9 @@ beforeEach(function () {
     $this->reports = app(StageReportService::class);
 
     WorkScheduleSetting::query()->delete();
-    WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00']);
+    // Pause explicitement nulle : ces tests mesurent le découpage dans/hors
+    // plage, pas la déduction de la pause — qui a son propre test plus bas.
+    WorkScheduleSetting::create(['start_time' => '08:00', 'end_time' => '18:00', 'break_minutes' => 0]);
 });
 
 afterEach(fn() => Carbon::setTestNow());

@@ -9,11 +9,13 @@ use Carbon\Carbon;
 /**
  * Résout l'horaire applicable à une journée donnée.
  *
- * Trois niveaux, du plus précis au plus général :
- *   1. le jour de la semaine du stage (stage_jour) — permet la demi-journée ;
- *   2. l'horaire du stage ;
- *   3. l'horaire de référence de l'entreprise, en base et modifiable par
- *      l'administrateur, pour les employés.
+ * Deux niveaux : l'horaire du stage, puis l'horaire de référence de
+ * l'entreprise pour qui n'en déclare pas.
+ *
+ * Un horaire par jour de la semaine a existé puis été retiré : un stage garde
+ * le même horaire tous ses jours. Une demi-journée se règle sur le stage
+ * lui-même (08:00–12:30), pas jour par jour. Les colonnes correspondantes
+ * subsistent sur stage_jour mais ne sont plus lues.
  *
  * Aucune tolérance : l'heure attendue est l'heure exacte. Une minute après,
  * c'est un retard.
@@ -42,14 +44,6 @@ class WorkScheduleResolver
             'end'           => $stage->expected_check_out_time ?: $defaults['end'],
             'break_minutes' => $stage->break_minutes ?? $defaults['break_minutes'],
         ];
-
-        if ($day = $this->dayOverride($stage, $date)) {
-            // Le jour ne redéfinit que ce qu'il renseigne : une demi-journée
-            // peut n'avoir qu'une heure de fin différente.
-            $schedule['start']         = $day->pivot->start_time    ?: $schedule['start'];
-            $schedule['end']           = $day->pivot->end_time      ?: $schedule['end'];
-            $schedule['break_minutes'] = $day->pivot->break_minutes ?? $schedule['break_minutes'];
-        }
 
         return $this->normalise($schedule);
     }
@@ -99,25 +93,6 @@ class WorkScheduleResolver
             'end'           => $setting->end_time,
             'break_minutes' => (int) $setting->break_minutes,
         ];
-    }
-
-    /**
-     * Le jour de la semaine configuré sur le stage, s'il porte un horaire propre.
-     */
-    private function dayOverride(Stage $stage, $date)
-    {
-        if (!$date) {
-            return null;
-        }
-
-        $names = [1 => 'lundi', 2 => 'mardi', 3 => 'mercredi', 4 => 'jeudi', 5 => 'vendredi', 6 => 'samedi', 7 => 'dimanche'];
-        $name  = $names[(int) Carbon::parse($date)->format('N')] ?? null;
-
-        if (!$name) {
-            return null;
-        }
-
-        return $stage->jours->first(fn($j) => mb_strtolower($j->jour) === $name);
     }
 
     private function normalise(array $schedule): array

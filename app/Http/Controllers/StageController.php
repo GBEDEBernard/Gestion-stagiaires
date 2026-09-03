@@ -148,11 +148,7 @@ class StageController extends Controller
             // déduite du temps de présence pour obtenir le temps de travail.
             'expected_check_in_time'  => 'required|date_format:H:i',
             'expected_check_out_time' => 'required|date_format:H:i|after:expected_check_in_time',
-            'break_minutes'           => 'nullable|integer|min:0|max:480',
-            'jour_schedule'                 => 'nullable|array',
-            'jour_schedule.*.start_time'    => 'nullable|date_format:H:i',
-            'jour_schedule.*.end_time'      => 'nullable|date_format:H:i',
-            'jour_schedule.*.break_minutes' => 'nullable|integer|min:0|max:480',
+            'break_hours'             => 'nullable|numeric|min:0|max:8',
         ]);
 
         if ($request->filled('site_id')) {
@@ -235,10 +231,14 @@ class StageController extends Controller
             'expected_check_out_time',
         ]), [
             'duree_mois'    => $request->nombre_mois,
-            'break_minutes' => (int) $request->input('break_minutes', 0),
+            // Vide = suit l'horaire de l'entreprise ; 0 = pause explicitement nulle.
+            // La saisie est en heures, le stockage reste en minutes.
+            'break_minutes' => $request->filled('break_hours')
+                ? (int) round((float) $request->input('break_hours') * 60)
+                : null,
         ]));
 
-        $stage->jours()->sync($this->joursPivot($request));
+        $stage->jours()->sync($request->input('jours_id', []));
 
         Activity::create([
             'user_id'     => auth()->id(),
@@ -387,11 +387,7 @@ class StageController extends Controller
             // déduite du temps de présence pour obtenir le temps de travail.
             'expected_check_in_time'  => 'required|date_format:H:i',
             'expected_check_out_time' => 'required|date_format:H:i|after:expected_check_in_time',
-            'break_minutes'           => 'nullable|integer|min:0|max:480',
-            'jour_schedule'                 => 'nullable|array',
-            'jour_schedule.*.start_time'    => 'nullable|date_format:H:i',
-            'jour_schedule.*.end_time'      => 'nullable|date_format:H:i',
-            'jour_schedule.*.break_minutes' => 'nullable|integer|min:0|max:480',
+            'break_hours'             => 'nullable|numeric|min:0|max:8',
         ]);
 
         $etudiant  = Etudiant::findOrFail($request->etudiant_id);
@@ -453,10 +449,14 @@ class StageController extends Controller
             'expected_check_out_time',
         ]), [
             'duree_mois'    => $request->nombre_mois,
-            'break_minutes' => (int) $request->input('break_minutes', 0),
+            // Vide = suit l'horaire de l'entreprise ; 0 = pause explicitement nulle.
+            // La saisie est en heures, le stockage reste en minutes.
+            'break_minutes' => $request->filled('break_hours')
+                ? (int) round((float) $request->input('break_hours') * 60)
+                : null,
         ]));
 
-        $stage->jours()->sync($this->joursPivot($request));
+        $stage->jours()->sync($request->input('jours_id', []));
 
         // Synchroniser la date d'expiration des appareils badges du stagiaire
         $studentUser = $stage->etudiant?->user 
@@ -493,30 +493,6 @@ class StageController extends Controller
         ]);
 
         return redirect()->route('stages.index')->with('success', 'Stage supprime.');
-    }
-
-    /**
-     * Compose les données du pivot stage_jour : chaque jour retenu, avec son
-     * horaire propre s'il en a un. Une valeur vide signifie « suit l'horaire du
-     * stage » et doit rester NULL, pas une chaîne vide que le résolveur
-     * prendrait pour un horaire réel.
-     */
-    protected function joursPivot(Request $request): array
-    {
-        $schedules = $request->input('jour_schedule', []);
-        $pivot     = [];
-
-        foreach ((array) $request->input('jours_id', []) as $jourId) {
-            $row = $schedules[$jourId] ?? [];
-
-            $pivot[$jourId] = [
-                'start_time'    => ($row['start_time']    ?? '') !== '' ? $row['start_time']          : null,
-                'end_time'      => ($row['end_time']      ?? '') !== '' ? $row['end_time']            : null,
-                'break_minutes' => ($row['break_minutes'] ?? '') !== '' ? (int) $row['break_minutes'] : null,
-            ];
-        }
-
-        return $pivot;
     }
 
     public function domainesDisponibles(Etudiant $etudiant)

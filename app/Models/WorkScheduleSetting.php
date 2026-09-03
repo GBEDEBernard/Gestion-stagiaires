@@ -24,7 +24,7 @@ class WorkScheduleSetting extends Model
     public const FALLBACK = [
         'start_time'    => '08:00',
         'end_time'      => '18:00',
-        'break_minutes' => 0,
+        'break_minutes' => 120,
     ];
 
     public static function current(): self

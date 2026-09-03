@@ -24,7 +24,7 @@ class WorkScheduleSettingController extends Controller
         $validated = $request->validate([
             'start_time'    => 'required|date_format:H:i',
             'end_time'      => 'required|date_format:H:i|after:start_time',
-            'break_minutes' => 'nullable|integer|min:0|max:480',
+            'break_hours'   => 'nullable|numeric|min:0|max:8',
         ], [
             'end_time.after' => "L'heure de départ doit être postérieure à l'heure d'arrivée.",
         ]);
@@ -34,7 +34,8 @@ class WorkScheduleSettingController extends Controller
         $setting->fill([
             'start_time'    => $validated['start_time'],
             'end_time'      => $validated['end_time'],
-            'break_minutes' => (int) ($validated['break_minutes'] ?? 0),
+            // Saisie en heures, stockage en minutes.
+            'break_minutes' => (int) round(((float) ($validated['break_hours'] ?? 0)) * 60),
             'updated_by'    => $request->user()->id,
         ])->save();
 
@@ -42,7 +43,7 @@ class WorkScheduleSettingController extends Controller
             'user_id'     => $request->user()->id,
             'action'      => 'Modification horaire de reference',
             'description' => "Horaire de l'entreprise : {$validated['start_time']} – {$validated['end_time']}, pause "
-                . (int) ($validated['break_minutes'] ?? 0) . " min.",
+                . ($validated['break_hours'] ?? 0) . " h.",
         ]);
 
         return back()->with('success', "Horaire de référence enregistré. Il s'applique aux prochains pointages.");

@@ -47,20 +47,20 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Pause <span class="font-normal text-gray-400">en minutes</span>
+                        Pause <span class="font-normal text-gray-400">en heures</span>
                     </label>
-                    <input type="number" name="break_minutes" min="0" max="480" step="15"
-                        value="{{ old('break_minutes', $setting->break_minutes) }}"
+                    <input type="number" name="break_hours" min="0" max="8" step="0.5"
+                        value="{{ old('break_hours', rtrim(rtrim(number_format($setting->break_minutes / 60, 2, '.', ''), '0'), '.') ?: '0') }}"
                         class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white shadow-sm">
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Déduite du temps de présence.</p>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Déduite du temps de présence. 2 pour deux heures.</p>
                 </div>
             </div>
 
             <div class="mt-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
                 <p class="text-sm text-amber-800 dark:text-amber-300">
                     Ce changement ne touche pas les pointages déjà enregistrés : il s'applique
-                    aux prochains. Un stage qui déclare son propre horaire garde le sien, et une
-                    demi-journée se règle jour par jour sur la fiche du stage.
+                    aux prochains. Un stage qui déclare son propre horaire garde le sien, et
+                    une demi-journée se règle sur la fiche du stage.
                 </p>
             </div>
 
