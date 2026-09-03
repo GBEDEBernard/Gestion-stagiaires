@@ -2,7 +2,14 @@
     /** @var \App\Models\Stage|null $stage */
     $stage = $stage ?? null;
 
-    $defaults   = config('presence.default_schedule');
+    // L'horaire de référence vit en base, plus en configuration : lire
+    // config('presence...') renverrait null depuis la suppression du fichier.
+    $reference  = \App\Models\WorkScheduleSetting::current();
+    $defaults   = [
+        'start'         => substr($reference->start_time, 0, 5),
+        'end'           => substr($reference->end_time, 0, 5),
+        'break_minutes' => (int) $reference->break_minutes,
+    ];
     $selected   = old('jours_id', $stage?->jours->pluck('id')->toArray() ?? []);
     $pivots     = $stage?->jours->keyBy('id') ?? collect();
     $oldPerDay  = old('jour_schedule', []);
