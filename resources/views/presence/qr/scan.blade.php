@@ -1,5 +1,8 @@
 @php
     $fullName = trim(($user->prenom ?? '') . ' ' . ($user->nom ?? $user->name ?? ''));
+
+    // Même salutation que sur la page de pointage : « Bonjour » à 19h sonnerait faux.
+    $salut = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -55,7 +58,7 @@
             <span>{{ $site->name }}</span>
         </p>
 
-        <h1 class="title">Bonjour {{ $user->prenom ?? $user->name }}</h1>
+        <h1 class="title">{{ $salut }}, {{ $user->prenom ?? $user->name }}</h1>
         <p class="subtitle">Nous vérifions que vous êtes bien sur le site.</p>
 
         {{-- État de progression --}}

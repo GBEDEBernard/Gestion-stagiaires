@@ -260,7 +260,7 @@
                             <div class="w-4 h-4 rounded-full border-2 mt-1" :class="!isDark ? 'bg-amber-400 border-amber-400' : 'border-gray-300'"></div>
                         </button>
                         <button @click="setTheme('dark')" :class="isDark ? 'ring-2 ring-indigo-400 bg-indigo-50' : 'bg-gray-50 dark:bg-gray-800'" class="p-5 rounded-2xl border flex flex-col items-center gap-2">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-slate-800 flex items-center justify-center text-white text-2xl">🌙</div>
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-gray-800 flex items-center justify-center text-white text-2xl">🌙</div>
                             <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">Mode Sombre</p>
                             <div class="w-4 h-4 rounded-full border-2 mt-1" :class="isDark ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'"></div>
                         </button>
