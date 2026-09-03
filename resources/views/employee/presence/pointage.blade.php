@@ -80,6 +80,8 @@
             'isWorkDay'     => true,
             'workDaysLabel' => null,
             'historiqueUrl' => route('presence.historique'),
+            'journeeOubliee' => $journeeOubliee ?? null,
+            'declarationUrl' => route('presence.depart-oublie'),
         ])
     </div>
 

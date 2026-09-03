@@ -826,7 +826,8 @@
     </style>
 
     {{-- ICI : on met le x-data sur .pres-wrap pour que les modals (placés après .pres-page) soient dans la portée --}}
-    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '', timeModal: false, timeDayId: null, timeLabel: '', timeCurrent: '', timeValue: '', timeReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''" @open-time-correction.window="timeModal = true; timeDayId = $event.detail.id; timeLabel = $event.detail.label; timeCurrent = $event.detail.current; timeValue = ''; timeReason = ''">
+    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '', timeModal: false, timeDayId: null, timeLabel: '', timeCurrent: '', timeValue: '', timeReason: '', outModal: false, outDayId: null, outLabel: '', outCurrent: '', outClaimed: '', outClaimReason: '', outValue: '', outReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''" @open-time-correction.window="timeModal = true; timeDayId = $event.detail.id; timeLabel = $event.detail.label; timeCurrent = $event.detail.current; timeValue = ''; timeReason = ''"
+     @open-departure-correction.window="outModal = true; outDayId = $event.detail.id; outLabel = $event.detail.label; outCurrent = $event.detail.current; outClaimed = $event.detail.claimed; outClaimReason = $event.detail.claimReason; outValue = $event.detail.claimed; outReason = ''">
 
         <div class="pres-header">
             <div class="pres-header-left">
@@ -1060,7 +1061,35 @@
                                     <div style="font-size:.75rem;color:var(--muted);">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
                                 </td>
                                 <td>{{ $day->first_check_in_at?->format('H:i') ?? '—' }}</td>
-                                <td>{{ $day->last_check_out_at?->format('H:i') ?? '—' }}</td>
+                                <td>
+                                    {{ $day->last_check_out_at?->format('H:i') ?? '—' }}
+                                    {{-- Un départ non pointé se voit : la journée compte dans les
+                                         heures, mais elle n'a pas été pointée pour autant. --}}
+                                    @if($day->departure_status === 'auto_closed')
+                                        <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="Départ non pointé, journée clôturée à l'heure de fin prévue">non pointé</span>
+                                    @elseif($day->departure_status === 'claimed')
+                                        <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="{{ $day->claimed_check_out_reason }}">
+                                            déclaré · {{ $day->claimed_check_out_at?->format('H:i') }}
+                                        </span>
+                                    @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
+                                        <span class="pres-tag tag-emerald" style="margin-left:.25rem;" title="{{ $day->correctionDepart->reason }}">
+                                            rétabli · d'office {{ $day->correctionDepart->original_check_out_at?->format('H:i') }}
+                                        </span>
+                                    @endif
+
+                                    @isset($user)
+                                        @if(in_array($day->departure_status, ['auto_closed', 'claimed'], true))
+                                            <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;"
+                                                onclick="openDepartureCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->last_check_out_at?->format('H:i') }}', '{{ $day->claimed_check_out_at?->format('H:i') }}', @js($day->claimed_check_out_reason))">Rétablir l'heure</button>
+                                        @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
+                                            <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correctionDepart]) }}" style="display:inline;"
+                                                  onsubmit="return confirm('Annuler cette correction ? La clôture d'office sera rétablie.')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="corr-btn corr-btn-sm" style="margin-left:.35rem;">Annuler</button>
+                                            </form>
+                                        @endif
+                                    @endisset
+                                </td>
                                 <td style="font-family:var(--mono);">{{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1).'h' : '—' }}</td>
                                 <td>
                                     @if($day->late_minutes > 0)
@@ -1305,6 +1334,69 @@
                 </form>
             </div>
         </div>
+
+        {{-- ── Rétablir une heure de départ oubliée ─────────────────────── --}}
+        <div x-show="outModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="outModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+                    <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Rétablir l'heure de départ</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="outLabel ? 'Jour : ' + outLabel : ''"></p>
+                    </div>
+                    <button @click="outModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">✕</button>
+                </div>
+
+                <form method="POST" :action="outDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + outDayId + '/correction-depart' : '#'">
+                    @csrf
+
+                    <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+                        Le départ n'a pas été pointé : la journée a été clôturée à l'heure de fin prévue,
+                        jamais au-delà. Vous posez ici l'heure réelle, après avoir vu la personne.
+                    </p>
+
+                    <div class="mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm">
+                        <span class="text-slate-500 dark:text-slate-400">Clôturé d'office à :</span>
+                        <strong class="text-slate-800 dark:text-slate-100" x-text="outCurrent"></strong>
+                    </div>
+
+                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/20 px-4 py-3 text-sm"
+                         x-show="outClaimed" x-cloak>
+                        <p class="text-amber-800 dark:text-amber-300">
+                            <span class="text-amber-700/80 dark:text-amber-400/80">Déclaré par l'intéressé :</span>
+                            <strong x-text="outClaimed"></strong>
+                        </p>
+                        <p class="mt-1 text-amber-700/85 dark:text-amber-400/85" x-text="outClaimReason"></p>
+                    </div>
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400" x-show="!outClaimed" x-cloak>
+                        Rien n'a été déclaré pour cette journée.
+                    </p>
+
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Heure réelle de départ</label>
+                        <input type="time" name="time" x-model="outValue" required
+                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Motif <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea name="reason" x-model="outReason" rows="3" required minlength="5"
+                            placeholder="Ex : départ à 18h30 confirmé par le responsable de site"
+                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Obligatoire : le volume horaire entre dans la note de stage, une correction
+                            sans justification serait indéfendable.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button type="button" @click="outModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
+                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Rétablir l'heure</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         @endisset
 
     </div> {{-- fin de .pres-wrap --}}
@@ -1319,6 +1411,12 @@
 
         function openTimeCorrection(id, label, current) {
             window.dispatchEvent(new CustomEvent('open-time-correction', { detail: { id, label, current } }));
+        }
+
+        function openDepartureCorrection(id, label, current, claimed, claimReason) {
+            window.dispatchEvent(new CustomEvent('open-departure-correction', {
+                detail: { id, label, current: current || '--:--', claimed: claimed || '', claimReason: claimReason || '' }
+            }));
         }
         @endisset
 

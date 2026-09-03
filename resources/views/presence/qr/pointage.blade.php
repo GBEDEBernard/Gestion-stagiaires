@@ -37,8 +37,12 @@
                 'champs'        => ['user_id' => $user->id, 'device_token' => $deviceToken],
                 'isWorkDay'     => $isWorkDay,
                 'workDaysLabel' => $workDaysLabel,
-                {{-- Le badge ne donne pas accès au compte : pas de lien vers l'historique. --}}
-                'historiqueUrl' => null,
+                {{-- Le badge ne donne pas accès au compte : ni historique, ni
+                     déclaration de départ oublié. Celle-ci sera demandée à la
+                     prochaine ouverture de l'application. --}}
+                'historiqueUrl'  => null,
+                'journeeOubliee' => null,
+                'declarationUrl' => null,
             ])
 
             <p class="mt-5 text-center text-xs text-gray-400 dark:text-gray-500">

@@ -315,6 +315,34 @@ class NotificationService
     }
 
     /**
+     * Un départ oublié vient d'être déclaré. La journée reste clôturée à
+     * l'heure de fin prévue : sans cette alerte, la déclaration resterait
+     * dans la base sans que personne n'ait à en décider.
+     */
+    public function notifyAdminsOfMissingCheckoutClaim(\App\Models\User $owner, \App\Models\AttendanceDay $day): void
+    {
+        $ownerName = $owner->name ?? 'Utilisateur';
+        $date      = $day->attendance_date->format('d/m/Y');
+        $heure     = $day->claimed_check_out_at?->format('H:i') ?? '--:--';
+
+        $admins = \App\Models\User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['admin', 'superviseur']);
+        })->get();
+
+        foreach ($admins as $admin) {
+            $this->push(
+                $admin->id,
+                'missing_checkout_claim',
+                "Départ oublié déclaré",
+                "{$ownerName} déclare être parti à {$heure} le {$date}, sans avoir pointé. La journée reste clôturée à l'heure prévue tant que vous n'avez pas rétabli l'heure réelle.",
+                encrypted_route('attendance.tracking.user.historique', $owner),
+                'clock',
+                'amber'
+            );
+        }
+    }
+
+    /**
      * Prévient l'utilisateur qu'un administrateur a coupé l'un de ses appareils,
      * pour qu'il comprenne pourquoi son téléphone ne pointe plus.
      */

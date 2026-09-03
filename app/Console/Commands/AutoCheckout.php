@@ -16,30 +16,38 @@ use Illuminate\Support\Str;
 
 class AutoCheckout extends Command
 {
-    protected $signature = 'attendance:auto-checkout {--notify-only : Send notifications without auto check-out}';
+    protected $signature = 'attendance:auto-checkout
+        {--notify-only : Rappeler les départs non pointés du jour, sans rien clôturer}
+        {--date= : Journée à clôturer (par défaut, la veille)}';
 
-    protected $description = 'Auto check-out users at 19:30 and send email reminders at 18:30';
+    protected $description = "Rappelle les départs non pointés le soir, et clôture la veille à l'heure de fin prévue";
 
     public function handle(): int
     {
         try {
             $notifyOnly = $this->option('notify-only');
-            $today = today()->toDateString();
 
-            $usersWithoutCheckout = AttendanceDay::whereDate('attendance_date', $today)
+            // Le rappel porte sur aujourd'hui ; la clôture, sur la veille.
+            // On ne peut pas déclarer un départ oublié le soir même : la
+            // personne est peut-être encore là, et pointera à 22h.
+            $date = $notifyOnly
+                ? today()
+                : ($this->option('date') ? Carbon::parse($this->option('date'))->startOfDay() : today()->subDay());
+
+            $usersWithoutCheckout = AttendanceDay::whereDate('attendance_date', $date->toDateString())
                 ->whereNotNull('first_check_in_at')
                 ->whereNull('last_check_out_at')
                 ->get();
 
             if ($usersWithoutCheckout->isEmpty()) {
-                $this->info('Aucun utilisateur sans pointage de départ.');
+                $this->info("Aucun départ non pointé le {$date->format('d/m/Y')}.");
                 return Command::SUCCESS;
             }
 
             if ($notifyOnly) {
                 $this->sendReminders($usersWithoutCheckout);
             } else {
-                $this->autoCheckout($usersWithoutCheckout);
+                $this->autoCheckout($usersWithoutCheckout, $date);
             }
 
             return Command::SUCCESS;
@@ -107,7 +115,7 @@ class AutoCheckout extends Command
                 'user_id'   => $userId,
                 'type'      => 'rappel_depart',
                 'title'     => 'Départ non pointé',
-                'message'   => 'Vous avez pointé votre arrivée mais pas encore votre départ. Veuillez pointer votre départ avant 19h30.',
+                'message'   => "Vous avez pointé votre arrivée mais pas encore votre départ. Pointez-le avant de quitter le site : demain, la journée sera clôturée à l'heure de fin prévue.",
                 'icon'      => 'clock',
                 'color'     => 'amber',
                 'url'       => '/pointage',
@@ -129,9 +137,9 @@ class AutoCheckout extends Command
         $this->info("{$count} notification(s) de rappel envoyée(s) par email et in-app." . ($skipped ? " ({$skipped} ignoré(s))" : ''));
     }
 
-    protected function autoCheckout($days): void
+    protected function autoCheckout($days, Carbon $date): void
     {
-        $autoTime = today()->setTime(19, 30, 0);
+        $resolver = app(\App\Services\WorkScheduleResolver::class);
         $count = 0;
         $skipped = 0;
 
@@ -150,6 +158,18 @@ class AutoCheckout extends Command
                 continue;
             }
 
+            // L'heure de fin prévue de CETTE journée-là, jamais une heure fixe :
+            // clôturer à 19h30 un stage qui finit à 12h créditerait sept heures
+            // et demie de travail imaginaire, et oublier de pointer deviendrait
+            // plus avantageux que pointer.
+            $autoTime = $resolver->expectedDeparture($day->stage, $date);
+
+            // Arrivée après l'heure de fin (journée décalée, rattrapage) : on
+            // ne peut pas fermer avant d'avoir ouvert.
+            if ($day->first_check_in_at && $autoTime->lessThanOrEqualTo($day->first_check_in_at)) {
+                $autoTime = $day->first_check_in_at->copy();
+            }
+
             try {
                 $event = AttendanceEvent::create([
                     'stage_id'         => $day->stage_id,
@@ -165,14 +185,20 @@ class AutoCheckout extends Command
                     ],
                 ]);
 
+                // Même calcul que sur un départ pointé : la pause est déduite.
+                // Deux formules pour la même journée finissaient par donner
+                // deux volumes horaires différents.
                 $workedMinutes = $day->first_check_in_at
-                    ? max(0, $day->first_check_in_at->diffInMinutes($autoTime))
+                    ? $resolver->workedMinutes($day->stage, $day->first_check_in_at, $autoTime)
                     : 0;
 
                 $day->check_out_event_id = $event->id;
                 $day->last_check_out_at  = $autoTime;
                 $day->worked_minutes     = $workedMinutes;
                 $day->day_status         = $day->day_status === 'present' ? 'completed' : $day->day_status;
+                // La journée porte sa marque : elle compte dans les heures,
+                // mais elle n'est pas une journée pointée pour autant.
+                $day->departure_status   = 'auto_closed';
                 $day->save();
 
                 AppNotification::create([
@@ -180,7 +206,7 @@ class AutoCheckout extends Command
                     'user_id'   => $userId,
                     'type'      => 'depart_automatique',
                     'title'     => 'Départ enregistré automatiquement',
-                    'message'   => "Votre départ a été automatiquement enregistré à 19h30 car vous n'avez pas pointé votre départ.",
+                    'message'   => "Vous n'avez pas pointé votre départ du {$date->format('d/m/Y')}. La journée a été clôturée d'office à {$autoTime->format('H:i')}. Indiquez votre heure réelle lors de votre prochain pointage, puis voyez votre responsable.",
                     'icon'      => 'logout',
                     'color'     => 'blue',
                     'url'       => '/historique',
@@ -204,6 +230,6 @@ class AutoCheckout extends Command
             }
         }
 
-        $this->info("{$count} départ(s) automatique(s) enregistré(s) à 19h30." . ($skipped ? " ({$skipped} échec(s))" : ''));
+        $this->info("{$count} journée(s) du {$date->format('d/m/Y')} clôturée(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} échec(s))" : ''));
     }
 }

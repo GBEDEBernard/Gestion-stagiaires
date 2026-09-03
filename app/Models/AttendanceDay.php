@@ -38,6 +38,9 @@ class AttendanceDay extends Model
         'summary_notes',
         'arrival_status',
         'departure_status',
+        'claimed_check_out_at',
+        'claimed_check_out_reason',
+        'claimed_at',
     ];
 
     protected $casts = [
@@ -47,6 +50,8 @@ class AttendanceDay extends Model
         'validated_at' => 'datetime',
         'arrival_status' => 'string',
         'departure_status' => 'string',
+        'claimed_check_out_at' => 'datetime',
+        'claimed_at' => 'datetime',
     ];
 
     // ========== RELATIONS ==========
@@ -56,9 +61,16 @@ class AttendanceDay extends Model
         return $this->belongsTo(Stage::class);
     }
     // Relation avec étudiant pour filtrer les présences par étudiant (pour stagiaires)
+    /** La correction d'heure d'arrivée : une seule par journée. */
     public function correction()
     {
-        return $this->hasOne(AttendanceCorrection::class);
+        return $this->hasOne(AttendanceCorrection::class)->where('field', 'check_in');
+    }
+
+    /** La correction d'heure de départ, posée après un départ oublié. */
+    public function correctionDepart()
+    {
+        return $this->hasOne(AttendanceCorrection::class)->where('field', 'check_out');
     }
 
     public function etudiant()

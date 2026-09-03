@@ -363,6 +363,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
         Route::post('/confirm', [PresenceController::class, 'confirm'])->name('presence.confirm');
         Route::post('/check-in', [PresenceController::class, 'checkIn'])->name('presence.checkin')->middleware('permission:presence.checkin');
         Route::post('/check-out', [PresenceController::class, 'checkOut'])->name('presence.checkout')->middleware('permission:presence.checkout');
+        Route::post('/depart-oublie', [PresenceController::class, 'declarerDepartOublie'])->name('presence.depart-oublie')->middleware('permission:presence.checkout');
         Route::post('/devices/enroll', [QrPointageController::class, 'enrollCurrentDevice'])->name('presence.devices.enroll');
         Route::delete('/devices/{device}', [QrPointageController::class, 'revokeDevice'])->name('presence.devices.revoke');
     });
@@ -421,6 +422,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
             Route::delete('/user/{user}/exceptions/{exception}', [AdminAttendanceTrackingController::class, 'destroyException'])->name('attendance.tracking.user.exception.destroy');
             // Correction d'une heure d'arrivée mal enregistrée (scan impossible).
             Route::post('/user/{user}/days/{day}/correction', [AdminAttendanceTrackingController::class, 'storeTimeCorrection'])->name('attendance.tracking.user.correction.store');
+            Route::post('/user/{user}/days/{day}/correction-depart', [AdminAttendanceTrackingController::class, 'storeDepartureCorrection'])->name('attendance.tracking.user.correction-depart.store');
             Route::delete('/user/{user}/corrections/{correction}', [AdminAttendanceTrackingController::class, 'destroyTimeCorrection'])->name('attendance.tracking.user.correction.destroy');
         });
     });

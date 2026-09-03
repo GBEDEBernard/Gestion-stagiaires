@@ -6,7 +6,9 @@
     Attendus :
       $lieu, $prenom, $day, $expIn, $expOut, $etat, $late, $departBloque,
       $action, $champs (tableau nom => valeur), $isWorkDay, $workDaysLabel,
-      $historiqueUrl (null pour masquer le bouton)
+      $historiqueUrl (null pour masquer le bouton),
+      $journeeOubliee et $declarationUrl (null hors session : la déclaration
+      d'un départ oublié demande un compte)
 --}}
 {{-- La carte apporte son propre comportement : @once protège des doubles inclusions. --}}
 @include('presence.partials.pointage-script')
@@ -134,6 +136,14 @@
         @endif
     </div>
 </div>
+
+{{-- La veille non clôturée, posée après le pointage du jour et non avant. --}}
+@if(($journeeOubliee ?? null) && ($declarationUrl ?? null))
+    @include('presence.partials.oubli-depart-modal', [
+        'journee'         => $journeeOubliee,
+        'declarationUrl'  => $declarationUrl,
+    ])
+@endif
 
 @if($historiqueUrl)
     <div class="mt-5 text-center">

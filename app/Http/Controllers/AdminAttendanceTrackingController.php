@@ -500,6 +500,47 @@ class AdminAttendanceTrackingController extends Controller
      * Rétablit l'heure d'arrivée réelle d'une journée où le pointage a échoué.
      * Le retard cesse de compter, mais l'heure constatée reste consultable.
      */
+    /**
+     * Rétablit l'heure de départ d'une journée clôturée d'office.
+     *
+     * La personne a déclaré une heure sur son écran de pointage ; cette
+     * déclaration n'a rien modifié. C'est ici qu'elle prend effet, si le
+     * responsable la valide.
+     */
+    public function storeDepartureCorrection(Request $request, User $user, AttendanceDay $day)
+    {
+        $etudiantId = $user->etudiant?->id;
+        $belongsToUser = ($day->user_id !== null && $day->user_id === $user->id)
+            || ($etudiantId !== null && $day->etudiant_id === $etudiantId);
+
+        if (!$belongsToUser) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'time'   => ['required', 'string'],
+            'reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'reason.required' => "Le motif est obligatoire : un volume horaire corrigé sans justification serait indéfendable.",
+            'reason.min'      => "Le motif doit être un minimum explicite.",
+        ]);
+
+        try {
+            app(AttendanceCorrectionService::class)
+                ->applyCheckOut($user, $day, $validated['time'], $validated['reason'], $request->user());
+        } catch (ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors());
+        }
+
+        Activity::create([
+            'user_id'     => $request->user()->id,
+            'action'      => 'Correction heure depart',
+            'description' => "Journée du {$day->attendance_date->format('d/m/Y')} pour {$user->name} : départ rétabli à {$validated['time']}.",
+        ]);
+
+        return back()->with('success', "Heure de départ rétablie. Le volume horaire de cette journée a été recalculé.");
+    }
+
     public function storeTimeCorrection(Request $request, User $user, AttendanceDay $day)
     {
         // Deux nulls ne prouvent pas une appartenance : comparer directement

@@ -12,14 +12,17 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Rappel départ à 18h30 (email + in-app)
+        // Rappel du soir : « vous n'avez pas encore pointé votre départ ».
         $schedule->command('attendance:auto-checkout --notify-only')
             ->dailyAt('18:30')
             ->withoutOverlapping();
 
-        // Auto check-out à 19h30 (email + in-app)
+        // Clôture de la VEILLE, à 05h00. On ne déclare pas un départ oublié le
+        // soir même : la personne peut rester travailler et pointer à 22h.
+        // Le lendemain, la question est tranchée, et l'écran de pointage
+        // demandera l'heure réelle avant que quiconque ait besoin d'y penser.
         $schedule->command('attendance:auto-checkout')
-            ->dailyAt('19:30')
+            ->dailyAt('05:00')
             ->withoutOverlapping();
 
         // Résumé IA hebdomadaire chaque vendredi à 20h00

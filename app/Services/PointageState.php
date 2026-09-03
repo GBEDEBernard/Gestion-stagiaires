@@ -25,7 +25,8 @@ class PointageState
     /**
      * @return array{stage: ?Stage, day: ?AttendanceDay, expIn: \Carbon\Carbon,
      *               expOut: \Carbon\Carbon, etat: string, late: bool,
-     *               departBloque: bool, isWorkDay: bool, workDaysLabel: ?string}
+     *               departBloque: bool, isWorkDay: bool, workDaysLabel: ?string,
+     *               journeeOubliee: ?AttendanceDay}
      */
     public function forUser(User $user, ?Site $site = null): array
     {
@@ -58,7 +59,27 @@ class PointageState
             'departBloque'  => $etat === 'depart' && !$peutPartir,
             'isWorkDay'     => $stage ? $stage->isWorkDay() : true,
             'workDaysLabel' => $stage?->workDaysLabel(),
+            // On ne demande l'heure du départ oublié qu'une fois l'arrivée du
+            // jour pointée : la question de la veille ne doit pas retarder le
+            // geste d'aujourd'hui.
+            'journeeOubliee' => $arrive ? $this->journeeOubliee($user, $stage) : null,
         ];
+    }
+
+    /**
+     * La dernière journée clôturée d'office sans que l'intéressé ait dit à
+     * quelle heure il était parti. Une seule à la fois : on règle la plus
+     * ancienne avant de passer à la suivante.
+     */
+    public function journeeOubliee(User $user, ?Stage $stage): ?AttendanceDay
+    {
+        return AttendanceDay::query()
+            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
+            ->where('departure_status', 'auto_closed')
+            ->whereNull('claimed_at')
+            ->whereDate('attendance_date', '<', today())
+            ->orderBy('attendance_date')
+            ->first();
     }
 
     /**

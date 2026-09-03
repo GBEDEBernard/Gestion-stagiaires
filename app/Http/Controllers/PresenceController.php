@@ -86,6 +86,11 @@ class PresenceController extends Controller
                 'hasCheckedOut'          => $hasCheckedOut,
                 'isWorkDay'              => $activeStage->isWorkDay(),
                 'workDaysLabel'          => $activeStage->workDaysLabel(),
+                // La veille clôturée d'office, à éclaircir — mais seulement
+                // une fois l'arrivée du jour pointée.
+                'journeeOubliee'         => $hasCheckedIn
+                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, $activeStage)
+                    : null,
             ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
@@ -131,8 +136,62 @@ class PresenceController extends Controller
                 'earlyDeparturePermission' => $earlyDeparturePermission,
                 'hasCheckedIn'             => $hasCheckedIn,
                 'hasCheckedOut'            => $hasCheckedOut,
+                'journeeOubliee'           => $hasCheckedIn
+                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, null)
+                    : null,
             ]);
         }
+    }
+
+    /**
+     * Déclaration d'un départ oublié : l'heure et le motif que la personne
+     * avance pour une journée clôturée d'office.
+     *
+     * Rien n'est appliqué ici. La journée garde son heure de fin prévue tant
+     * que le responsable n'a pas tranché — sans quoi il suffirait de déclarer
+     * 20h pour se créditer deux heures.
+     */
+    public function declarerDepartOublie(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'day_id'         => ['required', 'integer'],
+            'claimed_time'   => ['required', 'date_format:H:i'],
+            'claimed_reason' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'claimed_time.date_format' => "Indiquez une heure valide au format HH:MM.",
+            'claimed_reason.min'       => "Le motif doit être un minimum explicite.",
+        ]);
+
+        $day = AttendanceDay::find($validated['day_id']);
+
+        // Deux nulls ne prouvent pas une appartenance : sans ces vérifications
+        // explicites, la journée d'un autre passerait sous cet identifiant.
+        $etudiantId = $user->etudiant?->id;
+        $estSienne = $day
+            && (($day->user_id !== null && $day->user_id === $user->id)
+                || ($etudiantId !== null && $day->etudiant_id === $etudiantId));
+
+        if (!$estSienne || $day->departure_status !== 'auto_closed' || $day->claimed_at) {
+            return back()->with('error', "Cette journée n'attend aucune déclaration de votre part.");
+        }
+
+        try {
+            app(\App\Services\AttendanceCorrectionService::class)
+                ->claimCheckOut($day, $validated['claimed_time'], $validated['claimed_reason']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        app(\App\Services\NotificationService::class)
+            ->notifyAdminsOfMissingCheckoutClaim($user, $day->refresh());
+
+        return back()->with(
+            'info',
+            "Déclaration enregistrée pour le {$day->attendance_date->format('d/m/Y')}. "
+            . "Présentez-vous à votre responsable : lui seul peut rétablir l'heure."
+        );
     }
 
     /**
