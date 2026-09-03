@@ -210,9 +210,26 @@ class StageEvaluationService
         $report = $this->reportService->build($stage);
         $r      = $report['ratios'];
 
+        // La ponctualité en jours est binaire : une minute de retard et deux
+        // heures pèsent pareil. On la remplace, pour la note, par la part du
+        // temps attendu réellement perdue en retards.
+        $volume = $r['volume_horaire'];
+        $ponctualitePonderee = $r['ponctualite'];
+
+        if ($volume && ($volume['denominator'] ?? 0) > 0) {
+            $perdu = min(1.0, ($report['counts']['late_minutes'] ?? 0) / $volume['denominator']);
+
+            $ponctualitePonderee = [
+                'numerator'   => (int) round((1 - $perdu) * $volume['denominator']),
+                'denominator' => $volume['denominator'],
+                'rate'        => round(1 - $perdu, 4),
+                'reliable'    => $r['ponctualite']['reliable'] ?? false,
+            ];
+        }
+
         $parts = [
             'presence'     => $r['assiduite'],
-            'punctuality'  => $r['ponctualite'],
+            'punctuality'  => $ponctualitePonderee,
             'completeness' => $r['journees_completes'],
         ];
 

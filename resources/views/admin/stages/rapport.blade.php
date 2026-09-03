@@ -148,10 +148,23 @@
             <div>
                 <span class="block text-gray-500 dark:text-gray-400">Retard cumulé</span>
                 <span class="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">{{ $c['late_minutes'] }} min</span>
+                @if(($c['avg_late_minutes'] ?? 0) > 0)
+                    <span class="block text-xs text-amber-600 dark:text-amber-400">
+                        {{ $c['avg_late_minutes'] }} min en moyenne
+                    </span>
+                @endif
             </div>
             <div>
                 <span class="block text-gray-500 dark:text-gray-400">Heures travaillées</span>
                 <span class="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">{{ $c['worked_hours'] }} h</span>
+                <span class="block text-xs text-gray-400">dans l'horaire prévu</span>
+            </div>
+            <div>
+                <span class="block text-gray-500 dark:text-gray-400">Heures supplémentaires</span>
+                <span class="text-lg font-semibold tabular-nums {{ ($c['overtime_hours'] ?? 0) > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white' }}">
+                    {{ $c['overtime_hours'] ?? 0 }} h
+                </span>
+                <span class="block text-xs text-gray-400">hors horaire, non comptées dans le ratio</span>
             </div>
             <div>
                 <span class="block text-gray-500 dark:text-gray-400">Moyenne / jour</span>

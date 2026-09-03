@@ -159,6 +159,15 @@
             <td class="l2">Heures travaillées</td>
             <td class="v2">{{ number_format((float) $c['worked_hours'], 1, ',', ' ') }} h</td>
         </tr>
+        @if(($c['overtime_hours'] ?? 0) > 0)
+        <tr>
+            <td class="l1">Heures supplémentaires</td>
+            <td class="v1">{{ number_format((float) $c['overtime_hours'], 1, ',', ' ') }} h</td>
+            <td class="l2" colspan="2">
+                <span class="muted">effectuées hors de l'horaire prévu, hors ratio</span>
+            </td>
+        </tr>
+        @endif
         @if(($report['permissions']['days_covered'] ?? 0) > 0)
             <tr>
                 <td class="l1">Jours sur permission</td>

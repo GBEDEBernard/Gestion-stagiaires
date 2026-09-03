@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AttendanceDay;
 use App\Models\PermissionRequest;
 use App\Models\Stage;
+use App\Services\WorkScheduleResolver;
 use Carbon\Carbon;
 
 /**
@@ -68,8 +69,15 @@ class StageReportService
         $anomalies = $this->anomalies($stage, $from, $effectiveTo);
         $permissions = $this->permissions($user?->id, $from, $effectiveTo);
 
-        $workedMinutes   = (int) $days->sum('worked_minutes');
+        $split           = $this->splitWorkedMinutes($stage, $days);
+        $workedMinutes   = $split['inside'];
+        $overtimeMinutes = $split['outside'];
         $expectedMinutes = $this->expectedMinutes($stage, $expectedDays);
+
+        // Retard moyen : « 0 % de ponctualité » ne dit pas s'il s'agit d'une
+        // minute ou de deux heures.
+        $lateMinutes  = (int) ($stats['total_late_minutes'] ?? 0);
+        $lateDays     = (int) ($stats['late_days'] ?? 0);
 
         return [
             'stage'     => $stage,
@@ -88,6 +96,8 @@ class StageReportService
                 'late_days'       => (int) ($stats['late_days'] ?? 0),
                 'late_minutes'    => (int) ($stats['total_late_minutes'] ?? 0),
                 'worked_hours'    => round($workedMinutes / 60, 1),
+                'overtime_hours'  => round($overtimeMinutes / 60, 1),
+                'avg_late_minutes'=> $lateDays > 0 ? (int) round($lateMinutes / $lateDays) : 0,
                 'avg_daily_hours' => (float) ($stats['avg_daily_hours'] ?? 0),
             ],
             'ratios' => [
@@ -214,6 +224,50 @@ class StageReportService
      * Retourne 0 si l'horaire n'est pas renseigné : mieux vaut masquer
      * l'indicateur que d'inventer une base de comparaison.
      */
+    /**
+     * Répartit le temps de présence entre la plage attendue et ce qui déborde.
+     *
+     * Sans cette séparation, arriver à 10h et repartir à 20h sur une journée
+     * 08h–18h donnait 100 % de volume horaire : les heures du soir rachetaient
+     * la matinée manquée. Les heures hors plage sont désormais comptées à part,
+     * comme des heures supplémentaires, et n'entrent pas dans le ratio.
+     *
+     * @return array{inside: int, outside: int}
+     */
+    private function splitWorkedMinutes(Stage $stage, $days): array
+    {
+        $resolver = app(WorkScheduleResolver::class);
+        $inside = 0;
+        $outside = 0;
+
+        foreach ($days as $day) {
+            if (!$day->first_check_in_at || !$day->last_check_out_at) {
+                continue;
+            }
+
+            $in  = $day->first_check_in_at;
+            $out = $day->last_check_out_at;
+
+            if ($out->lessThanOrEqualTo($in)) {
+                continue;
+            }
+
+            $expIn  = $resolver->expectedArrival($stage, $in);
+            $expOut = $resolver->expectedDeparture($stage, $in);
+
+            // Intersection de [arrivée, départ] avec [attendu, attendu]
+            $debut = $in->greaterThan($expIn) ? $in : $expIn;
+            $fin   = $out->lessThan($expOut) ? $out : $expOut;
+            $dansLaPlage = $fin->greaterThan($debut) ? $debut->diffInMinutes($fin) : 0;
+
+            $pause = $resolver->forStage($stage, $in)['break_minutes'];
+            $inside  += max(0, $dansLaPlage - $pause);
+            $outside += max(0, $in->diffInMinutes($out) - $dansLaPlage);
+        }
+
+        return ['inside' => $inside, 'outside' => $outside];
+    }
+
     private function expectedMinutes(Stage $stage, int $expectedDays): int
     {
         if (!$stage->expected_check_in_time || !$stage->expected_check_out_time) {
@@ -223,7 +277,10 @@ class StageReportService
         $in  = Carbon::parse($stage->expected_check_in_time);
         $out = Carbon::parse($stage->expected_check_out_time);
 
-        $perDay = $in->diffInMinutes($out, false);
+        // La pause est retirée des deux côtés du ratio, sinon 100 % serait
+        // inatteignable pour quelqu'un qui respecte pourtant son horaire.
+        $pause  = app(WorkScheduleResolver::class)->forStage($stage)['break_minutes'];
+        $perDay = $in->diffInMinutes($out, false) - $pause;
 
         return $perDay > 0 ? $perDay * $expectedDays : 0;
     }
