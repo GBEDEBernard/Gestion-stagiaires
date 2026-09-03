@@ -320,3 +320,35 @@ test('an exempted user is told the holiday does not block them', function () {
         ->assertOk()
         ->assertSee('appelé en urgence', false);
 });
+
+test('the student stage page renders with tasks and reports', function () {
+    $student = smokeUser('etudiant');
+    $site = smokeSite();
+    $stage = smokeStage($student, $site);
+
+    \App\Models\AttendanceDay::create([
+        'user_id' => $student->id,
+        'stage_id' => $stage->id,
+        'attendance_date' => today()->toDateString(),
+        'first_check_in_at' => now(),
+        'day_status' => 'present',
+    ]);
+
+    $task = \App\Models\Task::create([
+        'stage_id' => $stage->id,
+        'owner_id' => $student->id,
+        'title' => 'Intégration SuiteCRM et refonte des composants',
+        'description' => str_repeat('Voici une très longue description de test qui ne doit pas casser la carte. ', 50),
+        'status' => 'in_progress',
+        'priority' => 'high',
+        'due_date' => now()->addDays(5),
+    ]);
+
+    $this->actingAs($student)
+        ->get(route('student.stage'))
+        ->assertOk()
+        ->assertSee('Mon stage')
+        ->assertSee('Tâches du stage')
+        ->assertSee('Intégration SuiteCRM')
+        ->assertSee('Accéder à la tâche');
+});

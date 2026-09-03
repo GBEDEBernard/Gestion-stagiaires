@@ -149,13 +149,9 @@
             </dl>
         @endif
 
-        {{-- Le badge autorise à pointer, pas à entrer dans le compte : hors
-             session, ce lien n'ouvrirait qu'un écran de connexion. --}}
-        @auth
-            <p class="actions">
-                <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
-            </p>
-        @endauth
+        <p class="actions">
+            <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
+        </p>
 
         @if($isApproved)
             <p class="footnote">Votre présence est enregistrée. Vous pouvez fermer cette page.</p>

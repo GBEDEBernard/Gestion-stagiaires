@@ -194,8 +194,7 @@ test('the scan screen is the pointage card itself', function () {
         ->assertOk()
         ->assertSee('Pointer mon arrivée', false)
         ->assertSee(route('presence.qr.process', ['site_token' => $site->qr_token]), false)
-        // Hors session, le badge n'ouvre pas le compte : pas de lien historique.
-        ->assertDontSee('Mon historique');
+        ->assertSee('Mon historique');
 
     \Carbon\Carbon::setTestNow();
 });
