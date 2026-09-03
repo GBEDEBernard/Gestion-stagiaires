@@ -69,7 +69,10 @@ class WorkScheduleResolver
      */
     public function workedMinutes(?Stage $stage, Carbon $checkIn, Carbon $checkOut): int
     {
-        $presence = max(0, $checkIn->diffInMinutes($checkOut));
+        // diffInMinutes renvoie un flottant : sans conversion explicite, le
+        // type de retour int déclenche une déprécation à chaque pointage, et
+        // une TypeError en PHP 9.
+        $presence = (int) max(0, $checkIn->diffInMinutes($checkOut));
         $break    = $this->forStage($stage, $checkIn)['break_minutes'];
 
         return $presence > $break ? $presence - $break : $presence;

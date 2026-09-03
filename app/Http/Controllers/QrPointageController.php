@@ -181,6 +181,14 @@ class QrPointageController extends Controller
         try {
             $preflight = $this->presenceService->qrPreflight($user, $site);
         } catch (\Exception $e) {
+            // Le pointage doit rester possible même si le préflight échoue,
+            // mais l'échec doit se voir : avalé en silence, c'est ainsi qu'une
+            // erreur SQL sur le chemin stagiaire est restée invisible.
+            Log::warning('Préflight QR indisponible : ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'site_id' => $site->id,
+            ]);
+
             $preflight = ['is_late' => false, 'event_type' => 'check_in', 'expected' => null];
         }
 
@@ -334,20 +342,10 @@ class QrPointageController extends Controller
         $device->last_seen_at = now();
         $device->save();
 
-        // Mettre à jour le cookie sur le navigateur (support multi-profils)
-        $cookieData = $request->cookie('pointage_device_tokens');
-        $tokens = [];
-        if ($cookieData) {
-            $decoded = json_decode($cookieData, true);
-            $tokens = is_array($decoded) ? $decoded : [$cookieData];
-        }
-
-        if (!in_array($rawToken, $tokens)) {
-            $tokens[] = $rawToken;
-        }
-
-        // Cookie valable 1 an (525600 minutes)
-        $cookie = Cookie::make('pointage_device_tokens', json_encode($tokens), 525600, '/', null, false, false);
+        // Un téléphone, un compte, un badge : le cookie ne porte que le jeton
+        // courant. L'empiler laissait des jetons révoqués vivre indéfiniment
+        // dans le navigateur.
+        $cookie = Cookie::make('pointage_device_tokens', json_encode([$rawToken]), 525600, '/', null, false, false);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -386,7 +384,10 @@ class QrPointageController extends Controller
         // administrateurs doivent pouvoir la relier à un incident.
         $this->notificationService->notifyAdminsOfDeviceRevocation($user, $device);
 
-        return redirect()->back()->with('status', "L'appareil « {$deviceName} » a été révoqué avec succès.");
+        // Le jeton ne vaut plus rien : il n'a plus à rester sur l'appareil.
+        return redirect()->back()
+            ->with('status', "L'appareil « {$deviceName} » a été révoqué avec succès.")
+            ->withCookie(Cookie::forget('pointage_device_tokens'));
     }
 
     /**

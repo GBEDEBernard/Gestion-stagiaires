@@ -731,7 +731,9 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             $day->worked_minutes     = $day->first_check_in_at
                 ? app(WorkScheduleResolver::class)->workedMinutes(null, $day->first_check_in_at, $event->occurred_at)
                 : 0;
-            $day->early_departure_minutes = 0;
+            // Calculé comme pour un stagiaire : écrire 0 d'office rendait le
+            // départ anticipé invisible pour la moitié des utilisateurs.
+            $day->early_departure_minutes = $this->computeEarlyDepartureMinutes(null, $event->occurred_at);
         }
 
         $day->save();
@@ -1162,17 +1164,17 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     {
         $expected = app(WorkScheduleResolver::class)->expectedArrival($stage, $occurredAt);
 
-        return $occurredAt->greaterThan($expected) ? $expected->diffInMinutes($occurredAt) : 0;
+        return $occurredAt->greaterThan($expected) ? (int) $expected->diffInMinutes($occurredAt) : 0;
     }
 
     /**
      * Calcule les minutes de départ anticipé par rapport à l'heure attendue.
      */
-    protected function computeEarlyDepartureMinutes(Stage $stage, $occurredAt): int
+    protected function computeEarlyDepartureMinutes(?Stage $stage, $occurredAt): int
     {
         $expected = app(WorkScheduleResolver::class)->expectedDeparture($stage, $occurredAt);
 
-        return $occurredAt->lessThan($expected) ? $occurredAt->diffInMinutes($expected) : 0;
+        return $occurredAt->lessThan($expected) ? (int) $occurredAt->diffInMinutes($expected) : 0;
     }
 
     /**

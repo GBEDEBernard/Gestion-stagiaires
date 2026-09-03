@@ -58,7 +58,15 @@ class StageReportService
         $checkedIn = $days->count();
 
         $onTime          = $days->where('arrival_status', '!=', 'late')->count();
-        $completeDays    = $days->filter(fn($d) => $d->first_check_in_at && $d->last_check_out_at)->count();
+        // Une journée fermée par le système n'est pas une journée pointée :
+        // sans cette exclusion, oublier son départ ferait monter le ratio.
+        // Une journée tranchée par l'administrateur (corrected) compte, elle :
+        // l'heure réelle est connue.
+        $completeDays = $days->filter(
+            fn($d) => $d->first_check_in_at
+                && $d->last_check_out_at
+                && !in_array($d->departure_status, ['auto_closed', 'claimed'], true)
+        )->count();
         $noEarlyDeparture = $days->filter(fn($d) => (int) ($d->early_departure_minutes ?? 0) === 0)->count();
 
         $submittedReports = $stage->dailyReports()
@@ -260,9 +268,12 @@ class StageReportService
             $fin   = $out->lessThan($expOut) ? $out : $expOut;
             $dansLaPlage = $fin->greaterThan($debut) ? $debut->diffInMinutes($fin) : 0;
 
+            // Même règle que WorkScheduleResolver::workedMinutes : la pause
+            // n'est retirée que si la présence la dépasse, sinon une journée
+            // écourtée tombe à zéro et efface le temps réellement passé.
             $pause = $resolver->forStage($stage, $in)['break_minutes'];
-            $inside  += max(0, $dansLaPlage - $pause);
-            $outside += max(0, $in->diffInMinutes($out) - $dansLaPlage);
+            $inside  += $dansLaPlage > $pause ? $dansLaPlage - $pause : $dansLaPlage;
+            $outside += (int) max(0, $in->diffInMinutes($out) - $dansLaPlage);
         }
 
         return ['inside' => $inside, 'outside' => $outside];
@@ -270,17 +281,18 @@ class StageReportService
 
     private function expectedMinutes(Stage $stage, int $expectedDays): int
     {
-        if (!$stage->expected_check_in_time || !$stage->expected_check_out_time) {
-            return 0;
-        }
+        // L'horaire vient du résolveur, seul endroit qui sait retomber sur
+        // celui de l'entreprise. Lire les colonnes du stage directement faisait
+        // disparaître le ratio pour tout stage sans horaire propre, alors que
+        // le reste de l'application lui en attribuait un.
+        $horaire = app(WorkScheduleResolver::class)->forStage($stage);
 
-        $in  = Carbon::parse($stage->expected_check_in_time);
-        $out = Carbon::parse($stage->expected_check_out_time);
+        $in  = Carbon::parse($horaire['start']);
+        $out = Carbon::parse($horaire['end']);
 
         // La pause est retirée des deux côtés du ratio, sinon 100 % serait
         // inatteignable pour quelqu'un qui respecte pourtant son horaire.
-        $pause  = app(WorkScheduleResolver::class)->forStage($stage)['break_minutes'];
-        $perDay = $in->diffInMinutes($out, false) - $pause;
+        $perDay = (int) $in->diffInMinutes($out, false) - $horaire['break_minutes'];
 
         return $perDay > 0 ? $perDay * $expectedDays : 0;
     }

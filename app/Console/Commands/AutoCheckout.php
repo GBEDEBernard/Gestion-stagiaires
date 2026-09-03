@@ -18,37 +18,50 @@ class AutoCheckout extends Command
 {
     protected $signature = 'attendance:auto-checkout
         {--notify-only : Rappeler les départs non pointés du jour, sans rien clôturer}
-        {--date= : Journée à clôturer (par défaut, la veille)}';
+        {--date= : Ne clôturer que cette journée-là}
+        {--days=7 : Profondeur de rattrapage, en jours, si le cron a sauté un tour}';
 
-    protected $description = "Rappelle les départs non pointés le soir, et clôture la veille à l'heure de fin prévue";
+    protected $description = "Rappelle les départs non pointés le soir, et clôture les journées passées à l'heure de fin prévue";
 
     public function handle(): int
     {
         try {
             $notifyOnly = $this->option('notify-only');
 
-            // Le rappel porte sur aujourd'hui ; la clôture, sur la veille.
-            // On ne peut pas déclarer un départ oublié le soir même : la
-            // personne est peut-être encore là, et pointera à 22h.
-            $date = $notifyOnly
-                ? today()
-                : ($this->option('date') ? Carbon::parse($this->option('date'))->startOfDay() : today()->subDay());
+            // Le rappel porte sur aujourd'hui ; la clôture, sur les journées
+            // déjà passées. On ne peut pas déclarer un départ oublié le soir
+            // même : la personne est peut-être encore là, et pointera à 22h.
+            if ($notifyOnly) {
+                $days = $this->openDays(today(), today());
 
-            $usersWithoutCheckout = AttendanceDay::whereDate('attendance_date', $date->toDateString())
-                ->whereNotNull('first_check_in_at')
-                ->whereNull('last_check_out_at')
-                ->get();
+                if ($days->isEmpty()) {
+                    $this->info("Aucun départ non pointé aujourd'hui.");
+                    return Command::SUCCESS;
+                }
 
-            if ($usersWithoutCheckout->isEmpty()) {
-                $this->info("Aucun départ non pointé le {$date->format('d/m/Y')}.");
+                $this->sendReminders($days);
                 return Command::SUCCESS;
             }
 
-            if ($notifyOnly) {
-                $this->sendReminders($usersWithoutCheckout);
+            // Une nuit sans cron laissait la journée ouverte pour toujours :
+            // jamais clôturée, jamais réclamée. On remonte donc sur quelques
+            // jours, sans aller chercher un arriéré historique qui noierait
+            // tout le monde sous les notifications au premier déploiement.
+            if ($this->option('date')) {
+                $depuis = $jusqua = Carbon::parse($this->option('date'))->startOfDay();
             } else {
-                $this->autoCheckout($usersWithoutCheckout, $date);
+                $jusqua = today()->subDay();
+                $depuis = today()->subDays(max(1, (int) $this->option('days')));
             }
+
+            $days = $this->openDays($depuis, $jusqua);
+
+            if ($days->isEmpty()) {
+                $this->info("Aucun départ non pointé entre le {$depuis->format('d/m/Y')} et le {$jusqua->format('d/m/Y')}.");
+                return Command::SUCCESS;
+            }
+
+            $this->autoCheckout($days);
 
             return Command::SUCCESS;
         } catch (\Throwable $e) {
@@ -59,6 +72,19 @@ class AutoCheckout extends Command
             $this->error('Erreur : ' . $e->getMessage());
             return Command::FAILURE;
         }
+    }
+
+    /** Les journées ouvertes d'une période : arrivée pointée, départ jamais. */
+    protected function openDays(Carbon $depuis, Carbon $jusqua)
+    {
+        return AttendanceDay::whereBetween('attendance_date', [$depuis->toDateString(), $jusqua->toDateString()])
+            ->whereNotNull('first_check_in_at')
+            ->whereNull('last_check_out_at')
+            // Sans ce chargement, l'horaire de chaque journée coûtait une
+            // requête de plus.
+            ->with('stage')
+            ->orderBy('attendance_date')
+            ->get();
     }
 
     protected function resolveUserId(AttendanceDay $day): ?int
@@ -137,7 +163,7 @@ class AutoCheckout extends Command
         $this->info("{$count} notification(s) de rappel envoyée(s) par email et in-app." . ($skipped ? " ({$skipped} ignoré(s))" : ''));
     }
 
-    protected function autoCheckout($days, Carbon $date): void
+    protected function autoCheckout($days): void
     {
         $resolver = app(\App\Services\WorkScheduleResolver::class);
         $count = 0;
@@ -162,6 +188,7 @@ class AutoCheckout extends Command
             // clôturer à 19h30 un stage qui finit à 12h créditerait sept heures
             // et demie de travail imaginaire, et oublier de pointer deviendrait
             // plus avantageux que pointer.
+            $date     = $day->attendance_date->copy()->startOfDay();
             $autoTime = $resolver->expectedDeparture($day->stage, $date);
 
             // Arrivée après l'heure de fin (journée décalée, rattrapage) : on
@@ -230,6 +257,6 @@ class AutoCheckout extends Command
             }
         }
 
-        $this->info("{$count} journée(s) du {$date->format('d/m/Y')} clôturée(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} échec(s))" : ''));
+        $this->info("{$count} journée(s) clôturée(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} échec(s))" : ''));
     }
 }

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pointage par QR — Analyse &amp; Propositions</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#5c6470; --rule:#e3e6ea;
+    --code-bg:#f5f6f8; --code-fg:#22303f; --pre-bg:#f7f8fa;
+    --accent:#0b6b5b; --accent-soft:#e8f4f1; --quote:#f2f7f6;
+    --th-bg:#f5f6f8; --link:#0b5fa5;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171a; --fg:#e6e9ec; --muted:#9aa4b0; --rule:#2a2f36;
+      --code-bg:#1e2329; --code-fg:#d7e0e8; --pre-bg:#1a1f24;
+      --accent:#5fd3bd; --accent-soft:#16302c; --quote:#182422;
+      --th-bg:#1e2329; --link:#7ab8f0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171a; --fg:#e6e9ec; --muted:#9aa4b0; --rule:#2a2f36;
+    --code-bg:#1e2329; --code-fg:#d7e0e8; --pre-bg:#1a1f24;
+    --accent:#5fd3bd; --accent-soft:#16302c; --quote:#182422;
+    --th-bg:#1e2329; --link:#7ab8f0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  main{max-width:860px; margin:0 auto; padding:48px 24px 96px}
+  h1{font-size:1.9rem; line-height:1.25; margin:0 0 8px; letter-spacing:-.02em}
+  h2{font-size:1.35rem; margin:44px 0 14px; letter-spacing:-.01em; padding-bottom:8px; border-bottom:1px solid var(--rule)}
+  h3{font-size:1.08rem; margin:26px 0 10px}
+  p{margin:0 0 14px}
+  ul,ol{margin:0 0 14px; padding-left:22px}
+  li{margin:0 0 7px}
+  hr{border:0; border-top:1px solid var(--rule); margin:34px 0}
+  a{color:var(--link); text-decoration:none; border-bottom:1px solid rgba(11,95,165,.35)}
+  a:hover{border-bottom-color:var(--link)}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.87em; background:var(--code-bg); color:var(--code-fg);
+    padding:.13em .38em; border-radius:4px;
+  }
+  pre{
+    background:var(--pre-bg); border:1px solid var(--rule); border-radius:8px;
+    padding:14px 16px; overflow-x:auto; margin:0 0 16px;
+  }
+  pre code{background:none; padding:0; font-size:.85rem; line-height:1.55}
+  blockquote{
+    margin:0 0 16px; padding:12px 16px; background:var(--quote);
+    border-left:3px solid var(--accent); border-radius:0 6px 6px 0; color:var(--fg);
+  }
+  blockquote p{margin:0}
+  .table-wrap{overflow-x:auto; margin:0 0 18px}
+  table{border-collapse:collapse; width:100%; font-size:.93rem}
+  th,td{border:1px solid var(--rule); padding:8px 11px; text-align:left; vertical-align:top}
+  th{background:var(--th-bg); font-weight:600}
+  .lead{color:var(--muted)}
+  .reco{background:var(--accent-soft); border:1px solid rgba(11,107,91,.3);
+        border-radius:8px; padding:14px 16px; margin:0 0 16px}
+  .reco p{margin:0; font-weight:600}
+</style>
+</head>
+<body>
+<main>
+
+<p class="lead">Je vais d'abord examiner l'état actuel du système de pointage avant de proposer quoi que ce soit.</p>
+
+<p>J'ai lu le système actuel en entier. Voici mon analyse et les propositions.</p>
+
+<hr>
+
+<h2>1. Ce qui existe aujourd'hui (le vrai diagnostic)</h2>
+
+<p><strong>Le flux actuel</strong>, dans <a href="routes/web.php">web.php:314-323</a> — tout est derrière <code>auth</code> :</p>
+
+<pre><code>Login → /presence/pointage → clic bouton → JS capture GPS (3 essais)
+     → POST prepare-checkin → session('pending_pointage') → vue validate
+     → clic "Confirmer" (+ observation obligatoire si retard)
+     → POST confirm → PresenceService → AttendanceEvent + AttendanceDay</code></pre>
+
+<p>Les briques de contrôle sont déjà là et elles sont bonnes :</p>
+<ul>
+  <li><code>PresenceService::evaluateEvent()</code> / <code>evaluateEmployeeEvent()</code> : doublons, précision GPS, distance vs <code>site_geofences.radius_meters</code> (25 à 200 m selon le site), réseau interne, jour férié, jour ouvré du stage, 07h30 mini, permission départ anticipé.</li>
+  <li><code>TrustedDevice</code> : table déjà existante, <code>unique(user_id, device_fingerprint)</code>, notion de <code>is_primary</code> + anomalie <code>secondary_device_detected</code>.</li>
+  <li><code>simplesoftwareio/simple-qrcode</code> est <strong>déjà installé</strong> (utilisé dans les badges de stage).</li>
+</ul>
+
+<p><strong>Et surtout, la vraie cause de la pénibilité</strong> — <a href=".env">.env:34</a> :</p>
+
+<pre><code>SESSION_EXPIRE_ON_CLOSE=true
+SESSION_LIFETIME=120</code></pre>
+
+<p>La session meurt à la fermeture du navigateur. Donc <strong>tout le monde doit se reconnecter chaque matin</strong>. Ce n'est pas le QR qui manque, c'est la persistance d'identité.</p>
+
+<hr>
+
+<h2>2. Le point dur à comprendre avant tout</h2>
+
+<blockquote><p>« comment savoir que c'est telle personne sans qu'il ne se connecte »</p></blockquote>
+
+<p>Un <strong>QR collé au mur est identique pour tout le monde</strong>. Il ne peut pas identifier qui que ce soit — il ne peut que dire « quelqu'un est à la porte du site X ». L'identité doit donc venir d'ailleurs, et il n'existe que <strong>trois sources possibles</strong> :</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Source d'identité</th><th>Mécanisme</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Le téléphone</strong></td><td>un jeton persistant stocké dans le navigateur du stagiaire</td></tr>
+    <tr><td><strong>Le badge</strong></td><td>un QR <strong>personnel</strong> que la personne porte, scanné par une borne</td></tr>
+    <tr><td><strong>La session</strong></td><td>il se connecte (mais une seule fois, pour très longtemps)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Les trois options ci-dessous découlent de ça.</p>
+
+<hr>
+
+<h2>3. Option A — QR fixe à la porte + « appareil-badge » ⭐ (ma recommandation)</h2>
+
+<p><strong>Principe</strong> : le téléphone devient le badge. Le QR au mur ne sert qu'à <em>déclencher</em> et à <em>prouver quel site</em>.</p>
+
+<h3>Enrôlement (une seule fois, ~30 secondes)</h3>
+
+<p>Le stagiaire se connecte normalement une fois, va sur « Mon appareil de pointage » et clique <strong>« Faire de ce téléphone mon badge »</strong>. Le serveur :</p>
+<ul>
+  <li>génère un <code>pointage_token</code> aléatoire (64 car.), stocke le <strong>hash</strong> dans <code>trusted_devices</code>,</li>
+  <li>pose un cookie <code>pointage_device</code> httpOnly + signé, durée <strong>1 an</strong>,</li>
+  <li>lie ce token à <code>user_id</code> + <code>device_fingerprint</code>.</li>
+</ul>
+
+<h3>Usage quotidien</h3>
+
+<pre><code>Il arrive à la porte → scanne le QR affiché
+  → ouvre https://app/p/{token_site_signé}
+  → le serveur lit le cookie → identifie l'utilisateur
+  → la page capture le GPS automatiquement (pas de bouton)
+  → POST auto → PresenceService → écran vert « ✅ Arrivée 08h12 — Bonne journée Jean »</code></pre>
+
+<p>Un seul écran, ~4 secondes, aucune connexion, aucune validation en 2 temps.</p>
+
+<h3>Ce que ça implique</h3>
+<ul>
+  <li><strong>Arrivée / départ déduits automatiquement</strong> : pas de <code>first_check_in_at</code> aujourd'hui → check-in ; sinon → check-out. Un seul QR pour les deux.</li>
+  <li><strong>Le GPS reste obligatoire</strong> et c'est lui la vraie barrière anti-fraude. Important : quelqu'un peut photographier le QR du mur et le scanner de chez lui — le QR seul ne prouve rien. C'est le geofence (25 m sur le site principal) qui refuse. Cette protection existe déjà, on la garde telle quelle.</li>
+  <li><strong>Le cookie peut être perdu</strong> : navigation privée, « effacer les données », changement de navigateur. Dans ce cas la page de scan affiche l'écran de connexion → il se connecte → on lui repropose l'enrôlement. Ça s'auto-répare en une fois.</li>
+  <li><strong>Piège iOS/Android à connaître</strong> : l'appareil photo iPhone ouvre <strong>Safari</strong>, Android ouvre <strong>Chrome</strong>. Si l'enrôlement a été fait dans un autre navigateur, le cookie n'y est pas. Il faut donc enrôler <strong>depuis le navigateur qu'ouvre l'appareil photo</strong> — je le gère en affichant clairement le navigateur détecté à l'enrôlement.</li>
+  <li><strong>Prêt de téléphone = fraude possible</strong> (A pointe pour B). Atténuations déjà disponibles : un seul check-in/jour, anomalie <code>secondary_device_detected</code>, GPS, et on peut ajouter une anomalie « 2 pointages depuis la même IP+empreinte à 10 s d'intervalle ».</li>
+  <li><strong>Renforcement optionnel</strong> : au lieu d'un QR papier, afficher le QR sur une petite tablette/écran à l'entrée, avec un <strong>nonce qui tourne toutes les 60 s</strong>. Une photo du QR devient inutilisable. À décider plus tard, ça ne change pas l'architecture.</li>
+</ul>
+
+<p><strong>Coût</strong> : zéro matériel. C'est l'option la plus proche de ce que tu décris.</p>
+
+<hr>
+
+<h2>4. Option B — QR <strong>personnel</strong> + borne à l'entrée</h2>
+
+<p><strong>Principe</strong> : inversion du sens. C'est la borne qui scanne la personne.</p>
+<ul>
+  <li>Chaque utilisateur reçoit un <strong>badge QR personnel</strong> (tu as déjà <a href="resources/views/admin/stages/badge.blade.php">badge.blade.php</a> qui génère des QR) : carte plastifiée ou QR affiché dans l'app.</li>
+  <li>Une tablette/vieux téléphone fixé à la porte, connecté en permanence sur un compte « borne », caméra ouverte (API <code>BarcodeDetector</code> native ou lib <code>html5-qrcode</code>).</li>
+  <li>Il présente son badge → la borne lit l'ID signé → pointage enregistré.</li>
+</ul>
+
+<h3>Implications</h3>
+<ul>
+  <li>✅ <strong>Identité la plus fiable</strong> — pas de cookie, pas de navigateur, pas de « j'ai effacé mes données ».</li>
+  <li>✅ <strong>Le problème GPS disparaît</strong> : la position, c'est celle de la borne, fixe et exacte. Fini les « précision GPS insuffisante » et le fallback IP à 2000 m qui fait rejeter les pointages (<a href="resources/views/presence/pointage.blade.php">pointage.blade.php:445</a>).</li>
+  <li>✅ Fonctionne pour ceux qui n'ont pas de smartphone.</li>
+  <li>❌ Nécessite <strong>une tablette dédiée</strong> par entrée, allumée, chargée, surveillée.</li>
+  <li>❌ <strong>File d'attente</strong> à 8h.</li>
+  <li>❌ Un badge papier se prête ou se photographie → il faut soit un QR dynamique dans l'app (mais alors il faut ouvrir l'app… donc être connecté), soit accepter le risque.</li>
+</ul>
+
+<hr>
+
+<h2>5. Option C — QR fixe + « rester connecté » longue durée</h2>
+
+<p>Le QR ouvre simplement <code>/presence/pointage</code>, et on rend la session persistante :</p>
+<ul>
+  <li><code>SESSION_EXPIRE_ON_CLOSE=false</code>, <code>SESSION_LIFETIME=43200</code> (30 j)</li>
+  <li>+ cookie <code>remember_me</code> Laravel activé au login</li>
+</ul>
+
+<p><strong>C'est 30 minutes de travail</strong> et ça règle 80 % de la douleur ressentie.</p>
+
+<p>❌ Mais le cookie « remember me » est une <strong>authentification complète</strong> : téléphone volé = accès total au compte (rapports, tâches, données). Le <code>pointage_token</code> de l'option A est au contraire <strong>cantonné au seul pointage</strong> — c'est la différence importante.</p>
+
+<hr>
+
+<h2>6. Ma recommandation</h2>
+
+<div class="reco"><p>Option A en principal + Option C comme réglage de confort + Option B en secours.</p></div>
+
+<p>Concrètement :</p>
+<ol>
+  <li><strong>A</strong> pour 90 % des gens (téléphone-badge, scan à la porte).</li>
+  <li><strong>C</strong> en complément : allonger la session pour que ceux qui restent sur le flux classique ne se reconnectent plus tous les matins.</li>
+  <li><strong>B</strong> plus tard, seulement si tu constates des cas non couverts (pas de smartphone, cookies perdus en boucle) — une borne unique à l'accueil suffit alors comme filet.</li>
+</ol>
+
+<p>Les trois partagent <strong>exactement le même <code>PresenceService</code></strong>. Aucun code métier n'est dupliqué : c'est juste une nouvelle porte d'entrée.</p>
+
+<hr>
+
+<h2>7. La suppression de la validation en 2 temps (décision indépendante)</h2>
+
+<p>Tu veux : scan → tout se fait → un seul message. Ça veut dire supprimer <code>prepare* → validate → confirm</code>. Deux points à trancher :</p>
+
+<p><strong>a) L'observation obligatoire en cas de retard.</strong> Aujourd'hui, si retard, le bouton « Confirmer » est <em>désactivé</em> tant qu'une observation ≥ 10 caractères n'est pas saisie, et elle alimente l'anomalie <code>retard_arrivee</code>. Si on la supprime au moment du scan, je propose de <strong>la déplacer, pas de la supprimer</strong> : le pointage passe immédiatement, <code>validation_status</code> reste <code>a_reexaminer</code>, et la <strong>prochaine ouverture de l'app</strong> demande la justification (via <code>EnsureDailyAttendance</code> qui bloque déjà la navigation). Tu ne perds aucune donnée pour l'admin, et la personne n'est pas bloquée à la porte. Sinon, on l'enregistre juste vide → l'admin verra <code>retard sans justification</code>.</p>
+
+<p><strong>b) L'écran de récapitulatif</strong> (site, GPS, distance, heure) disparaît en tant qu'étape de <em>validation</em>, mais je le garde comme <strong>écran de résultat</strong> après enregistrement — même contenu, en lecture seule, avec ✅ ou ❌. Tu gardes la transparence, tu perds le clic.</p>
+
+<hr>
+
+<h2>8. Fichiers concernés (option A + suppression de la double validation)</h2>
+
+<p><strong>À créer</strong></p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fichier</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td><code>database/migrations/*_create_site_qr_tokens_table.php</code></td><td>jeton public par site (+ rotation éventuelle)</td></tr>
+    <tr><td><code>database/migrations/*_add_pointage_token_to_trusted_devices.php</code></td><td><code>pointage_token_hash</code>, <code>enrolled_at</code>, <code>token_expires_at</code></td></tr>
+    <tr><td><code>app/Models/SiteQrToken.php</code></td><td>modèle du jeton de site</td></tr>
+    <tr><td><code>app/Http/Controllers/QrPointageController.php</code></td><td><code>scan()</code> (GET public), <code>store()</code> (POST), <code>enroll()</code> / <code>unenroll()</code></td></tr>
+    <tr><td><code>app/Http/Middleware/ResolveDeviceIdentity.php</code></td><td>résout l'utilisateur depuis le cookie, sans <code>auth</code></td></tr>
+    <tr><td><code>resources/views/presence/qr/scan.blade.php</code></td><td>page auto-pointage (GPS auto, aucun bouton)</td></tr>
+    <tr><td><code>resources/views/presence/qr/result.blade.php</code></td><td>écran unique de résultat</td></tr>
+    <tr><td><code>resources/views/presence/qr/enroll.blade.php</code></td><td>enrôlement de l'appareil</td></tr>
+    <tr><td><code>resources/views/admin/presence/qr-poster.blade.php</code></td><td>affiche A4 imprimable du QR par site</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>À modifier</strong></p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Fichier</th><th>Modification</th></tr></thead>
+  <tbody>
+    <tr><td><a href="routes/web.php">routes/web.php</a></td><td>nouveau groupe <code>/p/{token}</code> <strong>hors</strong> <code>auth</code>, avec throttle</td></tr>
+    <tr><td><a href="app/Services/PresenceService.php">app/Services/PresenceService.php</a></td><td>+ <code>registerFromQr()</code> : décide check-in/check-out et appelle <code>registerEvent</code>/<code>registerEmployeeEvent</code> existants. <strong>Aucune règle métier touchée.</strong></td></tr>
+    <tr><td><a href="app/Http/Controllers/PresenceController.php">app/Http/Controllers/PresenceController.php</a></td><td><code>prepareCheckIn/prepareCheckOut/showValidation/confirm</code> fusionnés en une action directe</td></tr>
+    <tr><td><a href="app/Http/Middleware/EnsureDailyAttendance.php">app/Http/Middleware/EnsureDailyAttendance.php</a></td><td>whitelister les routes QR + (option) déclencher la justification de retard différée</td></tr>
+    <tr><td><a href="bootstrap/app.php">bootstrap/app.php</a></td><td>alias du nouveau middleware</td></tr>
+    <tr><td><a href="resources/views/presence/pointage.blade.php">resources/views/presence/pointage.blade.php</a> + <a href="resources/views/employee/presence/pointage.blade.php">employee/presence/pointage.blade.php</a></td><td>soumission directe, retrait de la modale d'observation</td></tr>
+    <tr><td><a href="resources/views/presence/validate.blade.php">resources/views/presence/validate.blade.php</a></td><td>transformé en écran de résultat (ou supprimé)</td></tr>
+    <tr><td><code>app/Models/TrustedDevice.php</code>, <code>app/Models/Site.php</code></td><td>relations + casts</td></tr>
+    <tr><td><a href=".env">.env</a></td><td><code>SESSION_EXPIRE_ON_CLOSE=false</code> si tu prends aussi C</td></tr>
+    <tr><td><code>app/Http/Controllers/SiteController.php</code></td><td>bouton « générer / imprimer le QR » du site</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Non touché</strong> : <code>AdminPresenceController</code>, <code>AdminAttendanceTrackingController</code>, <code>AttendanceDay</code>, <code>AttendanceAnomaly</code>, tous les exports et statistiques. Les données produites sont strictement identiques, avec juste <code>meta.source = 'qr'</code> en plus pour tracer.</p>
+
+<hr>
+
+<h2>9. Points techniques à valider avant de coder</h2>
+<ul>
+  <li><strong>HTTPS obligatoire</strong> pour <code>navigator.geolocation</code> → OK, tu es déjà en ngrok HTTPS. Mais l'URL ngrok change ; le QR imprimé pointera vers une URL morte au prochain redémarrage. <strong>Il faut un domaine stable avant d'imprimer quoi que ce soit.</strong></li>
+  <li><strong>CSRF</strong> : la page de scan est publique en GET, elle sert un token, le POST le renvoie. Pas de problème, mais il faut un <code>throttle</code> sur l'endpoint.</li>
+  <li>Le <strong>fallback IP</strong> actuel (<code>ipapi.co</code>, précision 2000 m) provoque des rejets <code>gps_accuracy_low</code>. Sur la page QR je propose de le retirer et d'afficher plutôt « rapproche-toi de la fenêtre / réessaie », plus honnête.</li>
+</ul>
+
+<hr>
+
+<h2>10. Estimation</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Lot</th><th>Contenu</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>Session longue (option C)</td><td>30 min</td></tr>
+    <tr><td>1</td><td>Suppression validation 2 temps sur le flux classique</td><td>~3 h</td></tr>
+    <tr><td>2</td><td>Enrôlement appareil + cookie + middleware</td><td>~4 h</td></tr>
+    <tr><td>3</td><td>Route QR publique + page auto-pointage + résultat</td><td>~5 h</td></tr>
+    <tr><td>4</td><td>Génération/impression du QR par site (admin)</td><td>~2 h</td></tr>
+    <tr><td>5</td><td>Justification de retard différée</td><td>~2 h</td></tr>
+    <tr><td>6</td><td><em>(optionnel)</em> QR rotatif sur écran</td><td>~3 h</td></tr>
+    <tr><td>7</td><td><em>(optionnel)</em> Borne de scan option B</td><td>~8 h</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Le lot 1 est indépendant et peut partir tout de suite.</p>
+
+<hr>
+
+<p>Voilà les trois vraies options avec ce qu'elles coûtent et ce qu'elles risquent. Dis-moi ce que tu retiens sur ces trois points et je te rédige le plan d'implémentation détaillé :</p>
+
+<ol>
+  <li><strong>Architecture</strong> : A seule, A+C, ou B (borne) ?</li>
+  <li><strong>Observation de retard</strong> : différée à la prochaine connexion, ou supprimée définitivement ?</li>
+  <li><strong>QR</strong> : papier statique, ou écran avec rotation 60 s ?</li>
+</ol>
+
+</main>
+</body>
+</html>
