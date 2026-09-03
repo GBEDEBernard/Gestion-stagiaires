@@ -336,3 +336,35 @@ test('a student can point through the qr flow without a database error', functio
     expect($resultat['event_type'])->toBe('check_in')
         ->and(App\Models\AttendanceDay::first()->first_check_in_at)->not->toBeNull();
 });
+
+test('a permission requested today for a future day works on that day', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    // Demandée et approuvée aujourd'hui, mais portant sur vendredi 11:00
+    $vendredi = today()->next(\Carbon\CarbonInterface::FRIDAY);
+    earlyPermission($user, $vendredi->toDateString(), '11:00');
+
+    // Aujourd'hui, elle ne sert à rien : ce n'est pas le jour visé
+    Carbon::setTestNow(today()->setTime(15, 0));
+    expect(fn() => $this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+
+    // Le vendredi venu, avant 11:00 : encore trop tôt
+    Carbon::setTestNow($vendredi->copy()->setTime(10, 30));
+    App\Models\AttendanceDay::query()->update(['attendance_date' => $vendredi->toDateString()]);
+    \Illuminate\Support\Facades\DB::table('attendance_days')->update([
+        'attendance_date'   => $vendredi->toDateString(),
+        'first_check_in_at' => $vendredi->copy()->setTime(7, 0),
+        'last_check_out_at' => null,
+    ]);
+
+    expect(fn() => $this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+
+    // À partir de 11:00 ce vendredi-là, le départ passe
+    Carbon::setTestNow($vendredi->copy()->setTime(11, 0));
+
+    expect($this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->not->toBeNull();
+});

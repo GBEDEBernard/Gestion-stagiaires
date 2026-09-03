@@ -238,6 +238,47 @@
 
     .stack > * + * { margin-top: 8px; }
 
+    /* ---------- Salutation et horloge ---------- */
+
+    .greeting {
+        margin: 0 0 14px;
+        font-size: 16px;
+        color: var(--text-secondary);
+    }
+    .greeting strong { color: var(--text); font-weight: 600; }
+
+    /* Chiffres fins, larges et resserrés : l'esprit d'une horloge de veille. */
+    .clock {
+        margin: 0;
+        font-size: 68px;
+        font-weight: 300;
+        line-height: 1;
+        letter-spacing: -.04em;
+        font-variant-numeric: tabular-nums;
+        color: var(--text);
+    }
+    .clock-date {
+        margin: 6px 0 20px;
+        font-size: 14px;
+        color: var(--text-tertiary);
+    }
+
+    .actions { margin: 0 0 18px; }
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        transition: background-color 120ms ease, color 120ms ease;
+    }
+    .btn-ghost:hover { background: var(--surface-sunken); color: var(--text); }
+
     @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
             animation-duration: .01ms !important;

@@ -59,6 +59,8 @@
     }
 
     $fullName = trim(($user->prenom ?? '') . ' ' . ($user->nom ?? $user->name ?? ''));
+    $prenom   = $user->prenom ?? $user->name ?? null;
+    $salut    = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -104,13 +106,14 @@
             </div>
         @endif
 
-        <h1 class="title">{{ $heading }}</h1>
-
-        @if($fullName !== '')
-            <p class="subtitle">{{ $fullName }}</p>
-        @else
-            <p class="subtitle">{{ now()->isoFormat('dddd Do MMMM') }}</p>
+        @if($prenom)
+            <p class="greeting">{{ $salut }}, <strong>{{ $prenom }}</strong></p>
         @endif
+
+        <p class="clock">{{ $time ?? now()->format('H:i') }}</p>
+        <p class="clock-date">{{ now()->isoFormat('dddd Do MMMM') }}</p>
+
+        <h1 class="title">{{ $heading }}</h1>
 
         @if($isRejected)
             <div class="notice notice--danger">
@@ -142,20 +145,8 @@
                     <dt>Type</dt>
                     <dd>{{ $eventType === 'check_in' ? 'Arrivée' : 'Départ' }}</dd>
                 </div>
-                <div class="row">
-                    <dt>Heure</dt>
-                    <dd>{{ $time ?? now()->format('H:i') }}</dd>
-                </div>
-            @else
-                <div class="row">
-                    <dt>Tentative à</dt>
-                    <dd>{{ $time ?? now()->format('H:i') }}</dd>
-                </div>
             @endif
-            <div class="row">
-                <dt>Date</dt>
-                <dd>{{ now()->isoFormat('Do MMMM YYYY') }}</dd>
-            </div>
+            {{-- L'heure et la date sont déjà portées par l'horloge en tête. --}}
             @if($fullName !== '' && !$isApproved)
                 <div class="row">
                     <dt>Site</dt>
@@ -163,6 +154,10 @@
                 </div>
             @endif
         </dl>
+
+        <p class="actions">
+            <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
+        </p>
 
         @if($isApproved)
             <p class="footnote">Votre présence est enregistrée. Vous pouvez fermer cette page.</p>

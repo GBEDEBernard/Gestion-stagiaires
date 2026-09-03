@@ -6,7 +6,7 @@
 @once
 @push('scripts')
 <script>
-    function pointageForm(enRetard = false) {
+    function pointageForm(enRetard = false, departBloque = false) {
         return {
             busy: false,
             etape: '',
@@ -15,7 +15,9 @@
             // Le motif de retard se saisit en modale : la page reste lisible et
             // le champ n'apparaît qu'au moment où il conditionne l'enregistrement.
             enRetard: enRetard,
+            departBloque: departBloque,
             modalRetard: false,
+            modalDepart: false,
             motif: '',
             motifTropCourt: false,
 
@@ -74,6 +76,13 @@
 
             submit(form) {
                 if (this.busy) return;
+
+                // Départ avant l'heure : on l'annonce et on propose la permission,
+                // plutôt que de laisser le serveur refuser après coup.
+                if (this.departBloque) {
+                    this.modalDepart = true;
+                    return;
+                }
 
                 // En retard sans motif : on demande d'abord, on enregistre ensuite.
                 if (this.enRetard && this.motif.trim().length < 10) {

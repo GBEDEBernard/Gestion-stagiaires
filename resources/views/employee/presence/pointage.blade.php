@@ -93,7 +93,11 @@
                     {{ $salut }}, <span class="font-semibold text-gray-900 dark:text-white">{{ $prenom }}</span>
                 </p>
 
-                <p class="mt-4 text-5xl font-semibold tabular-nums text-gray-900 dark:text-white"
+                {{-- Taille et graisse en style en ligne : Tailwind purge les
+                     classes absentes du bundle, et l'horloge doit rester grande
+                     même sans reconstruction des assets. --}}
+                <p class="mt-4 tabular-nums text-gray-900 dark:text-white"
+                   style="font-size:4.25rem;font-weight:300;line-height:1;letter-spacing:-.04em"
                    x-data="{ h: '' }" x-init="h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
                                               setInterval(() => h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 10000)"
                    x-text="h">--:--</p>
@@ -133,7 +137,7 @@
                 @else
                     <form method="POST"
                           action="{{ $etat === 'arrivee' ? route('presence.checkin') : route('presence.checkout') }}"
-                          x-data="pointageForm({{ $late ? 'true' : 'false' }})" @submit.prevent="submit($el)">
+                          x-data="pointageForm({{ $late ? 'true' : 'false' }}, {{ ($etat === 'depart' && !($canCheckOutNow ?? true)) ? 'true' : 'false' }})" @submit.prevent="submit($el)">
                         @csrf
                         <input type="hidden" name="latitude" x-ref="lat">
                         <input type="hidden" name="longitude" x-ref="lng">
@@ -149,9 +153,7 @@
                         @endif
 
                         @if($etat === 'depart' && !($canCheckOutNow ?? true))
-                            <div class="mb-5 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300">
-                                La journée n'est pas terminée. Votre départ est prévu à {{ $expOut?->format('H:i') }}.
-                            </div>
+                            @include('presence.partials.depart-modal', ['heureDepart' => $expOut?->format('H:i')])
                         @endif
 
                         <button type="submit" x-bind:disabled="busy"
@@ -168,9 +170,17 @@
             </div>
         </div>
 
-        <p class="mt-4 text-center text-xs text-gray-400">
-            Votre position sert uniquement à confirmer votre présence sur le site.
-        </p>
+        <div class="mt-5 text-center">
+            <a href="{{ route('presence.historique') }}"
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium
+                      text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white
+                      hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/>
+                </svg>
+                Mon historique
+            </a>
+        </div>
     </div>
 
     @include('presence.partials.badge-popup')

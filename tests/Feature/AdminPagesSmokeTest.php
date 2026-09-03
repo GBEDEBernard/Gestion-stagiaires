@@ -266,7 +266,7 @@ test('a late arrival asks for the reason in a modal, not inline', function () {
 
     // Le champ vit dans la modale, pas dans le flux de la page
     expect($html)->toContain('modalRetard')
-        ->and($html)->toContain("pointageForm(true)");
+        ->and($html)->toContain("pointageForm(true,");
 });
 
 test('an on time arrival carries no late modal at all', function () {
@@ -277,7 +277,7 @@ test('an on time arrival carries no late modal at all', function () {
         ->get(route('presence.pointage'))
         ->assertOk()
         ->assertDontSee('Vous arrivez après')
-        ->assertSee('pointageForm(false)', false);
+        ->assertSee('pointageForm(false,', false);
 });
 
 test('a public holiday says whether pointage is open or closed', function () {
