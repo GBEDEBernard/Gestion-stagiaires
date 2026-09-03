@@ -311,3 +311,28 @@ test('the qr scan refuses a late arrival just like the classic flow', function (
     expect(fn() => $this->service->registerFromQrScan($user, $site, ['latitude' => 6.36, 'longitude' => 2.41]))
         ->toThrow(ValidationException::class);
 });
+
+test('a student can point through the qr flow without a database error', function () {
+    // Le chemin stagiaire du scan filtrait sur stages.status, colonne qui
+    // n'existe pas : toute tentative levait une erreur SQL en production alors
+    // que les tests QR, écrits sur des employés, ne l'empruntaient jamais.
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    $site  = App\Models\Site::find($stage->site_id);
+    $site->update(['qr_token' => 'tok-' . Str::random(12)]);
+
+    App\Models\AttendanceDay::query()->delete();
+
+    Carbon::setTestNow(today()->setTime(9, 0));
+
+    $resultat = $this->service->registerFromQrScan(
+        $user,
+        $site,
+        ['latitude' => 6.36, 'longitude' => 2.41],
+        null,
+        "Embouteillage sur la voie de Godomey."
+    );
+
+    expect($resultat['event_type'])->toBe('check_in')
+        ->and(App\Models\AttendanceDay::first()->first_check_in_at)->not->toBeNull();
+});

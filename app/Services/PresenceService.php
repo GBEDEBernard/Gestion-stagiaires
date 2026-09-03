@@ -249,7 +249,6 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             $stage = $etudiant->stages()
                 ->where('date_debut', '<=', today())
                 ->where('date_fin', '>=', today())
-                ->where('status', '!=', 'cancelled')
                 ->where(function ($q) use ($site) {
                     $q->where('site_id', $site->id)->orWhereNull('site_id');
                 })
