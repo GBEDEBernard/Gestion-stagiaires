@@ -22,7 +22,7 @@
                 </svg>
             </div>
 
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Faire de ce téléphone votre badge</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Faire de ce téléphone votre appareil de pointage</h3>
             <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                 Vos prochains scans à la porte seront immédiats, sans reconnexion.
             </p>
@@ -30,7 +30,7 @@
             <div class="mt-5 flex flex-col gap-2">
                 <button type="button" @click="enregistrer()" :disabled="busy"
                     class="w-full px-4 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium text-sm hover:opacity-90 disabled:opacity-60 transition">
-                    <span x-show="!busy">Enregistrer ce téléphone</span>
+                    <span x-show="!busy">Faire de ce téléphone mon appareil de pointage</span>
                     <span x-show="busy" x-cloak>Enregistrement…</span>
                 </button>
 

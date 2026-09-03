@@ -242,3 +242,72 @@ test('the qr scan applies the same block as the classic flow', function () {
 
     expect(AttendanceDay::first()->last_check_out_at)->toBeNull();
 });
+
+test('an arrival cannot be recorded once the day is over', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    // La journée s'arrête à 18:00 ; personne n'a pointé
+    App\Models\AttendanceDay::query()->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(19, 30));
+
+    expect(fn() => $this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+
+    expect(App\Models\AttendanceDay::first()->first_check_in_at)->toBeNull();
+});
+
+test('the refusal to arrive late names the end of the day', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    App\Models\AttendanceDay::query()->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(19, 30));
+
+    try {
+        $this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]);
+        $this->fail("L'arrivée aurait dû être refusée.");
+    } catch (ValidationException $e) {
+        expect(collect($e->errors())->flatten()->first())
+            ->toContain('terminée')
+            ->toContain('18:00');
+    }
+});
+
+test('an arrival is still possible one minute before the end', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    App\Models\AttendanceDay::query()->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(17, 59));
+
+    expect($this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->not->toBeNull();
+});
+
+test('a half day closes the arrival window at its own end time', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user, '12:30');
+    App\Models\AttendanceDay::query()->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    // 14:00 est après la fin de la demi-journée : trop tard pour arriver
+    Carbon::setTestNow(today()->setTime(14, 0));
+
+    expect(fn() => $this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+});
+
+test('the qr scan refuses a late arrival just like the classic flow', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    $site  = App\Models\Site::find($stage->site_id);
+    $site->update(['qr_token' => 'tok-' . Str::random(12)]);
+
+    App\Models\AttendanceDay::query()->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(19, 30));
+
+    expect(fn() => $this->service->registerFromQrScan($user, $site, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+});

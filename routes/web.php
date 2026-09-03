@@ -58,7 +58,6 @@ Route::get('/', fn() => redirect()->route('login'));
 Route::prefix('p')->middleware('throttle:60,1')->group(function () {
     Route::get('/{site_token}', [QrPointageController::class, 'scan'])->name('presence.qr.scan');
     Route::post('/{site_token}/process', [QrPointageController::class, 'processPointage'])->name('presence.qr.process');
-    Route::get('/{site_token}/post-login', [QrPointageController::class, 'postLogin'])->name('presence.qr.post-login')->middleware('auth');
 });
 
 require __DIR__ . '/auth.php';

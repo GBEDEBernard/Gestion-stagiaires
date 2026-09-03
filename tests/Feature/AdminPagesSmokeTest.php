@@ -226,7 +226,7 @@ test('the profile page renders without the account activity card', function () {
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertOk()
-        ->assertSee('Mes Badges de Pointage')
+        ->assertSee('Mon appareil de pointage')
         ->assertDontSee('Activité du compte');
 });
 

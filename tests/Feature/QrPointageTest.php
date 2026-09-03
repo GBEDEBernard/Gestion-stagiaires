@@ -145,36 +145,31 @@ test('scanning qr with enrolled device cookie displays scan page', function () {
     $response->assertViewHas('user');
 });
 
-test('multi-user device cookie displays user choice view', function () {
-    $site = createQrTestSite();
+test('a phone carrying an old second profile still lands on a single scan screen', function () {
+    // Le choix entre profils n'existe plus. Des données anciennes peuvent
+    // encore porter deux badges sur une même empreinte : l'écran de scan doit
+    // rester simple plutôt que de proposer une liste.
+    $site  = createQrTestSite();
     $user1 = createQrTestUser('employe');
     $user2 = createQrTestUser('employe');
 
-    $rawToken1 = Str::random(64);
-    $rawToken2 = Str::random(64);
+    $token1 = Str::random(64);
+    $token2 = Str::random(64);
 
-    TrustedDevice::create([
-        'user_id'             => $user1->id,
-        'device_fingerprint'  => 'fp_shared_device',
-        'pointage_token_hash' => hash('sha256', $rawToken1),
-        'is_qr_badge'         => true,
-        'is_trusted'          => true,
-    ]);
+    foreach ([[$user1, $token1], [$user2, $token2]] as [$u, $t]) {
+        TrustedDevice::create([
+            'user_id'             => $u->id,
+            'device_fingerprint'  => 'fp_ancien_partage',
+            'pointage_token_hash' => hash('sha256', $t),
+            'is_qr_badge'         => true,
+            'is_trusted'          => true,
+        ]);
+    }
 
-    TrustedDevice::create([
-        'user_id'             => $user2->id,
-        'device_fingerprint'  => 'fp_shared_device',
-        'pointage_token_hash' => hash('sha256', $rawToken2),
-        'is_qr_badge'         => true,
-        'is_trusted'          => true,
-    ]);
-
-    $response = $this->withCookie('pointage_device_tokens', json_encode([$rawToken1, $rawToken2]))
-        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]));
-
-    $response->assertStatus(200);
-    $response->assertViewIs('presence.qr.multi-user');
-    $response->assertViewHas('usersList');
+    $this->withCookie('pointage_device_tokens', json_encode([$token1, $token2]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.scan');
 });
 
 test('processing attendance returns standalone result view without redirection', function () {

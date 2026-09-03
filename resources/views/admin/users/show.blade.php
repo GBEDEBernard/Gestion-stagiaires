@@ -195,7 +195,7 @@
                         </div>
                     </div>
 
-                    <!-- Appareils de pointage enrôlés comme badge -->
+                    <!-- Appareil de pointage -->
                     @include('admin.users.partials.device-badges')
 
                     <!-- Actions -->

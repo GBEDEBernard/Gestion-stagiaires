@@ -8,7 +8,7 @@
             <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            <span>Mes Badges de Pointage par QR</span>
+            <span>Mon appareil de pointage</span>
         </h3>
         <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $enrolledDevices->count() >= 2 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' }}">
             {{ $enrolledDevices->count() }}/1 appareil
@@ -61,7 +61,7 @@
         @else
             <div class="text-center py-6 px-4 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Aucun smartphone n'est encore configuré comme badge.<br>
+                    Aucun téléphone n'est encore défini comme appareil de pointage.<br>
                     Pour en enregistrer un, scannez le QR code affiché à la porte avec votre téléphone et connectez-vous.
                 </p>
             </div>

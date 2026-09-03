@@ -1,5 +1,15 @@
 @php
     $day        = $attendanceDay ?? null;
+
+    // Couleur portée par l'état réel, pas par le simple fait d'avoir pointé :
+    // une arrivée en retard doit se voir.
+    $arriveeEnRetard = $day?->arrival_status === 'late';
+    $tonArrivee = !($hasCheckedIn ?? false)
+        ? 'text-gray-300 dark:text-gray-600'
+        : ($arriveeEnRetard ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400');
+    $tonDepart  = ($hasCheckedOut ?? false)
+        ? (($day?->early_departure_minutes ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')
+        : 'text-gray-300 dark:text-gray-600';
     $checkedIn  = $hasCheckedIn ?? false;
     $checkedOut = $hasCheckedOut ?? false;
     $expIn      = $expectedIn  ?? null;
@@ -66,15 +76,21 @@
             <div class="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
                 <div class="px-6 py-5 text-center">
                     <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Arrivée</p>
-                    <p class="text-3xl font-semibold tabular-nums {{ $checkedIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-600' }}">
+                    <p class="text-3xl font-semibold tabular-nums {{ $tonArrivee }}">
                         {{ $day?->first_check_in_at?->format('H:i') ?? '--:--' }}
                     </p>
-                    <p class="mt-1 text-xs text-gray-400">prévue {{ $expIn?->format('H:i') ?? '--:--' }}</p>
+                    @if($arriveeEnRetard && ($day->late_minutes ?? 0) > 0)
+                        <p class="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                            {{ $day->late_minutes }} min de retard
+                        </p>
+                    @else
+                        <p class="mt-1 text-xs text-gray-400">prévue {{ $expIn?->format('H:i') ?? '--:--' }}</p>
+                    @endif
                 </div>
 
                 <div class="px-6 py-5 text-center">
                     <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Départ</p>
-                    <p class="text-3xl font-semibold tabular-nums {{ $checkedOut ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-300 dark:text-gray-600' }}">
+                    <p class="text-3xl font-semibold tabular-nums {{ $tonDepart }}">
                         {{ $day?->last_check_out_at?->format('H:i') ?? '--:--' }}
                     </p>
                     <p class="mt-1 text-xs text-gray-400">prévu {{ $expOut?->format('H:i') ?? '--:--' }}</p>
@@ -110,15 +126,22 @@
                         <input type="hidden" name="browser" x-ref="browser">
 
                         @if($late)
-                            {{-- Motif demandé sur place, comme au scan : plus d'écran de validation. --}}
-                            <div class="mb-5">
-                                <label for="observation_message" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
-                                    Vous arrivez après {{ $expIn?->format('H:i') }} — motif du retard
+                            {{-- Motif demandé sur place, comme au scan. L'anneau rouge
+                                 signale que ce champ conditionne l'enregistrement. --}}
+                            <div class="mb-5 p-4 rounded-xl bg-red-50/60 dark:bg-red-900/10 ring-2 ring-red-500/40">
+                                <label for="observation_message" class="block text-sm font-semibold text-red-700 dark:text-red-400 mb-1.5">
+                                    Vous arrivez après {{ $expIn?->format('H:i') }}
                                 </label>
+                                <p class="text-xs text-red-700/80 dark:text-red-400/80 mb-2.5">
+                                    Expliquez brièvement ce qui s'est passé pour enregistrer votre arrivée.
+                                </p>
                                 <textarea id="observation_message" name="observation_message" rows="3" required minlength="10" maxlength="500"
                                     placeholder="Ex. : embouteillage sur la voie de Godomey."
-                                    class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white shadow-sm text-sm"></textarea>
-                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Dix caractères minimum. Il sera lu par votre responsable.</p>
+                                    class="w-full rounded-lg border-red-300 dark:border-red-800/60 bg-white dark:bg-gray-900 dark:text-white
+                                           focus:border-red-500 focus:ring-2 focus:ring-red-500/40 shadow-sm text-sm"></textarea>
+                                <p class="mt-1.5 text-xs text-red-700/70 dark:text-red-400/70">
+                                    Dix caractères minimum. Il sera lu par votre responsable.
+                                </p>
                             </div>
                         @endif
 

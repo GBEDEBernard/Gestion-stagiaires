@@ -76,47 +76,24 @@ class QrPointageController extends Controller
             );
         }
 
-        // Cas 1 : Exactement 1 profil sur cet appareil -> Scan direct
-        if ($activeDevices->count() === 1) {
-            $device = $activeDevices->first();
-            $user   = $device->user;
+        // Un téléphone porte un seul badge : on prend le premier actif. Le choix
+        // entre plusieurs profils n'existe plus, l'enrôlement l'interdit en amont.
+        $device = $activeDevices->first();
+        $user   = $device->user;
 
-            // Retrouver le token brut correspondant à ce hash
-            $matchingRawToken = null;
-            foreach ($rawTokens as $raw) {
-                if (hash('sha256', $raw) === $device->pointage_token_hash) {
-                    $matchingRawToken = $raw;
-                    break;
-                }
+        $matchingRawToken = null;
+        foreach ($rawTokens as $raw) {
+            if (hash('sha256', $raw) === $device->pointage_token_hash) {
+                $matchingRawToken = $raw;
+                break;
             }
-
-            return view('presence.qr.scan', [
-                'site'         => $site,
-                'user'         => $user,
-                'device_token' => $matchingRawToken,
-                'is_enrolled'  => true,
-            ]);
         }
 
-        // Cas 2 : Plusieurs utilisateurs sur le même téléphone (téléphone partagé)
-        $usersList = $activeDevices->map(function ($device) use ($rawTokens) {
-            $matchingRawToken = null;
-            foreach ($rawTokens as $raw) {
-                if (hash('sha256', $raw) === $device->pointage_token_hash) {
-                    $matchingRawToken = $raw;
-                    break;
-                }
-            }
-
-            return [
-                'user'         => $device->user,
-                'device_token' => $matchingRawToken,
-            ];
-        });
-
-        return view('presence.qr.multi-user', [
-            'site'      => $site,
-            'usersList' => $usersList,
+        return view('presence.qr.scan', [
+            'site'         => $site,
+            'user'         => $user,
+            'device_token' => $matchingRawToken,
+            'is_enrolled'  => true,
         ]);
     }
 
@@ -257,29 +234,6 @@ class QrPointageController extends Controller
                 'time'      => now()->format('H:i'),
             ]);
         }
-    }
-
-    /**
-     * Page après connexion pour finaliser le pointage et proposer l'enrôlement du téléphone.
-     * GET /p/{site_token}/post-login
-     */
-    public function postLogin(Request $request, string $site_token)
-    {
-        $site = Site::where('qr_token', $site_token)->where('is_active', true)->firstOrFail();
-        $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        $activeBadgesCount = $user->trustedDevices()->activeQrBadges()->count();
-
-        return view('presence.qr.post-login', [
-            'site'              => $site,
-            'user'              => $user,
-            'activeBadgesCount' => $activeBadgesCount,
-            'canEnroll'         => $activeBadgesCount < 1,
-        ]);
     }
 
     /**

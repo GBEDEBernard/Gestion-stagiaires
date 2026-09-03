@@ -11,20 +11,20 @@
             Appareils de pointage
         </h3>
         <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-            {{ $badgeDevices->count() }}/2
+            {{ $badgeDevices->count() }}/1
         </span>
     </div>
 
     <div class="p-6">
         @if($badgeDevices->isEmpty())
             <p class="text-sm text-gray-500 dark:text-gray-400">
-                Aucun appareil n'est enrôlé comme badge pour cet utilisateur. Il doit se connecter
+                Aucun téléphone n'est défini comme appareil de pointage pour cet utilisateur. Il doit se connecter
                 depuis son téléphone après un scan pour en configurer un.
             </p>
         @else
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                Ces téléphones peuvent pointer par QR code sans reconnexion. Révoquez-en un
-                en cas de perte, de vol ou de départ : l'appareil est coupé immédiatement,
+                Ce téléphone peut pointer par QR code sans reconnexion. Révoquez-le en cas
+                de perte, de vol ou de départ : l'appareil est coupé immédiatement,
                 sans désactiver le compte.
             </p>
 
