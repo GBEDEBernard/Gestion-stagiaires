@@ -120,17 +120,21 @@
         color: var(--text-secondary);
     }
 
+    /* Le lieu en pastille, comme sur la page de pointage : même objet,
+       même forme, que l'on arrive par le scan ou par l'application. */
     .eyebrow {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
         gap: 6px;
-        margin-bottom: 20px;
+        margin: 0 0 20px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #ecebe3;
         font-size: 12px;
         font-weight: 500;
-        color: var(--text-tertiary);
+        color: var(--text-secondary);
     }
-    .eyebrow svg { width: 13px; height: 13px; stroke-width: 1.75; flex: none; }
+    .eyebrow svg { width: 13px; height: 13px; stroke-width: 1.75; flex: none; color: var(--text-tertiary); }
 
     /* ---------- Tableau de détails ---------- */
 

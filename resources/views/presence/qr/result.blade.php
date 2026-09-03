@@ -58,7 +58,6 @@
         $heading = $errorTitle;
     }
 
-    $fullName = trim(($user->prenom ?? '') . ' ' . ($user->nom ?? $user->name ?? ''));
     $prenom   = $user->prenom ?? $user->name ?? null;
     $salut    = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
 @endphp
@@ -139,21 +138,16 @@
             </div>
         @endif
 
-        <dl class="details">
-            @if($isApproved)
+        {{-- L'heure et la date sont portées par l'horloge, le lieu par la
+             pastille en tête : il ne reste que la nature du pointage. --}}
+        @if($isApproved)
+            <dl class="details">
                 <div class="row">
                     <dt>Type</dt>
                     <dd>{{ $eventType === 'check_in' ? 'Arrivée' : 'Départ' }}</dd>
                 </div>
-            @endif
-            {{-- L'heure et la date sont déjà portées par l'horloge en tête. --}}
-            @if($fullName !== '' && !$isApproved)
-                <div class="row">
-                    <dt>Site</dt>
-                    <dd>{{ $site->name ?? '—' }}</dd>
-                </div>
-            @endif
-        </dl>
+            </dl>
+        @endif
 
         <p class="actions">
             <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
