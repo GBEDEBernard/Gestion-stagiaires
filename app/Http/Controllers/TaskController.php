@@ -38,7 +38,7 @@ public function index(Request $request)
      * occurrence dans le workspace, chaque personne travaille dessus et
      * dépose ses propres rapports.
      */
-    public function assignForm(Request $request, ?string $task = null)
+    public function assignForm(Request $request)
     {
         $user = auth()->user();
 
@@ -54,31 +54,48 @@ public function index(Request $request)
             ->values();
 
         // Toutes les tâches en cours (sources assignables).
-        $tasks = Task::with('owner', 'assignees')
+        $tasks = Task::with(['owner', 'assignees', 'subtasks.assignedTo'])
             ->where('status', '!=', 'completed')
             ->latest('updated_at')
-            ->get(['id', 'title', 'status', 'priority', 'due_date', 'last_progress_percent', 'owner_id']);
+            ->get();
 
         // Destinataires actuels par tâche (propriétaire + assignés pivot).
-        $taskHolders = $tasks->mapWithKeys(function ($task) {
-            $holders = collect([$task->owner_id])->filter()
-                ->merge($task->assignees->pluck('id'))
+        $taskHolders = $tasks->mapWithKeys(function ($t) {
+            $holders = collect([$t->owner_id])->filter()
+                ->merge($t->assignees->pluck('id'))
                 ->map(fn($k) => (int) $k)
                 ->unique()
                 ->values()
                 ->all();
 
-            return [$task->id => $holders];
+            return [$t->id => $holders];
         });
 
-        // Pré-sélection de la tâche si un ID chiffré est fourni dans l'URL.
+        // Pré-sélection de la tâche — récupérée depuis le paramètre de route {task?}
+        // Route::bind('task',...) résout automatiquement en modèle Task si un paramètre est fourni.
         $preselectedTaskId = null;
-        if ($task) {
-            $found = $tasks->firstWhere('id', $task);
-            $preselectedTaskId = $found ? (string) $found->id : null;
+        $fixedTask = null;
+
+        $routeTask = $request->route('task'); // Task model (via Route::bind) ou null
+
+        if ($routeTask) {
+            if ($routeTask instanceof Task) {
+                $fixedTask = $routeTask->loadMissing(['owner', 'assignees', 'subtasks.assignedTo']);
+            } else {
+                // Fallback : paramètre brut (chiffré ou numérique)
+                $decrypted = decrypt_route_param((string) $routeTask) ?? $routeTask;
+                $fixedTask = Task::with(['owner', 'assignees', 'subtasks.assignedTo'])->find($decrypted);
+            }
+
+            if ($fixedTask) {
+                $preselectedTaskId = (string) $fixedTask->id;
+                if (!$tasks->contains('id', $fixedTask->id)) {
+                    $tasks->push($fixedTask);
+                }
+            }
         }
 
-        return view('tasks.assign', compact('producers', 'tasks', 'taskHolders', 'preselectedTaskId'));
+        return view('tasks.assign', compact('producers', 'tasks', 'taskHolders', 'preselectedTaskId', 'fixedTask'));
     }
 
     /**
@@ -191,15 +208,23 @@ public function index(Request $request)
         }
 
         // ── Mode "assign" : une tâche → plusieurs personnes (pivot) ──
+        $ownerIds = array_filter((array) $request->input('owner_ids', []));
+        $subtaskAssignments = array_filter((array) $request->input('subtask_assignments', []));
+        $combinedUserIds = array_values(array_unique(array_merge($ownerIds, array_values($subtaskAssignments))));
+
+        $request->merge(['owner_ids' => $combinedUserIds]);
+
         $payload = $request->validate([
-            'task_id'    => 'required|integer|exists:tasks,id',
-            'owner_ids'  => 'required|array|min:1',
-            'owner_ids.*' => 'required|integer|exists:users,id',
+            'task_id'             => 'required|integer|exists:tasks,id',
+            'owner_ids'           => 'required|array|min:1',
+            'owner_ids.*'         => 'required|integer|exists:users,id',
+            'subtask_assignments' => 'nullable|array',
+            'subtask_assignments.*' => 'nullable|integer|exists:users,id',
         ], [
             'task_id.required'   => 'Veuillez sélectionner une tâche à assigner.',
             'task_id.exists'     => 'La tâche sélectionnée est introuvable.',
-            'owner_ids.required' => 'Sélectionnez au moins une personne.',
-            'owner_ids.min'      => 'Sélectionnez au moins une personne.',
+            'owner_ids.required' => 'Sélectionnez au moins une personne ou attribuez une sous-tâche.',
+            'owner_ids.min'      => 'Sélectionnez au moins une personne ou attribuez une sous-tâche.',
             'owner_ids.*.exists' => 'Une des personnes sélectionnées est introuvable.',
         ]);
 
@@ -217,23 +242,50 @@ public function index(Request $request)
         $targets = $targets->filter(fn($u) => $u->profil() !== null)
             ->reject(fn($u) => $u->hasRole('admin'));
 
-        // T-008 : au moment où la tâche passe d'un propriétaire isolé à une
-        // ÉQUIPE, on fige sa progression courante dans base_progress_percent.
-        // Ce % « d'avant » entre ensuite dans le calcul du global :
-        //   global = (base + progression de chaque membre) / (n + 1)
-        if ($task->assignees()->count() === 0 && is_null($task->base_progress_percent)) {
-            $task->update(['base_progress_percent' => max(0, min(100, (int) $task->last_progress_percent))]);
+
+        // ── Calcul des listes : ajouts et suppressions ──
+        $newAssigneeIds    = $targets->pluck('id')->values()->toArray();
+        $currentAssigneeIds = $task->assignees()->pluck('users.id')->map(fn($id) => (int) $id)->toArray();
+
+        // Personnes à retirer (décochées par l'admin)
+        $toDetach = array_values(array_diff($currentAssigneeIds, $newAssigneeIds));
+        // Personnes à ajouter (nouvellement cochées)
+        $toAttach = array_values(array_diff($newAssigneeIds, $currentAssigneeIds));
+
+        // Détacher les personnes supprimées
+        if (!empty($toDetach)) {
+            $task->assignees()->detach($toDetach);
+
+            $removedUsers = User::whereIn('id', $toDetach)->get();
+            foreach ($removedUsers as $removed) {
+                Activity::create([
+                    'user_id'     => $user->id,
+                    'action'      => 'Désassignation tache',
+                    'description' => "Tache « {$task->title} » retirée à {$removed->name}",
+                ]);
+
+                $this->notifications->push(
+                    $removed->id,
+                    'task_unassigned',
+                    '📋 Tâche retirée',
+                    $user->name . ' vous a retiré de la tâche « ' . Str::limit($task->title, 40) . ' »',
+                    encrypted_route('tasks.show', $task),
+                    'clipboard-list',
+                    'gray'
+                );
+            }
         }
 
         $created = [];
-        $skipped = [];
 
-        foreach ($targets as $target) {
-            if ($task->alreadyReceivedBy($target->id)) {
-                $skipped[] = $target->name;
-                continue;
-            }
+        // T-008 : au moment où la tâche passe d'un propriétaire isolé à une
+        // ÉQUIPE, on fige sa progression courante dans base_progress_percent.
+        if ($task->assignees()->count() === 0 && is_null($task->base_progress_percent) && !empty($toAttach)) {
+            $task->update(['base_progress_percent' => max(0, min(100, (int) $task->last_progress_percent))]);
+        }
 
+        // Attacher les nouvelles personnes
+        foreach ($targets->whereIn('id', $toAttach) as $target) {
             $task->assignees()->attach($target->id, ['assigned_at' => now()]);
             $created[] = $target->name;
 
@@ -254,21 +306,38 @@ public function index(Request $request)
             );
         }
 
+        // ── Répartition individuelle des sous-tâches ──
+        if (!empty($payload['subtask_assignments'])) {
+            foreach ($payload['subtask_assignments'] as $subtaskId => $assignedUserId) {
+                $subtask = $task->subtasks()->find($subtaskId);
+                // Une sous-tâche terminée ne peut plus être réassignée
+                if ($subtask && !$subtask->is_completed) {
+                    $subtask->update([
+                        'assigned_to_user_id' => !empty($assignedUserId) ? (int) $assignedUserId : null,
+                    ]);
+                }
+            }
+        }
+
         if (!empty($created)) {
             $this->emailService->notifyTaskCreated($task);
         }
 
-        $msg = '';
+        // Message de retour
+        $parts = [];
         if (!empty($created)) {
-            $msg .= 'Tâche « ' . $task->title . ' » assignée à : ' . implode(', ', $created) . '.';
+            $parts[] = 'Assignée à : ' . implode(', ', $created) . '.';
         }
-        if (!empty($skipped)) {
-            $msg .= ($msg ? ' ' : '') . count($skipped) . ' personne(s) possède(nt) déjà cette tâche.';
+        if (!empty($toDetach)) {
+            $parts[] = count($toDetach) . ' personne(s) retirée(s).';
+        }
+        if (empty($created) && empty($toDetach)) {
+            $parts[] = 'Aucune modification des destinataires.';
         }
 
         return redirect()
             ->to(encrypted_route('tasks.show', $task))
-            ->with('success', $msg ?: 'Aucune nouvelle assignation.');
+            ->with('success', 'Tâche « ' . $task->title . ' » mise à jour. ' . implode(' ', $parts));
     }
 
     /**
@@ -280,74 +349,118 @@ public function index(Request $request)
         abort_unless($user->can('tasks.assign'), 403);
     }
 
-  public function store(Request $request)
-{
-    $user = auth()->user();
+    public function store(Request $request)
+    {
+        $user = auth()->user();
 
-    $payload = $request->validate([
-        'title'       => 'required|string|max:255',
-        'description' => 'nullable|string|max:5000',
-        'priority'    => 'required|in:low,normal,high,urgent',
-        'start_date'  => 'nullable|date',
-        'due_date'    => 'nullable|date|after_or_equal:start_date',
-    ]);
+        $payload = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string|max:5000',
+            'priority'    => 'required|in:low,normal,high,urgent',
+            'start_date'  => 'nullable|date',
+            'due_date'    => 'nullable|date|after_or_equal:start_date',
+            'pdf'         => 'nullable|file|mimes:pdf|max:10240',
 
-    [$stageId, $etudiantId] = $this->resolveStudentContext($user);
+            // Sous-tâches obligatoires (au moins 1).
+            'subtasks'              => 'required|array|min:1',
+            'subtasks.*.title'      => 'required|string|max:255',
+            'subtasks.*.start_date' => 'nullable|date',
+            'subtasks.*.end_date'   => 'nullable|date|after_or_equal:subtasks.*.start_date',
+            'subtasks.*.assigned_to_user_id' => 'nullable|integer|exists:users,id',
+        ], [
+            'subtasks.required'         => 'Vous devez créer au moins une sous-tâche.',
+            'subtasks.min'              => 'Vous devez créer au moins une sous-tâche.',
+            'subtasks.*.title.required' => 'Chaque sous-tâche doit avoir un titre.',
+        ]);
 
-    $task = Task::create([
-        'owner_id'              => $user->id,
-        'assigned_by'           => $user->id,
-        'stage_id'              => $stageId,
-        'etudiant_id'           => $etudiantId,
-        'title'                 => $payload['title'],
-        'description'           => $payload['description'] ?? null,
-        'start_date'            => $payload['start_date'] ?? null,
-        'priority'              => $payload['priority'],
-        'status'                => 'pending',
-        'due_date'              => $payload['due_date'] ?? null,
-        'last_progress_percent' => 0,
-    ]);
-
-    Activity::create([
-        'user_id'     => $user->id,
-        'action'      => 'Creation tache',
-        'description' => "Tache {$task->title} creee",
-    ]);
-
-    // 🔥 EMAIL AUX ADMINS DÉSACTIVÉ
-    // $this->emailService->notifyTaskCreated($task);
-
-    // ✅ NOTIFICATIONS EN BASE DE DONNÉES CONSERVÉES
-    $url = encrypted_route('tasks.show', $task);
-    $recipients = collect();
-
-    if ($task->stage && $task->stage->supervisor_id) {
-        $recipients->push($task->stage->supervisor_id);
-    } else {
-        $supervisor = $task->owner?->profil()?->supervisor;
-        if ($supervisor) {
-            $recipients->push($supervisor->id);
+        // Validation des dates des sous-tâches vs tâche principale (backend).
+        $taskStart = $payload['start_date'] ?? null;
+        $taskEnd   = $payload['due_date']   ?? null;
+        foreach ($payload['subtasks'] as $i => $st) {
+            if ($taskStart && !empty($st['start_date']) && $st['start_date'] < $taskStart) {
+                return back()->withErrors(["subtasks.{$i}.start_date" => "La date de début de la sous-tâche «{$st['title']}» est antérieure à la tâche principale."])->withInput();
+            }
+            if ($taskEnd && !empty($st['end_date']) && $st['end_date'] > $taskEnd) {
+                return back()->withErrors(["subtasks.{$i}.end_date" => "La date de fin de la sous-tâche «{$st['title']}» dépasse la date de fin de la tâche."])->withInput();
+            }
+            if (!empty($st['start_date']) && !empty($st['end_date']) && $st['end_date'] < $st['start_date']) {
+                return back()->withErrors(["subtasks.{$i}.end_date" => "La date de fin de la sous-tâche «{$st['title']}» est antérieure à sa date de début."])->withInput();
+            }
         }
+
+        [$stageId, $etudiantId] = $this->resolveStudentContext($user);
+
+        // Stockage du PDF.
+        $pdfPath = null;
+        if ($request->hasFile('pdf')) {
+            $pdfPath = $request->file('pdf')->store('tasks/pdfs', 'public');
+        }
+
+        $task = Task::create([
+            'owner_id'              => $user->id,
+            'assigned_by'           => $user->id,
+            'stage_id'              => $stageId,
+            'etudiant_id'           => $etudiantId,
+            'title'                 => $payload['title'],
+            'description'           => $payload['description'],
+            'start_date'            => $payload['start_date'] ?? null,
+            'priority'              => $payload['priority'],
+            'status'                => 'pending',
+            'due_date'              => $payload['due_date'] ?? null,
+            'pdf_path'              => $pdfPath,
+            'last_progress_percent' => 0,
+        ]);
+
+        // Création des sous-tâches.
+        foreach ($payload['subtasks'] as $i => $st) {
+            $task->subtasks()->create([
+                'title'               => $st['title'],
+                'start_date'          => $st['start_date'] ?? null,
+                'end_date'            => $st['end_date']   ?? null,
+                'assigned_to_user_id' => $st['assigned_to_user_id'] ?? null,
+                'display_order'       => $i,
+            ]);
+        }
+
+        Activity::create([
+            'user_id'     => $user->id,
+            'action'      => 'Creation tache',
+            'description' => "Tache {$task->title} creee avec " . count($payload['subtasks']) . ' sous-tache(s)',
+        ]);
+
+        $url = encrypted_route('tasks.show', $task);
+        $recipients = collect();
+
+        if ($task->stage && $task->stage->supervisor_id) {
+            $recipients->push($task->stage->supervisor_id);
+        } else {
+            $supervisor = $task->owner?->profil()?->supervisor;
+            if ($supervisor) {
+                $recipients->push($supervisor->id);
+            }
+        }
+
+        User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
+
+        $recipients->unique()
+            ->reject(fn($id) => (int) $id === (int) $user->id)
+            ->each(fn($id) => $this->notifications->push(
+                (int) $id,
+                'task_created',
+                '📋 Nouvelle tâche',
+                $user->name . ' a créé « ' . Str::limit($task->title, 40) . ' »',
+                $url,
+                'clipboard-list',
+                'blue'
+            ));
+
+        return redirect()
+            ->to(encrypted_route('tasks.show', $task))
+            ->with('success', 'Tâche créée avec succès.');
     }
 
-    User::role('admin')->pluck('id')->each(fn($id) => $recipients->push($id));
 
-    $recipients->unique()
-        ->reject(fn($id) => (int) $id === (int) $user->id)
-        ->each(fn($id) => $this->notifications->push(
-            (int) $id,
-            'task_created',
-            '📋 Nouvelle tâche',
-            $user->name . ' a créé « ' . Str::limit($task->title, 40) . ' »',
-            $url,
-            'clipboard-list',
-            'blue'
-        ));
 
-    return redirect()
-        ->to(encrypted_route('tasks.show', $task))
-        ->with('success', 'Tâche créée avec succès.');
-}
 
    public function show(Request $request, Task $task)
 {
@@ -378,6 +491,8 @@ public function index(Request $request)
         'stage.etudiant',
         'dailyReports',
         'messages.user',
+        'subtasks.assignedTo',
+        'subtasks.completedBy',
     ]);
 
     return view('tasks.workspace', $this->workspaceData($request, $task));
@@ -445,7 +560,15 @@ public function index(Request $request)
     public function edit(Task $task)
     {
         $this->authorizeOwner($task);
-        return view('tasks.edit', compact('task'));
+        $task->load(['subtasks.assignedTo', 'subtasks.completedBy', 'owner', 'assignees']);
+
+        $assignees = collect([$task->owner])
+            ->filter()
+            ->merge($task->assignees)
+            ->unique('id')
+            ->values();
+
+        return view('tasks.edit', compact('task', 'assignees'));
     }
 
     public function update(Request $request, Task $task)
@@ -454,32 +577,50 @@ public function index(Request $request)
 
         $payload = $request->validate([
             'title'       => 'required|string|max:255',
-            'description' => 'nullable|string|max:5000',
+            'description' => 'required|string|max:5000',
             'priority'    => 'required|in:low,normal,high,urgent',
             'status'      => 'required|in:pending,in_progress,blocked,completed',
             'start_date'  => 'nullable|date',
             'due_date'    => 'nullable|date|after_or_equal:start_date',
+            'pdf'         => 'nullable|file|mimes:pdf|max:10240',
+            'remove_pdf'  => 'nullable|boolean',
         ]);
 
         $status = $payload['status'];
 
+        // Gestion du PDF.
+        $pdfPath = $task->pdf_path;
+        if ($request->boolean('remove_pdf')) {
+            if ($pdfPath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pdfPath);
+            }
+            $pdfPath = null;
+        }
+        if ($request->hasFile('pdf')) {
+            if ($pdfPath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pdfPath);
+            }
+            $pdfPath = $request->file('pdf')->store('tasks/pdfs', 'public');
+        }
+
         $task->update([
             'title'                 => $payload['title'],
-            'description'           => $payload['description'] ?? null,
+            'description'           => $payload['description'],
             'start_date'            => $payload['start_date'] ?? null,
             'priority'              => $payload['priority'],
             'status'                => $status,
             'due_date'              => $payload['due_date'] ?? null,
+            'pdf_path'              => $pdfPath,
             'started_at'            => in_array($status, ['in_progress', 'blocked'], true)
                 ? ($task->started_at ?: now())
                 : $task->started_at,
             'completed_at'          => $status === 'completed'
                 ? ($task->completed_at ?: now())
                 : null,
-            'last_progress_percent' => $status === 'completed'
-                ? 100
-                : ($status === 'pending' ? 0 : $task->last_progress_percent),
         ]);
+
+        // La progression est toujours calculée depuis les sous-tâches.
+        $task->syncProgressFromSubtasks();
 
         Activity::create([
             'user_id'     => auth()->id(),

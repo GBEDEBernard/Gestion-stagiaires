@@ -28,6 +28,7 @@ use App\Http\Controllers\AdminAttendanceTrackingController;
 use App\Http\Controllers\AdminReportTrackingController;
 use App\Http\Controllers\AdminTaskTrackingController;
 use App\Http\Controllers\SuperviseurDashboardController;
+use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\DomaineController;
 use App\Http\Controllers\PermissionRequestController;
 use App\Http\Controllers\AdminPermissionRequestController;
@@ -254,6 +255,13 @@ Route::prefix('tasks')->group(function () {
         Route::post('{task}/review', [TaskController::class, 'review'])->name('tasks.review')->middleware('permission:tasks.review');
         Route::post('{task}/complete', [TaskController::class, 'complete'])->name('tasks.complete')->middleware('permission:tasks.review');
         Route::post('{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen')->middleware('permission:tasks.review');
+
+        // ── Sous-tâches ──
+        Route::post('{task}/subtasks', [SubtaskController::class, 'store'])->name('tasks.subtasks.store')->middleware('permission:tasks.create');
+        Route::put('{task}/subtasks/{subtask}', [SubtaskController::class, 'update'])->name('tasks.subtasks.update')->middleware('permission:tasks.create');
+        Route::delete('{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy')->middleware('permission:tasks.create');
+        Route::post('{task}/subtasks/{subtask}/complete', [SubtaskController::class, 'complete'])->name('tasks.subtasks.complete')->middleware('permission:tasks.view');
+        Route::post('{task}/subtasks/{subtask}/reopen', [SubtaskController::class, 'reopen'])->name('tasks.subtasks.reopen')->middleware('role:admin');
     });
 
     // ---------------- Signataires ----------------

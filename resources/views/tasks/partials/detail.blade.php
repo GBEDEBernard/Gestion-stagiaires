@@ -13,7 +13,8 @@
         ->filter(fn($r) => !is_null($r->task_progress_percent))
         ->map(fn($r) => (int) $r->task_progress_percent)->values();
 
-    $pct    = max(0, min(100, (int) $task->last_progress_percent));
+    $pct     = $task->computeProgressFromSubtasks();
+    $nextStep = $task->nextStepLabel();
     $ringR  = 22; $ringC = 2 * M_PI * $ringR;
     $ringOff = $ringC * (1 - ($pct / 100));
     $reportCount = $task->dailyReports->count();
@@ -459,10 +460,134 @@
             </div>
 
             @if($task->description)
-            <div class="mt-4 rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line bg-black/2.5 border border-black/5 text-black/60">
+            <div class="mt-4 rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line bg-black/2.5 border border-black/5 text-black/60 dark:bg-white/[0.03] dark:border-white/10 dark:text-white/70">
                 {{ $task->description }}
             </div>
             @endif
+
+
+            {{-- ── Cahier des charges PDF ── --}}
+            @if($task->pdf_path)
+            <div class="mt-4 flex items-center justify-between gap-3 rounded-xl border border-black/6 bg-black/2.5 p-3.5 dark:border-white/10 dark:bg-white/[0.02]">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">Cahier des charges</p>
+                        <a href="{{ Storage::disk('public')->url($task->pdf_path) }}" target="_blank" class="text-sm font-semibold text-black hover:underline dark:text-white truncate block">
+                            Consulter le document PDF
+                        </a>
+                    </div>
+                </div>
+                <a href="{{ Storage::disk('public')->url($task->pdf_path) }}" download class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.05] dark:text-white">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Télécharger
+                </a>
+            </div>
+            @endif
+        </div>
+
+        <div class="d-divider"></div>
+
+        {{-- ── SECTION SOUS-TÂCHES ── --}}
+        <div class="px-6 py-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-semibold text-black dark:text-white flex items-center gap-2">
+                        <span>📋</span> Sous-tâches ({{ $task->subtasks->where('is_completed', true)->count() }} / {{ $task->subtasks->count() }})
+                    </h3>
+                    <p class="text-xs mt-0.5 text-black/40 dark:text-white/40">
+                        Progression calculée automatiquement sur l'ensemble des sous-tâches.
+                    </p>
+                </div>
+                @if($task->owner_id === $user->id || $user->hasRole('admin'))
+                <a href="{{ encrypted_route('tasks.edit', $task) }}" class="text-xs font-semibold text-blue-600 hover:underline">
+                    Gérer les sous-tâches →
+                </a>
+                @endif
+            </div>
+
+            <div class="space-y-2.5">
+                @forelse($task->subtasks as $st)
+                @php
+                    $isMySubtask = (int) $st->assigned_to_user_id === (int) $user->id;
+                @endphp
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition
+                            {{ $st->is_completed ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/30 dark:bg-emerald-950/10' : ($isMySubtask ? 'border-blue-200 bg-blue-50/30 ring-1 ring-blue-500/20 dark:border-blue-900/30 dark:bg-blue-950/10' : 'border-black/6 bg-black/2.5 dark:border-white/10 dark:bg-white/[0.02]') }}">
+
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full {{ $st->is_completed ? 'bg-emerald-500 text-white' : 'border-2 border-blue-400 dark:border-blue-400 text-transparent' }}">
+                            @if($st->is_completed)
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            @else
+                            <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                            @endif
+                        </div>
+
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-sm font-semibold text-black dark:text-white {{ $st->is_completed ? 'line-through opacity-60' : '' }}">
+                                    {{ $st->title }}
+                                </p>
+
+                                @if($isMySubtask)
+                                    <span class="rounded-md bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 text-[11px] font-bold">
+                                        👤 Attribuée à vous
+                                    </span>
+                                @elseif($st->assignedTo)
+                                    <span class="rounded-md bg-black/5 text-black/60 dark:bg-white/10 dark:text-white/60 px-2 py-0.5 text-[11px] font-medium">
+                                        👤 {{ $st->assignedTo->name }}
+                                    </span>
+                                @else
+                                    <span class="rounded-md border border-dashed border-black/20 dark:border-white/20 px-2 py-0.5 text-[11px] text-black/40 dark:text-white/40">
+                                        Non attribuée
+                                    </span>
+                                @endif
+
+                                @if($st->is_completed)
+                                    <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                        Terminée le {{ $st->completed_at?->format('d/m') }} {{ $st->completedBy ? 'par ' . $st->completedBy->name : '' }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($st->start_date || $st->end_date)
+                            <p class="text-xs text-black/40 dark:text-white/40 mt-1">
+                                📅 {{ $st->start_date?->format('d/m/Y') ?? '?' }} → {{ $st->end_date?->format('d/m/Y') ?? '?' }}
+                            </p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Statut : En cours (par défaut) ou Terminée --}}
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        @if($st->is_completed)
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-3 py-1 text-xs font-bold border border-emerald-200 dark:border-emerald-800/40">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                Terminée
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1 text-xs font-semibold border border-blue-200 dark:border-blue-800/40">
+                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                                En cours
+                            </span>
+                        @endif
+
+                        @if($isAdmin && $st->is_completed)
+                        <form method="POST" action="{{ route('tasks.subtasks.reopen', [$task, $st]) }}" onsubmit="return confirm('Réouvrir cette sous-tâche ?')">
+                            @csrf
+                            <button type="submit" class="rounded-lg border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition" title="Réouvrir (Admin)">
+                                🔓 Réouvrir
+                            </button>
+                        </form>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <p class="text-xs text-black/40 py-2">Aucune sous-tâche pour le moment.</p>
+                @endforelse
+            </div>
         </div>
 
         <div class="d-divider"></div>
@@ -627,7 +752,48 @@
         @if($isParticipant && !$task->isCompleted())
         <div class="d-divider"></div>
 
-        <div class="px-6 py-5" x-data="{ open: {{ $isFirstReport ? 'true' : 'false' }}, prog: {{ (int) $task->last_progress_percent }}, edit:false }">
+        @php
+            $subtasksPayload = $task->subtasks->map(fn($st) => [
+                'id' => $st->id,
+                'title' => $st->title,
+                'is_completed' => (bool) $st->is_completed,
+                'is_mine' => (int) $st->assigned_to_user_id === (int) $user->id,
+                'assigned_name' => $st->assignedTo?->name,
+                'assigned_to_user_id' => $st->assigned_to_user_id,
+            ])->values();
+            $subtasksTotal = $task->subtasks->count();
+            $subtasksDone = $task->subtasks->where('is_completed', true)->count();
+        @endphp
+
+        <div class="px-6 py-5" x-data="{
+            open: {{ $isFirstReport ? 'true' : 'false' }},
+            edit: false,
+            subtasks: @js($subtasksPayload),
+            checkedSubtasks: [],
+            subtasksTotal: {{ $subtasksTotal }},
+            subtasksDone: {{ $subtasksDone }},
+            basePercent: {{ $task->computeProgressFromSubtasks() }},
+            get livePercent() {
+                if (this.subtasksTotal === 0) return this.basePercent;
+                const countDone = this.subtasksDone + this.checkedSubtasks.length;
+                return Math.min(100, Math.round((countDone / this.subtasksTotal) * 100));
+            },
+            get mySubtasks() {
+                const isOwnerOrAdmin = {{ ($isOwner || $isAdmin) ? 'true' : 'false' }};
+                if (isOwnerOrAdmin) return this.subtasks;
+                return this.subtasks.filter(s => s.is_mine || !s.assigned_to_user_id);
+            },
+            get otherSubtasks() {
+                const isOwnerOrAdmin = {{ ($isOwner || $isAdmin) ? 'true' : 'false' }};
+                if (isOwnerOrAdmin) return [];
+                return this.subtasks.filter(s => !s.is_mine && s.assigned_to_user_id);
+            },
+            get nextStepTitle() {
+                const checked = this.checkedSubtasks.map(Number);
+                const remaining = this.subtasks.find(s => !s.is_completed && !checked.includes(Number(s.id)));
+                return remaining ? remaining.title : null;
+            }
+        }">
 
             {{-- Toggle header --}}
             <button type="button" @click="open = !open"
@@ -706,19 +872,73 @@
                         </div>
 
                         {{-- ── Formulaire édition inline ── --}}
-                        <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5" x-data="{prog:{{ (int)$todayReport->task_progress_percent }}}">
+                        <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="status_action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
 
-                            {{-- Introduction --}}
+                            {{-- Validation des sous-tâches (remplace l'introduction) --}}
+                            @if($task->subtasks->isNotEmpty())
                             <div class="d-field">
-                                <label class="d-field-label">Introduction <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
-                                <textarea name="introduction" rows="2"
-                                          class="d-input resize-none"
-                                          placeholder="Contexte du jour, objectifs fixés…">{{ $todayReport->introduction }}</textarea>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="d-field-label mb-0 flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
+                                        <span class="text-indigo-600">☑</span> Sous-tâches de la tâche
+                                    </label>
+                                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/30"
+                                          x-text="(subtasksDone + checkedSubtasks.length) + ' / ' + subtasksTotal + ' terminées'">
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                    Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                </p>
+
+                                <div class="space-y-2">
+                                    <template x-for="st in mySubtasks" :key="st.id">
+                                        <label class="flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer"
+                                               :class="st.is_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-300' : (checkedSubtasks.includes(st.id) ? 'bg-indigo-50/60 border-indigo-300 ring-2 ring-indigo-500/15 dark:bg-indigo-950/30 dark:border-indigo-700' : 'bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.05]')">
+                                            <input type="checkbox"
+                                                   name="completed_subtask_ids[]"
+                                                   :value="st.id"
+                                                   :disabled="st.is_completed"
+                                                   :checked="st.is_completed"
+                                                   x-model="checkedSubtasks"
+                                                   class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-sm font-semibold"
+                                                          :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
+                                                          x-text="st.title"></span>
+                                                    <template x-if="st.is_completed">
+                                                        <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                                            ✓ Déjà validée
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="!st.is_completed">
+                                                        <span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full transition"
+                                                              :class="checkedSubtasks.includes(st.id) ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'"
+                                                              x-text="checkedSubtasks.includes(st.id) ? 'À valider' : 'En cours'">
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </template>
+
+                                    {{-- Sous-tâches des autres personnes --}}
+                                    <template x-for="st in otherSubtasks" :key="st.id">
+                                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 text-xs dark:bg-white/[0.01] dark:border-white/5 dark:text-slate-400">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span x-text="st.is_completed ? '✅' : '⏳'"></span>
+                                                <span class="truncate" :class="st.is_completed ? 'line-through opacity-60' : ''" x-text="st.title"></span>
+                                            </div>
+                                            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                  x-text="'Attribuée à ' + (st.assigned_name || 'Autre')"></span>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
+                            @endif
 
                             {{-- Travail réalisé --}}
                             <div class="d-field">
@@ -731,25 +951,45 @@
                                           placeholder="Décris précisément ce que tu as accompli aujourd'hui…">{{ $todayReport->summary }}</textarea>
                             </div>
 
-                            {{-- Progression --}}
-                            <div class="d-field">
-                                <div class="d-progress-shell">
-                                    <div class="flex items-center justify-between">
-                                        <label class="d-field-label mb-0">Progression de la tâche</label>
-                                        <span class="d-pct-badge" x-text="prog + '%'"></span>
+                            {{-- Progression automatique de la tâche (redessinée) --}}
+                            <div class="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-4 dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-indigo-950/20 shadow-sm">
+                                <div class="flex items-center justify-between mb-2.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
+                                            %
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 block">
+                                                Progression de la tâche
+                                            </span>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                Augmente automatiquement selon les sous-tâches sélectionnées
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="d-progress-track">
-                                        <div class="d-progress-fill" :style="`width:${prog}%`"></div>
+                                    <div class="text-right">
+                                        <div class="flex items-baseline justify-end gap-1.5">
+                                            <span class="font-mono text-2xl font-black text-slate-900 dark:text-white" x-text="livePercent + '%'"></span>
+                                            <span x-show="checkedSubtasks.length > 0" x-cloak
+                                                  class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-md border border-emerald-200/60"
+                                                  x-text="'+' + (livePercent - basePercent) + '%'"></span>
+                                        </div>
                                     </div>
-                                    <input type="range" name="task_progress_percent"
-                                           min="0" max="100" step="5"
-                                           x-model="prog"
-                                           class="d-range">
-                                    <div class="flex justify-between mt-1.5">
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">0%</span>
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">50%</span>
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">100%</span>
-                                    </div>
+                                </div>
+
+                                <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10 p-0.5 shadow-inner">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500 transition-all duration-500 ease-out shadow-sm"
+                                         :style="`width: ${livePercent}%`"></div>
+                                </div>
+
+                                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                                    <span class="font-mono">0%</span>
+                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="font-semibold text-indigo-600 dark:text-indigo-400"
+                                          x-text="checkedSubtasks.length + ' sous-tâche(s) sélectionnée(s)'"></span>
+                                    <span x-show="checkedSubtasks.length === 0" class="text-slate-400">
+                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Cochez une sous-tâche pour faire progresser' }}
+                                    </span>
+                                    <span class="font-mono">100%</span>
                                 </div>
                             </div>
 
@@ -772,12 +1012,26 @@
                                 </div>
                             </div>
 
-                            {{-- Prochaines étapes --}}
+                            {{-- Prochaine étape (remplace l'ancien champ texte libre) --}}
                             <div class="d-field">
-                                <label class="d-field-label">Prochaines étapes <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
-                                <textarea name="next_steps" rows="2"
-                                          class="d-input resize-none"
-                                          placeholder="Ce que tu prévois pour la prochaine session…">{{ $todayReport->next_steps }}</textarea>
+                                <label class="d-field-label flex items-center gap-1.5 text-slate-900 dark:text-white font-bold mb-2">
+                                    <span class="text-blue-600 dark:text-blue-400">🎯</span> Prochaine étape
+                                </label>
+                                <template x-if="nextStepTitle">
+                                    <div class="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3.5 text-sm dark:border-blue-900/30 dark:bg-blue-950/20">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold shadow-sm">🎯</span>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold block">Étape suivante calculée</span>
+                                            <span class="text-sm font-semibold text-slate-900 dark:text-white truncate block" x-text="nextStepTitle"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!nextStepTitle">
+                                    <div class="flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs font-semibold text-emerald-800 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-300">
+                                        <span class="text-base">✅</span> Toutes les sous-tâches sont terminées.
+                                    </div>
+                                </template>
+                                <input type="hidden" name="next_steps" :value="nextStepTitle ? nextStepTitle : 'Toutes les sous-tâches sont terminées'">
                             </div>
 
                             {{-- Footer formulaire --}}
@@ -820,13 +1074,67 @@
                             <input type="hidden" name="accuracy_meters" id="report-accuracy" value="">
                             <input type="hidden" name="location_method" id="report-location-method" value="">
 
-                            {{-- Introduction --}}
+                            {{-- Validation des sous-tâches (remplace l'introduction) --}}
+                            @if($task->subtasks->isNotEmpty())
                             <div class="d-field">
-                                <label class="d-field-label">Introduction <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
-                                <textarea name="introduction" rows="2"
-                                          class="d-input resize-none"
-                                          placeholder="Contexte du jour, objectifs fixés…"></textarea>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="d-field-label mb-0 flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
+                                        <span class="text-indigo-600">☑</span> Sous-tâches de la tâche
+                                    </label>
+                                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/30"
+                                          x-text="(subtasksDone + checkedSubtasks.length) + ' / ' + subtasksTotal + ' terminées'">
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                    Cochez les sous-tâches que vous avez terminées aujourd'hui. Elles seront validées à l'envoi du rapport.
+                                </p>
+
+                                <div class="space-y-2">
+                                    <template x-for="st in mySubtasks" :key="st.id">
+                                        <label class="flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer"
+                                               :class="st.is_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-300' : (checkedSubtasks.includes(st.id) ? 'bg-indigo-50/60 border-indigo-300 ring-2 ring-indigo-500/15 dark:bg-indigo-950/30 dark:border-indigo-700' : 'bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.05]')">
+                                            <input type="checkbox"
+                                                   name="completed_subtask_ids[]"
+                                                   :value="st.id"
+                                                   :disabled="st.is_completed"
+                                                   :checked="st.is_completed"
+                                                   x-model="checkedSubtasks"
+                                                   class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-600">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-sm font-semibold"
+                                                          :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
+                                                          x-text="st.title"></span>
+                                                    <template x-if="st.is_completed">
+                                                        <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                                            ✓ Déjà validée
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="!st.is_completed">
+                                                        <span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full transition"
+                                                              :class="checkedSubtasks.includes(st.id) ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'"
+                                                              x-text="checkedSubtasks.includes(st.id) ? 'À valider' : 'En cours'">
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </template>
+
+                                    {{-- Sous-tâches des autres personnes --}}
+                                    <template x-for="st in otherSubtasks" :key="st.id">
+                                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 text-xs dark:bg-white/[0.01] dark:border-white/5 dark:text-slate-400">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span x-text="st.is_completed ? '✅' : '⏳'"></span>
+                                                <span class="truncate" :class="st.is_completed ? 'line-through opacity-60' : ''" x-text="st.title"></span>
+                                            </div>
+                                            <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-300"
+                                                  x-text="'Attribuée à ' + (st.assigned_name || 'Autre')"></span>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
+                            @endif
 
                             {{-- Travail réalisé --}}
                             <div class="d-field">
@@ -839,25 +1147,45 @@
                                           placeholder="Décris précisément ce que tu as accompli aujourd'hui…"></textarea>
                             </div>
 
-                            {{-- Progression --}}
-                            <div class="d-field">
-                                <div class="d-progress-shell">
-                                    <div class="flex items-center justify-between">
-                                        <label class="d-field-label mb-0">Progression de la tâche</label>
-                                        <span class="d-pct-badge" x-text="prog + '%'"></span>
+                            {{-- Progression automatique de la tâche (redessinée) --}}
+                            <div class="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-4 dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-indigo-950/20 shadow-sm">
+                                <div class="flex items-center justify-between mb-2.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
+                                            %
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 block">
+                                                Progression de la tâche
+                                            </span>
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                Augmente automatiquement selon les sous-tâches sélectionnées
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="d-progress-track">
-                                        <div class="d-progress-fill" :style="`width:${prog}%`"></div>
+                                    <div class="text-right">
+                                        <div class="flex items-baseline justify-end gap-1.5">
+                                            <span class="font-mono text-2xl font-black text-slate-900 dark:text-white" x-text="livePercent + '%'"></span>
+                                            <span x-show="checkedSubtasks.length > 0" x-cloak
+                                                  class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-md border border-emerald-200/60"
+                                                  x-text="'+' + (livePercent - basePercent) + '%'"></span>
+                                        </div>
                                     </div>
-                                    <input type="range" name="task_progress_percent"
-                                           min="0" max="100" step="5"
-                                           x-model="prog"
-                                           class="d-range">
-                                    <div class="flex justify-between mt-1.5">
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">0%</span>
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">50%</span>
-                                        <span class="text-[10px]" style="color:rgba(0,0,0,.30);">100%</span>
-                                    </div>
+                                </div>
+
+                                <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10 p-0.5 shadow-inner">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500 transition-all duration-500 ease-out shadow-sm"
+                                         :style="`width: ${livePercent}%`"></div>
+                                </div>
+
+                                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                                    <span class="font-mono">0%</span>
+                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="font-semibold text-indigo-600 dark:text-indigo-400"
+                                          x-text="checkedSubtasks.length + ' sous-tâche(s) sélectionnée(s)'"></span>
+                                    <span x-show="checkedSubtasks.length === 0" class="text-slate-400">
+                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Cochez une sous-tâche pour faire progresser' }}
+                                    </span>
+                                    <span class="font-mono">100%</span>
                                 </div>
                             </div>
 
@@ -878,12 +1206,26 @@
                                 </div>
                             </div>
 
-                            {{-- Prochaines étapes --}}
+                            {{-- Prochaine étape (remplace l'ancien champ texte libre) --}}
                             <div class="d-field">
-                                <label class="d-field-label">Prochaines étapes <span class="normal-case tracking-normal font-normal opacity-60">(optionnel)</span></label>
-                                <textarea name="next_steps" rows="2"
-                                          class="d-input resize-none"
-                                          placeholder="Ce que tu prévois pour la prochaine session…"></textarea>
+                                <label class="d-field-label flex items-center gap-1.5 text-slate-900 dark:text-white font-bold mb-2">
+                                    <span class="text-blue-600 dark:text-blue-400">🎯</span> Prochaine étape
+                                </label>
+                                <template x-if="nextStepTitle">
+                                    <div class="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3.5 text-sm dark:border-blue-900/30 dark:bg-blue-950/20">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-bold shadow-sm">🎯</span>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold block">Étape suivante calculée</span>
+                                            <span class="text-sm font-semibold text-slate-900 dark:text-white truncate block" x-text="nextStepTitle"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!nextStepTitle">
+                                    <div class="flex items-center gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs font-semibold text-emerald-800 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-300">
+                                        <span class="text-base">✅</span> Toutes les sous-tâches sont terminées.
+                                    </div>
+                                </template>
+                                <input type="hidden" name="next_steps" :value="nextStepTitle ? nextStepTitle : 'Toutes les sous-tâches sont terminées'">
                             </div>
 
                             {{-- Footer formulaire --}}

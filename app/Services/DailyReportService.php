@@ -90,20 +90,43 @@ class DailyReportService
                 $report->report_date = today();
             }
 
+            // ── Traitement des sous-tâches cochées ──
+            if ($task && !empty($payload['completed_subtask_ids'])) {
+                $completedIds = (array) $payload['completed_subtask_ids'];
+                $subtasksToComplete = $task->subtasks()
+                    ->whereIn('id', $completedIds)
+                    ->where('is_completed', false)
+                    ->get();
+
+                foreach ($subtasksToComplete as $st) {
+                    $canComplete = $st->isAssignedTo($user->id)
+                        || (int) $task->owner_id === (int) $user->id
+                        || $user->hasAnyRole(['admin', 'superviseur']);
+                    if ($canComplete) {
+                        $st->markComplete($user->id);
+                    }
+                }
+            }
+
+            // Progression automatique dérivée des sous-tâches si la tâche en possède.
+            $computedProgress = $task
+                ? ($task->subtasks()->count() > 0 ? $task->computeProgressFromSubtasks() : ($payload['task_progress_percent'] ?? $this->latestOwnProgress($task, $user)))
+                : null;
+
+            $nextStepAuto = $task ? $task->nextStepLabel() : null;
+
             $report->fill([
                 'stage_id' => $stage?->id,
                 'etudiant_id' => $etudiant?->id,
                 'user_id' => ($user->hasRole('employe') || $task) ? $user->id : null,
                 'attendance_day_id' => $attendanceDay?->id,
                 'task_id' => $task?->id,
-                'task_progress_percent' => $task
-                    ? ($payload['task_progress_percent'] ?? $this->latestOwnProgress($task, $user))
-                    : null,
+                'task_progress_percent' => $computedProgress,
                 'title' => 'Rapport du ' . today()->format('d/m/Y'),
                 'introduction' => $payload['introduction'] ?? null,
                 'summary' => $payload['summary'] ?? null,
                 'blockers' => $payload['blockers'] ?? null,
-                'next_steps' => $payload['next_steps'] ?? null,
+                'next_steps' => $payload['next_steps'] ?? $nextStepAuto,
                 'hours_declared' => $payload['hours_declared'] ?? 0,
                 'status' => $status,
                 'submitted_at' => $status === 'submitted' ? now() : null,
@@ -166,10 +189,13 @@ class DailyReportService
      */
 public function syncTaskProgress(DailyReport $report, Task $task, User $user, bool $notify = true): void
     {
-        // T-008 : tâche partagée → la progression affichée est l'AGRÉGAT des
-        // dernières progressions déclarées par chaque participant (propriétaire
-        // + personnes assignées), moyenne arrondie.
-        $progress = (int) $this->aggregateProgress($task);
+        // Si la tâche a des sous-tâches, la progression est le % de sous-tâches terminées.
+        // Sinon, calcul d'agrégat classique (compatibilité).
+        if ($task->subtasks()->count() > 0) {
+            $progress = $task->computeProgressFromSubtasks();
+        } else {
+            $progress = (int) $this->aggregateProgress($task);
+        }
         $progress = max(0, min(100, $progress));
 
         $originalStatus = $task->status;

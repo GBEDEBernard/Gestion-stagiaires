@@ -22,6 +22,7 @@ class Task extends Model
         'priority',
         'status',
         'due_date',
+        'pdf_path',
         'last_progress_percent',
         'base_progress_percent',
         'started_at',
@@ -113,9 +114,68 @@ class Task extends Model
         return $this->hasMany(TaskMessage::class)->orderBy('created_at');
     }
 
+    /** Sous-tâches de cette tâche, ordonnées. */
+    public function subtasks()
+    {
+        return $this->hasMany(Subtask::class)->orderBy('display_order');
+    }
+
     /* =======================
        HELPERS
     ======================= */
+
+    /**
+     * Calcule la progression à partir des sous-tâches terminées.
+     * Si aucune sous-tâche → retourne last_progress_percent (compatibilité).
+     */
+    public function computeProgressFromSubtasks(): int
+    {
+        $total = $this->subtasks()->count();
+        if ($total === 0) {
+            return (int) $this->last_progress_percent;
+        }
+        $done = $this->subtasks()->where('is_completed', true)->count();
+        return (int) round($done / $total * 100);
+    }
+
+    /**
+     * Retourne le titre de la première sous-tâche non terminée (prochaine étape).
+     * Null si toutes les sous-tâches sont terminées ou qu'il n'y en a pas.
+     */
+    public function nextStepLabel(): ?string
+    {
+        return $this->subtasks()
+            ->where('is_completed', false)
+            ->orderBy('display_order')
+            ->value('title');
+    }
+
+    /**
+     * Met à jour last_progress_percent depuis les sous-tâches et
+     * ajuste le statut automatiquement.
+     */
+    public function syncProgressFromSubtasks(): void
+    {
+        $total = $this->subtasks()->count();
+        if ($total === 0) {
+            return; // Rien à recalculer sans sous-tâches.
+        }
+
+        $progress = $this->computeProgressFromSubtasks();
+        $originalStatus = $this->status;
+
+        $updates = ['last_progress_percent' => $progress];
+
+        if ($progress >= 100 && !$this->isCompleted()) {
+            $updates['status'] = 'awaiting_validation';
+            $updates['completed_at'] = $this->completed_at ?: now();
+        } elseif ($progress > 0 && in_array($originalStatus, ['pending', 'changes_requested'], true)) {
+            $updates['status'] = 'in_progress';
+            $updates['started_at'] = $this->started_at ?: now();
+        }
+
+        $this->update($updates);
+    }
 
     public function isCompleted(): bool
     {

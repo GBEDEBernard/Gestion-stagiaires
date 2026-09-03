@@ -59,26 +59,100 @@
                             <input type="hidden" name="accuracy_meters" id="report-index-accuracy" value="">
                             <input type="hidden" name="location_method" id="report-index-location-method" value="">
 
-                            <!-- Tâche concernée + progression -->
+                            <!-- Tâche concernée + Sous-tâches -->
+                            @php
+                                $tasksMap = ($activeTasks ?? collect())->mapWithKeys(function($t) {
+                                    return [$t->id => [
+                                        'id' => $t->id,
+                                        'title' => $t->title,
+                                        'subtasks' => $t->subtasks->map(fn($st) => [
+                                            'id' => $st->id,
+                                            'title' => $st->title,
+                                            'is_completed' => (bool) $st->is_completed,
+                                            'assigned_to_user_id' => $st->assigned_to_user_id,
+                                            'is_mine' => (int) $st->assigned_to_user_id === (int) auth()->id(),
+                                            'assigned_name' => $st->assignedTo?->name,
+                                        ])->values(),
+                                    ]];
+                                });
+                            @endphp
+
                             @if(($activeTasks ?? collect())->isNotEmpty())
-                            <div x-data="{ prog: {{ (int) old('task_progress_percent', 0) }} }">
+                            <div x-data="{
+                                taskId: '{{ old('task_id', $editReport->task_id ?? '') }}',
+                                tasksMap: @js($tasksMap),
+                                checkedSubtasks: [],
+                                currentTask() {
+                                    return this.tasksMap[this.taskId] || null;
+                                },
+                                subtasks() {
+                                    return this.currentTask() ? this.currentTask().subtasks : [];
+                                },
+                                mySubtasks() {
+                                    return this.subtasks().filter(s => s.is_mine || !s.assigned_to_user_id);
+                                },
+                                otherSubtasks() {
+                                    return this.subtasks().filter(s => !s.is_mine && s.assigned_to_user_id);
+                                },
+                                computedProgress() {
+                                    const total = this.subtasks().length;
+                                    if (total === 0) return 0;
+                                    const alreadyDone = this.subtasks().filter(s => s.is_completed).length;
+                                    const newlyDone = this.checkedSubtasks.length;
+                                    return Math.min(100, Math.round(((alreadyDone + newlyDone) / total) * 100));
+                                }
+                            }">
                                 <label class="block text-sm font-semibold text-slate-900 mb-2">Tâche concernée</label>
-                                <select name="task_id"
-                                    @change="prog = parseInt($event.target.selectedOptions[0].dataset.progress || prog)"
+                                <select name="task_id" x-model="taskId"
                                     class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/30 text-base transition-all duration-200">
                                     <option value="">— Aucune tâche —</option>
                                     @foreach($activeTasks as $t)
-                                    <option value="{{ $t->id }}" data-progress="{{ (int) $t->last_progress_percent }}" {{ old('task_id') == $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
+                                    <option value="{{ $t->id }}">{{ $t->title }}</option>
                                     @endforeach
                                 </select>
 
-                                <div class="mt-4">
-                                    <label class="block text-sm font-semibold text-slate-900 mb-2">
-                                        Progression : <span class="font-bold text-slate-700" x-text="prog + '%'"></span>
-                                    </label>
-                                    <input type="range" name="task_progress_percent" min="0" max="100" step="5" x-model="prog"
-                                        class="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900"
-                                        style="accent-color: #0f172a">
+                                {{-- Liste des sous-tâches de la tâche sélectionnée --}}
+                                <div x-show="taskId && subtasks().length > 0" x-cloak class="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                            Sous-tâches terminées aujourd'hui
+                                        </label>
+                                        <span class="text-xs font-bold text-emerald-600" x-text="'Progression : ' + computedProgress() + '%'"></span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500">
+                                        Cochez les sous-tâches que vous avez terminées. La progression de la tâche s'ajustera automatiquement.
+                                    </p>
+
+                                    {{-- Sous-tâches de l'utilisateur --}}
+                                    <div class="space-y-2 mt-2">
+                                        <template x-for="st in mySubtasks()" :key="st.id">
+                                            <label class="flex items-start gap-2.5 p-2 rounded-xl transition cursor-pointer"
+                                                   :class="st.is_completed ? 'bg-emerald-50 text-emerald-800' : 'bg-white border border-slate-200 hover:bg-slate-50'">
+                                                <input type="checkbox"
+                                                       name="completed_subtask_ids[]"
+                                                       :value="st.id"
+                                                       :disabled="st.is_completed"
+                                                       :checked="st.is_completed"
+                                                       x-model="checkedSubtasks"
+                                                       class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                                <div class="min-w-0 flex-1">
+                                                    <span class="text-sm font-medium" :class="st.is_completed ? 'line-through text-emerald-700' : 'text-slate-800'" x-text="st.title"></span>
+                                                    <span x-show="st.is_completed" class="ml-1 text-[10px] font-bold text-emerald-600">(Déjà validée)</span>
+                                                </div>
+                                            </label>
+                                        </template>
+
+                                        {{-- Sous-tâches d'autres collègues (en lecture seule) --}}
+                                        <template x-for="st in otherSubtasks()" :key="st.id">
+                                            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-100 text-slate-500 text-xs opacity-75">
+                                                <div class="flex items-center gap-2">
+                                                    <span x-text="st.is_completed ? '✅' : '⬜'"></span>
+                                                    <span :class="st.is_completed ? 'line-through' : ''" x-text="st.title"></span>
+                                                </div>
+                                                <span class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded font-medium" x-text="'Attribuée à ' + st.assigned_name"></span>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                             @else

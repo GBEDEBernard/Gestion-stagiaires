@@ -25,7 +25,7 @@ class AdminTaskTrackingController extends Controller
             default  => [$date->copy()->startOfMonth(), $date->copy()->endOfMonth()],
         };
 
-        $tasks = Task::with(['owner', 'stage.etudiant'])
+        $tasks = Task::with(['owner', 'stage.etudiant', 'subtasks.assignedTo'])
             ->withCount(['messages', 'dailyReports'])
             ->visibleTo($user)
             ->whereBetween('updated_at', [$from, $to])
