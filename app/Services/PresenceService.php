@@ -98,11 +98,20 @@ protected function checkWorkDayRestriction(Stage $stage): void
         }
     }
 
-    protected function checkCheckInOpeningTime(): void
+    /**
+     * Le pointage d'arrivée n'ouvre pas au milieu de la nuit.
+     *
+     * L'heure vient de la base, comme le reste de l'horaire : elle était
+     * écrite en dur à 07h30, et ne s'appliquait qu'aux stagiaires — un stage
+     * commençant à 07h00 voyait donc son arrivée refusée jusqu'à 07h30.
+     */
+    protected function checkCheckInOpeningTime(?Stage $stage = null): void
     {
-        if (now()->format('H:i') < '07:30') {
+        $ouverture = app(WorkScheduleResolver::class)->checkInOpensAt($stage, now());
+
+        if ($ouverture && now()->lessThan($ouverture)) {
             throw ValidationException::withMessages([
-                'presence' => "Le pointage d'arrivée sera ouvert à partir de 07h30.",
+                'presence' => "Le pointage d'arrivée sera ouvert à partir de {$ouverture->format('H\hi')}.",
             ]);
         }
     }
@@ -124,7 +133,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
-        $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
+        $this->checkCheckInOpeningTime($stage);
         $this->checkArrivalWindow($stage);
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
@@ -218,6 +227,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     {
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
+        $this->checkCheckInOpeningTime();
         $this->checkArrivalWindow(null);
         return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }
@@ -275,7 +285,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
                 ->first();
 
             if (!$day || !$day->first_check_in_at) {
-                $this->checkCheckInOpeningTime();
+                $this->checkCheckInOpeningTime($stage);
                 $this->checkArrivalWindow($stage);
                 $eventType = 'check_in';
             } elseif (!$day->last_check_out_at) {
@@ -320,6 +330,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             ->first();
 
         if (!$day || !$day->first_check_in_at) {
+            $this->checkCheckInOpeningTime();
             $this->checkArrivalWindow(null);
             $eventType = 'check_in';
         } elseif (!$day->last_check_out_at) {

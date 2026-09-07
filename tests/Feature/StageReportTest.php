@@ -213,12 +213,88 @@ test('the report counts anomalies over the whole stage window', function () {
         ->and($report['anomalies']['by_type']['outside_geofence'])->toBe(2);
 });
 
-test('hourly volume is hidden when the stage has no declared schedule', function () {
-    $user  = reportUser();
+test('a stage without its own schedule inherits the company one', function () {
+    // Lire les colonnes du stage directement faisait disparaître le ratio pour
+    // tout stage sans horaire propre, alors que le reste de l'application lui
+    // en attribuait un — le rapport ne disait pas la même chose que le pointage.
+    $user  = reportUser('etudiant', now()->subMonths(3)->toDateString());
     $stage = finishedStage($user);
 
     expect($stage->expected_check_in_time)->toBeNull();
-    expect($this->service->build($stage)['ratios']['volume_horaire'])->toBeNull();
+
+    $date = \Carbon\Carbon::parse($stage->date_debut);
+    while ($date->isWeekend()) $date->addDay();
+
+    AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'user_id'           => $user->id,
+        'attendance_date'   => $date->toDateString(),
+        'first_check_in_at' => $date->copy()->setTime(8, 0),
+        'last_check_out_at' => $date->copy()->setTime(18, 0),
+        'arrival_status'    => 'ontime',
+    ]);
+
+    expect($this->service->build($stage)['ratios']['volume_horaire'])->not->toBeNull();
+});
+
+test('a day closed by the system is not a day that was clocked out', function () {
+    // Sans cette distinction, oublier son départ faisait monter le ratio des
+    // journées complètes : le système fermait la journée à la place de
+    // l'intéressé, et le rapport n'en gardait aucune trace.
+    $user  = reportUser('etudiant', now()->subMonths(3)->toDateString());
+    $stage = finishedStage($user);
+
+    $date = \Carbon\Carbon::parse($stage->date_debut);
+    while ($date->isWeekend()) $date->addDay();
+
+    // Une journée réellement pointée de bout en bout
+    AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'user_id'           => $user->id,
+        'attendance_date'   => $date->toDateString(),
+        'first_check_in_at' => $date->copy()->setTime(8, 0),
+        'last_check_out_at' => $date->copy()->setTime(18, 0),
+        'arrival_status'    => 'ontime',
+        'departure_status'  => 'pointed',
+    ]);
+
+    // Une journée clôturée d'office, jamais réclamée
+    $next = $date->copy()->addDay();
+    while ($next->isWeekend()) $next->addDay();
+
+    AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'user_id'           => $user->id,
+        'attendance_date'   => $next->toDateString(),
+        'first_check_in_at' => $next->copy()->setTime(8, 0),
+        'last_check_out_at' => $next->copy()->setTime(18, 0),
+        'arrival_status'    => 'ontime',
+        'departure_status'  => 'auto_closed',
+    ]);
+
+    // Et une troisième, tranchée par l'administrateur : l'heure est connue,
+    // elle compte.
+    $third = $next->copy()->addDay();
+    while ($third->isWeekend()) $third->addDay();
+
+    AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'user_id'           => $user->id,
+        'attendance_date'   => $third->toDateString(),
+        'first_check_in_at' => $third->copy()->setTime(8, 0),
+        'last_check_out_at' => $third->copy()->setTime(17, 30),
+        'arrival_status'    => 'ontime',
+        'departure_status'  => 'corrected',
+    ]);
+
+    $report = $this->service->build($stage);
+
+    expect($report['ratios']['journees_completes']['numerator'])->toBe(2)
+        ->and($report['ratios']['journees_completes']['denominator'])->toBe(3);
 });
 
 test('an ongoing stage is only judged on elapsed days', function () {

@@ -339,3 +339,57 @@ test('a genuine lateness keeps its exact minutes', function () {
     expect($jour->fresh()->arrival_status)->toBe('late')
         ->and($jour->fresh()->late_minutes)->toBe(75);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Corrections issues de la revue de code
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('the check-in opening never falls after the expected arrival', function () {
+    // 07h30 était écrit en dur : un stage commençant à 07h00 voyait son
+    // arrivée refusée jusqu'à 07h30, donc son retard rendu inévitable.
+    \App\Models\WorkScheduleSetting::first()?->update(['check_in_opens_at' => '07:30']);
+
+    $stage = schedStage([
+        'expected_check_in_time'  => '07:00:00',
+        'expected_check_out_time' => '12:00:00',
+    ]);
+
+    $ouverture = $this->resolver->checkInOpensAt($stage, Carbon::parse('2026-09-08 06:00'));
+
+    expect($ouverture->format('H:i'))->toBe('07:00');
+});
+
+test('the opening time comes from the database, not from the code', function () {
+    \App\Models\WorkScheduleSetting::first()?->update(['check_in_opens_at' => '05:15']);
+    app()->forgetInstance(WorkScheduleResolver::class);
+
+    expect(app(WorkScheduleResolver::class)->checkInOpensAt(null, Carbon::parse('2026-09-08 06:00'))->format('H:i'))
+        ->toBe('05:15');
+});
+
+test('an empty opening time restricts nothing', function () {
+    \App\Models\WorkScheduleSetting::first()?->update(['check_in_opens_at' => null]);
+    app()->forgetInstance(WorkScheduleResolver::class);
+
+    expect(app(WorkScheduleResolver::class)->checkInOpensAt(null, Carbon::parse('2026-09-08 03:00')))->toBeNull();
+});
+
+test('worked minutes no longer trigger a float to int deprecation', function () {
+    // diffInMinutes renvoie un flottant : sans conversion explicite, chaque
+    // pointage de départ émettait une déprécation.
+    $in  = Carbon::parse('2026-09-08 08:00:11');
+    $out = Carbon::parse('2026-09-08 18:00:44');
+
+    $erreurs = [];
+    set_error_handler(function ($niveau, $message) use (&$erreurs) {
+        $erreurs[] = $message;
+        return true;
+    }, E_DEPRECATED);
+
+    $minutes = $this->resolver->workedMinutes(null, $in, $out);
+
+    restore_error_handler();
+
+    expect($erreurs)->toBeEmpty()
+        ->and($minutes)->toBeInt();
+});

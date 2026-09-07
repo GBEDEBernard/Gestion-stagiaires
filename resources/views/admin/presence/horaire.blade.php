@@ -30,7 +30,7 @@
         <form method="POST" action="{{ route('admin.presence.horaire.update') }}" class="p-6">
             @csrf @method('PUT')
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Arrivée attendue</label>
                     <input type="time" name="start_time" required
@@ -43,6 +43,19 @@
                     <input type="time" name="end_time" required
                         value="{{ old('end_time', substr($setting->end_time, 0, 5)) }}"
                         class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white shadow-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Ouverture du pointage
+                    </label>
+                    <input type="time" name="check_in_opens_at"
+                        value="{{ old('check_in_opens_at', $setting->check_in_opens_at ? substr($setting->check_in_opens_at, 0, 5) : '') }}"
+                        class="w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white shadow-sm">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Avant cette heure, l'arrivée ne peut pas être pointée. Laissez vide pour ne rien restreindre.
+                        Un stage qui commence plus tôt ouvre à son propre horaire.
+                    </p>
                 </div>
 
                 <div>

@@ -22,6 +22,7 @@ class WorkScheduleSettingController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
+            'check_in_opens_at' => 'nullable|date_format:H:i',
             'start_time'    => 'required|date_format:H:i',
             'end_time'      => 'required|date_format:H:i|after:start_time',
             'break_hours'   => 'nullable|numeric|min:0|max:8',
@@ -32,6 +33,7 @@ class WorkScheduleSettingController extends Controller
         $setting = WorkScheduleSetting::first() ?? new WorkScheduleSetting();
 
         $setting->fill([
+            'check_in_opens_at' => ($validated['check_in_opens_at'] ?? null) ?: null,
             'start_time'    => $validated['start_time'],
             'end_time'      => $validated['end_time'],
             // Saisie en heures, stockage en minutes.

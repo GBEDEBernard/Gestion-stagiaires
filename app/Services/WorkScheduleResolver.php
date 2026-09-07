@@ -55,6 +55,27 @@ class WorkScheduleResolver
             ->setTimeFromTimeString($this->forStage($stage, $occurredAt)['start']);
     }
 
+    /**
+     * Heure à partir de laquelle le pointage d'arrivée est ouvert.
+     *
+     * Elle vient de la base, et ne peut jamais être postérieure à l'heure
+     * d'arrivée attendue : une ouverture à 07h30 sur un stage commençant à
+     * 07h00 rendait le retard inévitable.
+     */
+    public function checkInOpensAt(?Stage $stage, Carbon $occurredAt): ?Carbon
+    {
+        $ouverture = $this->companyDefaults()['check_in_opens_at'];
+
+        if (!$ouverture) {
+            return null;
+        }
+
+        $ouvertureAt = $occurredAt->copy()->setTimeFromTimeString($ouverture);
+        $arrivee     = $this->expectedArrival($stage, $occurredAt);
+
+        return $ouvertureAt->greaterThan($arrivee) ? $arrivee : $ouvertureAt;
+    }
+
     /** Heure de départ attendue pour la journée de l'instant donné. */
     public function expectedDeparture(?Stage $stage, Carbon $occurredAt): Carbon
     {
@@ -92,6 +113,9 @@ class WorkScheduleResolver
         $setting = WorkScheduleSetting::current();
 
         return $this->defaults = [
+            'check_in_opens_at' => $setting->check_in_opens_at
+                ? substr((string) $setting->check_in_opens_at, 0, 5)
+                : null,
             'start'         => $setting->start_time,
             'end'           => $setting->end_time,
             'break_minutes' => (int) $setting->break_minutes,

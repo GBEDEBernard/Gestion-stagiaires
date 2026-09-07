@@ -13,7 +13,7 @@ class WorkScheduleSetting extends Model
 {
     protected $table = 'work_schedule_settings';
 
-    protected $fillable = ['start_time', 'end_time', 'break_minutes', 'updated_by'];
+    protected $fillable = ['check_in_opens_at', 'start_time', 'end_time', 'break_minutes', 'updated_by'];
 
     protected $casts = ['break_minutes' => 'integer'];
 
@@ -22,9 +22,10 @@ class WorkScheduleSetting extends Model
      * n'a pas tourné. Ces valeurs ne sont jamais un réglage, seulement un filet.
      */
     public const FALLBACK = [
-        'start_time'    => '08:00',
-        'end_time'      => '18:00',
-        'break_minutes' => 120,
+        'check_in_opens_at' => '07:30',
+        'start_time'        => '08:00',
+        'end_time'          => '18:00',
+        'break_minutes'     => 120,
     ];
 
     public static function current(): self

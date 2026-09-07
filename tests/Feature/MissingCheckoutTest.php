@@ -138,6 +138,35 @@ test('a closure never lands before the arrival', function () {
     expect($day->refresh()->last_check_out_at->format('H:i'))->toBe('19:00');
 });
 
+test('a night without cron does not lose the day forever', function () {
+    // La clôture ne traitait que la veille : un cron qui saute un tour laissait
+    // la journée ouverte pour toujours, jamais réclamée, jamais visible.
+    $user = oubliUser();
+    $day  = journeeOuverte($user, today()->subDays(3));
+
+    Carbon::setTestNow(today()->setTime(5, 0));
+    $this->artisan('attendance:auto-checkout')->assertSuccessful();
+
+    expect($day->refresh()->departure_status)->toBe('auto_closed');
+});
+
+test('the catch-up does not reach back into the archives', function () {
+    // Un arriéré historique noierait tout le monde sous les notifications au
+    // premier déploiement : le rattrapage s'arrête à la profondeur demandée.
+    $user = oubliUser();
+    $day  = journeeOuverte($user, today()->subDays(40));
+
+    Carbon::setTestNow(today()->setTime(5, 0));
+    $this->artisan('attendance:auto-checkout')->assertSuccessful();
+
+    expect($day->refresh()->departure_status)->toBeNull();
+
+    // Sauf si on le demande explicitement.
+    $this->artisan('attendance:auto-checkout', ['--days' => 60])->assertSuccessful();
+
+    expect($day->refresh()->departure_status)->toBe('auto_closed');
+});
+
 test('the declaration is recorded but changes nothing', function () {
     $user = oubliUser();
     $day  = journeeOuverte($user, today()->subDay());
