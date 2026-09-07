@@ -6,13 +6,20 @@
     l'heure de fin prévue tant que le responsable n'a pas tranché — sinon
     chacun déclarerait 20h.
 
+    Passé l'avertissement, la même modale vire au rouge et annonce la
+    suspension du lendemain : une seconde fenêtre par-dessus la première
+    aurait caché le formulaire qui permet justement de s'en sortir.
+
     Attendus : $journee (AttendanceDay), $declarationUrl
 --}}
+@php
+    $avertie = (bool) $journee->suspension_warned_at;
+@endphp
 <div x-data="{ ouvert: true, heure: '', motif: '', erreur: '' }"
      x-show="ouvert" x-cloak
      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
      style="background: rgba(15, 18, 22, .5)"
-     @keydown.escape.window="ouvert = false">
+     @keydown.escape.window="{{ $avertie ? '' : 'ouvert = false' }}">
 
     <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-800 shadow-xl overflow-hidden"
          x-transition:enter="transition ease-out duration-200"
@@ -24,15 +31,28 @@
             @csrf
             <input type="hidden" name="day_id" value="{{ $journee->id }}">
 
-            <div class="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4">
-                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center mb-4
+                        {{ $avertie ? 'bg-red-50 dark:bg-red-900/30' : 'bg-amber-50 dark:bg-amber-900/30' }}">
+                <svg class="w-5 h-5 {{ $avertie ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400' }}"
+                     fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    @if($avertie)
+                        <path d="M12 9v4" stroke-linecap="round"/><path d="M12 17v.01" stroke-linecap="round"/>
+                        <path d="M10.3 4.3L2.6 17.6A2 2 0 004.3 20.6h15.4a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z" stroke-linejoin="round"/>
+                    @else
+                        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/>
+                    @endif
                 </svg>
             </div>
 
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Hier, votre départ n'a pas été pointé
-            </h3>
+            @if($avertie)
+                <h3 class="text-lg font-semibold text-red-700 dark:text-red-400">
+                    Votre compte sera suspendu demain
+                </h3>
+            @else
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    Hier, votre départ n'a pas été pointé
+                </h3>
+            @endif
             <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                 {{-- On ne qualifie pas l'heure de clôture : ce n'est pas toujours
                      la fin prévue, une arrivée tardive la repousse. --}}
@@ -56,9 +76,14 @@
                                  focus:border-amber-500 focus:ring-2 focus:ring-amber-500/40 shadow-sm text-sm"></textarea>
             </label>
 
-            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400" x-show="!erreur">
-                Votre déclaration ne modifie pas la journée : présentez-vous à votre responsable,
-                lui seul peut rétablir l'heure.
+            <p class="mt-2 text-xs {{ $avertie ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400' }}" x-show="!erreur">
+                @if($avertie)
+                    Sans déclaration, votre accès sera coupé demain. Seul un administrateur pourra le rouvrir,
+                    en personne. Votre déclaration ne modifie pas la journée : c'est lui qui rétablit l'heure.
+                @else
+                    Votre déclaration ne modifie pas la journée : présentez-vous à votre responsable,
+                    lui seul peut rétablir l'heure.
+                @endif
             </p>
             <p class="mt-2 text-xs text-red-600 dark:text-red-400" x-show="erreur" x-cloak x-text="erreur"></p>
 
@@ -67,10 +92,12 @@
                     class="w-full px-4 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium text-sm hover:opacity-90 transition">
                     Envoyer ma déclaration
                 </button>
-                <button type="button" @click="ouvert = false"
-                    class="w-full px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 font-medium text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                    Plus tard
-                </button>
+                @unless($avertie)
+                    <button type="button" @click="ouvert = false"
+                        class="w-full px-4 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 font-medium text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        Plus tard
+                    </button>
+                @endunless
             </div>
         </form>
     </div>

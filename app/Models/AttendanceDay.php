@@ -41,6 +41,7 @@ class AttendanceDay extends Model
         'claimed_check_out_at',
         'claimed_check_out_reason',
         'claimed_at',
+        'suspension_warned_at',
     ];
 
     protected $casts = [
@@ -52,6 +53,7 @@ class AttendanceDay extends Model
         'departure_status' => 'string',
         'claimed_check_out_at' => 'datetime',
         'claimed_at' => 'datetime',
+        'suspension_warned_at' => 'datetime',
     ];
 
     // ========== RELATIONS ==========

@@ -343,6 +343,36 @@ class NotificationService
     }
 
     /**
+     * Un compte vient d'être suspendu faute de déclaration.
+     *
+     * L'intéressé ne peut plus rien lire dans l'application : c'est
+     * l'administrateur qui doit savoir pourquoi la porte s'est fermée, et ce
+     * qu'il faut régler pour la rouvrir. Lui seul réactive le compte.
+     */
+    public function notifyAdminsOfAttendanceSuspension(\App\Models\User $owner, \App\Models\AttendanceDay $day): void
+    {
+        $ownerName = $owner->name ?? 'Utilisateur';
+        $date      = $day->attendance_date->format('d/m/Y');
+
+        $admins = \App\Models\User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['admin', 'superviseur']);
+        })->get();
+
+        foreach ($admins as $admin) {
+            $this->push(
+                $admin->id,
+                'attendance_suspension',
+                "Compte suspendu : départ jamais déclaré",
+                "{$ownerName} n'a jamais déclaré son départ du {$date} malgré l'avertissement. Son accès est suspendu. "
+                    . "Rétablissez l'heure de la journée, puis réactivez le compte depuis sa fiche.",
+                encrypted_route('attendance.tracking.user.historique', $owner),
+                'user-x',
+                'red'
+            );
+        }
+    }
+
+    /**
      * Prévient l'utilisateur qu'un administrateur a coupé l'un de ses appareils,
      * pour qu'il comprenne pourquoi son téléphone ne pointe plus.
      */
