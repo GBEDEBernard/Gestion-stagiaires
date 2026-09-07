@@ -285,6 +285,8 @@
                                         <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">En retard</span>
                                         @elseif($day['status'] === 'absent')
                                         <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Absent</span>
+                                        @elseif(!empty($day['is_permission']))
+                                        <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" title="{{ $day['permission_reason'] ?? 'Permission approuvée' }}">Journée permissionnée</span>
                                         @else
                                         <span class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Corrigé</span>
                                         @endif

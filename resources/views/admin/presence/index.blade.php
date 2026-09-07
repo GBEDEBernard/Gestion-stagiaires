@@ -1572,9 +1572,9 @@
                                     <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="r.site_name || '—'"></td>
                                     <td class="px-5 py-3">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                                            :class="statusBadge(r.status).cls">
-                                            <span class="w-1.5 h-1.5 rounded-full" :class="statusBadge(r.status).dot"></span>
-                                            <span x-text="statusBadge(r.status).label"></span>
+                                            :class="rowBadge(r).cls">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="rowBadge(r).dot"></span>
+                                            <span x-text="rowBadge(r).label"></span>
                                         </span>
                                     </td>
                                     <td class="px-5 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300" x-text="r.arrival || '—'"></td>
@@ -1687,6 +1687,17 @@
                     return map[status] || { label: status || '—', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' };
                 },
 
+                rowBadge(r) {
+                    if (r.status === 'corrected' && r.is_permission) {
+                        return {
+                            label: 'Journée permissionnée',
+                            cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+                            dot: 'bg-violet-500',
+                        };
+                    }
+                    return this.statusBadge(r.status);
+                },
+
                 groupLabel(group) {
                     return group === 'employe' ? 'Employé' : 'Stagiaire';
                 },
@@ -1716,7 +1727,7 @@
                                 r.name,
                                 this.groupLabel(r.group),
                                 r.site_name || '',
-                                this.statusBadge(r.status).label,
+                                this.rowBadge(r).label,
                                 r.arrival || '',
                                 r.departure || '',
                                 this.fmtHours(r.worked_minutes),

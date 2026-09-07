@@ -138,6 +138,7 @@
         .badge.late { background: #fee2e2; color: #991b1b; }
         .badge.absent { background: #fee2e2; color: #991b1b; }
         .badge.corrected { background: #e2e8f0; color: #334155; }
+        .badge.permission { background: #ede9fe; color: #6d28d9; }
         .time { font-weight: 700; }
         .time.arriv { color: #15803d; }
         .time.dep { color: #1d4ed8; }
@@ -277,6 +278,7 @@
                         @if($day['status'] === 'on_time')<span class="badge ok">À l'heure</span>
                         @elseif($day['status'] === 'late')<span class="badge late">En retard</span>
                         @elseif($day['status'] === 'absent')<span class="badge absent">Absent</span>
+                        @elseif(!empty($day['is_permission']))<span class="badge permission">Journée permissionnée</span>
                         @else<span class="badge corrected">Corrigé</span>@endif
                     </td>
                 </tr>

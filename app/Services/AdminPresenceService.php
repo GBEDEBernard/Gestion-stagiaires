@@ -1553,6 +1553,8 @@ class AdminPresenceService
                 'school'         => $etudiant->ecole ?: null,
                 'site_name'      => $details['site_name'],
                 'status'         => $details['status'],
+                'is_permission'  => $details['is_permission'] ?? false,
+                'permission_reason' => $details['permission_reason'] ?? null,
                 'arrival'        => $details['arrival'],
                 'departure'      => $details['departure'],
                 'worked_minutes' => $details['worked_minutes'],
@@ -1583,6 +1585,8 @@ class AdminPresenceService
                 'school'         => null,
                 'site_name'      => $details['site_name'],
                 'status'         => $details['status'],
+                'is_permission'  => $details['is_permission'] ?? false,
+                'permission_reason' => $details['permission_reason'] ?? null,
                 'arrival'        => $details['arrival'],
                 'departure'      => $details['departure'],
                 'worked_minutes' => $details['worked_minutes'],
@@ -1627,17 +1631,19 @@ class AdminPresenceService
 
         if ($exception) {
             return [
-                'date'         => $date->copy(),
-                'present'      => false,
-                'corrected'    => true,
-                'absent'       => false,
-                'status'       => 'corrected',
-                'arrival'      => null,
-                'departure'    => null,
-                'site_name'    => $expectedSite,
-                'distance'     => null,
-                'late_minutes' => 0,
-                'worked_minutes' => 0,
+                'date'              => $date->copy(),
+                'present'           => false,
+                'corrected'         => true,
+                'absent'            => false,
+                'status'            => 'corrected',
+                'is_permission'     => !is_null($exception->permission_request_id),
+                'permission_reason' => $exception->reason,
+                'arrival'           => null,
+                'departure'         => null,
+                'site_name'         => $expectedSite,
+                'distance'          => null,
+                'late_minutes'      => 0,
+                'worked_minutes'    => 0,
             ];
         }
 

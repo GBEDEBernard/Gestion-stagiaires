@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\AttendanceException;
 use App\Models\Holiday;
 use App\Models\HolidayEmergencyExemption;
 use App\Models\PermissionRequest;
@@ -223,6 +224,28 @@ class PresenceController extends Controller
 
 $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
+
+        // ✅ Permission « retard » approuvée pour aujourd'hui : l'arrivée n'est
+        //    autorisée qu'à partir de l'heure accordée, jamais avant.
+        $approvedRetard = $this->presenceService->approvedRetardForToday($user);
+        if ($approvedRetard) {
+            $retardAllowedAt = $approvedRetard->fields_data['end_time'] ?? null;
+            if ($retardAllowedAt) {
+                try {
+                    $retardGate = today()->setTimeFromTimeString($retardAllowedAt);
+                    if (now()->lt($retardGate)) {
+                        return redirect()->route('presence.pointage')
+                            ->with('error', "Votre permission de retard autorise une arrivée à partir de "
+                                . $retardAllowedAt . ". Vous ne pouvez pas pointer avant cette heure.");
+                    }
+                } catch (\Throwable $e) {
+                    // heure illisible : on laisse passer le flux normal
+                }
+            }
+        }
+        if ($this->presenceService->retardPermissionCoversNow($user)) {
+            $isLate = false;
+        }
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
@@ -716,10 +739,16 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         $attendanceDays = $attendanceDaysQuery->get();
 
+        // Jours excusés (permissions approuvées ou corrections admin) sur la période.
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$startDate->copy()->subDay()->toDateString(), $endDate->toDateString()])
+            ->orderBy('attendance_date')
+            ->get();
+
         if ($user->hasRole('etudiant')) {
-            return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
+            return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
         } else {
-            return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
+            return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
         }
     }
 
@@ -839,6 +868,12 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
+        // Jours excusés (permissions approuvées ou corrections admin) sur la période.
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$startDate->copy()->subDay()->toDateString(), $endDate->toDateString()])
+            ->orderBy('attendance_date')
+            ->get();
+
+        return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
     }
 }

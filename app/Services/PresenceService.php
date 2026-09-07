@@ -126,6 +126,11 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         $this->checkWorkDayRestriction($stage);
         $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
         $this->checkArrivalWindow($stage);
+        $this->checkRetardPermission($user);
+        // Une arrivée couverte par une permission « retard » n'est pas un retard.
+        if ($this->retardPermissionCoversNow($user)) {
+            $payload['is_late'] = false;
+        }
         return $this->registerEvent($stage, $user, $payload, 'check_in', $observation_message);
     }
 
@@ -154,7 +159,8 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
 
         if (!$permission) {
             throw ValidationException::withMessages([
-                'presence' => "La journée n'est pas terminée. Votre départ est prévu à {$expected->format('H:i')}.",
+                'presence' => "La journée n'est pas terminée (départ prévu à {$expected->format('H:i')}). "
+                    . "Pour partir plus tôt, une permission « départ anticipé » approuvée pour aujourd'hui est requise.",
             ]);
         }
 
@@ -199,6 +205,92 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             });
     }
 
+    /**
+     * Vérifie la permission « retard » approuvée pour aujourd'hui.
+     *
+     * Symétrique du départ anticipé : une permission de retard accorde une heure
+     * d'arrivée. Le pointage d'arrivée ne s'ouvre donc qu'à partir de cette heure.
+     * Une permission portant sur un autre jour ne vaut rien ici.
+     */
+    protected function checkRetardPermission(User $user): void
+    {
+        $permission = $this->approvedRetardForToday($user);
+
+        if (!$permission) {
+            return;
+        }
+
+        $allowed = $permission->fields_data['end_time'] ?? null;
+
+        if (!$allowed) {
+            return;
+        }
+
+        try {
+            $allowedAt = today()->setTimeFromTimeString($allowed);
+        } catch (\Throwable $e) {
+            return; // heure illisible : on s'en tient à la permission accordée
+        }
+
+        if (now()->lessThan($allowedAt)) {
+            throw ValidationException::withMessages([
+                'presence' => "Votre permission de retard autorise une arrivée à partir de "
+                    . "{$allowedAt->format('H:i')}. Vous ne pouvez pas pointer avant cette heure.",
+            ]);
+        }
+    }
+
+    /**
+     * Permission « retard » approuvée pour aujourd'hui, et pour aujourd'hui
+     * seulement : on compare la date portée par la demande à la date du jour.
+     */
+    public function approvedRetardForToday(User $user): ?\App\Models\PermissionRequest
+    {
+        $type = \App\Models\PermissionType::where('slug', 'retard')->first();
+
+        if (!$type) {
+            return null;
+        }
+
+        return \App\Models\PermissionRequest::where('user_id', $user->id)
+            ->where('permission_type_id', $type->id)
+            ->where('status', 'approved')
+            ->latest('decided_at')
+            ->get()
+            ->first(function ($p) {
+                $date = $p->fields_data['date'] ?? null;
+                return $date && \Carbon\Carbon::parse($date)->isSameDay(today());
+            });
+    }
+
+    /**
+     * Une permission « retard » excusant l'arrivée couvre-t-elle l'instant actuel ?
+     * Si oui, l'arrivée est dans la fenêtre autorisée : elle n'est pas marquée
+     * en retard et aucune observation n'est demandée.
+     */
+    public function retardPermissionCoversNow(User $user): bool
+    {
+        $permission = $this->approvedRetardForToday($user);
+
+        if (!$permission) {
+            return false;
+        }
+
+        $allowed = $permission->fields_data['end_time'] ?? null;
+
+        if (!$allowed) {
+            return false;
+        }
+
+        try {
+            $allowedAt = today()->setTimeFromTimeString($allowed);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return now()->lessThanOrEqualTo($allowedAt);
+    }
+
     public function registerCheckOut(Stage $stage, User $user, array $payload): AttendanceEvent
     {
         $this->checkHolidayRestriction($user);
@@ -219,6 +311,11 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
         $this->checkArrivalWindow(null);
+        $this->checkRetardPermission($user);
+        // Une arrivée couverte par une permission « retard » n'est pas un retard.
+        if ($this->retardPermissionCoversNow($user)) {
+            $payload['is_late'] = false;
+        }
         return $this->registerEmployeeEvent($user, $payload, 'check_in', $observation_message);
     }
 
@@ -277,6 +374,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             if (!$day || !$day->first_check_in_at) {
                 $this->checkCheckInOpeningTime();
                 $this->checkArrivalWindow($stage);
+                $this->checkRetardPermission($user);
                 $eventType = 'check_in';
             } elseif (!$day->last_check_out_at) {
                 $this->checkDepartureTime($stage, $user);
@@ -293,6 +391,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             // Le retard est calculé ici, à partir de l'horaire du stage : le
             // navigateur n'a pas à en décider.
             $payload['is_late'] = $eventType === 'check_in'
+                && !$this->retardPermissionCoversNow($user)
                 && now()->greaterThan(app(WorkScheduleResolver::class)->expectedArrival($stage, now()));
 
             $event = $this->registerEvent($stage, $user, $payload, $eventType, $observation);
@@ -321,6 +420,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
 
         if (!$day || !$day->first_check_in_at) {
             $this->checkArrivalWindow(null);
+            $this->checkRetardPermission($user);
             $eventType = 'check_in';
         } elseif (!$day->last_check_out_at) {
             $this->checkDepartureTime(null, $user);
@@ -335,6 +435,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         }
 
         $payload['is_late'] = $eventType === 'check_in'
+            && !$this->retardPermissionCoversNow($user)
             && now()->greaterThan(app(WorkScheduleResolver::class)->expectedArrival(null, now()));
 
         $event = $this->registerEmployeeEvent($user, $payload, $eventType, $observation);
@@ -397,7 +498,9 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
 
         return [
             'event_type' => $eventType,
-            'is_late'    => $eventType === 'check_in' && now()->greaterThan($expected),
+            'is_late'    => $eventType === 'check_in'
+                && !$this->retardPermissionCoversNow($user)
+                && now()->greaterThan($expected),
             'expected'   => $expected->format('H:i'),
         ];
     }

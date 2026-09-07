@@ -590,6 +590,16 @@
             border: 1px solid rgba(16, 185, 129, .2);
         }
 
+        .tag-violet {
+            background: rgba(139, 92, 246, .12);
+            color: #7c3aed;
+            border: 1px solid rgba(139, 92, 246, .25);
+        }
+
+        .dark .tag-violet {
+            color: #a78bfa;
+        }
+
         .pres-empty {
             text-align: center;
             padding: 3rem 1rem;
@@ -855,6 +865,12 @@
                 </div>
 
                 {{-- Desktop Table --}}
+                @php
+                    $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
+                    $permissionDays = ($exceptions ?? collect())
+                        ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
+                        ->sortByDesc('attendance_date');
+                @endphp
                 <div class="desktop-table">
                     <table class="pres-table">
                         <thead>
@@ -921,6 +937,20 @@
                                 </td>
                             </tr>
                             @endforelse
+                            @foreach($permissionDays as $exception)
+                            <tr style="background:rgba(139,92,246,.05);">
+                                <td>
+                                    <div style="font-weight:500;">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                    <div style="font-size:.75rem;color:var(--muted);">{{ $exception->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
+                                </td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td><span class="pres-tag tag-violet">Journée permissionnée</span></td>
+                                <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: 'Permission approuvée' }}</td>
+                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -979,6 +1009,22 @@
                         Aucun pointage trouvé pour cette période
                     </div>
                     @endforelse
+                    @foreach($permissionDays as $exception)
+                    <div class="mobile-card" style="border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);">
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Date</span>
+                            <span class="mobile-value">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Statut</span>
+                            <span class="mobile-value"><span class="pres-tag tag-violet">Journée permissionnée</span></span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Motif</span>
+                            <span class="mobile-value">{{ $exception->reason ?: 'Permission approuvée' }}</span>
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>
