@@ -385,7 +385,7 @@
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }} 
                     dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage a eu lieu du
-                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>.
+                    <b>{{ $dateDebut->isoFormat('DD MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('DD MMMM YYYY') }}</b>.
                 </p>
                 @else
                 <p>
@@ -393,7 +393,7 @@
                     atteste que {{ $civilite }} <b>{{ $stage->etudiant->personnel->nom ?? '' }} {{ $stage->etudiant->personnel->prenom ?? '' }}</b>
                     a effectué un stage {{ $typeStageLower }} de {{ $dureeTexte }} 
                     dans notre entreprise, au sein de la {{ $prepositionService }} {{ $serviceDisplay }}. Ce stage d'apprentissage a eu lieu du
-                    <b>{{ $dateDebut->isoFormat('D MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('D MMMM YYYY') }}</b>,
+                    <b>{{ $dateDebut->isoFormat('DD MMMM YYYY') }}</b> au <b>{{ $dateFin->isoFormat('DD MMMM YYYY') }}</b>,
                     pour le compte de l'année académique <b>{{ $academicYear }}</b>.
                 </p>
                 @endif
@@ -409,7 +409,7 @@
             <div class="signatures">
                 @if(count($signataires) == 1)
                 <div class="sign director">
-                    <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                    <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('DD MMMM YYYY') }}</b></p>
                     @php $parOrdre = $signataires[0]->pivot->par_ordre ?? false; @endphp
                     @if($parOrdre)
                     <p style="margin:4px 0;"><b>Le Directeur Général et P.O.</b></p>
@@ -421,7 +421,7 @@
                 <div class="sign-row">
                     @foreach($signataires as $signataire)
                     <div class="sign-item">
-                        <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('D MMMM YYYY') }}</b></p>
+                        <p style="margin-bottom:4px;"><b>Fait à Abomey-Calavi, le {{ now()->locale('fr')->isoFormat('DD MMMM YYYY') }}</b></p>
                         @php $parOrdre = $signataire->pivot->par_ordre ?? false; @endphp
                         @if($parOrdre)
                         <p style="margin:4px 0;"><b>Le Directeur Général et P.O</b></p>
