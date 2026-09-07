@@ -79,6 +79,25 @@
             </div>
         @endif
 
+        @if($late)
+            <div class="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl
+                        bg-amber-50 dark:bg-amber-900/20
+                        border border-amber-200 dark:border-amber-800/50">
+                <svg class="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400"
+                     fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/>
+                </svg>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                        Retard détecté — heure prévue : {{ $expIn?->format('H:i') ?? '—' }}
+                    </p>
+                    <p class="mt-0.5 text-sm text-amber-700/85 dark:text-amber-400/85">
+                        Vous devez justifier votre retard lors du pointage. Un motif sera demandé.
+                    </p>
+                </div>
+            </div>
+        @endif
+
         @include('presence.partials.carte', [
             'lieu'          => $activeStage->site?->name ?? 'Site',
             'prenom'        => $prenom,

@@ -88,6 +88,20 @@ class QrPointageController extends Controller
             }
         }
 
+        // Un compte désactivé ne pointe pas, même avec un badge encore actif :
+        // la désactivation doit se voir tout de suite, pas au prochain login.
+        if ($user->status !== 'actif') {
+            return view('presence.qr.result', [
+                'status'    => 'rejected',
+                'title'     => 'Compte désactivé',
+                'message'   => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'      => $user,
+                'site'      => $site,
+                'eventType' => 'unknown',
+                'time'      => now()->format('H:i'),
+            ]);
+        }
+
         return $this->cartePointage($site, $user, $matchingRawToken);
     }
 
@@ -167,6 +181,20 @@ class QrPointageController extends Controller
                 'title'     => 'Authentification requise',
                 'message'   => "Impossible d'identifier votre compte. Veuillez vous connecter pour pointer.",
                 'user'      => null,
+                'site'      => $site,
+                'eventType' => 'unknown',
+                'time'      => now()->format('H:i'),
+            ]);
+        }
+
+        // Un compte désactivé ne pointe pas, même par badge de porte : la
+        // règle vaut pour toutes les entrées, pas seulement le navigateur.
+        if ($user->status !== 'actif') {
+            return view('presence.qr.result', [
+                'status'    => 'rejected',
+                'title'     => 'Compte désactivé',
+                'message'   => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'      => $user,
                 'site'      => $site,
                 'eventType' => 'unknown',
                 'time'      => now()->format('H:i'),

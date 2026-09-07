@@ -101,8 +101,15 @@ class PresenceController extends Controller
                     return redirect()->route('admin.presence.index')
                         ->with('info', "En tant qu'administrateur, vous avez accès au suivi global des présences.");
                 }
-                return redirect()->route('dashboard')
-                    ->with('error', "Votre compte n'est pas rattaché à un domaine de travail. Veuillez contacter un administrateur.");
+                return view('employee.presence.pointage', [
+                    'activeStage'         => null,
+                    'todayHoliday'        => $todayHoliday,
+                    'canBypassHoliday'    => $canBypassHoliday,
+                    'isEmergencyExempted' => $isEmergencyExempted,
+                    'hasCheckedIn'        => false,
+                    'hasCheckedOut'       => false,
+                    'user'                => $user,
+                ]);
             }
 
             // Query today's attendance for employee
