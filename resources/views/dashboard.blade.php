@@ -50,7 +50,7 @@
         {{-- ── KPI ROW 1 ──────────────────────────────────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {{-- Total Stages --}}
-            <a href="{{ route('stages.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('stages.index', ['annee_academique' => 'all']) }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@
             </a>
 
             {{-- Stages en cours --}}
-            <a href="{{ route('stages.index') }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+            <a href="{{ route('stages.index', ['statut' => 'En cours', 'annee_academique' => 'all']) }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
                 <div class="flex items-start justify-between mb-3">
                     <div class="p-2 sm:p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,10 +106,10 @@
         {{-- ── KPI ROW 2 ──────────────────────────────────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             @foreach([
-                ['bg-purple-100 dark:bg-purple-900/30','text-purple-600',$terminesGlobal,'Stages terminés',route('stages.index')],
-                ['bg-orange-100 dark:bg-orange-900/30','text-orange-600',$inscritsGlobal,'Stages à venir',route('stages.index')],
+                ['bg-purple-100 dark:bg-purple-900/30','text-purple-600',$terminesGlobal,'Stages terminés',route('stages.index',['statut'=>'Termine','annee_academique'=>'all'])],
+                ['bg-orange-100 dark:bg-orange-900/30','text-orange-600',$inscritsGlobal,'Stages à venir',route('stages.index',['statut'=>'A venir','annee_academique'=>'all'])],
                 ['bg-cyan-100 dark:bg-cyan-900/30','text-cyan-600',$dureeMoyenne.' j','Durée moyenne',null],
-                ['bg-rose-100 dark:bg-rose-900/30','text-rose-600',$etudiantsSansStage,'Sans stage',route('etudiants.index')],
+                ['bg-rose-100 dark:bg-rose-900/30','text-rose-600',$etudiantsSansStage,'Sans stage',route('etudiants.index',['stage_status'=>'none'])],
             ] as [$bg,$ic,$val,$lbl,$link])
             @if($link)
             <a href="{{ $link }}" class="block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
@@ -322,60 +322,18 @@
             </div>
         </div>
 
-        {{-- ── CHARTS ROW 2 ────────────────────────────────── --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {{-- Stages/mois --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        Stages (12 derniers mois)
-                    </h3>
-                </div>
-                <div class="p-4 sm:p-6" style="position:relative;height:220px">
-                    <canvas id="chart-stages-mois"></canvas>
-                </div>
-            </div>
 
-            {{-- Top Domaines --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                        Top Domaines
-                    </h3>
-                </div>
-                <div class="p-4 sm:p-6 space-y-3 sm:space-y-4">
-                    @forelse($topDomaines as $idx => $dom)
-                    @php $max = $topDomaines->max('stages_count') ?: 1; @endphp
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0
-                            {{ $idx===0 ? 'bg-yellow-100 text-yellow-700' : ($idx===1 ? 'bg-gray-200 text-gray-700' : ($idx===2 ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600')) }}">
-                            {{ $idx+1 }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between mb-1">
-                                <span class="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ $dom->nom }}</span>
-                                <span class="text-xs sm:text-sm font-bold text-gray-600 dark:text-gray-400 ml-2 flex-shrink-0">{{ $dom->stages_count }}</span>
-                            </div>
-                            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 sm:h-2">
-                                <div class="h-1.5 sm:h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500"
-                                    style="width:{{ round($dom->stages_count/$max*100) }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-center text-gray-500 text-sm py-6">Aucun domaine</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
 
-        {{-- ── CHART 3 : Répartition domaines ─────── --}}
+        {{-- ── RÉPARTITION PAR DOMAINE (graphique empilé + détail) ───────────── --}}
+        @php
+            $repartitionDomaines = $domainesStats->sortByDesc('total')->values();
+            $nbDomainesRep       = $repartitionDomaines->count();
+            $totalStagesRep      = (int) $repartitionDomaines->sum('total');
+            $sEnCoursRep         = (int) $repartitionDomaines->sum('enCours');
+            $sTerminesRep        = (int) $repartitionDomaines->sum('termines');
+            $sInscritsRep        = (int) $repartitionDomaines->sum('inscrits');
+            $paletteRep          = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#14b8a6', '#f97316', '#ef4444', '#a855f7', '#22d3ee'];
+        @endphp
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                 <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -383,11 +341,117 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                     </svg>
                     Répartition par domaine
+                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 ml-1">
+                        {{ $nbDomainesRep }} domaine{{ $nbDomainesRep > 1 ? 's' : '' }}
+                    </span>
                 </h3>
             </div>
-            <div class="p-4 sm:p-6" style="position:relative;height:220px sm:height:280px">
-                <canvas id="chart-domaines"></canvas>
+            <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-6">
+
+                {{-- Graphique : donut par domaine (total de stages) --}}
+                <div class="lg:col-span-3 min-w-0">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <p class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate">
+                            Nombre total de stages par domaine
+                        </p>
+                        @if($nbDomainesRep)
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 whitespace-nowrap flex-shrink-0">
+                            {{ $totalStagesRep }} stage{{ $totalStagesRep > 1 ? 's' : '' }}
+                        </span>
+                        @endif
+                    </div>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        <div class="relative w-full max-w-[15rem] aspect-square shrink-0">
+                            <canvas id="chart-domaines"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-2xl sm:text-3xl font-extrabold text-gray-800 dark:text-gray-100 tabular-nums">{{ $totalStagesRep }}</span>
+                                <span class="text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">stages</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 w-full space-y-2">
+                            @forelse($repartitionDomaines as $idxPie => $domPie)
+                            @php
+                                $colorPie = $paletteRep[$idxPie % count($paletteRep)];
+                                $pctPie   = $totalStagesRep ? round($domPie['total'] / $totalStagesRep * 100, 1) : 0;
+                            @endphp
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:{{ $colorPie }}"></span>
+                                <span class="flex-1 min-w-0 text-xs font-medium text-gray-700 dark:text-gray-300 truncate" title="{{ $domPie['domaine'] }}">{{ $domPie['domaine'] }}</span>
+                                <span class="text-xs font-bold text-gray-400 dark:text-gray-500 flex-shrink-0 tabular-nums">{{ $pctPie }}%</span>
+                                <span class="w-6 text-right text-xs font-bold text-gray-700 dark:text-gray-300 flex-shrink-0 tabular-nums">{{ $domPie['total'] }}</span>
+                            </div>
+                            @empty
+                            <p class="text-center text-gray-500 text-sm py-6">Aucun domaine enregistré</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Détail par domaine --}}
+                <div class="lg:col-span-2 min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">Détail par domaine</p>
+                    <div class="space-y-2.5">
+                        @forelse($repartitionDomaines as $idxRep => $domRep)
+                        @php
+                            $totRep = $domRep['total'] ?: 1;
+                            $rings  = [
+                                ['En cours', $domRep['enCours'],  round($domRep['enCours']  / $totRep * 100), 'stroke-emerald-500', 'text-emerald-600 dark:text-emerald-400'],
+                                ['Terminés', $domRep['termines'], round($domRep['termines'] / $totRep * 100), 'stroke-violet-500',  'text-violet-600 dark:text-violet-400'],
+                                ['À venir',  $domRep['inscrits'], round($domRep['inscrits'] / $totRep * 100), 'stroke-orange-500',  'text-orange-600 dark:text-orange-400'],
+                            ];
+                        @endphp
+                        <div class="group rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 px-3 py-2.5 transition hover:bg-white dark:hover:bg-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0
+                                    {{ $idxRep === 0 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400' : ($idxRep === 1 ? 'bg-gray-200 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300' : ($idxRep === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400' : 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300')) }}">
+                                    {{ $idxRep + 1 }}
+                                </span>
+                                <span class="flex-1 min-w-0">
+                                    <span class="block text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title="{{ $domRep['domaine'] }}">{{ $domRep['domaine'] }}</span>
+                                </span>
+                                <span class="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 flex-shrink-0">{{ $domRep['total'] }}</span>
+                            </div>
+
+                            <div class="mt-3 ml-9 flex items-start justify-between gap-2">
+                                @foreach($rings as [$ringLbl, $ringCnt, $ringPct, $ringBar, $ringTxt])
+                                <div class="flex flex-col items-center gap-1 min-w-0">
+                                    <div class="relative w-9 h-9 flex-shrink-0">
+                                        <svg viewBox="0 0 36 36" class="w-9 h-9 -rotate-90">
+                                            <circle cx="18" cy="18" r="15.915" fill="none" class="stroke-gray-200 dark:stroke-gray-700" stroke-width="3.5"></circle>
+                                            <circle cx="18" cy="18" r="15.915" fill="none" class="{{ $ringBar }}" stroke-width="3.5"
+                                                stroke-linecap="round" stroke-dasharray="{{ $ringPct }} 100"></circle>
+                                        </svg>
+                                        <span class="absolute inset-0 flex items-center justify-center text-[9px] font-bold {{ $ringTxt }}">{{ $ringPct }}%</span>
+                                    </div>
+                                    <span class="text-[9px] font-medium text-gray-400 dark:text-gray-500 leading-none">{{ $ringLbl }}</span>
+                                    <span class="text-[9px] font-semibold text-gray-500 dark:text-gray-400 leading-none -mt-0.5">{{ $ringCnt }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @empty
+                        <p class="text-center text-gray-500 text-sm py-6">Aucun domaine enregistré</p>
+                        @endforelse
+                    </div>
+                </div>
             </div>
+
+            @if($nbDomainesRep)
+            <div class="px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>{{ $sEnCoursRep }} en cours
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-violet-500"></span>{{ $sTerminesRep }} terminés
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>{{ $sInscritsRep }} à venir
+                </span>
+                <span class="ml-auto inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-cyan-500"></span>{{ $totalStagesRep }} au total
+                </span>
+            </div>
+            @endif
         </div>
 
         {{-- ── Activités + Indicateurs ─────────────────────────── --}}
@@ -587,10 +651,9 @@
             typesData:       {!! Js::from($typesData) !!},
             stagesMoisLabels:{!! Js::from($labelsMoisAnnee) !!},
             stagesMoisData:  {!! Js::from($stagesParMois) !!},
-            domLabels:       {!! Js::from($domainesStats->pluck('domaine')->values()) !!},
-            domEnCours:      {!! Js::from($domainesStats->pluck('enCours')->values()) !!},
-            domTermines:     {!! Js::from($domainesStats->pluck('termines')->values()) !!},
-            domInscrits:     {!! Js::from($domainesStats->pluck('inscrits')->values()) !!},
+            domLabels:       {!! Js::from($repartitionDomaines->pluck('domaine')->values()) !!},
+            domTotaux:       {!! Js::from($repartitionDomaines->pluck('total')->values()) !!},
+            domPalette:      {!! Js::from($paletteRep) !!},
             tasksMoisLabels: {!! Js::from($tasksMoisLabels) !!},
             tasksCreated:    {!! Js::from($tasksCreatedByMonth) !!},
             tasksInProgress: {!! Js::from($tasksInProgressByMonth) !!},
@@ -1437,31 +1500,40 @@
             options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:TXT, boxWidth:10, padding:8} }, tooltip:tip() } }
         });
 
-        /* ── 3. STAGES/MOIS ── */
-        new Chart(document.getElementById('chart-stages-mois')?.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: safe(D.stagesMoisLabels,[]),
-                datasets: [{ label:'Stages', data:safe(D.stagesMoisData,[0]), backgroundColor:'#8b5cf6', borderRadius:4 }]
-            },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:tip() }, scales:xyScales() }
-        });
-
-        /* ── 4. DOMAINES ── */
+        /* ── 3. DOMAINES (donut par domaine) ── */
         new Chart(document.getElementById('chart-domaines')?.getContext('2d'), {
-            type: 'bar',
+            type: 'doughnut',
             data: {
-                labels: safe(D.domLabels,['Vide']),
-                datasets: [
-                    { label:'En cours',  data:safe(D.domEnCours,[0]),  backgroundColor:'#22c55e', borderRadius:3 },
-                    { label:'Terminés',  data:safe(D.domTermines,[0]), backgroundColor:'#a855f7', borderRadius:3 },
-                    { label:'À venir',   data:safe(D.domInscrits,[0]), backgroundColor:'#f97316', borderRadius:3 },
-                ]
+                labels: safe(D.domLabels, ['Vide']),
+                datasets: [{
+                    data: safe(D.domTotaux, [1]),
+                    backgroundColor: (D.domPalette && D.domPalette.length) ? D.domPalette : ['#06b6d4'],
+                    borderColor: isDark ? '#1f2937' : '#ffffff',
+                    borderWidth: 2,
+                    hoverOffset: 6,
+                }]
             },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:TXT, boxWidth:10, padding:8} }, tooltip:tip() }, scales:xyScales() }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: Object.assign(tip(), {
+                        callbacks: {
+                            label: (ctx) => {
+                                let total = 0;
+                                (ctx.dataset.data || []).forEach(v => total += v);
+                                const share = total ? Math.round(ctx.raw / total * 100) : 0;
+                                return ' ' + ctx.label + ' : ' + ctx.raw + ' (' + share + '%)';
+                            }
+                        }
+                    })
+                }
+            }
         });
 
-        /* ── 5. TÂCHES (courbes 12 mois) ── */
+        /* ── 4. TÂCHES (courbes 12 mois) ── */
         (function() {
             const el = document.getElementById('chart-tasks');
             if (!el) return;

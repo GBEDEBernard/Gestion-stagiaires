@@ -106,6 +106,31 @@
     .fi-search-wrap .fi-input { padding-left: 2.3rem; }
     .si-count { font-size: .78rem; color: var(--muted); margin-top: .75rem; }
 
+    /* ── Pagination ── */
+    .si-pagination {
+        display: flex; align-items: center; justify-content: flex-end; gap: .9rem;
+        padding: .75rem 1.1rem; border-top: 1px solid var(--border);
+        font-size: .8rem; color: var(--muted);
+    }
+    .si-pagination nav { display: flex; }
+    .si-pagination .pagination {
+        display: flex; align-items: center; gap: .3rem; list-style: none; margin: 0; padding: 0;
+    }
+    .si-pagination .pagination li a, .si-pagination .pagination li span {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 2rem; height: 2rem; padding: 0 .5rem;
+        border: 1px solid var(--border); border-radius: var(--radius-sm);
+        color: var(--text); text-decoration: none; font-weight: 600;
+        transition: background .15s, color .15s, border-color .15s;
+    }
+    .si-pagination .pagination li a:hover { background: var(--surface-alt); border-color: var(--muted); }
+    .si-pagination .pagination li.active span {
+        background: var(--brand); border-color: var(--brand); color: #fff; cursor: default;
+    }
+    .si-pagination .pagination li.disabled span {
+        color: var(--muted); pointer-events: none; opacity: .6;
+    }
+
     /* ── Onglets années académiques ── */
     .si-year-tabs {
         display: flex;
@@ -370,13 +395,44 @@
             </div>
         </div>
         <p id="result-count" class="si-count">
-            @if($stagesParAnnee !== null)
-                {{ $stages->count() }} stage(s) trouvé(s)
-            @else
-                {{ $stages->total() }} stage(s) trouvé(s)
-            @endif
+            {{ $stagesTotal }} stage(s) trouvé(s)
         </p>
     </form>
+
+    @php
+        $statutActif = request('statut');
+        $statutInfo  = [
+            'En cours' => ['En cours', '#10b981'],
+            'Terminé'  => ['Terminé', '#6b7a99'],
+            'À venir'  => ['À venir', '#3b82f6'],
+        ];
+        $statutNom = match (true) {
+            $statutActif == 'En cours'            => 'En cours',
+            in_array($statutActif, ['Termine', 'Terminé'], true) => 'Terminé',
+            in_array($statutActif, ['A venir', 'À venir'], true) => 'À venir',
+            default                               => null,
+        };
+    @endphp
+
+    {{-- Bandeau filtre statut actif --}}
+    @if($statutNom)
+    <div id="status-filter-banner" data-statut="{{ $statutNom }}" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.65rem 1.25rem;margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-card);">
+        <div style="display:flex;align-items:center;gap:.7rem;">
+            <span style="width:8px;height:8px;border-radius:50%;background:{{ $statutInfo[$statutNom][1] }};flex-shrink:0;"></span>
+            <span style="font-size:.85rem;font-weight:700;color:var(--text);">
+                Filtre statut : <span style="color:{{ $statutInfo[$statutNom][1] }};">{{ $statutNom }}</span>
+            </span>
+            <span style="font-size:.78rem;color:var(--muted);">
+                {{ $stagesTotal }} stage(s) avec ce filtre
+            </span>
+        </div>
+        <a href="{{ route('stages.index', ['annee_academique' => request('annee_academique')]) }}"
+            class="btn-ghost" style="padding:.4rem .9rem;font-size:.78rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            Retirer le filtre
+        </a>
+    </div>
+    @endif
 
     {{-- ── Onglets années académiques, statut rapide et pagination par page ── --}}
     <div class="si-year-tabs" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;" id="quick-filters-container">
@@ -414,6 +470,7 @@
                     Lignes par page :
                 </label>
                 <select id="per-page-select" class="fi-select-perpage" title="Nombre de lignes par page">
+                    <option value="all" {{ ($perPage ?? 10) === 'all' ? 'selected' : '' }}>Tout</option>
                     <option value="5" {{ ($perPage ?? 10) == 5 ? 'selected' : '' }}>5</option>
                     <option value="10" {{ ($perPage ?? 10) == 10 ? 'selected' : '' }}>10</option>
                     <option value="20" {{ ($perPage ?? 10) == 20 ? 'selected' : '' }}>20</option>
@@ -568,7 +625,7 @@
                     <h2>
                         Année académique {{ request('annee_academique') }}
                         <span style="font-weight:400;font-size:.8rem;color:var(--muted);margin-left:.5rem">
-                            ({{ $stages->total() }} stage{{ $stages->total() > 1 ? 's' : '' }})
+                            ({{ $stagesTotal }} stage{{ $stagesTotal > 1 ? 's' : '' }})
                         </span>
                     </h2>
                 </div>
@@ -690,6 +747,11 @@
                         </tbody>
                     </table>
             </div>
+            @if($stagesPaginated)
+                <div class="si-pagination">
+                    {{ $stages->links() }}
+                </div>
+            @endif
         @endif
 
     </div>{{-- #stages-table-container --}}
@@ -729,6 +791,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const newCount = doc.getElementById('result-count');
                 const oldCount = document.getElementById('result-count');
                 if (newCount && oldCount) oldCount.innerText = newCount.innerText;
+
+                const newBanner = doc.getElementById('status-filter-banner');
+                const oldBanner = document.getElementById('status-filter-banner');
+                if (newBanner && oldBanner) {
+                    oldBanner.outerHTML = newBanner.outerHTML;
+                } else if (oldBanner) {
+                    oldBanner.remove();
+                }
 
                 window.history.replaceState({}, '', url.toString());
                 attachPaginationLinks();

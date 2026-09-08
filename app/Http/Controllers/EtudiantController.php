@@ -11,11 +11,40 @@ use Illuminate\Validation\Rule;
 
 class EtudiantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $etudiants = Etudiant::with('personnel.user')
-            ->latest('id')         // optionnel : les plus récents d'abord
-            ->paginate(10);
+            ->withCount('stages')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = $request->input('search');
+                $q->whereHas('personnel', function ($p) use ($search) {
+                    $p->where('nom', 'like', "%{$search}%")
+                        ->orWhere('prenom', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('telephone', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('ecole'), function ($q) use ($request) {
+                $q->where('ecole', 'like', '%' . $request->input('ecole') . '%');
+            })
+            ->when($request->filled('account_status'), function ($q) use ($request) {
+                if ($request->input('account_status') === 'with') {
+                    $q->has('personnel.user');
+                } elseif ($request->input('account_status') === 'without') {
+                    $q->doesntHave('personnel.user');
+                }
+            })
+            ->when($request->filled('stage_status'), function ($q) use ($request) {
+                if ($request->input('stage_status') === 'none') {
+                    $q->doesntHave('stages');
+                } elseif ($request->input('stage_status') === 'has') {
+                    $q->has('stages');
+                }
+            })
+            ->latest('id')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('admin.etudiants.index', compact('etudiants'));
     }
 

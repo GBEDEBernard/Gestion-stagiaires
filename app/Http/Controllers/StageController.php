@@ -52,28 +52,44 @@ class StageController extends Controller
             });
         }
 
-        $now = now();
-        $currentYear = $now->month >= 9 ? $now->year . '-' . ($now->year + 1) : ($now->year - 1) . '-' . $now->year;
-
-        $perPage = (int) $request->get('per_page', 10);
-        if (!in_array($perPage, [5, 10, 20, 25, 50, 100], true)) {
-            $perPage = 10;
+        $perPageInput = $request->get('per_page', 10);
+        if ($perPageInput === 'all' || $perPageInput === '' || $perPageInput === '0') {
+            $perPage = 'all';
+        } else {
+            $perPage = (int) $perPageInput;
+            if (!in_array($perPage, [5, 10, 20, 25, 50, 100], true)) {
+                $perPage = 10;
+            }
         }
 
-        if ($request->annee_academique === 'all') {
+        $anneeAcademique = $request->input('annee_academique');
+
+        // "Toutes les années" : affichage complet, groupé par année académique
+        if ($anneeAcademique === 'all' || $anneeAcademique === null || $anneeAcademique === '') {
             $stages = $query->orderBy('annee_academique', 'desc')->orderBy('date_debut', 'desc')->get();
             $stagesParAnnee = $stages->groupBy('annee_academique');
+            $stagesPaginated = false;
+            $perPage = 'all';
         } else {
-            $anneeCible = $request->filled('annee_academique') ? $request->annee_academique : $currentYear;
-            $query->where('annee_academique', $anneeCible);
-            $stages = $query->orderBy('date_debut', 'desc')->paginate($perPage)->withQueryString();
+            $query->where('annee_academique', $anneeAcademique);
+            if ($perPage === 'all') {
+                $stages = $query->orderBy('date_debut', 'desc')->get();
+                $stagesPaginated = false;
+            } else {
+                $stages = $query->orderBy('date_debut', 'desc')->paginate($perPage)->withQueryString();
+                $stagesPaginated = true;
+            }
             $stagesParAnnee = null;
         }
+
+        $stagesTotal = $stages instanceof \Illuminate\Contracts\Pagination\Paginator
+            ? $stages->total()
+            : $stages->count();
 
         $typestages = TypeStage::all();
         $anneesAcademiques = Stage::distinct()->whereNotNull('annee_academique')->orderBy('annee_academique', 'desc')->pluck('annee_academique');
 
-        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques', 'perPage'));
+        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques', 'perPage', 'stagesTotal', 'stagesPaginated'));
     }
 
     public function create()
