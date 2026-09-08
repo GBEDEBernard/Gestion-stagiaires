@@ -88,6 +88,9 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
     Route::get('/admin/dashboard/inscriptions/details', [DashboardController::class, 'registrationsDetail'])
         ->name('dashboard.registrations.detail')
         ->middleware('permission:etudiants.view');
+    Route::get('/admin/dashboard/tasks-details', [DashboardController::class, 'tasksDetail'])
+        ->name('dashboard.tasks.detail')
+        ->middleware('permission:tasks.view');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {

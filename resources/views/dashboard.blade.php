@@ -163,6 +163,78 @@
         </div>
         @endcan
 
+        {{-- ── DEMANDES DE PERMISSION (cliquables) ─────────────────────── --}}
+        @role('admin|superviseur')
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            @foreach([
+                ['Demandes en attente',$permissionsPending,'from-amber-500 to-orange-500','bg-amber-100 dark:bg-amber-900/30','text-amber-600','Urgent à traiter',route('admin.permissions.index',['status'=>'pending']),'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                ['Approuvées',$permissionsApproved,'from-emerald-500 to-teal-500','bg-emerald-100 dark:bg-emerald-900/30','text-emerald-600','validées',route('admin.permissions.index',['status'=>'approved']),'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                ['Refusées',$permissionsRejected,'from-rose-500 to-red-500','bg-rose-100 dark:bg-rose-900/30','text-rose-600','rejetées',route('admin.permissions.index',['status'=>'rejected']),'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ] as [$lbl,$val,$grad,$bg,$txt,$sub,$link,$icon])
+            <a href="{{ $link }}" class="group block bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all hover:-translate-y-0.5">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="p-2 sm:p-2.5 {{ $bg }} rounded-xl">
+                        <svg class="w-5 h-5 {{ $txt }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}"/>
+                        </svg>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold bg-gradient-to-r {{ $grad }} text-white">{{ $sub }}</span>
+                </div>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{{ $val }}</p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+                    {{ $lbl }}
+                    <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-violet-600 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </p>
+            </a>
+            @endforeach
+        </div>
+        @endrole
+
+        {{-- ── SUIVI DES TÂCHES (courbes) ─────────────────────────────── --}}
+        @role('admin|superviseur')
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-gray-800 dark:to-gray-800 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-violet-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Suivi des Tâches
+                </h3>
+                <a href="{{ route('tasks.index') }}"
+                    class="px-3 sm:px-4 py-1.5 sm:py-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl text-xs sm:text-sm transition-all whitespace-nowrap">
+                    Voir les tâches
+                </a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 p-4 sm:p-6">
+                @foreach([
+                    ['Créées',$tasksCreated,'from-violet-500 to-purple-500','text-violet-700 dark:text-violet-300'],
+                    ['En cours',$tasksInProgress,'from-blue-500 to-blue-600','text-blue-700 dark:text-blue-300'],
+                    ['Terminées',$tasksCompleted,'from-emerald-500 to-teal-500','text-emerald-700 dark:text-emerald-300'],
+                    ['En attente val.',$tasksAwaiting,'from-amber-500 to-orange-500','text-amber-700 dark:text-amber-300'],
+                ] as [$lbl,$val,$grad,$txt])
+                <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-800 rounded-xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <svg class="w-4 h-4 bg-gradient-to-r {{ $grad }} rounded p-[1px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-[10px] sm:text-xs font-semibold {{ $txt }} uppercase tracking-wide">{{ $lbl }}</span>
+                    </div>
+                    <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{{ $val }}</p>
+                </div>
+                @endforeach
+            </div>
+            <div class="px-4 sm:px-6 pb-4 sm:pb-6" style="position:relative;height:260px">
+                <canvas id="chart-tasks"></canvas>
+            </div>
+            <div class="px-4 sm:px-6 pb-4 text-center">
+                <p class="inline-flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                    </svg>
+                    Cliquez sur un point de la courbe pour voir le détail des tâches du mois.
+                </p>
+            </div>
+        </div>
+        @endrole
+
         {{-- ── CERCLES STATISTIQUES UTILISATEURS ──────────────────────────── --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {{-- Cercle 1 : Répartition des Utilisateurs (Cliquable -> /admin/stages?per_page=10) --}}
@@ -519,6 +591,11 @@
             domEnCours:      {!! Js::from($domainesStats->pluck('enCours')->values()) !!},
             domTermines:     {!! Js::from($domainesStats->pluck('termines')->values()) !!},
             domInscrits:     {!! Js::from($domainesStats->pluck('inscrits')->values()) !!},
+            tasksMoisLabels: {!! Js::from($tasksMoisLabels) !!},
+            tasksCreated:    {!! Js::from($tasksCreatedByMonth) !!},
+            tasksInProgress: {!! Js::from($tasksInProgressByMonth) !!},
+            tasksCompleted:  {!! Js::from($tasksCompletedByMonth) !!},
+            tasksRanges:     {!! Js::from($rangesMois) !!},
         };
     </script>
 
@@ -682,6 +759,211 @@
         </div>
     </div>
 
+    {{-- ════════ MODALE : DÉTAIL DES TÂCHES (courbe cliquable) ════════ --}}
+    <div id="tasks-modal" x-data="tasksApp()" x-show="open" x-cloak
+        class="fixed inset-0 z-[10000] flex items-start justify-center p-3 sm:p-6 overflow-y-auto">
+        <div x-show="open" x-transition.opacity @click="open=false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+        <div x-show="open" x-transition.duration.200ms class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-7xl z-10 my-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            {{-- Header --}}
+            <div class="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600">
+                <div class="absolute inset-0 opacity-20"
+                    style="background-image:url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
+                </div>
+                <div class="relative px-5 sm:px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0 border border-white/20 shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-base sm:text-lg font-bold text-white truncate flex items-center gap-2">
+                                Tâches <span x-text="typeLabel()"></span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white border border-white/20" x-text="periodLabel"></span>
+                            </h3>
+                            <p class="text-xs text-violet-200 mt-0.5">
+                                <span x-text="total"></span> tâche(s) · du
+                                <span x-text="fromLabel"></span> au <span x-text="toLabel"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
+                        <a :href="trackingUrl()" target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm transition whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            Suivi des tâches
+                        </a>
+                        <button @click="open=false" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm transition flex items-center justify-center" title="Fermer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="px-4 sm:px-6 py-4" @keydown.escape.window="open=false">
+                <div x-show="loading" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-violet-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 font-medium">Chargement des tâches…</p>
+                </div>
+
+                <div x-show="!loading && error" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Impossible de charger les données.</p>
+                    <button @click="loadPage(page)" class="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition">
+                        Réessayer
+                    </button>
+                </div>
+
+                <div x-show="!loading && !error && rows.length === 0" class="py-16 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucune tâche sur cette période.</p>
+                    <p class="mt-1 text-xs text-gray-400">Essayez une autre période en cliquant sur la courbe.</p>
+                </div>
+
+                <template x-if="!loading && !error && rows.length > 0">
+                    <div>
+                        {{-- Search --}}
+                        <div class="mb-4 relative">
+                            <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.2-5.2m1.7-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                            </svg>
+                            <input type="text" x-model="q" placeholder="Rechercher une tâche, un propriétaire, un stage…"
+                                class="w-full h-10 pl-10 pr-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition">
+                            <button x-show="q.length > 0" @click="q = ''"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <div x-show="filteredRows().length === 0" class="py-12 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-2xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.2-5.2m1.7-4.3a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                                </svg>
+                            </div>
+                            <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucun résultat</p>
+                            <p class="mt-1 text-xs text-gray-400">Aucune tâche ne correspond à « <span class="font-medium" x-text="q"></span> ».</p>
+                        </div>
+
+                        {{-- Cards grid --}}
+                        <div x-show="filteredRows().length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-h-[55vh] overflow-y-auto pr-1">
+                            <template x-for="r in filteredRows()" :key="r.id">
+                                <a :href="r.url"
+                                    class="group relative block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-violet-300 dark:hover:border-violet-600 transition-all duration-300">
+                                    {{-- Status color bar --}}
+                                    <div class="absolute left-0 top-0 bottom-0 w-1" :class="statusBarClass(r)"></div>
+
+                                    <div class="p-4 pl-5">
+                                        {{-- Top row : priority dot + status + arrow --}}
+                                        <div class="flex items-center justify-between gap-2 mb-2.5">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0" :class="priorityDotClass(r)"></span>
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1.5"
+                                                    :class="statusBadgeClass(r)">
+                                                    <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(r)"></span>
+                                                    <span x-text="r.status_label"></span>
+                                                </span>
+                                            </div>
+                                            <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </div>
+
+                                        {{-- Title + owner --}}
+                                        <p class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug mb-2.5 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition">
+                                            <span x-text="r.title"></span>
+                                        </p>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" :style="`background:${avatarColor(r.owner || '—')}`" x-text="initials(r.owner)"></span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="r.owner || '—'"></span>
+                                        </div>
+
+                                        {{-- Meta : stage + date --}}
+                                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                                            <span x-show="r.stage_theme" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 truncate max-w-[60%]"
+                                                :title="`${r.stage_theme}${r.etudiant ? ' — ' + r.etudiant : ''}`">
+                                                <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                                <span x-text="r.stage_theme" class="truncate"></span>
+                                            </span>
+                                            <span x-show="!r.stage_theme" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                                Sans stage
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                <span x-text="r.created_at || '—'"></span>
+                                            </span>
+                                        </div>
+
+                                        {{-- Progress --}}
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <div class="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-500" :class="progressBarClass(r)" :style="`width:${Math.min(100,(r.progress || 0))}%`"></div>
+                                            </div>
+                                            <span class="text-[11px] font-bold text-gray-600 dark:text-gray-300 font-mono" x-text="(r.progress || 0) + '%'"></span>
+                                        </div>
+
+                                        {{-- Assignees --}}
+                                        <template x-if="r.assignees && r.assignees.length">
+                                            <div class="flex items-center pt-3 border-t border-gray-100 dark:border-gray-700/60">
+                                                <div class="flex -space-x-2">
+                                                    <template x-for="(a, ai) in r.assignees.slice(0, 3)" :key="a + ai">
+                                                        <span class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-gray-800 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                                                            :style="`background:${avatarColor(a)}`" :title="a" x-text="initials(a)"></span>
+                                                    </template>
+                                                    <span x-show="r.assignees.length > 3"
+                                                        class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                                                        x-text="'+' + (r.assignees.length - 3)"></span>
+                                                </div>
+                                                <div class="ml-2 flex flex-wrap gap-1 items-center w-full">
+                                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 truncate" x-text="r.assignees.slice(0, 3).map((n, i) => (i === 0 ? n : ' · ' + n)).join('') + (r.assignees.length > 3 ? '…' : '')"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+                        </div>
+
+                        {{-- Pagination --}}
+                        <div class="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                            <p class="text-xs text-gray-500 dark:text-gray-400"
+                                x-text="`Page ${page} / ${lastPage} — ${total} tâche(s) au total`"></p>
+                            <div class="flex gap-2">
+                                <button @click="loadPage(page - 1)" :disabled="page <= 1"
+                                    class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                    Précédent
+                                </button>
+                                <button @click="loadPage(page + 1)" :disabled="page >= lastPage"
+                                    class="inline-flex items-center gap-1 px-3.5 py-2 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                    Suivant
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
     <script>
         function registrationsApp() {
             return {
@@ -837,6 +1119,205 @@
         };
     </script>
 
+    <script>
+        function tasksApp() {
+            return {
+                open: false,
+                loading: false,
+                error: false,
+                rows: [],
+                total: 0,
+                from: null,
+                to: null,
+                fromLabel: '',
+                toLabel: '',
+                periodLabel: '',
+                type: 'created',
+                page: 1,
+                lastPage: 1,
+                perPage: 10,
+                q: '',
+
+                typeLabel() {
+                    const map = {
+                        created: 'créées',
+                        in_progress: 'en cours',
+                        completed: 'terminées',
+                    };
+                    return map[this.type] || this.type;
+                },
+
+                async openDetail(from, to, label, type) {
+                    this.from = from;
+                    this.to = to;
+                    this.periodLabel = label || '';
+                    this.type = type || 'created';
+                    this.page = 1;
+                    this.rows = [];
+                    this.total = 0;
+                    this.lastPage = 1;
+                    this.error = false;
+                    this.q = '';
+                    this.open = true;
+                    await this.loadPage(1);
+                },
+
+                async loadPage(page) {
+                    if (page < 1) return;
+                    this.loading = true;
+                    this.error = false;
+                    try {
+                        const url = `/admin/dashboard/tasks-details?from=${encodeURIComponent(this.from)}&to=${encodeURIComponent(this.to)}&type=${encodeURIComponent(this.type)}&page=${page}&per_page=${this.perPage}`;
+                        const resp = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        const data = await resp.json();
+                        this.rows = data.data || [];
+                        this.total = data.total || 0;
+                        this.page = data.pagination?.current_page || page;
+                        this.lastPage = data.pagination?.last_page || 1;
+                        this.setLabels(data.from, data.to);
+                    } catch (e) {
+                        this.error = true;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                setLabels(from, to) {
+                    const fmt = (iso) => {
+                        if (!iso) return '';
+                        const [y, m, d] = iso.split('-');
+                        return `${d}/${m}/${y}`;
+                    };
+                    this.fromLabel = fmt(from);
+                    this.toLabel = fmt(to);
+                },
+
+                filteredRows() {
+                    const q = (this.q || '').trim().toLowerCase();
+                    if (!q) return this.rows || [];
+                    return (this.rows || []).filter((r) => {
+                        const hay = [
+                            r.title,
+                            r.owner,
+                            r.stage_theme,
+                            r.etudiant,
+                            r.status_label,
+                            ...(r.assignees || []),
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        return hay.includes(q);
+                    });
+                },
+
+                initials(name) {
+                    name = (name || '').trim();
+                    if (!name) return '?';
+                    const parts = name.split(/\s+/).filter(Boolean);
+                    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+                    return name.slice(0, 2).toUpperCase();
+                },
+
+                avatarColor(n) {
+                    n = n || '?';
+                    let h = 0;
+                    for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 360;
+                    return 'hsl(' + h + ' 55% 48%)';
+                },
+
+                priorityDotClass(r) {
+                    const map = {
+                        urgent: 'bg-red-500',
+                        high: 'bg-orange-500',
+                        normal: 'bg-blue-500',
+                        low: 'bg-gray-400',
+                    };
+                    return map[r.priority] || map.normal;
+                },
+
+                statusBarClass(r) {
+                    const map = {
+                        slate: 'bg-slate-400',
+                        blue: 'bg-blue-500',
+                        red: 'bg-red-500',
+                        amber: 'bg-amber-500',
+                        violet: 'bg-violet-500',
+                        emerald: 'bg-emerald-500',
+                    };
+                    return map[r.status_color] || map.slate;
+                },
+
+                statusBadgeClass(r) {
+                    const map = {
+                        slate: 'bg-slate-100 dark:bg-slate-700/40 text-slate-600 dark:text-slate-300',
+                        blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+                        red: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+                        amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+                        violet: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
+                        emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+                    };
+                    return map[r.status_color] || map.slate;
+                },
+
+                statusDotClass(r) {
+                    const map = {
+                        slate: 'bg-slate-400',
+                        blue: 'bg-blue-500',
+                        red: 'bg-red-500',
+                        amber: 'bg-amber-500',
+                        violet: 'bg-violet-500',
+                        emerald: 'bg-emerald-500',
+                    };
+                    return map[r.status_color] || map.slate;
+                },
+
+                progressBarClass(r) {
+                    const p = r.progress || 0;
+                    if (p >= 100) return 'bg-emerald-500';
+                    if (p >= 50) return 'bg-blue-500';
+                    return 'bg-amber-500';
+                },
+
+                trackingUrl() {
+                    return `/admin/tasks-tracking?status=${encodeURIComponent(this.statusForTracking())}`;
+                },
+
+                statusForTracking() {
+                    const map = {
+                        created: '',
+                        in_progress: 'in_progress',
+                        completed: 'completed',
+                    };
+                    return map[this.type] || '';
+                },
+            };
+        }
+
+        window.openTasksDetails = function (from, to, label, type) {
+            const el = document.getElementById('tasks-modal');
+            if (!el) return;
+            let data = null;
+
+            if (window.Alpine && typeof window.Alpine.$data === 'function') {
+                try { data = window.Alpine.$data(el); } catch (e) { data = null; }
+            }
+            if (!data && el.__x && el.__x.$data) {
+                data = el.__x.$data;
+            }
+            if (!data) {
+                console.warn('[Tasks] Alpine composant modale non initialisé.');
+                return;
+            }
+            if (typeof data.openDetail === 'function') {
+                data.openDetail(from, to, label, type);
+            }
+        };
+    </script>
+
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
@@ -979,6 +1460,49 @@
             },
             options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{color:TXT, boxWidth:10, padding:8} }, tooltip:tip() }, scales:xyScales() }
         });
+
+        /* ── 5. TÂCHES (courbes 12 mois) ── */
+        (function() {
+            const el = document.getElementById('chart-tasks');
+            if (!el) return;
+
+            const typesByDs = ['created', 'in_progress', 'completed'];
+            let tasksChart;
+
+            const clickPoint = (evt, items) => {
+                let idx = (items && items.length) ? items[0].index : null;
+                let ds  = (items && items.length) ? items[0].datasetIndex : null;
+
+                if (idx === null && tasksChart) {
+                    const xScale = tasksChart.scales.x;
+                    const estimated = Math.round(xScale.getValueForPixel(evt.x));
+                    if (Number.isFinite(estimated)) idx = estimated;
+                }
+                if (ds === null && items && items.length) ds = items[0].datasetIndex;
+
+                if (idx === null || idx < 0) return;
+                const range = D.tasksRanges && D.tasksRanges[idx];
+                if (!range) return;
+                const type = typesByDs[ds] || 'created';
+                const label = (D.tasksMoisLabels && D.tasksMoisLabels[idx]) || '';
+                if (typeof window.openTasksDetails === 'function') {
+                    window.openTasksDetails(range[0], range[1], label, type);
+                }
+            };
+
+            tasksChart = new Chart(el.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: safe(D.tasksMoisLabels, []),
+                    datasets: [
+                        { label: 'Créées',  data: safe(D.tasksCreated, [0]),    borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', fill: true, tension: 0.4, pointRadius: 4, pointHitRadius: 15, pointHoverRadius: 7, pointBackgroundColor: '#8b5cf6', pointBorderColor: '#ffffff', pointBorderWidth: 1.5 },
+                        { label: 'En cours', data: safe(D.tasksInProgress, [0]), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)',  fill: false, tension: 0.4, pointRadius: 4, pointHitRadius: 15, pointHoverRadius: 7, pointBackgroundColor: '#3b82f6', pointBorderColor: '#ffffff', pointBorderWidth: 1.5 },
+                        { label: 'Terminées', data: safe(D.tasksCompleted, [0]), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.06)',  fill: false, tension: 0.4, pointRadius: 4, pointHitRadius: 15, pointHoverRadius: 7, pointBackgroundColor: '#10b981', pointBorderColor: '#ffffff', pointBorderWidth: 1.5 },
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: true, mode: 'nearest' }, onClick: clickPoint, onHover: (evt, item) => { evt.native.target.style.cursor = item[0] ? 'pointer' : 'default'; }, plugins: { legend: { position: 'bottom', labels: { color: TXT, boxWidth: 10, padding: 8 } }, tooltip: tip() }, scales: xyScales() }
+            });
+        })();
 
         /* ── CERCLE 1 : RÉPARTITION UTILISATEURS ── */
         (function() {

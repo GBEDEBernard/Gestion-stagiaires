@@ -13,6 +13,7 @@ use App\Models\AppNotification;
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Task;
+use App\Models\PermissionRequest;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -374,6 +375,50 @@ class DashboardController extends Controller
         $usersAdmins = User::role(['admin', 'superviseur'])->count();
         $usersAutres = max(0, $totalUsers - ($usersStagiaires + $usersEmployes + $usersAdmins));
 
+        // ==================== DEMANDES DE PERMISSION ====================
+        $permissionsPending  = PermissionRequest::where('status', 'pending')->count();
+        $permissionsApproved = PermissionRequest::where('status', 'approved')->count();
+        $permissionsRejected = PermissionRequest::where('status', 'rejected')->count();
+        $permissionsTotal    = PermissionRequest::count();
+
+        // ==================== SUIVI DES TÂCHES ====================
+        $visibleTasks = Task::query()->visibleTo(Auth::user());
+
+        $tasksCreated       = (clone $visibleTasks)->count();
+        $tasksInProgress    = (clone $visibleTasks)->where('status', 'in_progress')->count();
+        $tasksAwaiting      = (clone $visibleTasks)->where('status', 'awaiting_validation')->count();
+        $tasksCompleted     = (clone $visibleTasks)->where('status', 'completed')->count();
+        $tasksPending       = (clone $visibleTasks)->where('status', 'pending')->count();
+
+        // Séries mensuelles (12 derniers mois) pour la courbe des tâches
+        $tasksCreatedByMonth = [];
+        $tasksInProgressByMonth = [];
+        $tasksCompletedByMonth = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $monthStart = $month->copy()->startOfMonth();
+            $monthEnd   = $month->copy()->endOfMonth();
+
+            $tasksCreatedByMonth[] = (clone $visibleTasks)->whereMonth('created_at', $month->month)
+                ->whereYear('created_at', $month->year)
+                ->count();
+
+            // Tâches en cours au cours du mois (créées avant la fin du mois, non terminées après le début)
+            $tasksInProgressByMonth[] = (clone $visibleTasks)->whereDate('created_at', '<=', $monthEnd)
+                ->where(function ($q) use ($monthStart) {
+                    $q->whereNull('completed_at')
+                        ->orWhereDate('completed_at', '>', $monthStart);
+                })
+                ->count();
+
+            $tasksCompletedByMonth[] = (clone $visibleTasks)->whereMonth('completed_at', $month->month)
+                ->whereYear('completed_at', $month->year)
+                ->count();
+        }
+
+        $tasksMoisLabels = $labelsMoisAnnee;
+
         // ==================== Retour à la Vue ====================
         return view('dashboard', compact(
             // Notifications
@@ -453,7 +498,24 @@ class DashboardController extends Controller
             'usersStagiaires',
             'usersEmployes',
             'usersAdmins',
-            'usersAutres'
+            'usersAutres',
+
+            // Demandes de permission
+            'permissionsPending',
+            'permissionsApproved',
+            'permissionsRejected',
+            'permissionsTotal',
+
+            // Suivi des tâches
+            'tasksCreated',
+            'tasksInProgress',
+            'tasksAwaiting',
+            'tasksCompleted',
+            'tasksPending',
+            'tasksMoisLabels',
+            'tasksCreatedByMonth',
+            'tasksInProgressByMonth',
+            'tasksCompletedByMonth',
         ));
     }
 
@@ -524,5 +586,83 @@ class DashboardController extends Controller
         }
 
         return ['status' => 'pending', 'label' => 'Compte en attente'];
+    }
+
+    /**
+     * Détail des tâches sur une période précise (courbe cliquable).
+     * $type ∈ { created, in_progress, completed }
+     */
+    public function tasksDetail(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => ['required', 'date'],
+            'to'   => ['required', 'date', 'after_or_equal:from'],
+            'type' => ['required', 'in:created,in_progress,completed'],
+        ]);
+
+        $from = Carbon::parse($validated['from'])->startOfDay();
+        $to   = Carbon::parse($validated['to'])->endOfDay();
+
+        $perPage = min(max((int) $request->input('per_page', 10), 1), 1000);
+
+        $query = Task::with(['owner', 'stage.etudiant', 'assignees'])
+            ->visibleTo(auth()->user())
+            ->orderByDesc('created_at');
+
+        // Mêmes règles que les séries mensuelles du dashboard
+        if ($validated['type'] === 'created') {
+            $query->whereBetween('created_at', [$from, $to]);
+        } elseif ($validated['type'] === 'completed') {
+            $query->whereBetween('completed_at', [$from, $to]);
+        } else {
+            // En cours : créées avant la fin de la période, non terminées après le début
+            $query->whereDate('created_at', '<=', $to)
+                ->where(function ($q) use ($from) {
+                    $q->whereNull('completed_at')
+                        ->orWhereDate('completed_at', '>', $from);
+                });
+        }
+
+        $tasks = $query->paginate($perPage);
+
+        return response()->json([
+            'from'       => $from->format('Y-m-d'),
+            'to'         => $to->format('Y-m-d'),
+            'type'       => $validated['type'],
+            'total'      => $tasks->total(),
+            'pagination' => [
+                'current_page' => $tasks->currentPage(),
+                'last_page'    => $tasks->lastPage(),
+                'per_page'     => $tasks->perPage(),
+            ],
+            'data' => $tasks->map(function (Task $task) use ($validated) {
+                $statusMap = [
+                    'pending'           => ['label' => 'À faire', 'color' => 'slate'],
+                    'in_progress'       => ['label' => 'En cours', 'color' => 'blue'],
+                    'blocked'           => ['label' => 'Bloquée', 'color' => 'red'],
+                    'changes_requested' => ['label' => 'Corrections demandées', 'color' => 'amber'],
+                    'awaiting_validation' => ['label' => 'En attente de validation', 'color' => 'violet'],
+                    'completed'         => ['label' => 'Terminée', 'color' => 'emerald'],
+                ];
+                $status = $statusMap[$task->status] ?? ['label' => $task->status, 'color' => 'slate'];
+
+                return [
+                    'id'           => $task->id,
+                    'title'        => $task->title,
+                    'url'          => encrypted_route('tasks.show', $task),
+                    'status'       => $task->status,
+                    'status_label' => $status['label'],
+                    'status_color' => $status['color'],
+                    'priority'     => $task->priority,
+                    'progress'     => $task->last_progress_percent,
+                    'owner'        => $task->owner?->name,
+                    'etudiant'     => $task->stage?->etudiant?->full_name,
+                    'stage_theme'  => $task->stage?->theme,
+                    'assignees'    => $task->assignees->map(fn ($a) => $a->name)->values(),
+                    'created_at'   => $task->created_at?->format('d/m/Y'),
+                    'completed_at' => $task->completed_at?->format('d/m/Y'),
+                ];
+            }),
+        ]);
     }
 }
