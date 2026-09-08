@@ -58,7 +58,7 @@
         $heading = $errorTitle;
     }
 
-    $prenom   = $user->prenom ?? $user->name ?? null;
+    $prenom   = $user?->prenom ?? $user?->name ?? null;
     $salut    = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
 @endphp
 <!DOCTYPE html>
