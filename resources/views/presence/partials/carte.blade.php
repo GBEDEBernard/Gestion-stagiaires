@@ -36,9 +36,9 @@
 
     {{-- Contexte: date + lieu --}}
     <div class="flex items-center justify-between mb-6">
-        <p class="text-sm text-slate-500 dark:text-slate-400 capitalize">{{ now()->isoFormat('dddd D MMMM YYYY') }}</p>
-        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p class="text-base sm:text-xl font-semibold text-slate-700 dark:text-slate-200 capitalize">{{ now()->isoFormat('dddd D MMMM YYYY') }}</p>
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-700/40 text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-300">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             {{ $lieu }}
         </span>
     </div>
@@ -59,16 +59,24 @@
     {{-- Carte principale : layout split (image + contenu) --}}
     <div class="overflow-hidden rounded-2xl shadow-lg bg-gradient-to-b {{ $heroTint }} ring-1 ring-slate-200 dark:ring-slate-800">
         <div class="flex flex-col lg:flex-row">
-            {{-- Image à droite sur grand écran, en haut sur mobile --}}
-            <div class="lg:w-1/2 w-full order-1 lg:order-2">
-                <div class="h-44 lg:h-full w-full bg-cover bg-center" style="background-image:url('/images/imagepointage.jpeg')" aria-hidden="true"></div>
-            </div>
+          {{-- Image à droite sur grand écran, en haut sur mobile --}}
+<div class="lg:w-1/2 w-full order-1 lg:order-2">
+    <div class="relative w-full aspect-[16/10] sm:aspect-[21/9] lg:aspect-auto lg:h-full overflow-hidden">
+        <img
+            src="/images/imagepointage.jpeg"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            class="absolute inset-0 w-full h-full object-cover object-[center_25%]"
+        >
+    </div>
+</div>
 
             {{-- Contenu principal --}}
             <div class="lg:w-1/2 w-full p-6 sm:p-8 order-2 lg:order-1 flex flex-col justify-between">
                 <div>
-                    <p class="text-sm text-slate-600 dark:text-slate-300">{{ now()->hour < 18 ? 'Bonjour' : 'Bonsoir' }}, <span class="font-semibold text-slate-900 dark:text-white">{{ $prenom }}</span></p>
-                    <p class="mt-3 text-4xl sm:text-5xl font-extralight tracking-tight tabular-nums text-slate-900 dark:text-white leading-none"
+                    <p class="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-300 text-center">{{ now()->hour < 18 ? 'Bonjour' : 'Bonsoir' }}, <span class="font-extrabold text-violet-700 dark:text-violet-300">{{ $prenom }}</span></p>
+                    <p class="mt-3 text-4xl sm:text-5xl font-extralight tracking-tight tabular-nums leading-none text-center bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400"
                        x-data="{ h: '' }" x-init="h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}); setInterval(() => h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 10000)"
                        x-text="h">--:--</p>
 
@@ -144,8 +152,8 @@
     @endif
 
     @if($historiqueUrl)
-        <div class="mt-5 text-center">
-            <a href="{{ $historiqueUrl }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition">Mon historique</a>
+        <div class="mt-6 text-center">
+            <a href="{{ $historiqueUrl }}" class="font-sans inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-base font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm hover:text-violet-700 dark:hover:text-violet-300 transition">Mon historiques</a>
         </div>
     @endif
 </div>
