@@ -103,6 +103,8 @@
             'etat'          => $etat,
             'late'          => $late,
             'departBloque'  => $etat === 'depart' && !($canCheckOutNow ?? true),
+            'arriveeBloquee' => $arriveeBloquee ?? false,
+            'rapportSoumis' => $rapportSoumis ?? true,
             'action'        => $etat === 'arrivee' ? route('presence.checkin') : route('presence.checkout'),
             'champs'        => [],
             'isWorkDay'     => true,

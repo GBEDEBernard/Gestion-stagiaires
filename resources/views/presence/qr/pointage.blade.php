@@ -33,6 +33,8 @@
                 'etat'          => $etat,
                 'late'          => $late,
                 'departBloque'  => $departBloque,
+                'arriveeBloquee' => $arriveeBloquee ?? false,
+                'rapportSoumis' => $rapportSoumis ?? true,
                 'action'        => route('presence.qr.process', ['site_token' => $site->qr_token]),
                 'champs'        => ['user_id' => $user->id, 'device_token' => $deviceToken],
                 'isWorkDay'     => $isWorkDay,

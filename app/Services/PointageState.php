@@ -49,6 +49,14 @@ class PointageState
         $peutPartir = now()->greaterThanOrEqualTo($expOut)
             || $this->presence->approvedEarlyDepartureForToday($user) !== null;
 
+        // Un départ oublié antérieur non réglé bloque l'arrivée du jour.
+        $journeeOubliee = $this->journeeOubliee($user, $stage);
+        $arriveeBloquee = !$arrive && $journeeOubliee !== null;
+
+        // Un rapport de travail soumis du jour est requis avant le départ.
+        $rapportSoumis = $this->reportSubmittedToday($user, $stage);
+        $departBloqueRapport = $etat === 'depart' && !$rapportSoumis;
+
         return [
             'stage'         => $stage,
             'day'           => $day,
@@ -57,13 +65,33 @@ class PointageState
             'etat'          => $etat,
             'late'          => !$arrive && now()->greaterThan($expIn),
             'departBloque'  => $etat === 'depart' && !$peutPartir,
+            'arriveeBloquee'=> $arriveeBloquee,
+            'journeeBloqueuse' => $arriveeBloquee ? $journeeOubliee : null,
+            'rapportSoumis' => $rapportSoumis,
+            'departBloqueRapport' => $departBloqueRapport,
             'isWorkDay'     => $stage ? $stage->isWorkDay() : true,
             'workDaysLabel' => $stage?->workDaysLabel(),
             // On ne demande l'heure du départ oublié qu'une fois l'arrivée du
             // jour pointée : la question de la veille ne doit pas retarder le
             // geste d'aujourd'hui.
-            'journeeOubliee' => $arrive ? $this->journeeOubliee($user, $stage) : null,
+            'journeeOubliee' => $arrive ? $journeeOubliee : null,
         ];
+    }
+
+    /**
+     * Un rapport de travail soumis existe-t-il pour aujourd'hui ?
+     */
+    protected function reportSubmittedToday(User $user, ?Stage $stage): bool
+    {
+        $query = \App\Models\DailyReport::whereDate('report_date', today());
+
+        if ($stage) {
+            $query->where('stage_id', $stage->id);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        return (clone $query)->where('status', 'submitted')->exists();
     }
 
     /**

@@ -70,6 +70,12 @@ class PresenceController extends Controller
             $expectedIn  = $resolver->expectedArrival($activeStage, now());
             $expectedOut = $resolver->expectedDeparture($activeStage, now());
 
+            // Blocage de l'arrivée si un départ oublié antérieur n'est pas réglé,
+            // et blocage du départ si le rapport de travail du jour n'est pas soumis.
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+            $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
             return view('presence.pointage', [
                 'expectedIn'             => $expectedIn,
                 'expectedOut'            => $expectedOut,
@@ -87,6 +93,9 @@ class PresenceController extends Controller
                 'hasCheckedOut'          => $hasCheckedOut,
                 'isWorkDay'              => $activeStage->isWorkDay(),
                 'workDaysLabel'          => $activeStage->workDaysLabel(),
+                'arriveeBloquee'         => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+                'journeeBloqueuse'       => $journeeBloqueuse,
+                'rapportSoumis'          => $rapportSoumis,
                 // La veille clôturée d'office, à éclaircir — mais seulement
                 // une fois l'arrivée du jour pointée.
                 'journeeOubliee'         => $hasCheckedIn
@@ -129,6 +138,10 @@ class PresenceController extends Controller
             $expectedIn  = $resolver->expectedArrival(null, now());
             $expectedOut = $resolver->expectedDeparture(null, now());
 
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+            $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
             return view('employee.presence.pointage', [
                 'expectedIn'               => $expectedIn,
                 'expectedOut'              => $expectedOut,
@@ -144,6 +157,9 @@ class PresenceController extends Controller
                 'earlyDeparturePermission' => $earlyDeparturePermission,
                 'hasCheckedIn'             => $hasCheckedIn,
                 'hasCheckedOut'            => $hasCheckedOut,
+                'arriveeBloquee'           => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+                'journeeBloqueuse'         => $journeeBloqueuse,
+                'rapportSoumis'            => $rapportSoumis,
                 'journeeOubliee'           => $hasCheckedIn
                     ? app(\App\Services\PointageState::class)->journeeOubliee($user, null)
                     : null,
@@ -644,6 +660,13 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
             return redirect()->route('presence.historique')
                 ->with('success', $message);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            request()->session()->forget('pending_pointage');
+
+            $message = collect($e->errors())->flatten()->first() ?? 'Pointage refusé.';
+
+            return redirect()->route('presence.pointage')
+                ->with('error', $message);
         } catch (\Exception $e) {
             Log::error('Pointage confirmation failed: ' . $e->getMessage(), ['user_id' => $request->user()->id]);
             return redirect()->route('presence.pointage')
@@ -772,6 +795,10 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
         $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
         $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
 
+        $pointage = app(\App\Services\PointageState::class)->forUser($user);
+        $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+        $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
         return view('employee.presence.pointage', [
             'attendanceDay'            => $attendanceDay,
             'user'                     => $user,
@@ -779,6 +806,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             'earlyDeparturePermission' => $earlyDeparturePermission,
             'hasCheckedIn'             => $hasCheckedIn,
             'hasCheckedOut'            => $hasCheckedOut,
+            'arriveeBloquee'           => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+            'journeeBloqueuse'         => $journeeBloqueuse,
+            'rapportSoumis'            => $rapportSoumis,
         ]);
     }
 

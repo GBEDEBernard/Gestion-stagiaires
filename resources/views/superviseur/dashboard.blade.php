@@ -78,7 +78,7 @@
             <div class="bg-white border rounded-lg p-6">
                 <h4 class="font-semibold mb-4">Actions rapides</h4>
                 <div class="space-y-2">
-                    <a href="{{ route('reports.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">
+                    <a href="{{ route('tasks.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">
                         📋 Nouveau rapport journalier
                     </a>
                     <a href="{{ route('presence.index') }}" class="block p-3 border rounded hover:bg-gray-50 text-sm">

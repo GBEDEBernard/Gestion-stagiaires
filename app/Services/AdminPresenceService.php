@@ -1670,6 +1670,7 @@ class AdminPresenceService
                 'corrected'    => false,
                 'absent'       => false,
                 'status'       => $isLate ? 'late' : 'on_time',
+                'departure_status' => $attendanceDay->departure_status,
                 'arrival'      => $attendanceDay->first_check_in_at?->format('H:i'),
                 'departure'    => $attendanceDay->last_check_out_at?->format('H:i'),
                 'site_name'    => $siteName,

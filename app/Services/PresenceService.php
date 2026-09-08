@@ -119,11 +119,12 @@ protected function checkWorkDayRestriction(Stage $stage): void
     /**
      * Enregistre l'arrivée (check-in) d'un stagiaire.
      */
-public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
+    public function registerCheckIn(Stage $stage, User $user, array $payload, ?string $observation_message = null): AttendanceEvent
     {
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
+        $this->checkUnresolvedForgottenDeparture($user, $stage);
         $this->checkCheckInOpeningTime(); // ✅ pointage d'arrivée stagiaire ouvert à partir de 07h30
         $this->checkArrivalWindow($stage);
         $this->checkRetardPermission($user);
@@ -296,7 +297,72 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
         $this->checkHolidayRestriction($user);
         $this->checkWorkDayRestriction($stage);
         $this->checkDepartureTime($stage, $user);
+        $this->checkDailyReportSubmitted($user, $stage);
         return $this->registerEvent($stage, $user, $payload, 'check_out');
+    }
+
+    /**
+     * Y a-t-il un départ oublié (clôturé d'office) antérieur, non encore réglé
+     * par le responsable ? « Réglé » : l'intéressé a déclaré son heure (claimed)
+     * OU le responsable a posé une correction de départ (corrected).
+     * Une seule journée non réglée suffit à bloquer.
+     */
+    public function unresolvedForgottenDeparture(User $user, ?Stage $stage): ?AttendanceDay
+    {
+        return AttendanceDay::query()
+            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
+            ->where('departure_status', 'auto_closed')
+            ->whereNull('claimed_at')
+            ->whereDoesntHave('correctionDepart')
+            ->whereDate('attendance_date', '<', today())
+            ->orderBy('attendance_date')
+            ->first();
+    }
+
+    /**
+     * Refuse le pointage d'arrivée tant qu'un départ oublié antérieur n'est pas
+     * réglé.
+     */
+    protected function checkUnresolvedForgottenDeparture(User $user, ?Stage $stage): void
+    {
+        $day = $this->unresolvedForgottenDeparture($user, $stage);
+
+        if (!$day) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'presence' => "Pointage refusé : vous n'avez pas pointé votre départ du "
+                . $day->attendance_date->format('d/m/Y')
+                . ". Sans votre départ, le temps de travail de ce jour n'est pas compté. "
+                . "Indiquez l'heure de votre départ sur votre écran de pointage, puis voyez votre "
+                . "responsable pour qu'il la rétablisse, avant de pouvoir pointer à nouveau.",
+        ]);
+    }
+
+    /**
+     * Exige un rapport de travail soumis du jour avant le pointage de départ.
+     */
+    protected function checkDailyReportSubmitted(User $user, ?Stage $stage): void
+    {
+        $query = \App\Models\DailyReport::whereDate('report_date', today());
+
+        if ($stage) {
+            $query->where('stage_id', $stage->id);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $hasSubmitted = (clone $query)->where('status', 'submitted')->exists();
+
+        if ($hasSubmitted) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'presence' => "Pointage de départ refusé : vous n'avez pas encore déposé votre "
+                . "rapport de travail du jour. Déposez votre rapport avant de pointer votre départ.",
+        ]);
     }
 
     // ==========================================================================
@@ -310,6 +376,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     {
         $this->ensurePointageStarted($user);
         $this->checkHolidayRestriction($user);
+        $this->checkUnresolvedForgottenDeparture($user, null);
         $this->checkArrivalWindow(null);
         $this->checkRetardPermission($user);
         // Une arrivée couverte par une permission « retard » n'est pas un retard.
@@ -326,6 +393,7 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
     {
         $this->checkHolidayRestriction($user);
         $this->checkDepartureTime(null, $user);
+        $this->checkDailyReportSubmitted($user, null);
         return $this->registerEmployeeEvent($user, $payload, 'check_out');
     }
 
@@ -372,12 +440,14 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
                 ->first();
 
             if (!$day || !$day->first_check_in_at) {
+                $this->checkUnresolvedForgottenDeparture($user, $stage);
                 $this->checkCheckInOpeningTime();
                 $this->checkArrivalWindow($stage);
                 $this->checkRetardPermission($user);
                 $eventType = 'check_in';
             } elseif (!$day->last_check_out_at) {
                 $this->checkDepartureTime($stage, $user);
+                $this->checkDailyReportSubmitted($user, $stage);
                 $eventType = 'check_out';
             } else {
                 return [
@@ -419,11 +489,13 @@ public function registerCheckIn(Stage $stage, User $user, array $payload, ?strin
             ->first();
 
         if (!$day || !$day->first_check_in_at) {
+            $this->checkUnresolvedForgottenDeparture($user, null);
             $this->checkArrivalWindow(null);
             $this->checkRetardPermission($user);
             $eventType = 'check_in';
         } elseif (!$day->last_check_out_at) {
             $this->checkDepartureTime(null, $user);
+            $this->checkDailyReportSubmitted($user, null);
             $eventType = 'check_out';
         } else {
             return [

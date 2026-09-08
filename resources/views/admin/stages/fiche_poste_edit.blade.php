@@ -110,7 +110,7 @@
                         </div>
 
                         <div>
-                            <label for="tuteur_academique" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Maitre de Stage</label>
+                            <label for="tuteur_academique" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tuteur académique</label>
                             <input type="text" name="tuteur_academique" id="tuteur_academique"
                                 value="{{ old('tuteur_academique', $stage->tuteur_academique ?? '') }}"
                                 class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white"
@@ -141,7 +141,7 @@
                     {{-- Informations automatiques (issues du stage) --}}
                     <div class="rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700 p-4 space-y-3">
                         <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Récupérés automatiquement du stage</p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p class="text-gray-500 dark:text-gray-400">Lieu de travail</p>
                                 @if($stage->site)
@@ -155,17 +155,6 @@
                                 <p class="font-medium text-gray-900 dark:text-white">
                                     Du {{ $stage->date_debut?->format('d/m/Y') ?? '—' }} au {{ $stage->date_fin?->format('d/m/Y') ?? '—' }}
                                 </p>
-                            </div>
-                            <div>
-                                <p class="text-gray-500 dark:text-gray-400">Tuteur academique</p>
-                                @if($stage->supervisor)
-                                <p class="font-medium text-gray-900 dark:text-white">
-                                    {{ $stage->supervisor->personnel->nom ?? '' }} {{ $stage->supervisor->personnel->prenom ?? '' }}
-                                    @if($stage->supervisor->fonction) – {{ $stage->supervisor->fonction }}@endif
-                                </p>
-                                @else
-                                <p class="text-gray-400">Non défini</p>
-                                @endif
                             </div>
                         </div>
                         <p class="text-xs text-gray-400 dark:text-gray-500">Pour modifier ces éléments, modifiez le stage lui-même.</p>

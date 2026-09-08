@@ -113,7 +113,7 @@
 
                     <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600">
                         Besoin de decrire la journee ensuite ?
-                        <a href="{{ route('reports.index') }}" class="font-medium text-slate-900 underline underline-offset-2">
+                        <a href="{{ route('tasks.index') }}" class="font-medium text-slate-900 underline underline-offset-2">
                             Ouvrir le rapport journalier
                         </a>
                     </div>

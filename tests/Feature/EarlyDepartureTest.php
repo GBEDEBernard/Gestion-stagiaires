@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AttendanceDay;
+use App\Models\DailyReport;
 use App\Models\Domaine;
 use App\Models\Etudiant;
 use App\Models\Jour;
@@ -107,6 +108,21 @@ function earlyPermission(User $user, string $date, ?string $time = null, string 
     ]);
 }
 
+/** Un rapport du jour soumis : requis avant tout pointage de départ. */
+function depReport(User $user, Stage $stage, string $date): DailyReport
+{
+    return DailyReport::create([
+        'stage_id'     => $stage->id,
+        'etudiant_id'  => $stage->etudiant_id,
+        'user_id'      => $user->id,
+        'report_date'  => $date,
+        'title'        => 'Rapport du ' . $date,
+        'summary'      => 'Résumé de la journée.',
+        'status'       => 'submitted',
+        'submitted_at' => $date . ' 17:00:00',
+    ]);
+}
+
 test('a full day departure is refused before the end of the day', function () {
     $user  = depUser();
     $stage = fullDayStage($user);
@@ -138,6 +154,8 @@ test('the departure is allowed once the time has come', function () {
     $user  = depUser();
     $stage = fullDayStage($user);
 
+    depReport($user, $stage, today()->toDateString());
+
     Carbon::setTestNow(today()->setTime(18, 0));
 
     $event = $this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]);
@@ -150,6 +168,8 @@ test('a half day stage is judged on its own end time', function () {
     $user  = depUser();
     // Demi-journée : fin à 12:30
     $stage = fullDayStage($user, '12:30');
+
+    depReport($user, $stage, today()->toDateString());
 
     Carbon::setTestNow(today()->setTime(11, 0));
     expect(fn() => $this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
@@ -165,6 +185,7 @@ test('an approved permission for today lifts the block', function () {
     $stage = fullDayStage($user);
 
     earlyPermission($user, today()->toDateString(), '15:00');
+    depReport($user, $stage, today()->toDateString());
 
     Carbon::setTestNow(today()->setTime(15, 30));
 
@@ -204,6 +225,7 @@ test('a permission is honoured only from the hour it authorises', function () {
     $stage = fullDayStage($user);
 
     earlyPermission($user, today()->toDateString(), '15:00');
+    depReport($user, $stage, today()->toDateString());
 
     // 14:00 : la permission existe mais n'autorise pas encore le départ
     Carbon::setTestNow(today()->setTime(14, 0));
@@ -363,8 +385,172 @@ test('a permission requested today for a future day works on that day', function
         ->toThrow(ValidationException::class);
 
     // À partir de 11:00 ce vendredi-là, le départ passe
+    depReport($user, $stage, $vendredi->toDateString());
     Carbon::setTestNow($vendredi->copy()->setTime(11, 0));
 
     expect($this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
         ->not->toBeNull();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RÈGLES DÉPART OUBLIÉ ET RAPPORT DU JOUR
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Une journée de la veille clôturée d'office, sans déclaration ni correction. */
+function forgottenYesterday(User $user, Stage $stage): AttendanceDay
+{
+    $hier = today()->subDay();
+
+    return AttendanceDay::create([
+        'stage_id'          => $stage->id,
+        'etudiant_id'       => $stage->etudiant_id,
+        'user_id'           => $user->id,
+        'attendance_date'   => $hier->toDateString(),
+        'first_check_in_at' => $hier->copy()->setTime(7, 0),
+        'last_check_out_at' => $hier->copy()->setTime(18, 0),
+        'worked_minutes'    => 0,
+        'arrival_status'    => 'ontime',
+        'day_status'        => 'completed',
+        'departure_status'  => 'auto_closed',
+    ]);
+}
+
+test('an auto closed day credits zero worked minutes until corrected', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    Carbon::setTestNow(today()->setTime(6, 0));
+
+    $this->artisan('attendance:auto-checkout', ['--date' => today()->toDateString()])
+        ->assertExitCode(0);
+
+    $day = AttendanceDay::first()->fresh();
+
+    expect($day->departure_status)->toBe('auto_closed')
+        ->and($day->last_check_out_at)->not->toBeNull()
+        ->and($day->worked_minutes)->toBe(0);
+});
+
+test('the admin correction restores the real times and counts the day', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    $admin = depUser('admin');
+
+    Carbon::setTestNow(today()->setTime(6, 0));
+    $this->artisan('attendance:auto-checkout', ['--date' => today()->toDateString()]);
+
+    $day = AttendanceDay::first()->fresh();
+
+    app(\App\Services\AttendanceCorrectionService::class)->applyCheckOut(
+        $user,
+        $day,
+        '17:30',
+        'Départ réel à 17h30',
+        $admin,
+    );
+
+    $day = $day->fresh();
+
+    expect($day->departure_status)->toBe('corrected')
+        ->and($day->worked_minutes)->toBeGreaterThan(0);
+});
+
+test('an arrival is blocked while a forgotten departure is unresolved', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    forgottenYesterday($user, $stage);
+
+    // Aujourd'hui n'a pas encore été pointé à l'arrivée.
+    AttendanceDay::query()->whereDate('attendance_date', today())
+        ->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(8, 0));
+
+    try {
+        $this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]);
+        $this->fail("L'arrivée aurait dû être refusée.");
+    } catch (ValidationException $e) {
+        expect(collect($e->errors())->flatten()->first())
+            ->toContain('Pointage refusé')
+            ->toContain(today()->subDay()->format('d/m/Y'));
+    }
+
+    expect(AttendanceDay::whereDate('attendance_date', today())->first()->first_check_in_at)->toBeNull();
+});
+
+test('claiming the forgotten departure lifts the block', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    $hier  = forgottenYesterday($user, $stage);
+
+    app(\App\Services\AttendanceCorrectionService::class)
+        ->claimCheckOut($hier, '17:45', "J'avais oublié de pointer mon départ");
+
+    AttendanceDay::query()->whereDate('attendance_date', today())
+        ->update(['first_check_in_at' => null, 'arrival_status' => null]);
+
+    Carbon::setTestNow(today()->setTime(8, 0));
+
+    $event = $this->service->registerCheckIn($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]);
+
+    expect($event)->not->toBeNull()
+        ->and(AttendanceDay::whereDate('attendance_date', today())->first()->first_check_in_at)->not->toBeNull();
+});
+
+test('a checkout is refused while the daily report is not submitted', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    Carbon::setTestNow(today()->setTime(18, 0));
+
+    try {
+        $this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]);
+        $this->fail('Le départ aurait dû être refusé.');
+    } catch (ValidationException $e) {
+        expect(collect($e->errors())->flatten()->first())->toContain('rapport');
+    }
+
+    expect(AttendanceDay::first()->last_check_out_at)->toBeNull();
+});
+
+test('a submitted report allows the checkout', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    depReport($user, $stage, today()->toDateString());
+
+    Carbon::setTestNow(today()->setTime(18, 0));
+
+    expect($this->service->registerCheckOut($stage, $user, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->not->toBeNull();
+});
+
+test('the qr scan refuses a checkout without a submitted report', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+    $site  = Site::find($stage->site_id);
+    $site->update(['qr_token' => 'tok-' . Str::random(12)]);
+
+    Carbon::setTestNow(today()->setTime(18, 0));
+
+    expect(fn() => $this->service->registerFromQrScan($user, $site, ['latitude' => 6.36, 'longitude' => 2.41]))
+        ->toThrow(ValidationException::class);
+
+    expect(AttendanceDay::first()->last_check_out_at)->toBeNull();
+});
+
+test('a submitted report lets the qr scan check out', function () {
+    $user  = depUser();
+    $stage = fullDayStage($user);
+
+    depReport($user, $stage, today()->toDateString());
+
+    $site = Site::find($stage->site_id);
+    $site->update(['qr_token' => 'tok-' . Str::random(12)]);
+
+    Carbon::setTestNow(today()->setTime(18, 0));
+
+    $resultat = $this->service->registerFromQrScan($user, $site, ['latitude' => 6.36, 'longitude' => 2.41]);
+
+    expect($resultat['event_type'])->toBe('check_out');
 });

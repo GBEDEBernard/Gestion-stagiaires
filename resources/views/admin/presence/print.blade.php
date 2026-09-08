@@ -279,6 +279,7 @@
                         @elseif($day['status'] === 'late')<span class="badge late">En retard</span>
                         @elseif($day['status'] === 'absent')<span class="badge absent">Absent</span>
                         @elseif(!empty($day['is_permission']))<span class="badge permission">Journée permissionnée</span>
+                        @elseif(($day['departure_status'] ?? null) === 'auto_closed')<span class="badge">Départ oublié</span>
                         @else<span class="badge corrected">Corrigé</span>@endif
                     </td>
                 </tr>
