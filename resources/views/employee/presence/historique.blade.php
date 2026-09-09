@@ -869,7 +869,11 @@
                     $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
                     $permissionDays = ($exceptions ?? collect())
                         ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
-                        ->sortByDesc('attendance_date');
+                        ->map(fn($e) => (object)['type' => 'permission', 'record' => $e]);
+                    $allRecords = $attendanceDays
+                        ->map(fn($d) => (object)['type' => 'attendance', 'record' => $d])
+                        ->concat($permissionDays)
+                        ->sortByDesc(fn($r) => $r->record->attendance_date);
                 @endphp
                 <div class="desktop-table">
                     <table class="pres-table">
@@ -885,7 +889,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($attendanceDays->sortByDesc('attendance_date') as $day)
+                            @forelse($allRecords as $item)
+                            @if($item->type === 'attendance')
+                            @php $day = $item->record; @endphp
                             <tr>
                                 <td>
                                     <div style="font-weight:500;">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
@@ -927,17 +933,8 @@
                                     @endif
                                 </td>
                             </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7">
-                                    <div class="pres-empty">
-                                        <div class="pres-empty-icon">📭</div>
-                                        Aucun pointage trouvé pour cette période
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforelse
-                            @foreach($permissionDays as $exception)
+                            @else
+                            @php $exception = $item->record; @endphp
                             <tr style="background:rgba(139,92,246,.05);">
                                 <td>
                                     <div style="font-weight:500;">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
@@ -950,14 +947,26 @@
                                 <td><span class="pres-tag tag-violet">Journée permissionnée</span></td>
                                 <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: 'Permission approuvée' }}</td>
                             </tr>
-                            @endforeach
+                            @endif
+                            @empty
+                            <tr>
+                                <td colspan="7">
+                                    <div class="pres-empty">
+                                        <div class="pres-empty-icon">📭</div>
+                                        Aucun pointage trouvé pour cette période
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
                 {{-- Mobile Cards --}}
                 <div class="mobile-cards" style="padding:1rem;">
-                    @forelse($attendanceDays->sortByDesc('attendance_date') as $day)
+                    @forelse($allRecords as $item)
+                    @if($item->type === 'attendance')
+                    @php $day = $item->record; @endphp
                     <div class="mobile-card">
                         <div class="mobile-card-row">
                             <span class="mobile-label">Date</span>
@@ -1003,13 +1012,8 @@
                         </div>
                         @endif
                     </div>
-                    @empty
-                    <div class="pres-empty">
-                        <div class="pres-empty-icon">📭</div>
-                        Aucun pointage trouvé pour cette période
-                    </div>
-                    @endforelse
-                    @foreach($permissionDays as $exception)
+                    @else
+                    @php $exception = $item->record; @endphp
                     <div class="mobile-card" style="border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);">
                         <div class="mobile-card-row">
                             <span class="mobile-label">Date</span>
@@ -1024,7 +1028,13 @@
                             <span class="mobile-value">{{ $exception->reason ?: 'Permission approuvée' }}</span>
                         </div>
                     </div>
-                    @endforeach
+                    @endif
+                    @empty
+                    <div class="pres-empty">
+                        <div class="pres-empty-icon">📭</div>
+                        Aucun pointage trouvé pour cette période
+                    </div>
+                    @endforelse
                 </div>
             </div>
         </div>
