@@ -4,25 +4,28 @@
         @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
         .cd-scope {
-            --paper: #f5f3ee;
-            --paper-strong: #f0ece5;
-            --paper-raised: rgba(255, 255, 255, 0.86);
-            --ink: #181c22;
-            --ink-soft: #5f6773;
-            --ink-faint: #9aa0a9;
-            --line: rgba(143, 136, 123, 0.22);
-            --copper: #aa5b2d;
-            --copper-strong: #8f491d;
-            --copper-soft: rgba(170, 91, 45, 0.12);
-            --teal: #1c5f68;
-            --teal-soft: rgba(28, 95, 104, 0.08);
-            --green: #2a7d5f;
-            --green-soft: rgba(42, 125, 95, 0.12);
-            --shadow-soft: 0 14px 34px rgba(24, 28, 34, 0.08);
-            --shadow-card: 0 18px 40px rgba(24, 28, 34, 0.08);
+            --paper: #f5f7fb;
+            --paper-strong: #edf2f8;
+            --paper-raised: rgba(255, 255, 255, 0.9);
+            --ink: #111827;
+            --ink-soft: #5f6b7a;
+            --ink-faint: #8a94a6;
+            --line: rgba(15, 23, 42, 0.08);
+            --copper: #d97706;
+            --copper-strong: #b45309;
+            --copper-soft: rgba(217, 119, 6, 0.1);
+            --teal: #0f766e;
+            --teal-soft: rgba(15, 118, 110, 0.08);
+            --green: #16a34a;
+            --green-soft: rgba(22, 163, 74, 0.08);
+            --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.06);
+            --shadow-card: 0 18px 36px rgba(15, 23, 42, 0.08);
+            min-height: 100vh;
             font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
             color: var(--ink);
             letter-spacing: -0.01em;
+            padding: 24px 0 36px;
+            background: transparent;
         }
 
         .cd-scope .mono {
@@ -30,19 +33,24 @@
             font-feature-settings: "tnum" 1;
         }
 
-        .cd-dark .cd-scope {
-            --paper: #121720;
-            --paper-strong: #171d29;
-            --paper-raised: rgba(30, 35, 44, 0.82);
-            --ink: #eef1f4;
-            --ink-soft: #a3acba;
-            --ink-faint: #768193;
-            --line: rgba(142, 155, 173, 0.16);
-            --copper-soft: rgba(170, 91, 45, 0.18);
-            --teal-soft: rgba(28, 95, 104, 0.18);
-            --green-soft: rgba(42, 125, 95, 0.18);
-            --shadow-soft: 0 18px 40px rgba(5, 7, 11, 0.35);
-            --shadow-card: 0 22px 50px rgba(5, 7, 11, 0.35);
+        .cd-dark .cd-scope,
+        .dark .cd-scope {
+            --paper: #0f172a;
+            --paper-strong: #111c2d;
+            --paper-raised: rgba(15, 23, 42, 0.82);
+            --ink: #e5edf9;
+            --ink-soft: #a2afc0;
+            --ink-faint: #7b8ca5;
+            --line: rgba(148, 163, 184, 0.14);
+            --copper: #f2a65a;
+            --copper-strong: #e18b35;
+            --copper-soft: rgba(242, 166, 90, 0.14);
+            --teal: #7dd3cf;
+            --teal-soft: rgba(125, 211, 207, 0.12);
+            --green: #4ade80;
+            --green-soft: rgba(74, 222, 128, 0.1);
+            --shadow-soft: 0 14px 32px rgba(2, 6, 23, 0.42);
+            --shadow-card: 0 20px 44px rgba(2, 6, 23, 0.38);
         }
 
         .cd-scope * {
@@ -61,26 +69,23 @@
             align-items: flex-end;
             justify-content: space-between;
             gap: 20px;
-            padding: 24px 22px 20px;
-            margin-bottom: 24px;
+            padding: 22px 22px 18px;
+            margin-bottom: 22px;
             border: 1px solid var(--line);
-            border-radius: 26px;
-            background:
-                linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.14)),
-                linear-gradient(130deg, rgba(170,91,45,0.05), rgba(28,95,104,0.05), rgba(42,125,95,0.04));
+            border-radius: 24px;
+            background: var(--paper-raised);
             box-shadow: var(--shadow-soft);
-            backdrop-filter: blur(10px);
             overflow: hidden;
         }
 
         .cd-header::after {
             content: "";
             position: absolute;
-            inset: auto -10% -45% 48%;
-            width: 320px;
-            height: 320px;
+            inset: auto -8% -52% 52%;
+            width: 260px;
+            height: 260px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(170,91,45,0.12), rgba(170,91,45,0));
+            background: radial-gradient(circle, rgba(217,119,6,0.12), rgba(217,119,6,0));
             pointer-events: none;
         }
 
@@ -134,7 +139,7 @@
             padding: 12px 14px 10px;
             border: 1px solid var(--line);
             border-radius: 18px;
-            background: rgba(255,255,255,0.42);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
             text-align: center;
             box-shadow: var(--shadow-soft);
         }
@@ -185,10 +190,9 @@
 
         .cd-panel {
             border: 1px solid var(--line);
-            border-radius: 26px;
-            background: rgba(255,255,255,0.28);
+            border-radius: 24px;
+            background: var(--paper-raised);
             box-shadow: var(--shadow-card);
-            backdrop-filter: blur(8px);
             overflow: hidden;
         }
 
@@ -197,9 +201,9 @@
             align-items: center;
             justify-content: space-between;
             gap: 14px;
-            padding: 18px 22px 12px;
+            padding: 16px 22px 12px;
             border-bottom: 1px solid var(--line);
-            background: rgba(255,255,255,0.1);
+            background: rgba(148, 163, 184, 0.02);
         }
 
         .cd-toolbar-left {
@@ -216,7 +220,7 @@
             padding: 7px 10px;
             border: 1px solid var(--line);
             border-radius: 999px;
-            background: rgba(255,255,255,0.36);
+            background: rgba(148, 163, 184, 0.04);
             font-size: 12px;
             color: var(--ink-soft);
             font-weight: 600;
@@ -244,8 +248,8 @@
             padding: 18px 18px 18px 14px;
             border: 1px solid var(--line);
             border-radius: 20px;
-            background: rgba(255,255,255,0.36);
-            box-shadow: 0 8px 18px rgba(24,28,34,0.02);
+            background: rgba(255,255,255,0.02);
+            box-shadow: none;
             animation: fadeInUp 0.45s ease both;
             animation-delay: var(--delay, 0ms);
             transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -257,8 +261,8 @@
 
         .cd-row:hover {
             transform: translateY(-1px);
-            border-color: rgba(170,91,45,0.28);
-            box-shadow: 0 16px 28px rgba(24,28,34,0.06);
+            border-color: rgba(217,119,6,0.28);
+            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06);
         }
 
         @keyframes fadeInUp {
@@ -300,18 +304,17 @@
         }
 
         .cd-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--paper-strong), rgba(255,255,255,0.7));
-            border: 1px solid var(--line);
+            background: linear-gradient(135deg, rgba(217,119,6,0.14), rgba(15, 118, 110, 0.06));
+            border: 1px solid rgba(15, 23, 42, 0.06);
             font-weight: 700;
             font-size: 14px;
             color: var(--ink);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
             flex-shrink: 0;
         }
 
@@ -394,20 +397,20 @@
             border: none;
             border-radius: 12px;
             padding: 12px 16px;
-            background: linear-gradient(135deg, var(--ink), #2a313d);
+            background: linear-gradient(135deg, var(--copper), var(--copper-strong));
             color: #fff;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-            box-shadow: 0 10px 18px rgba(24,28,34,0.15);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+            box-shadow: 0 10px 20px rgba(217,119,6,0.18);
         }
 
         .cd-btn:hover {
             transform: translateY(-1px);
-            background: linear-gradient(135deg, var(--copper), var(--copper-strong));
-            box-shadow: 0 14px 22px rgba(170,91,45,0.22);
+            filter: brightness(1.03);
+            box-shadow: 0 12px 22px rgba(217,119,6,0.24);
         }
 
         .cd-btn svg {
@@ -421,7 +424,7 @@
             padding: 12px 14px 12px 16px;
             border-left: 3px solid var(--teal);
             border-radius: 0 12px 12px 0;
-            background: rgba(28,95,104,0.04);
+            background: rgba(15, 118, 110, 0.04);
             font-size: 13px;
             line-height: 1.6;
             color: var(--ink-soft);
@@ -436,7 +439,7 @@
             margin: 0;
             padding: 16px 18px;
             border-left: 4px solid var(--copper);
-            background: linear-gradient(135deg, var(--copper-soft), rgba(255,255,255,0.18));
+            background: rgba(217,119,6,0.05);
             color: var(--ink);
             font-size: 13.5px;
             line-height: 1.7;
@@ -490,10 +493,10 @@
 
         .cd-modal-card {
             width: min(100%, 620px);
-            border-radius: 26px;
+            border-radius: 24px;
             border: 1px solid var(--line);
-            background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.72));
-            box-shadow: 0 24px 60px rgba(18,23,32,0.25);
+            background: var(--paper-raised);
+            box-shadow: var(--shadow-card);
             overflow: hidden;
             animation: modalIn 0.22s ease;
         }
@@ -552,7 +555,7 @@
             margin-top: 16px;
             border-radius: 14px;
             border: 1px solid var(--line);
-            background: rgba(255,255,255,0.35);
+            background: rgba(148, 163, 184, 0.02);
         }
 
         .cd-summary-box strong {
@@ -583,7 +586,7 @@
             width: 100%;
             border: 1px solid var(--line);
             border-radius: 12px;
-            background: rgba(255,255,255,0.44);
+            background: rgba(148, 163, 184, 0.02);
             color: var(--ink);
             padding: 12px 14px;
             font-size: 14px;
@@ -640,7 +643,7 @@
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 12px 22px rgba(170,91,45,0.22);
+            box-shadow: 0 10px 20px rgba(217,119,6,0.18);
             transition: transform 0.18s ease, filter 0.18s ease;
         }
 
