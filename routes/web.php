@@ -420,6 +420,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
+        Route::get('/corrections-depart', [AdminPresenceController::class, 'departureCorrections'])->name('admin.presence.corrections')->middleware('role:admin|superviseur');
         Route::get('/chart-detail', [AdminPresenceController::class, 'chartDayDetail'])->name('admin.presence.chart-detail');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');

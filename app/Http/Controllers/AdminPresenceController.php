@@ -45,6 +45,9 @@ class AdminPresenceController extends Controller
         $absenceDays = $absenceData['details'];
         $absenceItems = $absenceData['items'];
 
+        // ── Départs non pointés à régler (auto_closed / claimed) ──
+        $pendingCorrections = $this->presenceService->getPendingDepartureCorrections(20);
+
         $days = $this->presenceService->listAttendanceDays($request->only([
             'date_from',
             'date_to',
@@ -79,8 +82,21 @@ class AdminPresenceController extends Controller
             'reportStats',
             'request',
             'rangeStart',
-            'rangeEnd'
+            'rangeEnd',
+            'pendingCorrections'
         ));
+    }
+
+    /**
+     * Page dédiée aux départs non pointés à régler (auto_closed / claimed).
+     * L'admin y voit toutes les demandes et rétablit l'heure pour chacun,
+     * sans quitter la page : chaque correction renvoie ici par `back()`.
+     */
+    public function departureCorrections()
+    {
+        $pendingCorrections = $this->presenceService->getPendingDepartureCorrections(100);
+
+        return view('admin.presence.corrections', compact('pendingCorrections'));
     }
 
     /**

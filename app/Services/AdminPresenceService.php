@@ -283,6 +283,26 @@ class AdminPresenceService
             ->get();
     }
 
+    /**
+     * Départs non pointés à régler : les journées clôturées d'office encore
+     * sans correction (auto_closed) et celles déclarées mais pas encore
+     * validées par le responsable (claimed). Trie la plus ancienne d'abord.
+     */
+    public function getPendingDepartureCorrections(int $limit = 20): Collection
+    {
+        return AttendanceDay::forActiveUsers()
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'user',
+            ])
+            ->whereIn('departure_status', ['auto_closed', 'claimed'])
+            ->whereDate('attendance_date', '<', today())
+            ->orderBy('attendance_date')
+            ->limit($limit)
+            ->get();
+    }
+
     public function resolveAnomaly(int $anomalyId, array $data): bool
     {
         $anomaly = AttendanceAnomaly::findOrFail($anomalyId);

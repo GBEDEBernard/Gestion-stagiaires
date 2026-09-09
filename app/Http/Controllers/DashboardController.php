@@ -381,6 +381,10 @@ class DashboardController extends Controller
         $permissionsRejected = PermissionRequest::where('status', 'rejected')->count();
         $permissionsTotal    = PermissionRequest::count();
 
+        // ==================== DÉPARTS NON POINTÉS (corrections de pointage) ====================
+        $pendingCorrections     = app(\App\Services\AdminPresenceService::class)->getPendingDepartureCorrections();
+        $pendingCorrectionsCount = $pendingCorrections->count();
+
         // ==================== SUIVI DES TÂCHES ====================
         $visibleTasks = Task::query()->visibleTo(Auth::user());
 
@@ -505,6 +509,10 @@ class DashboardController extends Controller
             'permissionsApproved',
             'permissionsRejected',
             'permissionsTotal',
+
+            // Départs non pointés à régler
+            'pendingCorrections',
+            'pendingCorrectionsCount',
 
             // Suivi des tâches
             'tasksCreated',
