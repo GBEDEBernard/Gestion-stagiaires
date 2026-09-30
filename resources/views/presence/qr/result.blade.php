@@ -4,7 +4,10 @@
     $isRejected         = !$isApproved && !$isAlreadyCompleted;
 
     $event      = $event ?? null;
-    $reasonCode = $event->reason_code ?? null;
+    // Un refus qui n'a pas d'événement derrière lui (compte désactivé, compte
+    // non habilité) porte son propre code : sinon l'écran retomberait sur le
+    // titre générique et la consigne disparaîtrait.
+    $reasonCode = $event?->reason_code ?? ($reasonCode ?? null);
 
     // Un refus est d'abord une consigne : ce qui s'est passé, puis ce que la
     // personne peut faire dans les secondes qui suivent, devant la porte.
@@ -44,6 +47,14 @@
         'stage_inactive' => [
             'Stage hors période',
             "Votre stage n'est pas actif à cette date. Contactez votre administrateur si les dates doivent être prolongées.",
+        ],
+        'account_inactive' => [
+            'Compte désactivé',
+            "Votre compte est désactivé : aucun pointage n'est enregistré. Contactez votre administrateur pour être réactivé.",
+        ],
+        'not_pointable' => [
+            'Compte non habilité au pointage',
+            "Vous êtes connecté avec un compte d'administration ou de supervision, qui ne relève pas du pointage. Si vous exercez aussi un poste sur le terrain, demandez le rôle « Employé » à votre administrateur : votre présence sera alors enregistrée normalement.",
         ],
     ];
 

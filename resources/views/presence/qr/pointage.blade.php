@@ -1,8 +1,10 @@
 {{--
     Le scan du QR code de porte aboutit sur la carte de pointage — la même que
-    dans l'application. Une seule interface à apprendre, et l'écran intermédiaire
-    « Localisation en cours » disparaît : on voit son heure, son état du jour,
-    et on appuie.
+    dans l'application. Une seule interface à apprendre.
+
+    Mais ici la carte pointe toute seule : le scan suffit. L'écran ne sert plus
+    qu'à montrer l'heure, l'état du jour et ce que le téléphone est en train de
+    vérifier. Le bouton n'apparaît qu'en cas d'échec de la localisation.
 
     La page est autonome (pas de layout applicatif) : le badge autorise à
     pointer, pas à entrer dans le compte. Personne n'est connecté ici.
@@ -42,10 +44,11 @@
                 'historiqueUrl'  => route('presence.historique'),
                 'journeeOubliee' => null,
                 'declarationUrl' => null,
+                'autoPointage'  => $autoPointage ?? false,
             ])
 
             <p class="mt-5 text-center text-xs text-gray-400 dark:text-gray-500">
-                Appareil reconnu comme badge de {{ $prenom }}.
+                Appareil reconnu comme badge de {{ $prenom }}. Votre présence est enregistrée dès le scan.
             </p>
 
         </div>

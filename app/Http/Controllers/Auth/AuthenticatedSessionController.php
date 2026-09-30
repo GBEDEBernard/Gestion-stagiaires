@@ -30,7 +30,10 @@ class AuthenticatedSessionController extends Controller
         if ($request->session()->has('pending_qr_site')) {
             $request->session()->pull('pending_qr_site');
 
-            return redirect()->route('presence.pointage')->with('proposer_badge', true);
+            // Un compte de gestion n'a pas de badge à enregistrer : inutile de
+            // lui renvoyer vers une page de pointage en lui proposant l'appareil.
+            return redirect()->route('presence.pointage')
+                ->with('proposer_badge', $user->peutPointer());
         }
 
         // Redirection directe vers le tableau de bord du rôle (admin,

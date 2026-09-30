@@ -71,6 +71,20 @@ class User extends Authenticatable implements MustVerifyEmail
         )->where('personnable_type', Etudiant::class);
     }
 
+    /**
+     * Le compte peut-il enregistrer ses présences ?
+     *
+     * La réponse porte sur le rôle, jamais sur la fiche Employe ou Etudiant :
+     * l'administrateur du groupe est volontairement affecté à un site sans
+     * pointer, alors qu'un administrateur qui exerce aussi un poste sur le
+     * terrain pointe normalement. C'est le rôle qui dit qui pointe, parce que
+     * c'est le seul endroit où se trouve cette décision.
+     */
+    public function peutPointer(): bool
+    {
+        return $this->hasAnyRole(['etudiant', 'employe']);
+    }
+
     public function profil()
     {
         return $this->personnel?->personnable;

@@ -92,13 +92,29 @@ class QrPointageController extends Controller
         // la désactivation doit se voir tout de suite, pas au prochain login.
         if ($user->status !== 'actif') {
             return view('presence.qr.result', [
-                'status'    => 'rejected',
-                'title'     => 'Compte désactivé',
-                'message'   => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
-                'user'      => $user,
-                'site'      => $site,
-                'eventType' => 'unknown',
-                'time'      => now()->format('H:i'),
+                'status'     => 'rejected',
+                'reasonCode' => 'account_inactive',
+                'title'      => 'Compte désactivé',
+                'message'    => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
+        // Un compte de gestion n'est pas habilité au pointage. Le badge reste
+        // valide, mais ce qu'il ouvre, c'est le message qui suit.
+        if (!$user->peutPointer()) {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'not_pointable',
+                'title'      => 'Compte non habilité au pointage',
+                'message'    => 'Votre compte ne permet pas le pointage.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
             ]);
         }
 
@@ -109,6 +125,11 @@ class QrPointageController extends Controller
      * La carte de pointage servie à la porte : même écran que dans
      * l'application, mais hors session — le badge autorise à pointer, pas à
      * entrer dans le compte.
+     *
+     * Elle pointe toute seule. Sur une porte, un clic de plus n'est pas une
+     * confirmation : c'est une seconde à perdre, devant la file, et rien à
+     * décider. Les conditions sont déjà vérifiées côté serveur ; le scan les
+     * déclenche et le résultat s'affiche.
      */
     protected function cartePointage(Site $site, User $user, ?string $deviceToken)
     {
@@ -119,6 +140,7 @@ class QrPointageController extends Controller
             'user'        => $user,
             'deviceToken' => $deviceToken,
             'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
+            'autoPointage' => true,
         ]));
     }
 
@@ -191,13 +213,30 @@ class QrPointageController extends Controller
         // règle vaut pour toutes les entrées, pas seulement le navigateur.
         if ($user->status !== 'actif') {
             return view('presence.qr.result', [
-                'status'    => 'rejected',
-                'title'     => 'Compte désactivé',
-                'message'   => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
-                'user'      => $user,
-                'site'      => $site,
-                'eventType' => 'unknown',
-                'time'      => now()->format('H:i'),
+                'status'     => 'rejected',
+                'reasonCode' => 'account_inactive',
+                'title'      => 'Compte désactivé',
+                'message'    => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
+        // La route est publique : le refus du scan doit être rejoué ici, sinon
+        // un POST direct sur /p/{token}/process enregistrerait la journée d'un
+        // compte de gestion.
+        if (!$user->peutPointer()) {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'not_pointable',
+                'title'      => 'Compte non habilité au pointage',
+                'message'    => 'Votre compte ne permet pas le pointage.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
             ]);
         }
 
@@ -292,6 +331,16 @@ class QrPointageController extends Controller
         $user = Auth::user();
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Non authentifié.'], 401);
+        }
+
+        // Un badge qui n'a pas le droit de pointer n'a rien à faire à la porte :
+        // sans ce refus, un compte d'administration promène des jetons valides,
+        // sans date d'expiration, sur une route publique.
+        if (!$user->peutPointer()) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ce compte n'est pas habilité au pointage. Demandez le rôle « Employé » à votre administrateur si vous devez enregistrer vos présences.",
+            ], 422);
         }
 
         $validated = $request->validate([

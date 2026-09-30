@@ -30,17 +30,42 @@
 
     $arriveeBloque       = ($arriveeBloquee ?? false) && $etat === 'arrivee';
     $departBloqueRapport = $etat === 'depart' && !($rapportSoumis ?? true);
+
+    // Pointage automatique : le scan du QR code de porte suffit, le bouton
+    // disparaît. Il revient si la localisation a échoué, pour réessayer sans
+    // rescanner — et il reste en place quand le pointage attend une décision
+    // humaine (motif de retard, permission de départ anticipé).
+    $autoActif = ($autoPointage ?? false) && !$late && !$departBloque;
+
+    // Condition d'affichage du bouton, en syntaxe Alpine. Écrite ici plutôt
+    // qu'inline dans l'attribut : une expression contenant des apostrophes
+    // ne survit pas au passage par l'échappement de Blade.
+    $expressionBouton = $autoActif ? "erreur !== ''" : 'true';
 @endphp
 
 <div class="max-w-4xl mx-auto px-4 sm:px-6">
 
-    {{-- Contexte: date + lieu --}}
-    <div class="flex items-center justify-between mb-6">
-        <p class="text-base sm:text-xl font-semibold text-slate-700 dark:text-slate-200 capitalize">{{ now()->isoFormat('dddd D MMMM YYYY') }}</p>
-        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-700/40 text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-300">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            {{ $lieu }}
+    {{-- Contexte : le lieu d'abord, la date en légende.
+
+         Un nom de domaine s'écrit en toutes lettres — « Direction Technique
+         Chargé de l'Ingénierie des Systèmes d'information » fait soixante-neuf
+         caractères. Dans une rangée `justify-between`, les deux éléments se
+         partageaient la largeur sans pouvoir céder : le nom gonflait la
+         pastille en capsule de six lignes et la date se retrouvait tassée sur
+         deux ou trois lignes, même pour un nom court. Le lieu prend donc sa
+         propre ligne, bornée à deux lignes, et la date redescend dessous :
+         l'endroit, puis le moment. `break-words` couvre un libellé d'un seul
+         tenant, `title` garde le nom complet pour qui le veut en entier. --}}
+    <div class="mb-6">
+        <span class="inline-flex max-w-full items-start gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-700/40"
+              title="{{ $lieu }}">
+            <span class="mt-1.5 w-2 h-2 flex-shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="min-w-0 text-sm sm:text-base font-semibold leading-snug text-emerald-700 dark:text-emerald-300 line-clamp-2 break-words">{{ $lieu }}</span>
         </span>
+
+        <p class="mt-2 text-xs sm:text-sm font-medium capitalize text-slate-500 dark:text-slate-400">
+            {{ now()->isoFormat('dddd D MMMM YYYY') }}
+        </p>
     </div>
 
     {{-- Alerte compacte (ne montre que le bloc d'arrivée bloquée) --}}
@@ -108,7 +133,10 @@
                         <button type="button" disabled class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400">Complétez d'abord l'action requise ci-dessus</button>
 
                     @else
-                        <form method="POST" action="{{ $action }}" x-data="pointageForm({{ $late ? 'true' : 'false' }}, {{ $departBloque ? 'true' : 'false' }})" @submit.prevent="submit($el)">
+                        <form method="POST" action="{{ $action }}"
+                              data-auto-pointage="{{ $autoActif ? '1' : '0' }}"
+                              x-data="pointageForm({{ $late ? 'true' : 'false' }}, {{ $departBloque ? 'true' : 'false' }}, {{ $autoActif ? 'true' : 'false' }})"
+                              @submit.prevent="submit($el)">
                             @csrf
                             @foreach($champs as $nom => $valeur)
                                 <input type="hidden" name="{{ $nom }}" value="{{ $valeur }}">
@@ -129,9 +157,19 @@
                                 @include('presence.partials.depart-modal', ['heureDepart' => $expOut?->format('H:i')])
                             @endif
 
-                            <button type="submit" x-bind:disabled="busy" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition {{ $etat === 'arrivee' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700' }}">
-                                <svg x-show="busy" x-cloak class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                                <span x-show="!busy">{{ $etat === 'arrivee' ? "Pointer mon arrivée" : "Pointer mon départ" }}</span>
+                            {{-- En pointage automatique, on dit ce qui se joue pendant
+                                 que le téléphone se positionne. Le bouton ne revient
+                                 qu'en cas d'échec, pour réessayer sans rescanner. --}}
+                            @if($autoActif)
+                                <div class="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-sm" x-cloak x-show="erreur === ''">
+                                    <svg class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" stroke="currentColor" stroke-width="4" cx="12" cy="12" r="10"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                    <span x-text="etape || 'Vérification de votre présence…'">Vérification de votre présence…</span>
+                                </div>
+                            @endif
+
+                            <button type="submit" x-cloak x-show="{!! $expressionBouton !!}" x-bind:disabled="busy" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition {{ $etat === 'arrivee' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700' }}">
+                                <svg x-show="busy" x-cloak class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" stroke="currentColor" stroke-width="4" cx="12" cy="12" r="10"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                <span x-show="!busy">{{ $autoActif ? 'Réessayer' : ($etat === 'arrivee' ? "Pointer mon arrivée" : "Pointer mon départ") }}</span>
                                 <span x-show="busy" x-cloak x-text="etape"></span>
                             </button>
 
