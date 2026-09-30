@@ -40,56 +40,92 @@ class QrPointageController extends Controller
             $rawTokens = is_array($decoded) ? $decoded : [$cookieData];
         }
 
-        // Déjà connecté : la page de pointage de l'application est exactement
-        // cet écran. Inutile d'en servir une copie hors session.
+        // Le badge actif porté par ce téléphone, s'il y en a un.
+        $badge = $this->badgeActif($rawTokens);
+
+        // Une session ouverte ne doit pas détourner le scan vers la page de
+        // l'application. C'est le même geste au second passage qu'au premier,
+        // et le pointage automatique n'existe qu'ici : renvoyer dans
+        // l'application supprimait de fait l'automatisation pour la moitié des
+        // personnes, celles qui laissent leur session ouverte.
         if (Auth::check()) {
-            return redirect()->route('presence.pointage')->with(
-                'info',
-                "Site « {$site->name} » reconnu. Vous pouvez pointer ci-dessous."
-            );
+            $user = Auth::user();
+
+            // Le badge n'automatise que le compte qu'il autorise. Un téléphone
+            // dont le badge appartient à un autre compte, ou sans badge du tout,
+            // reste un pointage volontaire : le bouton reste, rien ne part seul.
+            if ($badge === null || $badge->user_id !== $user->id) {
+                return $this->cartePointage($site, $user, null, false);
+            }
+
+            return $this->pointagePorte($site, $user, $badge, $this->tokenDuBadge($rawTokens, $badge));
         }
 
-        if (empty($rawTokens)) {
-            // Aucun appareil enrôlé : mémorisation et redirection vers le login
+        if ($badge === null) {
+            // Aucun badge utilisable : mémorisation et redirection vers le login
             session(['pending_qr_site' => $site->qr_token]);
+
             return redirect()->route('login')->with(
                 'info',
-                "Bienvenue sur le site « {$site->name} ». Veuillez vous connecter pour valider votre pointage et configurer votre appareil."
-            );
-        }
-
-        // Résolution des badges actifs liés aux tokens du cookie
-        $tokenHashes = array_map(fn($t) => hash('sha256', $t), $rawTokens);
-        $activeDevices = TrustedDevice::whereIn('pointage_token_hash', $tokenHashes)
-            ->where('is_qr_badge', true)
-            ->whereNull('revoked_at')
-            ->with(['user.etudiant.stages', 'user.domaine'])
-            ->get()
-            ->filter(fn($device) => $device->isBadgeActive());
-
-        if ($activeDevices->isEmpty()) {
-            session(['pending_qr_site' => $site->qr_token]);
-            return redirect()->route('login')->with(
-                'info',
-                "Votre badge sur cet appareil n'est plus actif ou a expiré. Veuillez vous connecter pour le renouveler."
+                empty($rawTokens)
+                    ? "Bienvenue sur le site « {$site->name} ». Veuillez vous connecter pour valider votre pointage et configurer votre appareil."
+                    : "Votre badge sur cet appareil n'est plus actif ou a expiré. Veuillez vous connecter pour le renouveler."
             );
         }
 
         // Un téléphone porte un seul badge : on prend le premier actif. Le choix
         // entre plusieurs profils n'existe plus, l'enrôlement l'interdit en amont.
-        $device = $activeDevices->first();
-        $user   = $device->user;
+        return $this->pointagePorte($site, $badge->user, $badge, $this->tokenDuBadge($rawTokens, $badge));
+    }
 
-        $matchingRawToken = null;
+    /**
+     * Le badge actif porté par ce téléphone, déduit des tokens du cookie.
+     *
+     * @param  array<int, string>  $rawTokens
+     */
+    protected function badgeActif(array $rawTokens): ?TrustedDevice
+    {
+        if ($rawTokens === []) {
+            return null;
+        }
+
+        $tokenHashes = array_map(fn($t) => hash('sha256', $t), $rawTokens);
+
+        return TrustedDevice::whereIn('pointage_token_hash', $tokenHashes)
+            ->where('is_qr_badge', true)
+            ->whereNull('revoked_at')
+            ->with(['user.etudiant.stages', 'user.domaine'])
+            ->get()
+            ->first(fn($device) => $device->isBadgeActive());
+    }
+
+    /**
+     * Le token brut correspondant au badge retenu. Il repart dans la carte pour
+     * que le POST puisse réidentifier l'appareil sans refaire la résolution.
+     *
+     * @param  array<int, string>  $rawTokens
+     */
+    protected function tokenDuBadge(array $rawTokens, TrustedDevice $badge): ?string
+    {
         foreach ($rawTokens as $raw) {
-            if (hash('sha256', $raw) === $device->pointage_token_hash) {
-                $matchingRawToken = $raw;
-                break;
+            if (hash('sha256', $raw) === $badge->pointage_token_hash) {
+                return $raw;
             }
         }
 
-        // Un compte désactivé ne pointe pas, même avec un badge encore actif :
-        // la désactivation doit se voir tout de suite, pas au prochain login.
+        return null;
+    }
+
+    /**
+     * Contrôles d'accès de la porte, puis carte automatique.
+     *
+     * Un compte désactivé ne pointe pas, même badge encore actif : la
+     * désactivation doit se voir tout de suite, pas au prochain login. Un
+     * compte de gestion n'est pas habilité au pointage : le badge reste
+     * valide, mais ce qu'il ouvre, c'est le message qui suit.
+     */
+    protected function pointagePorte(Site $site, User $user, TrustedDevice $badge, ?string $deviceToken)
+    {
         if ($user->status !== 'actif') {
             return view('presence.qr.result', [
                 'status'     => 'rejected',
@@ -103,8 +139,6 @@ class QrPointageController extends Controller
             ]);
         }
 
-        // Un compte de gestion n'est pas habilité au pointage. Le badge reste
-        // valide, mais ce qu'il ouvre, c'est le message qui suit.
         if (!$user->peutPointer()) {
             return view('presence.qr.result', [
                 'status'     => 'rejected',
@@ -118,7 +152,7 @@ class QrPointageController extends Controller
             ]);
         }
 
-        return $this->cartePointage($site, $user, $matchingRawToken);
+        return $this->cartePointage($site, $user, $deviceToken, true);
     }
 
     /**
@@ -130,8 +164,12 @@ class QrPointageController extends Controller
      * confirmation : c'est une seconde à perdre, devant la file, et rien à
      * décider. Les conditions sont déjà vérifiées côté serveur ; le scan les
      * déclenche et le résultat s'affiche.
+     *
+     * @param  bool  $autoPointage  False quand aucun badge n'autorise ce
+     *                             téléphone : le pointage reste alors un geste
+     *                             volontaire, bouton conservé.
      */
-    protected function cartePointage(Site $site, User $user, ?string $deviceToken)
+    protected function cartePointage(Site $site, User $user, ?string $deviceToken, bool $autoPointage = true)
     {
         $etat = $this->pointageState->forUser($user, $site);
 
@@ -140,7 +178,7 @@ class QrPointageController extends Controller
             'user'        => $user,
             'deviceToken' => $deviceToken,
             'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
-            'autoPointage' => true,
+            'autoPointage' => $autoPointage,
         ]));
     }
 

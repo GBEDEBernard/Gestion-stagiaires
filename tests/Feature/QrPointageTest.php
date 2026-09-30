@@ -770,6 +770,154 @@ test('the in app pointage page is untouched and keeps its button', function () {
     \Carbon\Carbon::setTestNow();
 });
 
+test('a connected user scanning the qr code keeps the automatic door card', function () {
+    // Le cas le plus fréquent : la session reste ouverte d'un scan à l'autre.
+    // Renvoyer vers la page de l'application retirait l'automatisation à cette
+    // personne, sans qu'aucun message n'explique la redirection.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_session_ouverte');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('autoPointage', true)
+        ->assertSee('data-auto-pointage="1"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a connected user without its badge on the phone keeps the manual button', function () {
+    // Sans badge, le scan ne vaut rien tout seul. Le pointage reste possible,
+    // mais volontaire : on ne retire pas une capacité au profit d'un gain.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('autoPointage', false)
+        ->assertSee('data-auto-pointage="0"', false)
+        ->assertSee('Pointer mon arrivée', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a connected user does not inherit another account badge at the door', function () {
+    // Le badge n'automatise que le compte qu'il autorise. Sinon, emprunter le
+    // téléphone d'un collègue suffirait à pointer seul.
+    $user  = createQrTestUser('employe');
+    $autre = createQrTestUser('employe');
+    $site  = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    attachQrTestEmploye($autre, $site);
+    $raw   = enrollQrTestBadge($autre, 'fp_badge_autre');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('user', fn (User $vu) => $vu->is($user))
+        ->assertViewHas('autoPointage', false)
+        ->assertSee('data-auto-pointage="0"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a rescan before departure time explains that the departure is not due yet', function () {
+    // Le cas vécu : arrivée déjà pointée le matin, rescan avant 18h. L'écran
+    // proposait un formulaire de départ qui ne pouvait pas aboutir.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_rescan');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('11:15:00');
+
+    \App\Models\DailyReport::create([
+        'user_id'     => $user->id,
+        'report_date' => today(),
+        'status'      => 'submitted',
+    ]);
+
+    \App\Models\AttendanceDay::create([
+        'user_id'           => $user->id,
+        'attendance_date'   => today(),
+        'first_check_in_at' => now()->subMinutes(65),
+        'arrival_status'    => 'ontime',
+    ]);
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee('Départ pas encore ouvert')
+        ->assertSee('Arrivée enregistrée à <strong>10:10</strong>', false)
+        ->assertSee('à partir de <strong>18:00</strong>', false)
+        ->assertSee('Demander une permission')
+        ->assertSee('verif-ouvrir', false)
+        ->assertSee('data-auto-pointage="0"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a departure without a daily report points at the report to deposit', function () {
+    // Le rapport manque avant comme après l'heure de départ : dans les deux cas
+    // le départ est refusé et le modal porte le geste. Avant 18h, le blocage
+    // d'heure se superpose au rapport manquant — le rapport doit primer, sinon
+    // l'écran retombe sur un bouton mort.
+    foreach (['13:09:00', '18:30:00'] as $heure) {
+        $user = createQrTestUser('employe');
+        $site = createQrTestSite();
+        attachQrTestEmploye($user, $site);
+        $raw  = enrollQrTestBadge($user, 'fp_rapport');
+
+        setQrTestWorkHours('08:00');
+        freezeQrTestClock($heure);
+
+        \App\Models\AttendanceDay::create([
+            'user_id'           => $user->id,
+            'attendance_date'   => today(),
+            'first_check_in_at' => now()->subHours(3),
+            'arrival_status'    => 'ontime',
+        ]);
+
+        $this->actingAs($user)
+            ->withCookie('pointage_device_tokens', json_encode([$raw]))
+            ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+            ->assertOk()
+            ->assertSee('Rapport de travail du jour')
+            ->assertSee('une fois votre rapport de travail déposé')
+            ->assertSee(route('reports.index'))
+            // Le bouton de la carte rouvre le modal : fermé, plus rien
+            // n'expliquerait le refus.
+            ->assertSee("@click=\"\$dispatch('verif-ouvrir')\"", false)
+            // Aucun formulaire n'est rendu : rien n'est armé, donc rien ne part.
+            ->assertDontSee('data-auto-pointage', false);
+
+        \App\Models\AttendanceDay::query()->delete();
+        \App\Models\DailyReport::query()->delete();
+    }
+
+    \Carbon\Carbon::setTestNow();
+});
+
 // ==========================================================================
 //  QUI A LE DROIT DE POINTER
 // ==========================================================================
