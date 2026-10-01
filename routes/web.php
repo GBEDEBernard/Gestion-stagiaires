@@ -157,6 +157,7 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::get('create', [StageController::class, 'create'])->name('stages.create')->middleware('permission:stages.create');
         Route::post('/', [StageController::class, 'store'])->name('stages.store')->middleware('permission:stages.create');
         Route::get('corbeille', [StageController::class, 'trash'])->name('stages.trash')->middleware('permission:stages.view');
+        Route::post('{stage}/prolonger', [StageController::class, 'prolonger'])->name('stages.prolonger')->middleware('permission:stages.edit');
         Route::get('{stage}', [StageController::class, 'show'])->name('stages.show')->middleware('permission:stages.view');
         Route::get('{stage}/edit', [StageController::class, 'edit'])->name('stages.edit')->middleware('permission:stages.edit');
         Route::put('{stage}', [StageController::class, 'update'])->name('stages.update')->middleware('permission:stages.edit');

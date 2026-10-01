@@ -265,6 +265,103 @@ class StageController extends Controller
         return redirect()->route('stages.index')->with('success', 'Stage cree avec succes.');
     }
 
+    public function prolonger(Stage $stage, Request $request)
+    {
+        $request->validate([
+            'date_debut' => 'required|date',
+            'date_fin' => 'required|date|after_or_equal:date_debut',
+            'theme' => 'nullable|string|max:255',
+        ]);
+
+        $newDateDebut = \Carbon\Carbon::parse($request->date_debut);
+        $newDateFin = \Carbon\Carbon::parse($request->date_fin);
+
+        if (!$stage->date_fin || $newDateDebut->lt($stage->date_fin)) {
+            return back()->withErrors([
+                'date_debut' => 'La nouvelle période doit commencer après la fin du stage actuel.',
+            ])->withInput();
+        }
+
+        $conflictEtudiant = Stage::where('etudiant_id', $stage->etudiant_id)
+            ->where('id', '!=', $stage->id)
+            ->where(function ($query) use ($newDateDebut, $newDateFin) {
+                $query->whereBetween('date_debut', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                    ->orWhereBetween('date_fin', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                    ->orWhere(function ($innerQuery) use ($newDateDebut, $newDateFin) {
+                        $innerQuery->where('date_debut', '<=', $newDateDebut->toDateString())
+                            ->where('date_fin', '>=', $newDateFin->toDateString());
+                    });
+            })->exists();
+
+        if ($conflictEtudiant) {
+            return back()->withErrors([
+                'date_debut' => 'Cette nouvelle période chevauche un autre stage existant pour cet étudiant.',
+            ])->withInput();
+        }
+
+        // Le badge est la propriété de l'étudiant, pas du segment : il ne se
+        // recopie donc pas sur la prolongation. Le numéro reste sur ses autres
+        // stages, et un seul numéro par personne.
+        //
+        // On refuse en revanche de prolonger si le badge est déjà porté par un
+        // stage d'un AUTRE étudiant : sans ce contrôle, la même carte
+        // pointerait pour deux personnes, l'une masking l'autre.
+        if ($stage->badge_id) {
+            $badgeConflict = Stage::where('badge_id', $stage->badge_id)
+                ->where('id', '!=', $stage->id)
+                ->where(function ($query) use ($newDateDebut, $newDateFin) {
+                    $query->whereBetween('date_debut', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                        ->orWhereBetween('date_fin', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                        ->orWhere(function ($innerQuery) use ($newDateDebut, $newDateFin) {
+                            $innerQuery->where('date_debut', '<=', $newDateDebut->toDateString())
+                                ->where('date_fin', '>=', $newDateFin->toDateString());
+                        });
+                })->exists();
+
+            if ($badgeConflict) {
+                return back()->withErrors([
+                    'date_debut' => 'Ce badge est déjà attribué à un autre stage durant cette période.',
+                ])->withInput();
+            }
+        }
+
+        $newStage = Stage::create(array_merge($stage->only([
+            'etudiant_id',
+            'typestage_id',
+            'site_id',
+            'supervisor_id',
+            'domaine_id',
+            'expected_check_in_time',
+            'expected_check_out_time',
+            'allowed_late_minutes',
+            'allowed_early_departure_minutes',
+            'break_minutes',
+            'presence_mode',
+            'follow_up_status',
+            'intitule_poste',
+            'filiere',
+            'niveau_etude',
+            'tuteur_academique',
+            'indemnite',
+            'livrables',
+        ]), [
+            'theme' => $request->filled('theme') ? trim($request->theme) : $stage->theme,
+            'date_debut' => $newDateDebut->toDateString(),
+            'date_fin' => $newDateFin->toDateString(),
+            'duree_mois' => max(1, (int) round($newDateDebut->diffInDays($newDateFin) / 30)),
+        ]));
+
+        $newStage->jours()->sync($stage->jours->pluck('id'));
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Prolongation stage',
+            'description' => "Stage prolongé pour l'étudiant {$newStage->etudiant->personnel->full_name} : {$newStage->theme}",
+        ]);
+
+        return redirect()->route('stages.show', $newStage)->with('success', 'Le stage a bien été prolongé et ajouté à l’historique du stagiaire.');
+    }
+
     public function show(Stage $stage)
     {
         $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'site', 'supervisor']);

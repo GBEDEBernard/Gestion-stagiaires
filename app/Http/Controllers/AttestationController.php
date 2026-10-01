@@ -27,6 +27,8 @@ class AttestationController extends Controller
             'attestation.signataires.user.personnel',
         ]);
 
+        $stage->duree_mois = $stage->totalDurationInMonths();
+
         $attestation = $stage->attestation;
         if (!$attestation) {
             $reference = $this->generateReference();

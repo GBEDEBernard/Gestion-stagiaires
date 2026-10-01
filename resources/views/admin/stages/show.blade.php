@@ -83,6 +83,60 @@
                 </svg>
                 Modifier
             </a>
+            @role('admin')
+            <button type="button" onclick="document.getElementById('modalProlongation').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prolonger le stage
+            </button>
+            @endrole
+        </div>
+    </div>
+
+    <div id="modalProlongation" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-orange-50 dark:bg-gray-900/50">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Prolongation du stage
+                </h2>
+            </div>
+            <form method="POST" action="{{ route('stages.prolonger', $stage) }}" class="p-6 space-y-4">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="prolong_date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début *</label>
+                        <input type="date" id="prolong_date_debut" name="date_debut" required
+                            min="{{ $stage->date_fin?->copy()->addDay()->format('Y-m-d') ?? now()->toDateString() }}"
+                            value="{{ old('date_debut', $stage->date_fin?->copy()->addDay()->format('Y-m-d')) }}"
+                            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label for="prolong_date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
+                        <input type="date" id="prolong_date_fin" name="date_fin" required
+                            value="{{ old('date_fin') }}"
+                            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="prolong_theme" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Libellé de la prolongation</label>
+                    <input type="text" id="prolong_theme" name="theme" value="{{ old('theme', $stage->theme) }}"
+                        class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Ex. Développement web - prolongation">
+                </div>
+                <div class="rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50 dark:bg-orange-900/20 p-3 text-sm text-orange-700 dark:text-orange-300">
+                    La période ajoutée sera enregistrée comme un nouveau segment de stage pour le même étudiant, sans supprimer l’historique précédent.
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('modalProlongation').classList.add('hidden')"
+                        class="px-5 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">Annuler</button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-xl font-medium hover:from-orange-700 hover:to-amber-600 transition shadow-lg shadow-orange-600/20">Confirmer la prolongation</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -404,7 +458,7 @@
                 </div>
                 <div class="divide-y divide-gray-100 dark:divide-gray-700">
                     @foreach($stagesTermines as $stageHist)
-                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                    <a href="{{ encrypted_route('stages.show', $stageHist) }}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                         <div class="flex items-center justify-between gap-4">
                             <div class="flex items-center gap-4">
                                 <div class="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -426,7 +480,7 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Terminé</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                     @endforeach
                 </div>
             </div>

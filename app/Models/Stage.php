@@ -194,6 +194,55 @@ class Stage extends Model
         return $this->hasOne(Attestation::class);
     }
 
+    public function getRelatedSequenceStages(): \Illuminate\Support\Collection
+    {
+        if (!$this->etudiant_id) {
+            return collect([$this]);
+        }
+
+        $query = static::where('etudiant_id', $this->etudiant_id)
+            ->whereNotNull('date_debut')
+            ->whereNotNull('date_fin');
+
+        if ($this->domaine_id) {
+            $query->where('domaine_id', $this->domaine_id);
+        }
+
+        if ($this->typestage_id) {
+            $query->where('typestage_id', $this->typestage_id);
+        }
+
+        return $query->orderBy('date_debut')->get()->filter(function ($stage) {
+            return $stage->date_debut && $stage->date_fin;
+        })->values();
+    }
+
+    public function totalDurationInDays(): int
+    {
+        $stages = $this->getRelatedSequenceStages();
+
+        if ($stages->isEmpty()) {
+            return $this->date_debut && $this->date_fin
+                ? (int) $this->date_debut->diffInDays($this->date_fin) + 1
+                : 0;
+        }
+
+        return (int) $stages->sum(function ($stage) {
+            if (!$stage->date_debut || !$stage->date_fin) {
+                return 0;
+            }
+
+            return $stage->date_debut->diffInDays($stage->date_fin) + 1;
+        });
+    }
+
+    public function totalDurationInMonths(): int
+    {
+        $days = $this->totalDurationInDays();
+
+        return $days > 0 ? max(1, (int) round($days / 30)) : 0;
+    }
+
     public function getFinalReportUrlAttribute(): ?string
     {
         return $this->final_report_path
