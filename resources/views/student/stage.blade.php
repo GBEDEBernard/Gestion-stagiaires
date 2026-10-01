@@ -506,5 +506,138 @@
             </div>
         </div>
         @endif
+
+                {{-- Mon parcours : une carte par stage réellement effectué.
+                     Une prolongation est une carte unique, pas une carte par
+                     segment : c'est le même stage, plus long. --}}
+                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Mon parcours</h2>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-gray-700 dark:text-slate-300">
+                            {{ $chaines->count() }} stage{{ $chaines->count() > 1 ? 's' : '' }}
+                        </span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
+                        Chaque stage compte la durée totale réellement effectuée, prolongations comprises.
+                    </p>
+
+                    @forelse($chaines as $chaine)
+                        @php
+                            $enCours = $chaine['en_cours'];
+                            $terminee = $chaine['terminee'];
+                            $nbProlongations = $chaine['prolongations']->count();
+                        @endphp
+
+                        <div @class([
+                            'mt-4 overflow-hidden rounded-xl border transition',
+                            'border-indigo-200 bg-indigo-50/50 dark:border-indigo-700 dark:bg-indigo-950/30' => $enCours,
+                            'border-slate-200 bg-slate-50/60 dark:border-gray-700 dark:bg-gray-900/40' => ! $enCours,
+                        ])>
+                            {{-- En-tête : période réelle et statut --}}
+                            <div class="flex items-start justify-between gap-3 border-b border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white">
+                                        {{ $chaine['racine']->theme ?: 'Stage' }}
+                                    </p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500 dark:text-gray-400">
+                                        {{ $chaine['debut']?->format('d/m/Y') }} → {{ $chaine['fin']?->format('d/m/Y') }}
+                                        @if($nbProlongations)
+                                            <span class="text-orange-600 dark:text-orange-400">
+                                                · prolongé {{ $nbProlongations }}×
+                                            </span>
+                                        @endif
+                                    </p>
+                                </div>
+                                <span @class([
+                                    'flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide',
+                                    'bg-indigo-600 text-white' => $enCours,
+                                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300' => ! $enCours && $terminee,
+                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300' => ! $enCours && ! $terminee,
+                                ])>
+                                    {{ $enCours ? 'En cours' : ($terminee ? 'Terminé' : 'À venir') }}
+                                </span>
+                            </div>
+
+                            {{-- Chiffres clés : durée cumulée et travail réellement rendu --}}
+                            <div class="grid grid-cols-2 divide-x divide-slate-200/70 sm:grid-cols-4 dark:divide-gray-700/70">
+                                <div class="px-4 py-3">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Durée totale</p>
+                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['mois'] }}<span class="text-xs font-bold"> mois</span></p>
+                                    <p class="text-[10px] text-slate-400">{{ $chaine['jours'] }} jours</p>
+                                </div>
+                                <div class="px-4 py-3">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Domaine</p>
+                                    <p class="mt-0.5 truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ \Illuminate\Support\Str::limit($chaine['racine']->domaine?->nom ?? 'Non défini', 26) }}
+                                    </p>
+                                    <p class="text-[10px] text-slate-400">{{ $chaine['racine']->typestage?->libelle ?? '—' }}</p>
+                                </div>
+                                <div class="px-4 py-3">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tâches</p>
+                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['taches'] }}</p>
+                                    <p class="text-[10px] text-slate-400">{{ $chaine['taches_terminees'] }} terminée{{ $chaine['taches_terminees'] > 1 ? 's' : '' }}</p>
+                                </div>
+                                <div class="px-4 py-3">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Attestations</p>
+                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['attestations']->count() }}</p>
+                                    <p class="text-[10px] text-slate-400">
+                                        {{ $nbProlongations > 0 ? 'une seule pour tout le stage' : 'pour ce stage' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {{-- Détail des périodes : utile quand le stage a été prolongé,
+                                 pour distinguer ce qui relève de chaque segment. --}}
+                            @if($nbProlongations > 0)
+                                <div class="border-t border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
+                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Périodes effectuées</p>
+                                    <ol class="mt-2 space-y-1.5">
+                                        @foreach($chaine['segments'] as $segment)
+                                            <li class="flex items-center gap-2 text-[11px]">
+                                                <span @class([
+                                                    'h-1.5 w-1.5 flex-shrink-0 rounded-full',
+                                                    'bg-slate-400' => $loop->first,
+                                                    'bg-orange-500' => ! $loop->first,
+                                                ])></span>
+                                                <span class="font-semibold text-slate-700 dark:text-slate-300">
+                                                    {{ $segment->date_debut?->format('d/m/Y') }} → {{ $segment->date_fin?->format('d/m/Y') }}
+                                                </span>
+                                                <span class="text-slate-400">
+                                                    ({{ $segment->id == $chaine['racine']->id ? 'stage initial' : 'prolongation' }})
+                                                </span>
+                                            </li>
+                                        @endforeach
+                                    </ol>
+                                </div>
+                            @endif
+
+                            @if($chaine['attestations']->isNotEmpty())
+                                <div class="border-t border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
+                                    @foreach($chaine['attestations'] as $attestation)
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-9 w-9 flex-shrink-0 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                    {{ $attestation->reference }}
+                                                </p>
+                                                <p class="text-[10px] text-slate-400">
+                                                    Délivrée le {{ \Illuminate\Support\Carbon::parse($attestation->date_delivrance)->format('d/m/Y') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-gray-600 dark:text-gray-400">
+                            Aucun stage enregistré pour le moment.
+                        </p>
+                    @endforelse
+                </div>
     </div>
 </x-app-layout>

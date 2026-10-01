@@ -445,6 +445,53 @@
                 </div>
             </div>
 
+            {{-- Segments de la même chaîne : ils prolongent CE stage, ils ne
+                 figurent donc pas dans l'historique du stagiaire, mais
+                 l'administrateur doit les avoir sous la main. --}}
+            @if($prolongationsLiees->count() > 0)
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-orange-100 dark:border-orange-900/50 overflow-hidden">
+                <div class="px-6 py-4 border-b border-orange-100 dark:border-orange-900/50 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-gray-800">
+                    <h3 class="text-lg font-bold text-orange-800 dark:text-orange-300 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Prolongations de ce stage
+                        <span class="text-sm font-medium text-orange-600 dark:text-orange-400">({{ $prolongationsLiees->count() }})</span>
+                    </h3>
+                    <p class="mt-1 text-sm text-orange-700 dark:text-orange-300/80">
+                        Ces périodes prolongent le stage affiché. L'attestation porte la durée totale, de {{ $stage->date_debut?->format('d/m/Y') }} à {{ $prolongationsLiees->max('date_fin')?->format('d/m/Y') }}.
+                    </p>
+                </div>
+                <div class="divide-y divide-orange-50 dark:divide-orange-900/30">
+                    @foreach($prolongationsLiees as $prolongation)
+                    <a href="{{ encrypted_route('stages.show', $prolongation) }}" class="block p-4 hover:bg-orange-50/60 dark:hover:bg-orange-950/20 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-xl bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 4.3L2.6 17.6A2 2 0 004.3 20.6h15.4a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $prolongation->theme ?? 'Prolongation' }}</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $prolongation->typestage->libelle ?? 'Type non défini' }} • {{ $prolongation->domaine->nom ?? 'Domaine non défini' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {{ $prolongation->date_debut?->format('d/m/Y') }} - {{ $prolongation->date_fin?->format('d/m/Y') }}
+                                </p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">Prolongation</span>
+                            </div>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- Historical Stages --}}
             @if($stagesTermines->count() > 0)
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -471,6 +518,15 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
                                         {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->domaine->nom ?? 'Domaine non défini' }}
                                     </p>
+                                    {{-- Un segment rattaché à une chaîne porte son stage
+                                         d'origine : sans cette précision, deux
+                                         périodes distinctes de la même direction
+                                         se lisaient comme une suite continue. --}}
+                                    @if($stageHist->estProlongation())
+                                    <p class="mt-1 text-xs text-orange-600 dark:text-orange-400 font-medium">
+                                        Prolongation du stage du {{ $stageHist->stageProlonge?->date_debut?->format('d/m/Y') }}
+                                    </p>
+                                    @endif
                                 </div>
                             </div>
                             <div class="text-right">

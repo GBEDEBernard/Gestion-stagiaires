@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
+use App\Models\Attestation;
+use App\Models\Stage;
 use App\Models\Task;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
@@ -15,8 +17,7 @@ class StudentStageController extends Controller
     public function __construct(
         protected DailyReportService $dailyReportService,
         protected UserProfileLinkService $profileLinkService
-    ) {
-    }
+    ) {}
 
     public function updateTheme(Request $request)
     {
@@ -27,7 +28,7 @@ class StudentStageController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if (!$etudiant) {
+        if (! $etudiant) {
             if ($user && $user->hasAnyRole(['admin', 'superviseur'])) {
                 return redirect()->route('dashboard');
             }
@@ -35,7 +36,7 @@ class StudentStageController extends Controller
         }
 
         $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
-        abort_if(!$activeStage, 404, "Aucun stage actif trouve.");
+        abort_if(! $activeStage, 404, 'Aucun stage actif trouve.');
 
         $activeStage->update(['theme' => $validated['theme']]);
 
@@ -47,12 +48,12 @@ class StudentStageController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if (!$etudiant) {
+        if (! $etudiant) {
             abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
         }
 
         $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
-        abort_if(!$activeStage, 404, "Aucun stage actif trouve.");
+        abort_if(! $activeStage, 404, 'Aucun stage actif trouve.');
 
         $validated = $request->validate([
             'final_report' => 'required|file|mimes:pdf|max:10240',
@@ -77,15 +78,53 @@ class StudentStageController extends Controller
         $user = $request->user();
         $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
 
-        if (!$etudiant) {
+        if (! $etudiant) {
             if ($user && $user->hasAnyRole(['admin', 'superviseur'])) {
                 return redirect()->route('dashboard')
-                    ->with('info', "Vous êtes administrateur : redirection vers votre espace de travail.");
+                    ->with('info', 'Vous êtes administrateur : redirection vers votre espace de travail.');
             }
             abort(403, "Votre compte n'est pas encore rattaché à une fiche étudiant.");
         }
 
         $activeStage = $this->dailyReportService->resolveActiveStageForUser($user);
+
+        // Parcours complet du stagiaire, segment par segment.
+        //
+        // Une prolongation n'est pas un nouveau stage : c'est la suite du même
+        // stage. Deux stages réellement distincts le sont. On présente donc des
+        // chaînes, chacune avec sa période totale et ses attestations, pour que
+        // le stagiaire voie ce qu'il a réellement fait et ne retrouve pas deux
+        // attestations là où il n'y en a qu'une.
+        $chaines = \App\Models\Stage::where('etudiant_id', $etudiant->id)
+            ->whereNull('prolonge_stage_id')
+            ->with(['typestage', 'domaine', 'prolongations.typestage', 'prolongations.domaine'])
+            ->orderByDesc('date_debut')
+            ->get()
+            ->map(function (Stage $racine) use ($activeStage) {
+                $segments = $racine->getRelatedSequenceStages();
+                $taches = Task::whereIn('stage_id', $segments->pluck('id'))->count();
+                $tachesTerminees = Task::whereIn('stage_id', $segments->pluck('id'))
+                    ->where('status', 'completed')
+                    ->count();
+
+                return [
+                    'racine' => $racine,
+                    'segments' => $segments,
+                    'prolongations' => $racine->prolongations()->orderBy('date_debut')->get(),
+                    'debut' => $segments->min('date_debut'),
+                    'fin' => $segments->max('date_fin'),
+                    'jours' => $racine->totalDurationInDays(),
+                    'mois' => $racine->totalDurationInMonths(),
+                    'taches' => $taches,
+                    'taches_terminees' => $tachesTerminees,
+                    'attestations' => Attestation::whereIn('stage_id', $segments->pluck('id'))
+                        ->with('signataires')
+                        ->get(),
+                    'terminee' => $segments->max('date_fin')?->isPast(),
+                    'en_cours' => $activeStage && $segments->contains('id', $activeStage->id),
+                ];
+            });
+
         $attendanceDay = $activeStage
             ? AttendanceDay::where('stage_id', $activeStage->id)
                 ->whereDate('attendance_date', today())
@@ -146,7 +185,7 @@ class StudentStageController extends Controller
             $cursor = $startWeek->copy();
             $joursOuvres = 0;
             while ($cursor->lte($endWeek)) {
-                if (!$cursor->isWeekend()) {
+                if (! $cursor->isWeekend()) {
                     $joursOuvres++;
                 }
                 $cursor->addDay();
@@ -171,7 +210,7 @@ class StudentStageController extends Controller
         $tasks = Task::where('stage_id', $activeStage?->id)
             ->visibleTo($user)
             ->with([
-                'dailyReports' => fn($q) => $q
+                'dailyReports' => fn ($q) => $q
                     ->with(['user', 'etudiant.user'])
                     ->latest('report_date')
                     ->limit(5),
@@ -181,6 +220,7 @@ class StudentStageController extends Controller
 
         return view('student.stage', [
             'activeStage' => $activeStage,
+            'chaines' => $chaines,
             'attendanceDay' => $attendanceDay,
             'todayReport' => $todayReport,
             'tasks' => $tasks,

@@ -164,6 +164,96 @@ test('admin can prolong a stage and keep the historical sequence visible', funct
     $this->assertCount(2, $etudiant->fresh()->stages()->orderBy('date_debut')->get());
 });
 
+test('a prolongation shares one attestation, a separate stage keeps its own', function () {
+    $admin = createPersonnelFlowUser('admin');
+    $etudiant = createPersonnelFlowUser('etudiant')->etudiant;
+
+    $typeStage = \App\Models\TypeStage::create(['code' => 'PRO4', 'libelle' => 'Professionnel']);
+    $domaine = Domaine::create(['nom' => 'Informatique', 'description' => 'Domaine test']);
+
+    $stage = \App\Models\Stage::create([
+        'etudiant_id' => $etudiant->id,
+        'typestage_id' => $typeStage->id,
+        'domaine_id' => $domaine->id,
+        'theme' => 'Stage initial',
+        'date_debut' => '2025-01-10',
+        'date_fin' => '2025-03-10',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('stages.prolonger', $stage), [
+            'date_debut' => '2025-03-11',
+            'date_fin' => '2025-05-11',
+        ])->assertRedirect();
+
+    $prolongation = $etudiant->fresh()->stages()->where('theme', 'Stage initial')->first();
+
+    // Ouvrir l'attestation depuis le segment prolongé doit reprendre celle du
+    // stage d'origine : deux attestations proclameraient deux stages.
+    $this->actingAs($admin)
+        ->get(route('stages.attestation.show', $prolongation))
+        ->assertOk();
+
+    $this->assertCount(1, \App\Models\Attestation::whereIn(
+        'stage_id',
+        $etudiant->fresh()->stages()->pluck('id')
+    )->get());
+
+    // Un stage sans lien reste une chaîne à part entière, avec sa propre
+    // attestation.
+    $autre = \App\Models\Stage::create([
+        'etudiant_id' => $etudiant->id,
+        'typestage_id' => $typeStage->id,
+        'domaine_id' => $domaine->id,
+        'theme' => 'Nouveau stage plus tard',
+        'date_debut' => '2026-09-01',
+        'date_fin' => '2026-11-30',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('stages.attestation.show', $autre))
+        ->assertOk();
+
+    // Même domaine, même type, mais aucun lien : la durée du nouveau stage ne
+    // doit pas s'ajouter à celle de la chaîne précédente.
+    expect($autre->getRelatedSequenceStages()->pluck('id')->all())->toBe([$autre->id])
+        ->and($autre->totalDurationInDays())->toBe(91);
+});
+
+test('the student sees one card per stage, prolongations included in its duration', function () {
+    $etudiantUser = createPersonnelFlowUser('etudiant');
+    $etudiant = $etudiantUser->etudiant;
+    $admin = createPersonnelFlowUser('admin');
+
+    $typeStage = \App\Models\TypeStage::create(['code' => 'PRO5', 'libelle' => 'Professionnel']);
+    $domaine = Domaine::create(['nom' => 'Informatique', 'description' => 'Domaine test']);
+
+    $stage = \App\Models\Stage::create([
+        'etudiant_id' => $etudiant->id,
+        'typestage_id' => $typeStage->id,
+        'domaine_id' => $domaine->id,
+        'theme' => 'Stage prolongé',
+        'date_debut' => '2025-01-10',
+        'date_fin' => '2025-03-10',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('stages.prolonger', $stage), [
+            'date_debut' => '2025-03-11',
+            'date_fin' => '2025-05-11',
+        ])->assertRedirect();
+
+    $this->actingAs($etudiantUser)
+        ->get(route('student.stage'))
+        ->assertOk()
+        ->assertSee('Mon parcours')
+        // La carte porte la durée cumulée, pas celle du seul segment.
+        // Les libellés accentués sont comparés en clair : Blade n'échappe pas
+        // le texte saisi en dur dans le gabarit.
+        ->assertSee('prolongé 1', false)
+        ->assertSee('Périodes effectuées', false);
+});
+
 test('the badge belongs to the student, a prolongation does not duplicate it', function () {
     $admin = createPersonnelFlowUser('admin');
     $etudiant = createPersonnelFlowUser('etudiant')->etudiant;
@@ -221,3 +311,4 @@ test('a stage starting before the current one ends is refused', function () {
 
     expect($etudiant->fresh()->stages()->count())->toBe(1);
 });
+

@@ -30,6 +30,7 @@ class Stage extends Model
         'break_minutes',
         'presence_mode',
         'follow_up_status',
+        'prolonge_stage_id',
         'intitule_poste',
         'filiere',
         'niveau_etude',
@@ -47,8 +48,8 @@ class Stage extends Model
                 $mois = (int) $stage->date_debut->format('n');
                 $annee = (int) $stage->date_debut->format('Y');
                 $stage->annee_academique = $mois >= 9
-                    ? $annee . '-' . ($annee + 1)
-                    : ($annee - 1) . '-' . $annee;
+                    ? $annee.'-'.($annee + 1)
+                    : ($annee - 1).'-'.$annee;
             }
         });
     }
@@ -70,6 +71,7 @@ class Stage extends Model
 
     /** Valeurs par défaut affichées dans le formulaire de fiche de poste. */
     public const DEFAULT_INTITULE_POSTE = 'Stagiaire académique en développement web';
+
     public const DEFAULT_INDEMNITE = 'Non rémunéré';
 
     /** Description lisible du type de stage pour la fiche de poste. */
@@ -132,7 +134,7 @@ class Stage extends Model
         $jours = $this->jours;
 
         if ($jours->isEmpty()) {
-            return !$date->isWeekend();
+            return ! $date->isWeekend();
         }
 
         $dayName = match ((int) $date->format('N')) {
@@ -194,27 +196,85 @@ class Stage extends Model
         return $this->hasOne(Attestation::class);
     }
 
+    /**
+     * Stage auquel celui-ci prolonge, s'il en est un.
+     *
+     * Le lien est explicite : deux stages d'un même étudiant qui partagent
+     * domaine et type ne sont pas forcément liés. Un stagiaire qui revient un
+     * an plus tard dans la même direction fait un NOUVEAU stage, avec sa propre
+     * attestation — pas une prolongation d'un an de plus.
+     */
+    public function stageProlonge()
+    {
+        return $this->belongsTo(Stage::class, 'prolonge_stage_id');
+    }
+
+    /**
+     * Segments ajoutés par prolongation de celui-ci.
+     */
+    public function prolongations()
+    {
+        return $this->hasMany(Stage::class, 'prolonge_stage_id');
+    }
+
+    /**
+     * Premier segment de la chaîne : le stage d'origine, pas une prolongation.
+     *
+     * C'est lui qui porte l'attestation. Les attestations sont adossées au
+     * stage d'origine pour qu'une chaîne n'en produise qu'une seule ; une
+     * attestation par segment ferait dire au stagiaire qu'il a effectué deux
+     * stages alors qu'il n'en a fait qu'un, plus long.
+     */
+    public function stageRacine(): Stage
+    {
+        $stage = $this;
+
+        // Garde-fou : une chaîne bouclée ne doit pas faire boucler la page.
+        $vus = [];
+        while ($stage->prolonge_stage_id && ! isset($vus[$stage->id])) {
+            $vus[$stage->id] = true;
+            $parent = $stage->stageProlonge()->first();
+
+            if (! $parent) {
+                break;
+            }
+
+            $stage = $parent;
+        }
+
+        return $stage;
+    }
+
+    public function estProlongation(): bool
+    {
+        return (bool) $this->prolonge_stage_id;
+    }
+
+    /**
+     * Tous les segments d'une même chaîne, du plus ancien au plus récent.
+     *
+     * Seul le stage d'origine est cherché : une prolongation connaît sa
+     * racine, donc les segments trouvés ici sont exactement ceux qui doivent
+     * être additionnés pour l'attestation.
+     */
     public function getRelatedSequenceStages(): \Illuminate\Support\Collection
     {
-        if (!$this->etudiant_id) {
+        if (! $this->etudiant_id) {
             return collect([$this]);
         }
 
-        $query = static::where('etudiant_id', $this->etudiant_id)
+        $racine = $this->stageRacine();
+
+        $segments = static::where(function ($query) use ($racine) {
+            $query->where('id', $racine->id)
+                ->orWhere('prolonge_stage_id', $racine->id);
+        })
             ->whereNotNull('date_debut')
-            ->whereNotNull('date_fin');
+            ->whereNotNull('date_fin')
+            ->orderBy('date_debut')
+            ->get();
 
-        if ($this->domaine_id) {
-            $query->where('domaine_id', $this->domaine_id);
-        }
-
-        if ($this->typestage_id) {
-            $query->where('typestage_id', $this->typestage_id);
-        }
-
-        return $query->orderBy('date_debut')->get()->filter(function ($stage) {
-            return $stage->date_debut && $stage->date_fin;
-        })->values();
+        return $segments->values();
     }
 
     public function totalDurationInDays(): int
@@ -228,7 +288,7 @@ class Stage extends Model
         }
 
         return (int) $stages->sum(function ($stage) {
-            if (!$stage->date_debut || !$stage->date_fin) {
+            if (! $stage->date_debut || ! $stage->date_fin) {
                 return 0;
             }
 
@@ -261,7 +321,7 @@ class Stage extends Model
     {
         $today = today();
 
-        if (!$this->date_debut || !$this->date_fin) {
+        if (! $this->date_debut || ! $this->date_fin) {
             return 'A venir';
         }
 

@@ -349,6 +349,10 @@ class StageController extends Controller
             'date_debut' => $newDateDebut->toDateString(),
             'date_fin' => $newDateFin->toDateString(),
             'duree_mois' => max(1, (int) round($newDateDebut->diffInDays($newDateFin) / 30)),
+            // Le lien est porté par le stage d'origine : prolonger une
+            // prolongation rattache le nouveau segment à la même chaîne, sans
+            // quoi les segments se disperseraient en plusieurs attestations.
+            'prolonge_stage_id' => $stage->stageRacine()->id,
         ]));
 
         $newStage->jours()->sync($stage->jours->pluck('id'));
@@ -392,11 +396,27 @@ class StageController extends Controller
         $etudiant    = $stage->etudiant;
         $nombreStages = $etudiant->stages()->count();
 
+        // Historique : tout ce qui n'est pas le segment affiché. On sépare les
+        // segments de la même chaîne (prolongations) des stages réellement
+        // distincts, sinon deux stages séparés par deux ans paraîtraient
+        // comme la suite immédiate l'un de l'autre.
         $stagesTermines = $etudiant->stages()
             ->where('id', '!=', $stage->id)
+            ->where(function ($query) use ($stage) {
+                $query->where('prolonge_stage_id', '!=', $stage->id)
+                    ->orWhereNull('prolonge_stage_id');
+            })
             ->where('date_fin', '<', now())
             ->with(['typestage', 'domaine'])
             ->orderBy('date_fin', 'desc')
+            ->get();
+
+        // Les segments de prolongation de la chaîne affichée : ils font partie
+        // du même stage, et non de l'historique du stagiaire.
+        $prolongationsLiees = $etudiant->stages()
+            ->where('prolonge_stage_id', $stage->id)
+            ->with(['typestage', 'domaine'])
+            ->orderBy('date_debut')
             ->get();
 
         $attestations = \App\Models\Attestation::whereHas('stage', function ($query) use ($etudiant) {
@@ -428,6 +448,7 @@ class StageController extends Controller
             'selectedSignataireIds',
             'nombreStages',
             'stagesTermines',
+            'prolongationsLiees',
             'attestations',
             'dureeTotale'
         ));

@@ -290,8 +290,12 @@
     @php
     use Carbon\Carbon;
 
-    $dateDebut = Carbon::parse($stage->date_debut)->locale('fr');
-    $dateFin = Carbon::parse($stage->date_fin)->locale('fr');
+    // Période affichée : du début du premier segment à la fin du dernier.
+    // Pour une chaîne, l'attestation annonce la période totale réellement
+    // effectuée, et non celle du seul segment qui a servi à l'ouvrir.
+    $segments = $stage->getRelatedSequenceStages();
+    $dateDebut = Carbon::parse($segments->min('date_debut'))->locale('fr');
+    $dateFin = Carbon::parse($segments->max('date_fin'))->locale('fr');
     $now = Carbon::now()->locale('fr');
 
     $diffDays = $dateDebut->diffInDays($dateFin) + 1;
