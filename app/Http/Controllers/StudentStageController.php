@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Services\DailyReportService;
 use App\Services\UserProfileLinkService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class StudentStageController extends Controller
@@ -124,14 +125,38 @@ class StudentStageController extends Controller
             $joursEcoules = $debut ? max(0, (int) $debut->diffInDays($now)) : 0;
 
             // Présence de la semaine : jours pointés / jours enregistrés (ou jours ouvrés écoulés)
+            $startWeek = now()->startOfWeek();
+            $endWeek = now()->endOfWeek();
+
             $attendanceSemaine = AttendanceDay::where('stage_id', $activeStage->id)
-                ->whereBetween('attendance_date', [now()->startOfWeek(), now()->endOfWeek()])
+                ->whereBetween('attendance_date', [$startWeek, $endWeek])
                 ->get();
-            $joursTrackesSemaine = $attendanceSemaine->count();
             $joursPresentSemaine = $attendanceSemaine->whereNotNull('first_check_in_at')->count();
+
+            $userId = $etudiant->user_id ?? Auth::id();
+            $permissionedSemaine = 0;
+            if ($userId) {
+                $permissionedSemaine = \App\Models\AttendanceException::where('user_id', $userId)
+                    ->whereBetween('attendance_date', [$startWeek->toDateString(), $endWeek->toDateString()])
+                    ->distinct()
+                    ->count('attendance_date');
+            }
+
+            // Compter les jours ouvrés de la semaine
+            $cursor = $startWeek->copy();
+            $joursOuvres = 0;
+            while ($cursor->lte($endWeek)) {
+                if (!$cursor->isWeekend()) {
+                    $joursOuvres++;
+                }
+                $cursor->addDay();
+            }
+            $joursTrackesSemaine = max(0, $joursOuvres - $permissionedSemaine);
 
             if ($joursTrackesSemaine > 0) {
                 $presenceSemaine = round(($joursPresentSemaine / $joursTrackesSemaine) * 100);
+            } else {
+                $presenceSemaine = 100;
             }
 
             // Progression globale du stage : 0 % au jour 1, 100 % le dernier jour

@@ -56,8 +56,11 @@
              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                  <div class="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-sm">
                      <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Stagiaires</h3>
-                     <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences des stagiaires.</p>
-                     <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
+<p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences des stagiaires.</p>
+                            @if(($summary['student_permissioned'] ?? 0) > 0)
+                            <p class="mt-2 text-xs text-sky-700 dark:text-sky-300">{{ $summary['student_permissioned'] }} journée{{ $summary['student_permissioned'] > 1 ? 's' : '' }} permissionnée{{ $summary['student_permissioned'] > 1 ? 's' : '' }} — hors du taux de présence.</p>
+                            @endif
+                            <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
                          <div class="rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-950/60 p-3 sm:p-4">
                              <p class="text-[10px] sm:text-xs uppercase tracking-[0.24em] text-slate-500">Total</p>
                              <p class="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{{ $summary['student_total'] }}</p>
@@ -70,8 +73,11 @@
                  </div>
                  <div class="rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-sm">
                      <h3 class="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Employés</h3>
-                     <p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences du personnel.</p>
-                     <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
+<p class="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Suivi des présences du personnel.</p>
+                            @if(($summary['employee_permissioned'] ?? 0) > 0)
+                            <p class="mt-2 text-xs text-sky-700 dark:text-sky-300">{{ $summary['employee_permissioned'] }} journée{{ $summary['employee_permissioned'] > 1 ? 's' : '' }} permissionnée{{ $summary['employee_permissioned'] > 1 ? 's' : '' }} — hors du taux de présence.</p>
+                            @endif
+                            <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
                          <div class="rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-950/60 p-3 sm:p-4">
                              <p class="text-[10px] sm:text-xs uppercase tracking-[0.24em] text-slate-500">Total</p>
                              <p class="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{{ $summary['employee_total'] }}</p>
@@ -402,7 +408,10 @@
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $data['owner']?->user?->name ?? 'N/A' }}</div>
                          <div class="flex justify-between items-center">
                              <span class="text-sm text-slate-600">Jours présents:</span>
-                             <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">{{ $data['present_days'] }}/5 jours</span>
+                             <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">{{ $data['present_days'] }}/{{ $data['expected_days'] }} jours</span>
+                             @if(($data['permissioned_days'] ?? 0) > 0)
+                             <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-semibold">{{ $data['permissioned_days'] }} permission{{ $data['permissioned_days'] > 1 ? 's' : '' }}</span>
+                             @endif
                          </div>
                          <div class="flex justify-between items-center">
                              <span class="text-sm text-slate-600">Retard total:</span>
@@ -435,7 +444,11 @@
                              @forelse($studentWeekData as $data)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $data['owner']?->user?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/5 jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/{{ $data['expected_days'] }} jours</span>
+                                     @if(($data['permissioned_days'] ?? 0) > 0)
+                                     <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $data['permissioned_days'] }} journée{{ $data['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $data['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                     @endif
+                                 </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $data['total_late_minutes'] > 0 ? $data['total_late_minutes'] . ' min' : '0 min' }}</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm">
                                      <a href="{{ route('attendance.tracking.user.historique', $data['owner']->user) }}"
@@ -466,7 +479,10 @@
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $data['owner']?->name ?? 'N/A' }}</div>
                          <div class="flex justify-between items-center">
                              <span class="text-sm text-slate-600">Jours présents:</span>
-                             <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">{{ $data['present_days'] }}/5 jours</span>
+                             <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm">{{ $data['present_days'] }}/{{ $data['expected_days'] }} jours</span>
+                             @if(($data['permissioned_days'] ?? 0) > 0)
+                             <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-semibold">{{ $data['permissioned_days'] }} permission{{ $data['permissioned_days'] > 1 ? 's' : '' }}</span>
+                             @endif
                          </div>
                          <div class="flex justify-between items-center">
                              <span class="text-sm text-slate-600">Retard total:</span>
@@ -499,7 +515,11 @@
                              @forelse($employeeWeekData as $data)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $data['owner']?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/5 jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $data['present_days'] }}/{{ $data['expected_days'] }} jours</span>
+                                     @if(($data['permissioned_days'] ?? 0) > 0)
+                                     <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $data['permissioned_days'] }} journée{{ $data['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $data['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                     @endif
+                                 </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $data['total_late_minutes'] > 0 ? $data['total_late_minutes'] . ' min' : '0 min' }}</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm">
                                      <a href="{{ route('attendance.tracking.user.historique', $data['owner']) }}"
@@ -533,7 +553,10 @@
                      <div class="p-4 space-y-2">
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->user?->name ?? 'N/A' }}</div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
-                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></div>
+                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span></div>
+                            @if(($summary['permissioned_days'] ?? 0) > 0)
+                            <div><span class="text-slate-500">Journées permissionnées:</span> <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full font-semibold">{{ $summary['permissioned_days'] }}</span></div>
+                            @endif
                              <div><span class="text-slate-500">Heures travaillées:</span> <span class="font-semibold">{{ $summary['total_worked_hours'] }}h</span></div>
                              <div><span class="text-slate-500">Retard cumulé:</span> <span class="font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</span></div>
                          </div>
@@ -557,7 +580,11 @@
                              @forelse($studentMonthlySummary as $summary)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->user?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span>
+                                    @if(($summary['permissioned_days'] ?? 0) > 0)
+                                    <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $summary['permissioned_days'] }} journée{{ $summary['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $summary['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                    @endif
+                                </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                              </tr>
@@ -581,7 +608,10 @@
                      <div class="p-4 space-y-2">
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->name ?? 'N/A' }}</div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
-                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></div>
+                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span></div>
+                            @if(($summary['permissioned_days'] ?? 0) > 0)
+                            <div><span class="text-slate-500">Journées permissionnées:</span> <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full font-semibold">{{ $summary['permissioned_days'] }}</span></div>
+                            @endif
                              <div><span class="text-slate-500">Heures travaillées:</span> <span class="font-semibold">{{ $summary['total_worked_hours'] }}h</span></div>
                              <div><span class="text-slate-500">Retard cumulé:</span> <span class="font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</span></div>
                          </div>
@@ -605,7 +635,11 @@
                              @forelse($employeeMonthlySummary as $summary)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span>
+                                    @if(($summary['permissioned_days'] ?? 0) > 0)
+                                    <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $summary['permissioned_days'] }} journée{{ $summary['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $summary['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                    @endif
+                                </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                              </tr>
@@ -634,7 +668,10 @@
                      <div class="p-4 space-y-2">
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->user?->name ?? 'N/A' }}</div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
-                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></div>
+                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span></div>
+                            @if(($summary['permissioned_days'] ?? 0) > 0)
+                            <div><span class="text-slate-500">Journées permissionnées:</span> <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full font-semibold">{{ $summary['permissioned_days'] }}</span></div>
+                            @endif
                              <div><span class="text-slate-500">Heures:</span> <span class="font-semibold">{{ $summary['total_worked_hours'] }}h</span></div>
                              <div><span class="text-slate-500">Retard:</span> <span class="font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</span></div>
                              <div><span class="text-slate-500">Anomalies:</span> <span class="px-2 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></div>
@@ -660,7 +697,11 @@
                              @forelse($studentYearlySummary as $summary)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->user?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span>
+                                    @if(($summary['permissioned_days'] ?? 0) > 0)
+                                    <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $summary['permissioned_days'] }} journée{{ $summary['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $summary['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                    @endif
+                                </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></td>
@@ -685,7 +726,10 @@
                      <div class="p-4 space-y-2">
                          <div class="font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->name ?? 'N/A' }}</div>
                          <div class="grid grid-cols-2 gap-2 text-sm">
-                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></div>
+                             <div><span class="text-slate-500">Jours présents:</span> <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span></div>
+                            @if(($summary['permissioned_days'] ?? 0) > 0)
+                            <div><span class="text-slate-500">Journées permissionnées:</span> <span class="px-2 py-1 bg-sky-100 text-sky-800 rounded-full font-semibold">{{ $summary['permissioned_days'] }}</span></div>
+                            @endif
                              <div><span class="text-slate-500">Heures:</span> <span class="font-semibold">{{ $summary['total_worked_hours'] }}h</span></div>
                              <div><span class="text-slate-500">Retard:</span> <span class="font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</span></div>
                              <div><span class="text-slate-500">Anomalies:</span> <span class="px-2 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></div>
@@ -711,7 +755,11 @@
                              @forelse($employeeYearlySummary as $summary)
                              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['owner']?->name ?? 'N/A' }}</td>
-                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }} jours</span></td>
+                                 <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">{{ $summary['present_days'] }}/{{ $summary['expected_days'] }} jours</span>
+                                    @if(($summary['permissioned_days'] ?? 0) > 0)
+                                    <span class="block mt-1 text-xs font-semibold text-sky-700">{{ $summary['permissioned_days'] }} journée{{ $summary['permissioned_days'] > 1 ? 's' : '' }} permissionnée{{ $summary['permissioned_days'] > 1 ? 's' : '' }}</span>
+                                    @endif
+                                </td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ $summary['total_worked_hours'] }}h</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm font-semibold">{{ $summary['total_late_minutes'] > 0 ? $summary['total_late_minutes'] . ' min' : '0 min' }}</td>
                                  <td class="px-4 lg:px-6 py-3 text-sm"><span class="px-2 lg:px-3 py-1 rounded-full {{ $summary['anomalies_count'] > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ $summary['anomalies_count'] }}</span></td>

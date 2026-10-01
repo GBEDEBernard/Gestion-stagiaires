@@ -13,9 +13,23 @@
             opacity: 1;
             transform: scale(1.05);
         }
+        .stage-shell {
+            overflow-x: hidden;
+        }
+        .stage-shell * {
+            min-width: 0;
+        }
+        @media (max-width: 640px) {
+            .stage-mobile-card {
+                padding: 1rem;
+            }
+            .stage-mobile-meta {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-6 px-3 sm:px-4 lg:px-0 overflow-x-hidden stage-shell">
         
         <!-- En-tête / Banner Premium -->
         <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 px-6 sm:px-8 py-8 sm:py-10 text-white shadow-xl ring-1 ring-white/10">
@@ -58,7 +72,7 @@
         <!-- Grille 1 : Informations générales -->
         <div class="grid gap-6 lg:grid-cols-4">
             <!-- Carte 1 : Thème, Site & Superviseur -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 lg:col-span-2"
+            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 lg:col-span-2 stage-mobile-card min-w-0"
                  x-data="{ editing: false, theme: @js($activeStage->theme ?? '') }">
                 <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-700/80 pb-4">
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Thème du stage</p>
@@ -69,7 +83,7 @@
                 </div>
                 
                 <template x-if="!editing">
-                    <h2 class="mt-4 text-xl font-bold text-slate-900 dark:text-white leading-snug break-words" x-text="theme || 'Stage sans thème'"></h2>
+                    <h2 class="mt-4 text-xl font-bold text-slate-900 dark:text-white leading-snug break-words overflow-hidden" x-text="theme || 'Stage sans thème'"></h2>
                 </template>
                 
                 <template x-if="editing">
@@ -108,7 +122,7 @@
             </div>
 
             <!-- Carte 2 : Présence du jour -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between">
+            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between stage-mobile-card min-w-0">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Présence du jour</p>
                     @php
@@ -123,8 +137,22 @@
                         $statusKey = $attendanceDay?->day_status;
                         $statusInfo = $statusMap[$statusKey] ?? [$statusKey ? ucfirst($statusKey) : 'Non pointé', 'text-slate-700 dark:text-gray-300'];
                     @endphp
-                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $statusInfo[1] }}">{{ $statusInfo[0] }}</p>
-                    <div class="mt-4 flex items-center gap-6 text-sm">
+                    @php
+                        // Si aucune journée pointée mais des exceptions (permissions) ce jour-là, afficher un état "Permission"
+                        $today = today();
+                        $userId = $etudiant->user_id ?? auth()->id();
+                        $hasPermissionToday = false;
+                        if ($userId) {
+                            $hasPermissionToday = \App\Models\AttendanceException::where('user_id', $userId)
+                                ->whereDate('attendance_date', $today)
+                                ->exists();
+                        }
+                        if ($hasPermissionToday) {
+                            $statusInfo = ['Jour permissionné', 'text-sky-600 dark:text-sky-400'];
+                        }
+                    @endphp
+                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $statusInfo[1] }} break-words">{{ $statusInfo[0] }}</p>
+                    <div class="mt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
                         <div>
                             <span class="block text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-gray-500">Arrivée</span>
                             <span class="font-bold text-slate-800 dark:text-gray-200">{{ $attendanceDay?->first_check_in_at?->format('H:i') ?: '--:--' }}</span>
@@ -149,7 +177,7 @@
             </div>
 
             <!-- Carte 3 : Rapport du jour -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between">
+            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between stage-mobile-card min-w-0">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Rapport du jour</p>
                     @php
@@ -163,7 +191,7 @@
                         ];
                         $todayReportStatus = $todayReport?->status ? ($reportStatusMap[$todayReport->status] ?? [ucfirst($todayReport->status), 'text-slate-800 dark:text-gray-200']) : ['En attente', 'text-amber-600 dark:text-amber-400'];
                     @endphp
-                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $todayReportStatus[1] }}">{{ $todayReportStatus[0] }}</p>
+                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $todayReportStatus[1] }} break-words">{{ $todayReportStatus[0] }}</p>
                     <div class="mt-4 space-y-2 text-xs text-slate-500 dark:text-gray-400">
                         <div class="flex justify-between">
                             <span>Dernière mise à jour :</span>
@@ -189,13 +217,13 @@
         <div class="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
             
             <!-- Section Tâches du stage -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700">
+            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-gray-700/80 pb-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900 dark:text-white">Tâches du stage</h2>
                         <p class="text-xs text-slate-500 dark:text-gray-400">Suivi rapide de ce qui est en cours et de ce qui est déjà bouclé.</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-600/20">
                             <svg class="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             {{ $completedTasksCount }} terminée(s)
@@ -240,13 +268,13 @@
                     @endphp
 
                     {{-- CARTE DE TÂCHE : Disposition exacte selon la capture --}}
-                    <div class="group rounded-2xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
-                        <a href="{{ encrypted_route('tasks.show', $task) }}" class="block">
-                            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div class="group rounded-2xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all min-w-0">
+                        <a href="{{ encrypted_route('tasks.show', $task) }}" class="block min-w-0">
+                            <div class="flex w-full flex-col gap-4 md:flex-row md:items-start md:justify-between min-w-0">
                                 
                                 {{-- Colonne Gauche : Titre, Badges, Description, Progression, Rapports --}}
                                 <div class="flex-1 min-w-0 md:pr-4">
-                                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
+                                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug break-words overflow-hidden">
                                         {{ $task->title }}
                                     </h3>
 
@@ -304,11 +332,11 @@
                                 </div>
 
                                 {{-- Colonne Droite : Priorité, Démarrage, Date de fin, Lien --}}
-                                <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-gray-400 sm:text-right shrink-0 mt-2 md:mt-0">
-                                    <div>Priorité : <span class="font-medium text-slate-800 dark:text-gray-200">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Normale','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
-                                    <div>Démarré le : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->started_at?->format('d/m/Y') ?: ($task->created_at?->format('d/m/Y') ?: '--') }}</span></div>
-                                    <div class="col-span-2">date de fin : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
-                                    <div class="col-span-2 mt-2 inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 sm:justify-end transition-colors">
+                                <div class="stage-mobile-meta grid grid-cols-1 gap-2 text-xs text-slate-500 dark:text-gray-400 sm:grid-cols-2 sm:text-right shrink-0 mt-2 md:mt-0 min-w-0">
+                                    <div class="break-words">Priorité : <span class="font-medium text-slate-800 dark:text-gray-200">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Normale','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
+                                    <div class="break-words">Démarré le : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->started_at?->format('d/m/Y') ?: ($task->created_at?->format('d/m/Y') ?: '--') }}</span></div>
+                                    <div class="sm:col-span-2 break-words">date de fin : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
+                                    <div class="sm:col-span-2 mt-1 inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 sm:justify-end transition-colors">
                                         Ouvrir l'espace de travail
                                         <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
@@ -328,30 +356,30 @@
             <div class="space-y-6">
                 
                 {{-- Cadre du stage --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700">
+                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
                     <h2 class="text-lg font-bold text-slate-900 dark:text-white">Cadre du stage</h2>
                     <dl class="mt-4 space-y-2 text-sm divide-y divide-slate-100 dark:divide-gray-700/60">
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Période</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white">
+                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">
                                 {{ $activeStage->date_debut?->format('d/m/Y') }} - {{ $activeStage->date_fin?->format('d/m/Y') }}
                             </dd>
                         </div>
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Domaine</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white">{{ $activeStage->domaine?->nom ?: 'Non défini' }}</dd>
+                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $activeStage->domaine?->nom ?: 'Non défini' }}</dd>
                         </div>
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Type de stage</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white">{{ $activeStage->typestage?->libelle ?: 'Non défini' }}</dd>
+                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $activeStage->typestage?->libelle ?: 'Non défini' }}</dd>
                         </div>
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Horaire attendu</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white">
+                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">
                                 {{ $activeStage->expected_check_in_time ?: '08:00' }} 
                             </dd>
                         </div>
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Mode présence</dt>
                             @php
                                 $presenceModeMap = [
@@ -365,14 +393,14 @@
                                 ];
                                 $presenceModeText = $presenceModeMap[$activeStage->presence_mode] ?? ($activeStage->presence_mode ? ucfirst(str_replace('_', ' ', $activeStage->presence_mode)) : 'Géolocalisée');
                             @endphp
-                            <dd class="font-bold text-slate-900 dark:text-white">{{ $presenceModeText }}</dd>
+                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $presenceModeText }}</dd>
                         </div>
                         @php
                             $encoreDansPeriode = $activeStage->date_debut?->isPast() && !$activeStage->date_fin?->isPast();
                         @endphp
-                        <div class="flex items-center justify-between py-2.5">
+                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                             <dt class="text-slate-500 dark:text-gray-400">Jours restants</dt>
-                            <dd class="font-bold {{ $joursRestants > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-400' }}">
+                            <dd class="font-bold break-words text-left sm:text-right {{ $joursRestants > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-400' }}">
                                 @if ($joursRestants > 0)
                                     {{ $joursRestants }} jour{{ $joursRestants > 1 ? 's' : '' }}
                                 @elseif ($encoreDansPeriode)
@@ -403,7 +431,7 @@
                 </div>
 
                 {{-- Rapport de fin de stage PDF --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700">
+                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
                     <h2 class="text-lg font-bold text-slate-900 dark:text-white">Rapport de fin de stage</h2>
                     <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Dépose ici ton rapport de fin de stage final au format PDF.</p>
 
@@ -452,7 +480,7 @@
                 </div>
 
                 {{-- Rappels utiles --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-sm border border-slate-200/80 dark:border-gray-700">
+                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
                     <h2 class="text-lg font-bold text-slate-900 dark:text-white">Rappels utiles</h2>
                     <ul class="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-gray-300">
                         <li class="flex items-start gap-2">
@@ -465,7 +493,7 @@
                         </li>
                     </ul>
 
-                    <div class="mt-6 grid gap-2.5">
+                    <div class="mt-6 grid gap-2.5 sm:grid-cols-2">
                         <a href="{{ route('presence.pointage') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition-colors">
                             Aller au pointage
                         </a>

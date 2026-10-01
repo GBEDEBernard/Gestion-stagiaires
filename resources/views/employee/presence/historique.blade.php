@@ -867,12 +867,18 @@
                 {{-- Desktop Table --}}
                 @php
                     $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
-                    $permissionDays = ($exceptions ?? collect())
+                    // Une exception n'est pas toujours une permission : l'administrateur peut
+                    // aussi excuser une journée à la main. Sans distinction, une
+                    // correction manuelle s'affichait comme une permission approuvée.
+                    $excusedDays = ($exceptions ?? collect())
                         ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
-                        ->map(fn($e) => (object)['type' => 'permission', 'record' => $e]);
+                        ->map(fn($e) => (object)[
+                            'type' => $e->isAutomatic() ? 'permission' : 'excused',
+                            'record' => $e,
+                        ]);
                     $allRecords = $attendanceDays
                         ->map(fn($d) => (object)['type' => 'attendance', 'record' => $d])
-                        ->concat($permissionDays)
+                        ->concat($excusedDays)
                         ->sortByDesc(fn($r) => $r->record->attendance_date);
                 @endphp
                 <div class="desktop-table">
@@ -944,8 +950,14 @@
                                 <td>—</td>
                                 <td>—</td>
                                 <td>—</td>
-                                <td><span class="pres-tag tag-violet">Journée permissionnée</span></td>
-                                <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: 'Permission approuvée' }}</td>
+                                <td>
+                                    @if($item->type === 'permission')
+                                        <span class="pres-tag tag-violet">Journée permissionnée</span>
+                                    @else
+                                        <span class="pres-tag tag-amber">Journée excusée</span>
+                                    @endif
+                                </td>
+                                <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</td>
                             </tr>
                             @endif
                             @empty
@@ -1021,11 +1033,17 @@
                         </div>
                         <div class="mobile-card-row">
                             <span class="mobile-label">Statut</span>
-                            <span class="mobile-value"><span class="pres-tag tag-violet">Journée permissionnée</span></span>
+                            <span class="mobile-value">
+                                @if($item->type === 'permission')
+                                    <span class="pres-tag tag-violet">Journée permissionnée</span>
+                                @else
+                                    <span class="pres-tag tag-amber">Journée excusée</span>
+                                @endif
+                            </span>
                         </div>
                         <div class="mobile-card-row">
                             <span class="mobile-label">Motif</span>
-                            <span class="mobile-value">{{ $exception->reason ?: 'Permission approuvée' }}</span>
+                            <span class="mobile-value">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</span>
                         </div>
                     </div>
                     @endif
