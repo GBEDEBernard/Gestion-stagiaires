@@ -58,7 +58,39 @@
         ],
     ];
 
+    // Les refus d'horaire arrivent en ValidationException : sans code, ils
+    // retomberaient tous sur le même texte générique. On les rattache donc à
+    // leur contrôle d'origine pour que la porte dise l'heure à laquelle
+    // repasser, plutôt que « pointage non enregistré ».
+    $scheduleReasons = [
+        'checkin_before_opening' => [
+            'Trop tôt pour pointer',
+            "Le pointage du jour ouvre à 07h30. Revenez à partir de 07h30, votre présence sera enregistrée normalement.",
+        ],
+        'after_expected_departure' => [
+            'Journée de présence terminée',
+            "Les horaires de présence d'aujourd'hui sont écoulés. Si vous êtes resté après l'heure prévue, prévenez votre responsable : il régularisera la journée.",
+        ],
+        'not_a_work_day' => [
+            "Aujourd'hui n'est pas un jour de présence",
+            "Votre planning ne prévoit pas de présence aujourd'hui. Le pointage rouvrira à votre prochain jour de travail.",
+        ],
+        'holiday' => [
+            'Jour férié',
+            "Le pointage est fermé aujourd'hui, jour férié. Aucune présence n'est attendue.",
+        ],
+        'pointage_not_started' => [
+            'Pointage pas encore actif',
+            "Votre prise de poste n'a pas commencé. Le pointage s'ouvrira à la date indiquée par votre responsable.",
+        ],
+        'retard_permission' => [
+            'Permission de retard en cours',
+            "Une permission justifie votre arrivée tardive à partir de l'heure prévue. Revenez à ce moment-là : votre pointage sera accepté.",
+        ],
+    ];
+
     [$errorTitle, $errorText] = $reasons[$reasonCode]
+        ?? $scheduleReasons[$reasonCode]
         ?? ['Pointage non enregistré', $message ?? "Votre présence n'a pas pu être validée."];
 
     if ($isApproved) {

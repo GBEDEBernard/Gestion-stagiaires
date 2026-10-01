@@ -7,6 +7,7 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
 use App\Models\Domaine;
 use App\Models\Etudiant;
+use App\Exceptions\PresenceRefusedException;
 use App\Models\Holiday;
 use App\Models\HolidayEmergencyExemption;
 use App\Models\SiteGeofence;
@@ -36,9 +37,10 @@ class PresenceService
     protected function checkHolidayRestriction(User $user): void
     {
         if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$this->isEmergencyExempted($user)) {
-            throw ValidationException::withMessages([
-                'presence' => "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé sauf pour le personnel d'urgence.",
-            ]);
+            throw PresenceRefusedException::refuse(
+                'holiday',
+                "Aujourd'hui est un jour férié déclaré. Le pointage est désactivé sauf pour le personnel d'urgence.",
+            );
         }
     }
 
@@ -55,11 +57,12 @@ class PresenceService
         }
 
         if (\Carbon\Carbon::parse($start)->startOfDay()->gt(today())) {
-            throw ValidationException::withMessages([
-                'presence' => "Votre prise de poste commencera le "
+            throw PresenceRefusedException::refuse(
+                'pointage_not_started',
+                "Votre prise de poste commencera le "
                     . \Carbon\Carbon::parse($start)->format('d/m/Y')
                     . ". Le pointage n'est pas encore activé.",
-            ]);
+            );
         }
     }
 
@@ -70,9 +73,10 @@ class PresenceService
 protected function checkWorkDayRestriction(Stage $stage): void
     {
         if (!$stage->isWorkDay()) {
-            throw ValidationException::withMessages([
-                'presence' => "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.",
-            ]);
+            throw PresenceRefusedException::refuse(
+                'not_a_work_day',
+                "Aujourd'hui n'est pas un jour de travail pour ce stage. Jours de présence : {$stage->workDaysLabel()}.",
+            );
         }
     }
 
@@ -92,18 +96,20 @@ protected function checkWorkDayRestriction(Stage $stage): void
         $fin = app(WorkScheduleResolver::class)->expectedDeparture($stage, now());
 
         if (now()->greaterThanOrEqualTo($fin)) {
-            throw ValidationException::withMessages([
-                'presence' => "La journée est terminée depuis {$fin->format('H:i')}. Vous ne pouvez plus pointer votre arrivée.",
-            ]);
+            throw PresenceRefusedException::refuse(
+                'after_expected_departure',
+                "La journée est terminée depuis {$fin->format('H:i')}. Vous ne pouvez plus pointer votre arrivée.",
+            );
         }
     }
 
     protected function checkCheckInOpeningTime(): void
     {
         if (now()->format('H:i') < '07:30') {
-            throw ValidationException::withMessages([
-                'presence' => "Le pointage d'arrivée sera ouvert à partir de 07h30.",
-            ]);
+            throw PresenceRefusedException::refuse(
+                'checkin_before_opening',
+                "Le pointage d'arrivée sera ouvert à partir de 07h30.",
+            );
         }
     }
 
@@ -234,10 +240,11 @@ protected function checkWorkDayRestriction(Stage $stage): void
         }
 
         if (now()->lessThan($allowedAt)) {
-            throw ValidationException::withMessages([
-                'presence' => "Votre permission de retard autorise une arrivée à partir de "
+            throw PresenceRefusedException::refuse(
+                'retard_permission',
+                "Votre permission de retard autorise une arrivée à partir de "
                     . "{$allowedAt->format('H:i')}. Vous ne pouvez pas pointer avant cette heure.",
-            ]);
+            );
         }
     }
 

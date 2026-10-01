@@ -693,10 +693,12 @@ test('the retry button only appears once the location capture failed', function 
     \Carbon\Carbon::setTestNow();
 });
 
-test('a late qr scan still asks the person to explain themselves', function () {
-    // Le pointage automatique ne remplace pas la motivation du retard : le
-    // motif ne s'écrit pas à la place de l'intéressé. Le bouton reste donc en
-    // place, et l'automatisme est désarmé.
+test('a late qr scan opens the observation modal without waiting for a click', function () {
+    // Le pointage automatique ne remplace pas la motivation du retard : le motif
+    // ne s'écrit pas à la place de l'intéressé. L'automatisme reste donc armé —
+    // le script ouvre la modale au scan — mais il n'envoie la journée qu'une fois
+    // le motif écrit, si bien qu'aucun clic sur « Pointer mon arrivée » n'est
+    // demandé et qu'aucune arrivée ne peut partir sans raison.
     $site = createQrTestSite();
     $user = createQrTestUser('employe');
     attachQrTestEmploye($user, $site);
@@ -708,9 +710,45 @@ test('a late qr scan still asks the person to explain themselves', function () {
     $this->withCookie('pointage_device_tokens', json_encode([$raw]))
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
         ->assertOk()
-        ->assertSee('data-auto-pointage="0"', false)
-        ->assertSee('Pointer mon arrivée', false)
+        ->assertSee('data-auto-pointage="1"', false)
+        ->assertSee('modalRetard = true', false)
+        ->assertDontSee('Pointer mon arrivée', false)
         ->assertSee('Vous arrivez après', false);
+
+    // Le scan seul n'écrit rien : la journée n'existe pas tant que le motif
+    // n'a pas été saisi.
+    expect(
+        \App\Models\AttendanceDay::whereDate('attendance_date', today())->exists()
+    )->toBeFalse();
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a late check-in posted without a reason is refused even from the phone badge', function () {
+    // Le scan ouvre la modale et n'écrit rien. Si quelqu'un contourne le
+    // navigateur et poste le formulaire de la porte directement, le serveur
+    // doit encore refuser : la justification du retard est obligatoire, elle
+    // n'est pas une simple confort d'affichage.
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_late_direct');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('09:30:00');
+
+    $this->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+        'latitude'           => 6.3654,
+        'longitude'          => 2.4183,
+        'accuracy_meters'    => 10,
+        'device_fingerprint' => 'fp_late_direct',
+        'user_id'            => $user->id,
+        'device_token'       => $raw,
+    ])
+        ->assertOk()
+        ->assertViewIs('presence.qr.observation');
+
+    expect(\App\Models\AttendanceDay::count())->toBe(0);
 
     \Carbon\Carbon::setTestNow();
 });

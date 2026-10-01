@@ -86,9 +86,14 @@
 
     // Pointage automatique : le scan du QR code de porte suffit, le bouton
     // disparaît. Il revient si la localisation a échoué, pour réessayer sans
-    // rescanner — et il reste en place quand le pointage attend une décision
-    // humaine (motif de retard, permission de départ anticipé).
-    $autoActif = ($autoPointage ?? false) && !$late && !$departBloque;
+    // rescanner.
+    //
+    // Un retard n'arrête pas l'automatisme : le script ouvre la modale de
+    // justification au scan, et n'envoie le pointage qu'une fois le motif
+    // écrit. L'arrivée est donc enregistrée sans clic, avec la raison
+    // obligatoire. Seul le départ anticipé reste une décision humaine à part
+    // entière : il demande une permission, et le bouton demeure.
+    $autoActif = ($autoPointage ?? false) && !$departBloque;
 
     // Condition d'affichage du bouton, en syntaxe Alpine. Écrite ici plutôt
     // qu'inline dans l'attribut : une expression contenant des apostrophes
@@ -233,7 +238,19 @@
                                 <span x-show="busy" x-cloak x-text="etape"></span>
                             </button>
 
-                            <p x-show="erreur" x-cloak class="mt-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-sm text-red-800 dark:text-red-300" x-text="erreur"></p>
+                            {{-- Un refus de localisation se corrige sur place : le GPS
+                                 se relance sans rescanner. On dit donc ce qui bloque,
+                                 ce qu'il reste à faire, et le bouton « Réessayer »
+                                 reste juste au-dessus. --}}
+                            <div x-show="erreur" x-cloak class="mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
+                                <p class="flex items-start gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                    <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 4.3L2.6 17.6A2 2 0 004.3 20.6h15.4a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z"/></svg>
+                                    <span x-text="erreur"></span>
+                                </p>
+                                <p class="mt-2 pl-6 text-sm text-amber-800 dark:text-amber-300/90">
+                                    Sortez quelques secondes vers l'extérieur ou approchez-vous d'une baie vitrée, puis relancez la localisation. Rescanner n'est pas nécessaire.
+                                </p>
+                            </div>
                         </form>
                     @endif
                 </div>

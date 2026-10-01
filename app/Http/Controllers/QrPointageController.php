@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PresenceRefusedException;
 use App\Models\Site;
 use App\Models\Stage;
 use App\Models\TrustedDevice;
@@ -329,12 +330,18 @@ class QrPointageController extends Controller
         } catch (ValidationException $e) {
             $errorMessage = collect($e->errors())->flatten()->first() ?? "Pointage non autorisé.";
             return view('presence.qr.result', [
-                'status'    => 'rejected',
-                'eventType' => 'rejected',
-                'message'   => $errorMessage,
-                'user'      => $user,
-                'site'      => $site,
-                'time'      => now()->format('H:i'),
+                'status'     => 'rejected',
+                'eventType'  => 'rejected',
+                'message'    => $errorMessage,
+                'user'       => $user,
+                'site'       => $site,
+                'time'       => now()->format('H:i'),
+                // Un refus d'horaire porte son code : sans lui, l'écran de
+                // résultat retomberait sur « Pointage non enregistré » et la
+                // personne ne saurait pas à quelle heure revenir.
+                'reasonCode' => $e instanceof PresenceRefusedException
+                    ? $e->reasonCode
+                    : null,
             ]);
         } catch (\Exception $e) {
             // Un identifiant court est affiché à l'utilisateur pour que l'admin

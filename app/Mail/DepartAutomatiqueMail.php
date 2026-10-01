@@ -14,12 +14,14 @@ class DepartAutomatiqueMail extends Mailable
         public string $arrivalTime,
         public string $departureTime,
         public string $workedHours,
+        public string $attendanceDate,
+        public bool $reportMissing = false,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Votre départ a été enregistré automatiquement',
+            subject: 'Départ du ' . $this->attendanceDate . ' clôturé automatiquement',
         );
     }
 

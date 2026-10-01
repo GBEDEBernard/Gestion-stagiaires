@@ -233,11 +233,20 @@ class AutoCheckout extends Command
                     'user_id'   => $userId,
                     'type'      => 'depart_automatique',
                     'title'     => 'Départ non pointé',
-                    'message'   => "Vous n'avez pas pointé votre départ du {$date->format('d/m/Y')}. La journée a été clôturée d'office à {$autoTime->format('H:i')}, mais sans votre départ, le temps de travail de ce jour n'est PAS compté. Indiquez votre heure réelle lors de votre prochain pointage, puis voyez votre responsable pour qu'il la rétablisse.",
+                    'message'   => "Vous n'avez pas pointé votre départ du {$date->format('d/m/Y')}. La journée a été clôturée d'office à {$autoTime->format('H:i')}, mais le temps de travail de ce jour n'est PAS compté. Vous pouvez déclarer l'heure à laquelle vous êtes parti depuis votre page de pointage : votre responsable la rétablira.",
                     'icon'      => 'logout',
                     'color'     => 'amber',
                     'url'       => '/historique',
                 ]);
+
+                // Un rapport non déposé aggrave la situation : le responsable
+                // ne peut ni valider le travail de la journée, ni juger une
+                // déclaration d'heure de départ. Le mail le dit, pour que la
+                // personne ne se contente pas de déclarer son départ.
+                $reportMissing = \App\Models\DailyReport::where('user_id', $userId)
+                    ->whereDate('report_date', $day->attendance_date->toDateString())
+                    ->where('status', 'submitted')
+                    ->doesntExist();
 
                 try {
                     Mail::to($user->email)->send(new DepartAutomatiqueMail(
@@ -245,6 +254,8 @@ class AutoCheckout extends Command
                         $day->first_check_in_at?->format('H:i') ?? '--:--',
                         $autoTime->format('H:i'),
                         round($workedMinutes / 60, 1) . 'h',
+                        $date->format('d/m/Y'),
+                        $reportMissing,
                     ));
                 } catch (\Exception $e) {
                     Log::error("Échec envoi email départ auto à {$user->email}: " . $e->getMessage());
