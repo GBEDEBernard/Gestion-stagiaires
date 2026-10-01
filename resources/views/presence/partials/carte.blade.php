@@ -51,7 +51,7 @@
     } elseif ($arriveeBloque) {
         $verif = [
             'titre'   => 'Arrivée bloquée',
-            'message' => 'Un départ oublié doit être réglé avec votre responsable avant de pointer votre arrivée.',
+            'message' => 'Un départ oublié n\'a pas été déclaré dans les délais. Votre pointage est bloqué jusqu\'à ce qu\'un administrateur rétablisse votre heure de sortie : présentez-vous à votre responsable.',
             'ton'     => 'danger',
             'icone'   => 'interdit',
             'bouton'  => 'Voir pourquoi',

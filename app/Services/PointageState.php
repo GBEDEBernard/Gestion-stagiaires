@@ -49,9 +49,17 @@ class PointageState
         $peutPartir = now()->greaterThanOrEqualTo($expOut)
             || $this->presence->approvedEarlyDepartureForToday($user) !== null;
 
-        // Un départ oublié antérieur non réglé bloque l'arrivée du jour.
-        $journeeOubliee = $this->journeeOubliee($user, $stage);
-        $arriveeBloquee = !$arrive && $journeeOubliee !== null;
+        // Deux questions distinctes, une seule source de vérité côté serveur.
+        //
+        // « Faut-il déclarer un départ oublié ? » vaut dès le lendemain : c'est
+        // l'invitation à régulariser, et elle ne doit dépendre d'aucune heure.
+        //
+        // « L'arrivée est-elle bloquée ? » ne vaut qu'une fois le délai de grâce
+        // écoulé. Tant qu'il reste, l'arrivée passe et la personne garde une
+        // journée entière pour faire la déclaration elle-même.
+        $journeeOubliee    = $this->presence->forgottenDepartureToDeclare($user, $stage);
+        $journeeBloqueuse = $this->presence->unresolvedForgottenDeparture($user, $stage);
+        $arriveeBloquee   = !$arrive && $journeeBloqueuse !== null;
 
         // Un rapport de travail soumis du jour est requis avant le départ.
         $rapportSoumis = $this->reportSubmittedToday($user, $stage);
@@ -66,7 +74,7 @@ class PointageState
             'late'          => !$arrive && now()->greaterThan($expIn),
             'departBloque'  => $etat === 'depart' && !$peutPartir,
             'arriveeBloquee'=> $arriveeBloquee,
-            'journeeBloqueuse' => $arriveeBloquee ? $journeeOubliee : null,
+            'journeeBloqueuse' => $arriveeBloquee ? $journeeBloqueuse : null,
             'rapportSoumis' => $rapportSoumis,
             'departBloqueRapport' => $departBloqueRapport,
             'isWorkDay'     => $stage ? $stage->isWorkDay() : true,
@@ -98,16 +106,15 @@ class PointageState
      * La dernière journée clôturée d'office sans que l'intéressé ait dit à
      * quelle heure il était parti. Une seule à la fois : on règle la plus
      * ancienne avant de passer à la suivante.
+     *
+     * Délégué à PresenceService : c'est là que vivent les critères « non
+     * réglée » (déclarée par l'intéressé ou corrigée par un responsable).
+     * Les duplications ont déjà divergé une fois, et l'écran annonçait un
+     * départ oublié que le serveur, lui, ne voyait plus.
      */
     public function journeeOubliee(User $user, ?Stage $stage): ?AttendanceDay
     {
-        return AttendanceDay::query()
-            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
-            ->where('departure_status', 'auto_closed')
-            ->whereNull('claimed_at')
-            ->whereDate('attendance_date', '<', today())
-            ->orderBy('attendance_date')
-            ->first();
+        return $this->presence->forgottenDepartureToDeclare($user, $stage);
     }
 
     /**

@@ -3,6 +3,9 @@
     $isAlreadyCompleted = $status === 'already_completed';
     $isRejected         = !$isApproved && !$isAlreadyCompleted;
 
+    $forgottenDeparture = $forgotten_departure ?? null;
+    $showDepartureReminder = $isApproved && $forgottenDeparture !== null;
+
     $event      = $event ?? null;
     // Un refus qui n'a pas d'événement derrière lui (compte désactivé, compte
     // non habilité) porte son propre code : sinon l'écran retomberait sur le
@@ -43,6 +46,10 @@
         'checkout_without_checkin' => [
             'Aucune arrivée enregistrée',
             "Un départ ne peut être enregistré sans arrivée correspondante. Contactez votre responsable pour régulariser la journée.",
+        ],
+        'departure_correction_pending' => [
+            'Pointage bloqué — départ à régulariser',
+            "Un départ que vous n'avez pas pointé n'a pas été déclaré dans les délais prévus pour le faire vous-même. Votre pointage est bloqué jusqu'à ce qu'un administrateur rétablisse votre heure de sortie. Présentez-vous à votre responsable : il débloquera votre pointage en quelques minutes.",
         ],
         'stage_inactive' => [
             'Stage hors période',
@@ -103,6 +110,9 @@
 
     $prenom   = $user?->prenom ?? $user?->name ?? null;
     $salut    = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
+
+    $forgottenDeparture = $forgotten_departure ?? null;
+    $showDepartureReminder = $isApproved && $forgottenDeparture !== null && $eventType === 'check_in';
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -177,6 +187,27 @@
                 </svg>
                 <div class="notice-body">
                     <p class="notice-text">{{ $message ?? "Vos deux pointages du jour sont déjà validés." }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if($showDepartureReminder && $forgottenDeparture)
+            <div class="notice notice--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+                </svg>
+                <div class="notice-body">
+                    <p class="notice-text">
+                        Hier, votre départ n'a pas été pointé.
+                        La journée du <strong>{{ $forgottenDeparture->attendance_date->format('d/m/Y') }}</strong>
+                        a été clôturée d'office.
+                        Déclarez votre heure réelle de départ pour que votre responsable la valide.
+                    </p>
+                    <p class="mt-3">
+                        <a href="{{ route('presence.depart-oublie') }}" class="btn-ghost">
+                            Déclarer mon départ oublié
+                        </a>
+                    </p>
                 </div>
             </div>
         @endif

@@ -42,8 +42,8 @@
                 'isWorkDay'     => $isWorkDay,
                 'workDaysLabel' => $workDaysLabel,
                 'historiqueUrl'  => route('presence.historique'),
-                'journeeOubliee' => null,
-                'declarationUrl' => null,
+                'journeeOubliee' => $journeeOubliee,
+                'declarationUrl' => $declarationUrl,
                 'autoPointage'  => $autoPointage ?? false,
             ])
 

@@ -174,12 +174,18 @@ class QrPointageController extends Controller
     {
         $etat = $this->pointageState->forUser($user, $site);
 
+        $hasCheckedIn = (bool) ($etat['day']?->first_check_in_at);
+
         return view('presence.qr.pointage', array_merge($etat, [
             'site'        => $site,
             'user'        => $user,
             'deviceToken' => $deviceToken,
             'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
             'autoPointage' => $autoPointage,
+            'journeeOubliee' => $hasCheckedIn
+                ? app(\App\Services\PointageState::class)->journeeOubliee($user, $etat['stage'])
+                : null,
+            'declarationUrl' => route('presence.depart-oublie'),
         ]));
     }
 
@@ -326,6 +332,7 @@ class QrPointageController extends Controller
                 'site'      => $site,
                 'time'      => now()->format('H:i'),
                 'event'     => $result['event'] ?? null,
+                'forgotten_departure' => $result['forgotten_departure'] ?? null,
             ]);
         } catch (ValidationException $e) {
             $errorMessage = collect($e->errors())->flatten()->first() ?? "Pointage non autorisé.";

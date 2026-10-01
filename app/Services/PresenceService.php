@@ -309,12 +309,26 @@ protected function checkWorkDayRestriction(Stage $stage): void
     }
 
     /**
-     * Y a-t-il un départ oublié (clôturé d'office) antérieur, non encore réglé
-     * par le responsable ? « Réglé » : l'intéressé a déclaré son heure (claimed)
-     * OU le responsable a posé une correction de départ (corrected).
-     * Une seule journée non réglée suffit à bloquer.
+     * Nombre de jours de grâce laissés à la personne pour régulariser elle-même
+     * un départ oublié, avant que son pointage ne soit bloqué.
+     *
+     * Un seul. Un départ oublié appartient à la journée où il s'est produit :
+     * le lendemain, la personne voit l'invitation à déclarer son heure de sortie
+     * et peut le
+     * faire dans la journée, sans que cela gêne son arrivée ni son rapport. Le
+     * surlendemain, l'oubli n'est plus un oubli de la veille mais une absence
+     * de déclaration : le pointage est alors bloqué et l'affaire passe à
+     * l'administrateur.
      */
-    public function unresolvedForgottenDeparture(User $user, ?Stage $stage): ?AttendanceDay
+    public const GRACE_FORGOTTEN_DEPARTURE_DAYS = 1;
+
+    /**
+     * Un départ oublié (clôturé d'office) antérieur attend-il encore une
+     * déclaration ? C'est la question de la notification : elle vaut dès le
+     * lendemain, sans condition d'âge, pour que la personne puisse régulariser
+     * elle-même pendant la journée.
+     */
+    public function forgottenDepartureToDeclare(User $user, ?Stage $stage): ?AttendanceDay
     {
         return AttendanceDay::query()
             ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
@@ -327,8 +341,28 @@ protected function checkWorkDayRestriction(Stage $stage): void
     }
 
     /**
-     * Refuse le pointage d'arrivée tant qu'un départ oublié antérieur n'est pas
-     * réglé.
+     * Y a-t-il un départ oublié assez ancien pour interdire le pointage ?
+     * « Réglé » : l'intéressé a déclaré son heure (claimed) OU le responsable
+     * a posé une correction de départ (corrected). Une seule journée non réglée
+     * suffit à bloquer.
+     */
+    public function unresolvedForgottenDeparture(User $user, ?Stage $stage): ?AttendanceDay
+    {
+        return AttendanceDay::query()
+            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
+            ->where('departure_status', 'auto_closed')
+            ->whereNull('claimed_at')
+            ->whereDoesntHave('correctionDepart')
+            ->whereDate('attendance_date', '<=', today()->subDays(self::GRACE_FORGOTTEN_DEPARTURE_DAYS))
+            ->orderBy('attendance_date')
+            ->first();
+    }
+
+    /**
+     * Refuse le pointage d'arrivée tant qu'un départ oublié trop ancien n'est
+     * pas réglé. Passé le délai de grâce, la personne ne peut plus se
+     * débloquer elle-même : l'heure déclarée n'a de valeur que validée par un
+     * administrateur.
      */
     protected function checkUnresolvedForgottenDeparture(User $user, ?Stage $stage): void
     {
@@ -338,13 +372,16 @@ protected function checkWorkDayRestriction(Stage $stage): void
             return;
         }
 
-        throw ValidationException::withMessages([
-            'presence' => "Pointage refusé : vous n'avez pas pointé votre départ du "
-                . $day->attendance_date->format('d/m/Y')
-                . ". Sans votre départ, le temps de travail de ce jour n'est pas compté. "
-                . "Indiquez l'heure de votre départ sur votre écran de pointage, puis voyez votre "
-                . "responsable pour qu'il la rétablisse, avant de pouvoir pointer à nouveau.",
-        ]);
+        throw PresenceRefusedException::refuse(
+            'departure_correction_pending',
+            "Pointage refusé : vous n'avez pas pointé votre départ du "
+            . $day->attendance_date->format('d/m/Y')
+            . " et vous ne l'avez pas déclaré dans les "
+            . self::GRACE_FORGOTTEN_DEPARTURE_DAYS . " jours suivants. "
+            . "Sans ce départ, le temps de travail de cette journée n'est pas compté. "
+            . "Votre pointage est bloqué : présentez-vous à un administrateur, qui rétablira "
+            . "votre heure de sortie et vous rendra l'accès au pointage.",
+        );
     }
 
     /**
@@ -473,13 +510,19 @@ protected function checkWorkDayRestriction(Stage $stage): void
 
             $event = $this->registerEvent($stage, $user, $payload, $eventType, $observation);
 
+            $forgottenDeparture = null;
+            if ($eventType === 'check_in' && $event->status === 'approved') {
+                $forgottenDeparture = $this->forgottenDepartureToDeclare($user, $stage);
+            }
+
             return [
                 'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
                 'event_type' => $eventType,
                 'message'    => $event->status === 'approved'
                     ? ($eventType === 'check_in' ? "Arrivée enregistrée avec succès !" : "Départ enregistré avec succès !")
                     : ($event->rejection_reason ?? "Pointage non validé."),
-                'event'      => $event,
+                'event'              => $event,
+                'forgotten_departure' => $forgottenDeparture,
             ];
         }
 
@@ -519,13 +562,19 @@ protected function checkWorkDayRestriction(Stage $stage): void
 
         $event = $this->registerEmployeeEvent($user, $payload, $eventType, $observation);
 
+        $forgottenDeparture = null;
+        if ($eventType === 'check_in' && $event->status === 'approved') {
+            $forgottenDeparture = $this->forgottenDepartureToDeclare($user, null);
+        }
+
         return [
             'status'     => $event->status === 'approved' ? 'approved' : 'rejected',
             'event_type' => $eventType,
             'message'    => $event->status === 'approved'
                 ? ($eventType === 'check_in' ? "Arrivée enregistrée avec succès !" : "Départ enregistré avec succès !")
                 : ($event->rejection_reason ?? "Pointage non validé."),
-            'event'      => $event,
+            'event'              => $event,
+            'forgotten_departure' => $forgottenDeparture,
         ];
     }
 
