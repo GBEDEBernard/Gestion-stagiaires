@@ -164,6 +164,102 @@ test('admin can prolong a stage and keep the historical sequence visible', funct
     $this->assertCount(2, $etudiant->fresh()->stages()->orderBy('date_debut')->get());
 });
 
+test('a stage in progress cannot be prolonged and the button is disabled', function () {
+    $admin = createPersonnelFlowUser('admin');
+    $etudiant = createPersonnelFlowUser('etudiant')->etudiant;
+
+    $typeStage = \App\Models\TypeStage::create(['code' => 'PRO3', 'libelle' => 'Professionnel']);
+    $domaine = Domaine::create(['nom' => 'Informatique', 'description' => 'Domaine test']);
+
+    $stage = \App\Models\Stage::create([
+        'etudiant_id' => $etudiant->id,
+        'typestage_id' => $typeStage->id,
+        'domaine_id' => $domaine->id,
+        'theme' => 'Stage en cours',
+        'date_debut' => now()->subDays(20)->toDateString(),
+        'date_fin' => now()->addDays(20)->toDateString(),
+    ]);
+
+    expect($stage->estProlongable())->toBeFalse();
+    expect($stage->motifProlongationRefusee())->toContain('encore en cours');
+
+    // Le bouton doit être visible mais inactif, avec le motif en infobulle :
+    // le retirer priverait l'admin de l'explication.
+    $this->actingAs($admin)
+        ->get(route('stages.show', $stage))
+        ->assertOk()
+        ->assertSee('Prolonger le stage')
+        ->assertSee('cursor-not-allowed', false)
+        ->assertSee('Prolonger une période en cours', false);
+
+    // Le contrôle serveur doit refuser, même en forçant le POST : un bouton
+    // désactivé n'est pas une protection.
+    $this->actingAs($admin)
+        ->from(route('stages.show', $stage))
+        ->post(route('stages.prolonger', $stage), [
+            'date_debut' => now()->subDays(10)->toDateString(),
+            'date_fin' => now()->addDays(40)->toDateString(),
+        ])
+        ->assertRedirect(route('stages.show', $stage))
+        ->assertSessionHasErrors('date_debut');
+
+    expect($etudiant->fresh()->stages()->count())->toBe(1);
+
+    // Une fois la période terminée, la prolongation redevient possible et le
+    // message d'explication disparaît.
+    $stage->update(['date_fin' => now()->subDay()->toDateString()]);
+
+    expect($stage->fresh()->estProlongable())->toBeTrue()
+        ->and($stage->fresh()->motifProlongationRefusee())->toBeNull();
+});
+
+test('prolonging a stage reactivates the deactivated student account', function () {
+    $admin = createPersonnelFlowUser('admin');
+    $etudiantUser = createPersonnelFlowUser('etudiant');
+    $etudiant = $etudiantUser->etudiant;
+
+    $typeStage = \App\Models\TypeStage::create(['code' => 'PRO5', 'libelle' => 'Professionnel']);
+    $domaine = Domaine::create(['nom' => 'Informatique', 'description' => 'Domaine test']);
+
+    $stage = \App\Models\Stage::create([
+        'etudiant_id' => $etudiant->id,
+        'typestage_id' => $typeStage->id,
+        'domaine_id' => $domaine->id,
+        'theme' => 'Stage terminé',
+        'date_debut' => now()->subDays(60)->toDateString(),
+        'date_fin' => now()->subDays(30)->toDateString(),
+    ]);
+
+    // Tous les stages sont terminés : le compte a été désactivé par le
+    // service d'expiration, comme cela se produit en production.
+    expect(app(\App\Services\StudentStageExpiryService::class)->hasExpiredStage($etudiantUser))->toBeTrue();
+
+    $etudiantUser->forceFill(['status' => 'inactif'])->save();
+    expect($etudiantUser->fresh()->status)->toBe('inactif');
+
+    $this->actingAs($admin)
+        ->post(route('stages.prolonger', $stage), [
+            'date_debut' => now()->subDays(29)->toDateString(),
+            'date_fin' => now()->addDays(30)->toDateString(),
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    // Le compte redevient utilisable, sans quoi le stagiaire ne pourrait plus
+    // pointer pendant une période où son stage est bien en cours.
+    expect($etudiantUser->fresh()->status)->toBe('actif');
+
+    // Et il n'est plus considéré comme désactivé par le service d'expiration.
+    expect(app(\App\Services\StudentStageExpiryService::class)->hasExpiredStage($etudiantUser->fresh()))->toBeFalse();
+
+    // Le stagiaire peut de nouveau se connecter : c'est le contrôle de
+    // LoginRequest qui bloquait les comptes inactifs.
+    $this->post(route('login'), [
+        'email' => $etudiantUser->email,
+        'password' => 'password',
+    ])->assertRedirect();
+});
+
 test('a prolongation shares one attestation, a separate stage keeps its own', function () {
     $admin = createPersonnelFlowUser('admin');
     $etudiant = createPersonnelFlowUser('etudiant')->etudiant;
@@ -311,4 +407,3 @@ test('a stage starting before the current one ends is refused', function () {
 
     expect($etudiant->fresh()->stages()->count())->toBe(1);
 });
-

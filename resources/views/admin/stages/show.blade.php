@@ -84,6 +84,7 @@
                 Modifier
             </a>
             @role('admin')
+            @if($stage->estProlongable())
             <button type="button" onclick="document.getElementById('modalProlongation').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +92,15 @@
                 </svg>
                 Prolonger le stage
             </button>
+            @else
+            <span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-slate-400 dark:text-gray-500 font-medium cursor-not-allowed"
+                title="{{ $stage->motifProlongationRefusee() }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prolonger le stage
+            </span>
+            @endif
             @endrole
         </div>
     </div>
@@ -130,6 +140,12 @@
                 <div class="rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50 dark:bg-orange-900/20 p-3 text-sm text-orange-700 dark:text-orange-300">
                     La période ajoutée sera enregistrée comme un nouveau segment de stage pour le même étudiant, sans supprimer l’historique précédent.
                 </div>
+                @if(($compteEtudiant = $stage->etudiant?->user) && $compteEtudiant->status !== 'actif')
+                <div class="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+                    Le compte de ce stagiaire est actuellement désactivé. Confirmer la prolongation le
+                    <strong>réactivera</strong> : il pourra à nouveau pointer et rendre ses rapports.
+                </div>
+                @endif
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" onclick="document.getElementById('modalProlongation').classList.add('hidden')"
                         class="px-5 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">Annuler</button>

@@ -267,6 +267,13 @@ class StageController extends Controller
 
     public function prolonger(Stage $stage, Request $request)
     {
+        // On refuse de prolonger tant que le stage est en cours. Sans ce
+        // contrôle, l'admin pouvait ajouter une période qui chevauche la
+        // précédente, et le compte du stagiaire restait actif sans raison.
+        if ($motif = $stage->motifProlongationRefusee()) {
+            return back()->withErrors(['date_debut' => $motif])->withInput();
+        }
+
         $request->validate([
             'date_debut' => 'required|date',
             'date_fin' => 'required|date|after_or_equal:date_debut',
@@ -357,13 +364,37 @@ class StageController extends Controller
 
         $newStage->jours()->sync($stage->jours->pluck('id'));
 
+        // Le compte du stagiaire a été désactivé à la fin de son dernier
+        // segment. Prolonger le stage le rend de nouveau utilisable : sans
+        // cette réactivation, le stagiaire ne pourrait plus pointer alors que
+        // son stage repart.
+        $compte = $newStage->etudiant?->user;
+        $compteReactive = false;
+
+        if ($compte && $compte->status !== 'actif') {
+            $compte->forceFill(['status' => 'actif'])->save();
+            $compteReactive = true;
+
+            Activity::create([
+                'user_id' => auth()->id(),
+                'action' => 'Compte stagiaire réactivé',
+                'description' => "Le compte de {$newStage->etudiant->personnel->full_name} a été réactivé : le stage est prolongé.",
+            ]);
+        }
+
         Activity::create([
             'user_id' => auth()->id(),
             'action' => 'Prolongation stage',
             'description' => "Stage prolongé pour l'étudiant {$newStage->etudiant->personnel->full_name} : {$newStage->theme}",
         ]);
 
-        return redirect()->route('stages.show', $newStage)->with('success', 'Le stage a bien été prolongé et ajouté à l’historique du stagiaire.');
+        $message = 'Le stage a bien été prolongé et ajouté à l’historique du stagiaire.';
+
+        if ($compteReactive) {
+            $message .= ' Le compte du stagiaire a été réactivé : il peut à nouveau pointer et rendre ses rapports.';
+        }
+
+        return redirect()->route('stages.show', $newStage)->with('success', $message);
     }
 
     public function show(Stage $stage)

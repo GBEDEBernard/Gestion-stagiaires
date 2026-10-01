@@ -251,6 +251,55 @@ class Stage extends Model
     }
 
     /**
+     * Un segment est considéré terminé quand sa date de fin est passée.
+     * Un stage sans date de fin n'est jamais terminé : on ne prolonge pas
+     * une période qui n'a pas de borne.
+     */
+    public function estTermine(): bool
+    {
+        return $this->date_fin !== null && today()->gt($this->date_fin);
+    }
+
+    /**
+     * La chaîne peut-elle être prolongée ? Il faut que TOUS ses segments
+     * soient terminés : prolonger un stage en cours reviendrait à ajouter une
+     * période qui chevauche la précédente, et le compte du stagiaire est
+     * justement encore actif.
+     */
+    public function estProlongable(): bool
+    {
+        return $this->getRelatedSequenceStages()
+            ->reject(fn (Stage $segment) => $segment->date_fin === null)
+            ->every(fn (Stage $segment) => $segment->estTermine());
+    }
+
+    /**
+     * Message expliquant pourquoi la prolongation est refusée, ou null si elle
+     * est possible. La vue et le contrôleur s'appuient tous les deux dessus
+     * pour ne pas diverger.
+     */
+    public function motifProlongationRefusee(): ?string
+    {
+        if (! $this->date_fin) {
+            return 'Ce stage n’a pas de date de fin : la prolongation n’est pas possible.';
+        }
+
+        $segmentsEnCours = $this->getRelatedSequenceStages()
+            ->filter(fn (Stage $segment) => $segment->date_fin === null || today()->lte($segment->date_fin))
+            ->sortBy(fn (Stage $segment) => $segment->date_fin ?? now()->addCentury())
+            ->last();
+
+        if ($segmentsEnCours) {
+            $date = $segmentsEnCours->date_fin?->format('d/m/Y') ?? 'sans date';
+
+            return "Le stage est encore en cours (jusqu’au {$date}). Prolonger une période en cours "
+                .'ajouterait une période qui la chevauche : terminez-la d’abord.';
+        }
+
+        return null;
+    }
+
+    /**
      * Tous les segments d'une même chaîne, du plus ancien au plus récent.
      *
      * Seul le stage d'origine est cherché : une prolongation connaît sa
