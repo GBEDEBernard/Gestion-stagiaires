@@ -65,6 +65,11 @@ class PointageState
         $rapportSoumis = $this->reportSubmittedToday($user, $stage);
         $departBloqueRapport = $etat === 'depart' && !$rapportSoumis;
 
+        // La veille non clôturée est signalée dès aujourd'hui, y compris avant
+        // l'arrivée du jour, pour qu'elle apparaisse sur la page de pointage et
+        // sur le tableau de bord.
+        $hasForgottenDeparture = $journeeOubliee !== null;
+
         return [
             'stage'         => $stage,
             'day'           => $day,
@@ -79,10 +84,8 @@ class PointageState
             'departBloqueRapport' => $departBloqueRapport,
             'isWorkDay'     => $stage ? $stage->isWorkDay() : true,
             'workDaysLabel' => $stage?->workDaysLabel(),
-            // On ne demande l'heure du départ oublié qu'une fois l'arrivée du
-            // jour pointée : la question de la veille ne doit pas retarder le
-            // geste d'aujourd'hui.
-            'journeeOubliee' => $arrive ? $journeeOubliee : null,
+            'journeeOubliee' => $journeeOubliee,
+            'hasForgottenDeparture' => $hasForgottenDeparture,
         ];
     }
 

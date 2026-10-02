@@ -96,11 +96,7 @@ class PresenceController extends Controller
                 'arriveeBloquee'         => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
                 'journeeBloqueuse'       => $journeeBloqueuse,
                 'rapportSoumis'          => $rapportSoumis,
-                // La veille clôturée d'office, à éclaircir — mais seulement
-                // une fois l'arrivée du jour pointée.
-                'journeeOubliee'         => $hasCheckedIn
-                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, $activeStage)
-                    : null,
+                'journeeOubliee'         => app(\App\Services\PointageState::class)->journeeOubliee($user, $activeStage),
             ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
@@ -160,9 +156,7 @@ class PresenceController extends Controller
                 'arriveeBloquee'           => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
                 'journeeBloqueuse'         => $journeeBloqueuse,
                 'rapportSoumis'            => $rapportSoumis,
-                'journeeOubliee'           => $hasCheckedIn
-                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, null)
-                    : null,
+                'journeeOubliee'           => app(\App\Services\PointageState::class)->journeeOubliee($user, null),
             ]);
         }
     }
@@ -718,6 +712,18 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             $dateTo
         );
 
+        $missingDeparture = false;
+        $missingDepartureDay = null;
+
+        if ($user->etudiant) {
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $missingDeparture = (bool) ($pointage['hasForgottenDeparture'] ?? false);
+            $missingDepartureDay = $pointage['journeeOubliee'];
+        } else {
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $missingDeparture = (bool) ($pointage['hasForgottenDeparture'] ?? false);
+            $missingDepartureDay = $pointage['journeeOubliee'];
+        }
 
         if ($dateFrom || $dateTo) {
             $startDate = $dateFrom ? \Carbon\Carbon::parse($dateFrom) : now()->startOfMonth();
@@ -768,11 +774,7 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             ->orderBy('attendance_date')
             ->get();
 
-        if ($user->hasRole('etudiant')) {
-            return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
-        } else {
-            return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
-        }
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions', 'missingDeparture', 'missingDepartureDay'));
     }
 
     /**

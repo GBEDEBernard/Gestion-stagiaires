@@ -17,12 +17,12 @@ class Kernel extends ConsoleKernel
             ->dailyAt('18:30')
             ->withoutOverlapping();
 
-        // Clôture de la VEILLE, à 05h00. On ne déclare pas un départ oublié le
-        // soir même : la personne peut rester travailler et pointer à 22h.
-        // Le lendemain, la question est tranchée, et l'écran de pointage
-        // demandera l'heure réelle avant que quiconque ait besoin d'y penser.
-        $schedule->command('attendance:auto-checkout')
-            ->dailyAt('05:00')
+        // Clôture TON JOUR de toutes les journées pointées sans départ.
+        // On le fait à 00h00 (début de journée) pour que demain matin,
+        // dès l'arrivée pointée, le modal de départ oublié soit déjà
+        // utilisable par tous (employés, stagiaires, admin+employés).
+        $schedule->command('attendance:auto-checkout --date=yesterday')
+            ->dailyAt('00:02')
             ->withoutOverlapping();
 
         // Résumé IA hebdomadaire chaque vendredi à 20h00

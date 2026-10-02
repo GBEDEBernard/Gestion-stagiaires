@@ -121,9 +121,10 @@
             </div>
         @endif
 
-        @if(($hasCheckedIn ?? false) && !($hasCheckedOut ?? false) && !($rapportSoumis ?? true))
-            <x-alerts.rapport-manquant />
-        @endif
+        {{-- L'absence de rapport ne se signale plus ici : le clic sur « Pointer
+             mon départ » ouvre le constat qui l'explique et donne le chemin
+             pour le déposer. Deux messages pour un seul fait, c'en était un de
+             trop, et le bandeau rouge était le plus visible des deux. --}}
 
         @include('presence.partials.carte', [
             'lieu'          => $activeStage->site?->name ?? 'Site',

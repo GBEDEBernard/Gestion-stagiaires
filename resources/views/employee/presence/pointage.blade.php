@@ -94,7 +94,9 @@
             </div>
         @endif
 
-        @include('presence.partials.carte', [
+        @include('presence.partials.missing-departure-banner', ['missingDeparture' => (bool) ($journeeOubliee ?? null), 'missingDepartureDay' => $journeeOubliee ?? null])
+
+@include('presence.partials.carte', [
             'lieu'          => $user->domaine?->nom ?? 'Poste',
             'prenom'        => $prenom,
             'day'           => $day,

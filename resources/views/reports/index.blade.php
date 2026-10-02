@@ -25,7 +25,7 @@
         </div>
 
         <!-- FORM CREATE / EDIT -->
-        <div x-show="open || @js(isset($editReport) || (old('summary') && !session('success')))" x-cloak>
+        <div x-show="open || @js(isset($editReport) || request()->boolean('nouveau') || (old('summary') && !session('success')))" x-cloak>
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
                 @click.away="open = false">
                 <div class="relative w-full max-w-md">

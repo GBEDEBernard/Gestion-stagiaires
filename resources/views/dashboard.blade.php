@@ -1,5 +1,14 @@
 <x-app-layout>
 
+    @php
+        $missingDepartureDay = $missingDepartureDay ?? null;
+    @endphp
+
+    @include('presence.partials.missing-departure-banner', [
+        'missingDeparture' => (bool) ($missingDeparture ?? false),
+        'missingDepartureDay' => $missingDepartureDay,
+    ])
+
     {{-- ════════════════════════════════════════════════════════
          BANNER
     ════════════════════════════════════════════════════════ --}}

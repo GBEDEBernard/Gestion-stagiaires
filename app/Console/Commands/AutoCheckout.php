@@ -43,15 +43,11 @@ class AutoCheckout extends Command
                 return Command::SUCCESS;
             }
 
-            // Une nuit sans cron laissait la journée ouverte pour toujours :
-            // jamais clôturée, jamais réclamée. On remonte donc sur quelques
-            // jours, sans aller chercher un arriéré historique qui noierait
-            // tout le monde sous les notifications au premier déploiement.
             if ($this->option('date')) {
                 $depuis = $jusqua = Carbon::parse($this->option('date'))->startOfDay();
             } else {
                 $jusqua = today()->subDay();
-                $depuis = today()->subDays(max(1, (int) $this->option('days')));
+                $depuis = $jusqua;
             }
 
             $days = $this->openDays($depuis, $jusqua);
@@ -268,6 +264,6 @@ class AutoCheckout extends Command
             }
         }
 
-        $this->info("{$count} journée(s) clôturée(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} échec(s))" : ''));
+        $this->info("{$count} jour(s) cloturé(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} echec(s))" : '') . '. A partir de ce moment, les utilisateurs verront le modal de depart oublie sils pointent leur arrivee le lendemain sans avoir declare leur heure de sortie.');
     }
 }

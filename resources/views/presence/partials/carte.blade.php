@@ -8,6 +8,7 @@
       $action, $champs, $isWorkDay, $workDaysLabel, $historiqueUrl,
       $journeeOubliee, $declarationUrl, $arriveeBloquee, $rapportSoumis
 --}}
+@include('presence.partials.missing-departure-banner', ['missingDeparture' => ($journeeOubliee ?? null) && ($declarationUrl ?? null), 'missingDepartureDay' => $journeeOubliee])
 @include('presence.partials.pointage-script')
 
 @php
@@ -62,7 +63,7 @@
             'message'     => "Votre départ n'est enregistré qu'une fois votre rapport de travail déposé.",
             'ton'         => 'warning',
             'icone'       => 'document',
-            'actionUrl'   => route('reports.index'),
+            'actionUrl'   => route('reports.index', ['nouveau' => 1]),
             'actionLabel' => 'Déposer mon rapport',
             'bouton'      => 'Déposer mon rapport',
         ];
@@ -82,7 +83,13 @@
     // Le modal ne sert qu'à la porte. Dans l'application, la page porte
     // déjà des alertes plus détaillées — elles nomment la journée concernée —
     // et le modal ne ferait que les répéter en plus court.
-    $verifModal = ($autoPointage ?? false) ? $verif : null;
+    //
+    // Une exception : le rapport de travail manquant. Là, le bandeau se limite
+    // à nommer le blocage, et c'est le clic sur « Pointer mon départ » qui doit
+    // livrer l'explication complète et le raccourci vers le dépôt. Sans ce
+    // modal, le bouton serait nécessairement inerte, puisque le départ est
+    // refusé et qu'aucun formulaire n'a de quoi être soumis.
+    $verifModal = ($autoPointage ?? false) || $departBloqueRapport ? $verif : null;
 
     // Pointage automatique : le scan du QR code de porte suffit, le bouton
     // disparaît. Il revient si la localisation a échoué, pour réessayer sans
@@ -189,10 +196,24 @@
                     @elseif(! $isWorkDay)
                         <p class="text-sm text-slate-600 dark:text-slate-300">Aujourd'hui n'est pas un jour de présence. <span class="block text-slate-400">Jours prévus : {{ $workDaysLabel ?? '—' }}</span></p>
 
-                    @elseif($arriveeBloque || $departBloqueRapport)
-                        {{-- Application : les alertes de la page déjà expliquent,
-                             le bouton se contente de nommer l'action. --}}
-                        <button type="button" disabled class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400">{{ $departBloqueRapport ? "Déposez d'abord votre rapport de travail" : "Un départ oublié doit être réglé d'abord" }}</button>
+                    @elseif($departBloqueRapport)
+                        {{-- Rapport manquant : le bouton reste cliquable et
+                             ouvre le constat. Un bouton « disabled » expliquait
+                             le blocage dans la zone grise sans jamais permettre
+                             d'y répondre ; ici la personne comprend pourquoi le
+                             départ est refusé et part directement déposer le
+                             rapport, qui est l'action attendue. --}}
+                        <button type="button" @click="$dispatch('verif-ouvrir')"
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition bg-amber-500 hover:bg-amber-600">
+                            Pointer mon départ
+                        </button>
+
+                    @elseif($arriveeBloque)
+                        {{-- Départ oublié à régulariser : rien à faire depuis
+                             cette page, l'heure doit être rétablie par un
+                             responsable. Le bouton reste donc inerte, et le
+                             bandeau plus haut explique pourquoi. --}}
+                        <button type="button" disabled class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400">Un départ oublié doit être réglé d'abord</button>
 
                     @elseif($etat === 'termine')
                         <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-100/70 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 font-medium text-sm">Journée complète — à demain</div>
@@ -263,7 +284,8 @@
         {{-- x-data local : le modal s'ouvre au chargement et se referme au
              clic sur le voile. Le bouton de la carte le rappelle grâce à
              l'événement, les deux étant trop éloignés pour partager un état. --}}
-        <div x-data="{ verif: true }">
+        <div x-data="{ verif: @js(!($autoPointage ?? false)) }"
+             @verif-ouvrir.window="verif = true">
             @include('presence.partials.verif-modal', [
                 'titre'       => $verifModal['titre'],
                 'message'     => $verifModal['message'],

@@ -47,6 +47,11 @@ use App\Http\Controllers\EvaluationCriterionController;
 use App\Http\Controllers\StageEvaluationController;
 use App\Http\Controllers\WorkScheduleSettingController;
 
+// ---------------- Debug (unused in prod, drop after fixing) ----------------
+// Route::middleware(['auth', 'role:admin|superviseur'])
+//     ->get('/debug/pointage-state', [DebugPointageStateController::class, '__invoke'])
+//     ->name('debug.pointage.state');
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -85,6 +90,10 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/missing-departure', [
+        App\Http\Controllers\DashboardMissingDepartureController::class,
+        '__invoke',
+    ])->name('dashboard.missing-departure');
     Route::get('/admin/dashboard/inscriptions/details', [DashboardController::class, 'registrationsDetail'])
         ->name('dashboard.registrations.detail')
         ->middleware('permission:etudiants.view');

@@ -309,29 +309,54 @@ protected function checkWorkDayRestriction(Stage $stage): void
     }
 
     /**
-     * Nombre de jours de grâce laissés à la personne pour régulariser elle-même
-     * un départ oublié, avant que son pointage ne soit bloqué.
+     * Nombre de jours laissés à la personne pour régulariser elle-même un
+     * départ oublié, avant que son pointage ne soit bloqué.
      *
      * Un seul. Un départ oublié appartient à la journée où il s'est produit :
      * le lendemain, la personne voit l'invitation à déclarer son heure de sortie
-     * et peut le
-     * faire dans la journée, sans que cela gêne son arrivée ni son rapport. Le
-     * surlendemain, l'oubli n'est plus un oubli de la veille mais une absence
-     * de déclaration : le pointage est alors bloqué et l'affaire passe à
-     * l'administrateur.
+     * et peut le faire dans la journée, sans que cela gêne son arrivée ni son
+     * rapport. Le surlendemain, l'oubli n'est plus un oubli de la veille mais
+     * une absence de déclaration : le pointage est alors bloqué et l'affaire
+     * passe à l'administrateur.
      */
     public const GRACE_FORGOTTEN_DEPARTURE_DAYS = 1;
+
+    /**
+     * Les journées de cette personne, stagiaire ou pas.
+     */
+    protected function attendanceDaysQuery(User $user, ?Stage $stage)
+    {
+        return AttendanceDay::query()
+            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id));
+    }
+
+    /**
+     * Date à laquelle le délai de grâce est épuisé.
+     *
+     * Départ oublié le 1er, jour J+1 le 2 : le blocage commence le 3. La
+     * borne est donc le jour même du départ oublié majoré de la grâce, ce qui
+     * revient à subtract(grâce + 1). Écrire seulement subtract(grâce)
+     * supprimerait la journée de grâce : le jour même où la personne est
+     * invitée à déclarer son heure, elle serait déjà bloquée.
+     */
+    protected function graceDeadline(): \Illuminate\Support\Carbon
+    {
+        return today()->subDays(self::GRACE_FORGOTTEN_DEPARTURE_DAYS + 1);
+    }
 
     /**
      * Un départ oublié (clôturé d'office) antérieur attend-il encore une
      * déclaration ? C'est la question de la notification : elle vaut dès le
      * lendemain, sans condition d'âge, pour que la personne puisse régulariser
      * elle-même pendant la journée.
+     *
+     * Indépendante de l'arrivée du jour. L'ancien code n'invitait qu'une fois
+     * l'arrivée pointée, alors que le serveur bloquait cette même arrivée dès
+     * le lendemain : personne ne pouvait donc jamais voir l'invitation.
      */
     public function forgottenDepartureToDeclare(User $user, ?Stage $stage): ?AttendanceDay
     {
-        return AttendanceDay::query()
-            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
+        return $this->attendanceDaysQuery($user, $stage)
             ->where('departure_status', 'auto_closed')
             ->whereNull('claimed_at')
             ->whereDoesntHave('correctionDepart')
@@ -348,12 +373,11 @@ protected function checkWorkDayRestriction(Stage $stage): void
      */
     public function unresolvedForgottenDeparture(User $user, ?Stage $stage): ?AttendanceDay
     {
-        return AttendanceDay::query()
-            ->when($stage, fn ($q) => $q->where('stage_id', $stage->id), fn ($q) => $q->where('user_id', $user->id))
+        return $this->attendanceDaysQuery($user, $stage)
             ->where('departure_status', 'auto_closed')
             ->whereNull('claimed_at')
             ->whereDoesntHave('correctionDepart')
-            ->whereDate('attendance_date', '<=', today()->subDays(self::GRACE_FORGOTTEN_DEPARTURE_DAYS))
+            ->whereDate('attendance_date', '<=', $this->graceDeadline())
             ->orderBy('attendance_date')
             ->first();
     }

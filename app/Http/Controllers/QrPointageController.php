@@ -182,9 +182,7 @@ class QrPointageController extends Controller
             'deviceToken' => $deviceToken,
             'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
             'autoPointage' => $autoPointage,
-            'journeeOubliee' => $hasCheckedIn
-                ? app(\App\Services\PointageState::class)->journeeOubliee($user, $etat['stage'])
-                : null,
+            'journeeOubliee' => app(\App\Services\PointageState::class)->journeeOubliee($user, $etat['stage']),
             'declarationUrl' => route('presence.depart-oublie'),
         ]));
     }
