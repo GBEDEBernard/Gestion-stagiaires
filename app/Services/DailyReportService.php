@@ -60,6 +60,34 @@ class DailyReportService
                 ]);
             }
 
+            // 🔒 Un rapport ne peut être SOUMIS que si la tâche est découpée
+            // (au moins une sous-tâche + un item) : sans cela la progression
+            // reste à 0 et le rapport ne sert à rien. Le brouillon, lui, reste
+            // libre — on autorise de préparer son texte avant d'avoir découpé.
+            //
+            // La règle vaut pour tout le monde, y compris pour un admin qui
+            // porte aussi le rôle employé : dès lors qu'on dépose UN rapport
+            // sur UNE tâche, cette tâche doit être découpée. Elle porte sur le
+            // travail rapporté, pas sur la fonction de qui le rapporte.
+            if ($task && $status === 'submitted') {
+                if (!$task->reportReadiness()['can_submit']) {
+                    throw ValidationException::withMessages([
+                        'status_action' => $task->reportReadinessMessage(),
+                    ]);
+                }
+
+                // 🔒 Et on ne valide pas un rapport vide : il faut coché ce
+                // qu'on a réellement terminé. Le contrôle ne s'applique que
+                // si l'utilisateur a une liste à cocher — sinon on ne peut
+                // pas lui en demander une.
+                if ($task->hasChecklistFor($user->id) && empty($payload['completed_subtask_ids'])) {
+                    throw ValidationException::withMessages([
+                        'completed_subtask_ids' => "Coche au moins une tâche terminée avant de valider ton rapport. "
+                            . "C'est ce qui fait progresser la tâche.",
+                    ]);
+                }
+            }
+
             $attendanceDay = AttendanceDay::whereDate('attendance_date', today())
                 ->when($stage, fn($q) => $q->where('stage_id', $stage->id))
                 ->when(!$stage, fn($q) => $q->where('user_id', $user->id))
@@ -90,6 +118,13 @@ class DailyReportService
             if (!$report) {
                 $report = new DailyReport();
                 $report->report_date = today();
+            }
+
+            // Un rapport déjà soumis ne repasse jamais en brouillon : le
+            // bouton « enregistrer le brouillon » ne doit pas pouvoir
+            // dévalidationner ce qui a déjà été validé.
+            if ($report->exists && $status === 'draft' && $report->status !== 'draft') {
+                $status = 'submitted';
             }
 
             // ── Traitement des sous-tâches cochées ──

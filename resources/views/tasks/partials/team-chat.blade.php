@@ -38,13 +38,13 @@
     <button type="button"
             @click="openChat()"
             aria-label="Ouvrir la discussion d'équipe"
-            class="tc-fab fixed bottom-5 right-5 z-[75] inline-flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
+            class="tc-fab fixed bottom-[5.5rem] right-4 z-[75] inline-flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-transform hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14"
             style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;">
         <template x-if="!open">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m9-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/></svg>
+            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m9-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z"/></svg>
         </template>
         <template x-if="open">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
         </template>
         {{-- Pastille de non-lus --}}
         <template x-if="!open && unread">

@@ -220,7 +220,7 @@
                                     <span class="text-base shrink-0" x-text="st.is_completed ? '✅' : '⬜'"></span>
                                     <div class="min-w-0">
                                         <p class="text-sm font-semibold break-words"
-                                           :class="st.is_completed ? 'text-emerald-900 line-through opacity-70' : 'text-slate-800'"
+                                           :class="st.is_completed ? 'text-emerald-900' : 'text-slate-800'"
                                            x-text="st.title"></p>
                                         <p x-show="st.is_completed" class="text-[11px] text-emerald-700 font-semibold">
                                             Terminée · Non réassignable
