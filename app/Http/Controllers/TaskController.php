@@ -501,6 +501,54 @@ public function index(Request $request)
     return view('tasks.workspace', $this->workspaceData($request, $task));
 }
 
+    /**
+     * Restreint la liste à ce que la personne a réellement saisi.
+     *
+     * Un seul terme, mais quatre champs : le titre, la description, et
+     * l'identité de ceux qui touchent la tâche — son propriétaire et les
+     * personnes assignées.
+     *
+     * La recherche par nom n'était pas possible tant qu'elle portait sur le
+     * seul titre : à l'admin qui voit les tâches de tout le monde, demander
+     * « Dine » ne renvoyait rien, alors que ce nom est affiché à l'écran juste
+     * à côté du titre. Il ne fallait pas non plus limiter au propriétaire : une
+     * personne souvent assignée sans posséder la tâche serait restée
+     * introuvable.
+     *
+     * Les espaces de début et de fin sont tolérés, parce qu'un copier-coller
+     * en apporte toujours. Le nom est cherché sur personnel, seule source des
+     * prénoms — users.name n'en contient qu'un seul, en majuscules.
+     */
+    protected function applySearch($query, string $q)
+    {
+        $term = trim($q);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%' . $term . '%';
+
+        return $query->where(function ($qb) use ($like) {
+            $qb->where('title', 'like', $like)
+                ->orWhere('description', 'like', $like)
+                ->orWhereHas('owner', fn ($o) => $this->matchPersonName($o, $like))
+                ->orWhereHas('assignees', fn ($a) => $this->matchPersonName($a, $like));
+        });
+    }
+
+    /** Le nom de la personne, dans l'ordre où il est affiché : prénom, puis nom. */
+    protected function matchPersonName($userQuery, string $like)
+    {
+        return $userQuery->where(function ($inner) use ($like) {
+            $inner->whereHas('personnel', fn ($p) => $p
+                    ->where('prenom', 'like', $like)
+                    ->orWhere('nom', 'like', $like)
+                )
+                ->orWhere('email', 'like', $like);
+        });
+    }
+
     protected function workspaceData(Request $request, ?Task $selected): array
     {
         $user = auth()->user();
@@ -510,7 +558,7 @@ public function index(Request $request)
         $tasks = Task::with(['owner'])
             ->visibleTo($user)
             ->when(in_array($status, Task::STATUSES, true), fn($qb) => $qb->where('status', $status))
-            ->when($q, fn($qb) => $qb->where('title', 'like', "%{$q}%"))
+            ->when($q, fn($qb) => $this->applySearch($qb, $q))
             ->latest('updated_at')
             ->limit(100)
             ->get();
@@ -557,7 +605,7 @@ public function index(Request $request)
             ];
         }
 
-        return compact('tasks', 'stats', 'status', 'selected', 'todayReport', 'group', 'chat');
+        return compact('tasks', 'stats', 'status', 'q', 'selected', 'todayReport', 'group', 'chat');
     }
 
     public function edit(Task $task)
