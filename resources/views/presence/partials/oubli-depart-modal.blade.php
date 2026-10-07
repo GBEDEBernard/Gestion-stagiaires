@@ -17,6 +17,7 @@
 @endphp
 <div x-data="{ ouvert: true, heure: '', motif: '', erreur: '' }"
      x-show="ouvert" x-cloak
+     data-declaration-oubliee
      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
      style="background: rgba(15, 18, 22, .5)"
      @keydown.escape.window="{{ $avertie ? '' : 'ouvert = false' }}">

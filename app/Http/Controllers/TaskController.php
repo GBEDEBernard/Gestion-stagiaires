@@ -10,6 +10,7 @@ use App\Services\TaskThreadService;
 use App\Services\UserProfileLinkService;
 use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class TaskController extends Controller
@@ -23,7 +24,30 @@ class TaskController extends Controller
 
 public function index(Request $request)
     {
-        return view('tasks.workspace', $this->workspaceData($request, null));
+        $user = auth()->user();
+
+        // La recherche se fait depuis le workspace : on garde la tâche
+        // ouverte dans le panneau de droite au lieu de le vider à chaque
+        // frappe. Le paramètre `task` reprend l'identifiant chiffré du lien.
+        $selected = null;
+
+        if ($raw = $request->get('task')) {
+            $id = decrypt_route_param((string) $raw) ?? $raw;
+            $selected = Task::visibleTo($user)
+                ->with([
+                    'owner',
+                    'assignedBy',
+                    'stage.etudiant',
+                    'dailyReports',
+                    'messages.user',
+                    'subtasks.assignedTo',
+                    'subtasks.completedBy',
+                    'subtasks.items',
+                ])
+                ->find($id);
+        }
+
+        return view('tasks.workspace', $this->workspaceData($request, $selected));
     }
 
     /** Formulaire de création d'une tâche. */
@@ -501,6 +525,82 @@ public function index(Request $request)
     return view('tasks.workspace', $this->workspaceData($request, $task));
 }
 
+    /**
+     * Restreint la liste à ce que la personne a réellement saisi.
+     *
+     * La saisie est découpée en mots : chaque mot doit être trouvé quelque
+     * part, mais pas forcément dans le même champ. C'est ce qui rend
+     * « Bernard GBEDE » finding alors que le nom affiché à l'écran est
+     * précisément « Bernard GBEDE » : la requête ne colle plus la chaîne
+     * entière sur une seule colonne, elle cherche « Bernard » puis
+     * « GBEDE » indépendamment.
+     *
+     * Champs couverts : titre, description, sous-tâches, et l'identité de
+     * tous ceux qui touchent la tâche — propriétaire, personnes assignées,
+     * et la personne qui l'a assignée. Le nom est cherché sur users.name
+     * (la colonne réellement affichée), sur l'email, et sur personnel
+     * (prénom / nom), pour qu'un compte sans profil reste trouvable.
+     */
+    protected function applySearch($query, string $q)
+    {
+        $terms = preg_split('/\s+/u', trim($q), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($terms)) {
+            return $query;
+        }
+
+        foreach ($terms as $term) {
+            $like = '%' . $this->escapeLike($term) . '%';
+
+            $query->where(function ($qb) use ($like) {
+                $this->whereLike($qb, 'tasks.title', $like);
+                $this->whereLike($qb, 'tasks.description', $like, 'or');
+
+                $qb->orWhereHas('subtasks', fn ($s) => $this->whereLike($s, 'subtasks.title', $like))
+                    ->orWhereHas('owner', fn ($o) => $this->matchPersonName($o, $like))
+                    ->orWhereHas('assignees', fn ($a) => $this->matchPersonName($a, $like))
+                    ->orWhereHas('assignedBy', fn ($a) => $this->matchPersonName($a, $like));
+            });
+        }
+
+        return $query;
+    }
+
+    /** Le nom de la personne, dans l'ordre où il est affiché : prénom, puis nom. */
+    protected function matchPersonName($userQuery, string $like)
+    {
+        return $userQuery->where(function ($inner) use ($like) {
+            $this->whereLike($inner, 'users.name', $like);
+            $this->whereLike($inner, 'users.email', $like, 'or');
+
+            $inner->orWhereHas('personnel', function ($p) use ($like) {
+                $this->whereLike($p, 'personnels.prenom', $like);
+                $this->whereLike($p, 'personnels.nom', $like, 'or');
+            });
+        });
+    }
+
+    /**
+     * LIKE avec caractère d'échappement explicite.
+     *
+     * MySQL traite le backslash comme échappement par défaut, SQLite non :
+     * sans cette clause, un terme contenant « % » se comporte différemment
+     * entre la production et les tests. « ESCAPE '\' » fixe la même
+     * règle partout.
+     */
+    protected function whereLike($builder, string $column, string $like, string $boolean = 'and'): void
+    {
+        $method = $boolean === 'or' ? 'orWhereRaw' : 'whereRaw';
+
+        $builder->{$method}("{$column} LIKE ? ESCAPE '\\\\'", [$like]);
+    }
+
+    /** Neutralise les jokers SQL pour qu'un « 100% » ne matche pas n'importe quoi. */
+    protected function escapeLike(string $term): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term);
+    }
+
     protected function workspaceData(Request $request, ?Task $selected): array
     {
         $user = auth()->user();
@@ -510,7 +610,7 @@ public function index(Request $request)
         $tasks = Task::with(['owner'])
             ->visibleTo($user)
             ->when(in_array($status, Task::STATUSES, true), fn($qb) => $qb->where('status', $status))
-            ->when($q, fn($qb) => $qb->where('title', 'like', "%{$q}%"))
+            ->when($q, fn($qb) => $this->applySearch($qb, $q))
             ->latest('updated_at')
             ->limit(100)
             ->get();
@@ -557,7 +657,14 @@ public function index(Request $request)
             ];
         }
 
-        return compact('tasks', 'stats', 'status', 'selected', 'todayReport', 'group', 'chat');
+        return compact('tasks', 'stats', 'status', 'q', 'selected', 'todayReport', 'group', 'chat') + [
+            // Paramètre chiffré de la tâche ouverte, pour que la recherche
+            // puisse la conserver dans le panneau de droite.
+            'selectedParam' => $selected
+                ? Crypt::encryptString((string) $selected->getKey())
+                : null,
+            'resultCount' => $tasks->count(),
+        ];
     }
 
     public function edit(Task $task)

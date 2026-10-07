@@ -2,11 +2,18 @@
     Capture GPS et empreinte d'appareil pour le pointage classique.
     Même contrat de champs que le scan QR : l'écran de validation intermédiaire
     ayant disparu, tout part en une seule soumission.
+
+    En mode `auto` (scan du QR code de porte), le pointage part tout seul dès
+    que la page s'ouvre : la personne scanne, l'appareil valide les conditions
+    et enregistre. Le clic disparaît parce qu'il n'apportait rien. Deux cas
+    restent malgré tout à sa main, parce qu'ils appellent une décision humaine
+    et non un relevé de position : le retard (le motif ne s'écrit pas à la
+    place de l'intéressé) et le départ avant l'heure (il faut une permission).
 --}}
 @once
 @push('scripts')
 <script>
-    function pointageForm(enRetard = false, departBloque = false) {
+    function pointageForm(enRetard = false, departBloque = false, auto = false) {
         return {
             busy: false,
             etape: '',
@@ -20,6 +27,26 @@
             modalDepart: false,
             motif: '',
             motifTropCourt: false,
+
+            auto: auto,
+
+            init() {
+                if (!this.auto) return;
+
+                // Un départ avant l'heure attend une permission : on laisse le
+                // bouton en place, l'intéressé doit voir pourquoi ça ne part pas.
+                if (this.departBloque) return;
+
+                // Un retard attend une explication : on ouvre la modale, mais
+                // on n'écrit rien à sa place. Le bouton reste visible derrière,
+                // pour ceux qui referment la fenêtre sans rien dire.
+                if (this.enRetard) {
+                    this.modalRetard = true;
+                    return;
+                }
+
+                this.$nextTick(() => this.capturer(this.$root));
+            },
 
             validerMotif() {
                 if (this.motif.trim().length < 10) {

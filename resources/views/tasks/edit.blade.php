@@ -308,7 +308,7 @@
                                         </div>
                                         <div class="min-w-0">
                                             <div class="flex flex-wrap items-center gap-2">
-                                                <p class="text-sm font-semibold text-slate-900 dark:text-white {{ $st->is_completed ? 'line-through text-slate-500' : '' }}">
+                                                <p class="text-sm font-semibold {{ $st->is_completed ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-900 dark:text-white' }}">
                                                     {{ $st->title }}
                                                 </p>
                                                 @if($st->is_completed)

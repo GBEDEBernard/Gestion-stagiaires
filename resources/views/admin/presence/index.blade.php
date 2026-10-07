@@ -1415,6 +1415,72 @@
                 </div>
             </div>
 
+            {{-- DÉPARTS NON POINTÉS À RÉGLER --}}
+            <div class="pres-table-card mt-6">
+                <div class="pres-table-head">
+                    <span class="pres-table-head-title">⏳ Départs à régler</span>
+                    <span class="pres-table-head-meta">Départs non pointés, clôturés ou déclarés, sans correction validée</span>
+                </div>
+                @if($pendingCorrections->isEmpty())
+                    <div class="pres-empty">
+                        <div class="pres-empty-icon">✅</div>Aucun départ oublié en attente de correction
+                    </div>
+                @else
+                    <div style="overflow-x:auto;">
+                        <table class="pres-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Utilisateur</th>
+                                    <th>Arrivée</th>
+                                    <th>Clôturé à</th>
+                                    <th>Status</th>
+                                    <th>Déclaration</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($pendingCorrections as $pc)
+                                    @php
+                                        $pcUser    = $pc->user ?: $pc->etudiant?->user;
+                                        $pcName    = $pcUser?->name ?? ($pc->etudiant?->full_name ?? 'Utilisateur');
+                                        $pcRoute   = $pcUser ? route('attendance.tracking.user.historique', $pcUser) : null;
+                                        $pcEtat    = $pc->departure_status === 'claimed' ? 'declaré' : 'clôturé';
+                                        $pcEjEtat  = $pc->departure_status === 'claimed' ? 'tag-amber' : 'tag-rose';
+                                    @endphp
+                                    <tr>
+                                        <td style="white-space:nowrap;">{{ $pc->attendance_date->locale('fr')->isoFormat('dd D MMM YYYY') }}</td>
+                                        <td style="font-weight:500;">{{ $pcName }}</td>
+                                        <td style="font-family:var(--mono);">{{ $pc->first_check_in_at?->format('H:i') }}</td>
+                                        <td style="font-family:var(--mono);">{{ $pc->last_check_out_at?->format('H:i') }}</td>
+                                        <td>
+                                            <span class="pres-tag {{ $pcEjEtat }}">
+                                                {{ $pcEtat }}
+                                                @if($pc->departure_status === 'claimed')
+                                                    <span title="{{ $pc->claimed_check_out_reason ?? '' }}">· {{ $pc->claimed_check_out_at?->format('H:i') }}</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                        <td style="font-size:.8rem;color:var(--muted);max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                            {{ $pc->claimed_check_out_reason ?? '—' }}
+                                        </td>
+                                        <td>
+                                            @if($pcRoute)
+                                                <a href="{{ $pcRoute }}" class="pres-tag tag-emerald" style="text-decoration:none;">
+                                                    Rétablir l'heure
+                                                </a>
+                                            @else
+                                                <span class="pres-tag" style="color:var(--muted);">—</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
         </div>
     </div>
 
@@ -1572,9 +1638,9 @@
                                     <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="r.site_name || '—'"></td>
                                     <td class="px-5 py-3">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                                            :class="statusBadge(r.status).cls">
-                                            <span class="w-1.5 h-1.5 rounded-full" :class="statusBadge(r.status).dot"></span>
-                                            <span x-text="statusBadge(r.status).label"></span>
+                                            :class="rowBadge(r).cls">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="rowBadge(r).dot"></span>
+                                            <span x-text="rowBadge(r).label"></span>
                                         </span>
                                     </td>
                                     <td class="px-5 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300" x-text="r.arrival || '—'"></td>
@@ -1687,6 +1753,17 @@
                     return map[status] || { label: status || '—', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' };
                 },
 
+                rowBadge(r) {
+                    if (r.status === 'corrected' && r.is_permission) {
+                        return {
+                            label: 'Journée permissionnée',
+                            cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+                            dot: 'bg-violet-500',
+                        };
+                    }
+                    return this.statusBadge(r.status);
+                },
+
                 groupLabel(group) {
                     return group === 'employe' ? 'Employé' : 'Stagiaire';
                 },
@@ -1716,7 +1793,7 @@
                                 r.name,
                                 this.groupLabel(r.group),
                                 r.site_name || '',
-                                this.statusBadge(r.status).label,
+                                this.rowBadge(r).label,
                                 r.arrival || '',
                                 r.departure || '',
                                 this.fmtHours(r.worked_minutes),

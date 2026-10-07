@@ -47,6 +47,11 @@ use App\Http\Controllers\EvaluationCriterionController;
 use App\Http\Controllers\StageEvaluationController;
 use App\Http\Controllers\WorkScheduleSettingController;
 
+// ---------------- Debug (unused in prod, drop after fixing) ----------------
+// Route::middleware(['auth', 'role:admin|superviseur'])
+//     ->get('/debug/pointage-state', [DebugPointageStateController::class, '__invoke'])
+//     ->name('debug.pointage.state');
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -85,9 +90,16 @@ Route::middleware(['auth', \App\Http\Middleware\DecryptRouteParameter::class, 'a
 
     // ---------------- Dashboard ----------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/missing-departure', [
+        App\Http\Controllers\DashboardMissingDepartureController::class,
+        '__invoke',
+    ])->name('dashboard.missing-departure');
     Route::get('/admin/dashboard/inscriptions/details', [DashboardController::class, 'registrationsDetail'])
         ->name('dashboard.registrations.detail')
         ->middleware('permission:etudiants.view');
+    Route::get('/admin/dashboard/tasks-details', [DashboardController::class, 'tasksDetail'])
+        ->name('dashboard.tasks.detail')
+        ->middleware('permission:tasks.view');
 
     // ---------------- Profil utilisateur ----------------
     Route::prefix('profile')->group(function () {
@@ -154,6 +166,7 @@ Route::post('admin/presence/anomalies/bulk-resolve', [AdminPresenceController::c
         Route::get('create', [StageController::class, 'create'])->name('stages.create')->middleware('permission:stages.create');
         Route::post('/', [StageController::class, 'store'])->name('stages.store')->middleware('permission:stages.create');
         Route::get('corbeille', [StageController::class, 'trash'])->name('stages.trash')->middleware('permission:stages.view');
+        Route::post('{stage}/prolonger', [StageController::class, 'prolonger'])->name('stages.prolonger')->middleware('permission:stages.edit');
         Route::get('{stage}', [StageController::class, 'show'])->name('stages.show')->middleware('permission:stages.view');
         Route::get('{stage}/edit', [StageController::class, 'edit'])->name('stages.edit')->middleware('permission:stages.edit');
         Route::put('{stage}', [StageController::class, 'update'])->name('stages.update')->middleware('permission:stages.edit');
@@ -417,6 +430,7 @@ Route::delete('/admin/logs/clear', [AdminLogController::class, 'clear'])
     // ---------------- Supervision Présence Admin ----------------
     Route::prefix('admin/presence')->middleware('can:accessAdminPresence')->group(function () {
         Route::get('/', [AdminPresenceController::class, 'index'])->name('admin.presence.index');
+        Route::get('/corrections-depart', [AdminPresenceController::class, 'departureCorrections'])->name('admin.presence.corrections')->middleware('role:admin|superviseur');
         Route::get('/chart-detail', [AdminPresenceController::class, 'chartDayDetail'])->name('admin.presence.chart-detail');
         Route::get('/stats', [AdminPresenceController::class, 'stats'])->name('admin.presence.stats');
         Route::get('/dashboard-stats', [AdminPresenceController::class, 'dashboardStats'])->name('admin.presence.dashboard-stats');

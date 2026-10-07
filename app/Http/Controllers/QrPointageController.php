@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\PresenceRefusedException;
 use App\Models\Site;
 use App\Models\Stage;
 use App\Models\TrustedDevice;
@@ -40,71 +41,149 @@ class QrPointageController extends Controller
             $rawTokens = is_array($decoded) ? $decoded : [$cookieData];
         }
 
-        // Déjà connecté : la page de pointage de l'application est exactement
-        // cet écran. Inutile d'en servir une copie hors session.
+        // Le badge actif porté par ce téléphone, s'il y en a un.
+        $badge = $this->badgeActif($rawTokens);
+
+        // Une session ouverte ne doit pas détourner le scan vers la page de
+        // l'application. C'est le même geste au second passage qu'au premier,
+        // et le pointage automatique n'existe qu'ici : renvoyer dans
+        // l'application supprimait de fait l'automatisation pour la moitié des
+        // personnes, celles qui laissent leur session ouverte.
         if (Auth::check()) {
-            return redirect()->route('presence.pointage')->with(
-                'info',
-                "Site « {$site->name} » reconnu. Vous pouvez pointer ci-dessous."
-            );
+            $user = Auth::user();
+
+            // Le badge n'automatise que le compte qu'il autorise. Un téléphone
+            // dont le badge appartient à un autre compte, ou sans badge du tout,
+            // reste un pointage volontaire : le bouton reste, rien ne part seul.
+            if ($badge === null || $badge->user_id !== $user->id) {
+                return $this->cartePointage($site, $user, null, false);
+            }
+
+            return $this->pointagePorte($site, $user, $badge, $this->tokenDuBadge($rawTokens, $badge));
         }
 
-        if (empty($rawTokens)) {
-            // Aucun appareil enrôlé : mémorisation et redirection vers le login
+        if ($badge === null) {
+            // Aucun badge utilisable : mémorisation et redirection vers le login
             session(['pending_qr_site' => $site->qr_token]);
+
             return redirect()->route('login')->with(
                 'info',
-                "Bienvenue sur le site « {$site->name} ». Veuillez vous connecter pour valider votre pointage et configurer votre appareil."
-            );
-        }
-
-        // Résolution des badges actifs liés aux tokens du cookie
-        $tokenHashes = array_map(fn($t) => hash('sha256', $t), $rawTokens);
-        $activeDevices = TrustedDevice::whereIn('pointage_token_hash', $tokenHashes)
-            ->where('is_qr_badge', true)
-            ->whereNull('revoked_at')
-            ->with(['user.etudiant.stages', 'user.domaine'])
-            ->get()
-            ->filter(fn($device) => $device->isBadgeActive());
-
-        if ($activeDevices->isEmpty()) {
-            session(['pending_qr_site' => $site->qr_token]);
-            return redirect()->route('login')->with(
-                'info',
-                "Votre badge sur cet appareil n'est plus actif ou a expiré. Veuillez vous connecter pour le renouveler."
+                empty($rawTokens)
+                    ? "Bienvenue sur le site « {$site->name} ». Veuillez vous connecter pour valider votre pointage et configurer votre appareil."
+                    : "Votre badge sur cet appareil n'est plus actif ou a expiré. Veuillez vous connecter pour le renouveler."
             );
         }
 
         // Un téléphone porte un seul badge : on prend le premier actif. Le choix
         // entre plusieurs profils n'existe plus, l'enrôlement l'interdit en amont.
-        $device = $activeDevices->first();
-        $user   = $device->user;
+        return $this->pointagePorte($site, $badge->user, $badge, $this->tokenDuBadge($rawTokens, $badge));
+    }
 
-        $matchingRawToken = null;
+    /**
+     * Le badge actif porté par ce téléphone, déduit des tokens du cookie.
+     *
+     * @param  array<int, string>  $rawTokens
+     */
+    protected function badgeActif(array $rawTokens): ?TrustedDevice
+    {
+        if ($rawTokens === []) {
+            return null;
+        }
+
+        $tokenHashes = array_map(fn($t) => hash('sha256', $t), $rawTokens);
+
+        return TrustedDevice::whereIn('pointage_token_hash', $tokenHashes)
+            ->where('is_qr_badge', true)
+            ->whereNull('revoked_at')
+            ->with(['user.etudiant.stages', 'user.domaine'])
+            ->get()
+            ->first(fn($device) => $device->isBadgeActive());
+    }
+
+    /**
+     * Le token brut correspondant au badge retenu. Il repart dans la carte pour
+     * que le POST puisse réidentifier l'appareil sans refaire la résolution.
+     *
+     * @param  array<int, string>  $rawTokens
+     */
+    protected function tokenDuBadge(array $rawTokens, TrustedDevice $badge): ?string
+    {
         foreach ($rawTokens as $raw) {
-            if (hash('sha256', $raw) === $device->pointage_token_hash) {
-                $matchingRawToken = $raw;
-                break;
+            if (hash('sha256', $raw) === $badge->pointage_token_hash) {
+                return $raw;
             }
         }
 
-        return $this->cartePointage($site, $user, $matchingRawToken);
+        return null;
+    }
+
+    /**
+     * Contrôles d'accès de la porte, puis carte automatique.
+     *
+     * Un compte désactivé ne pointe pas, même badge encore actif : la
+     * désactivation doit se voir tout de suite, pas au prochain login. Un
+     * compte de gestion n'est pas habilité au pointage : le badge reste
+     * valide, mais ce qu'il ouvre, c'est le message qui suit.
+     */
+    protected function pointagePorte(Site $site, User $user, TrustedDevice $badge, ?string $deviceToken)
+    {
+        if ($user->status !== 'actif') {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'account_inactive',
+                'title'      => 'Compte désactivé',
+                'message'    => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
+        if (!$user->peutPointer()) {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'not_pointable',
+                'title'      => 'Compte non habilité au pointage',
+                'message'    => 'Votre compte ne permet pas le pointage.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
+        return $this->cartePointage($site, $user, $deviceToken, true);
     }
 
     /**
      * La carte de pointage servie à la porte : même écran que dans
      * l'application, mais hors session — le badge autorise à pointer, pas à
      * entrer dans le compte.
+     *
+     * Elle pointe toute seule. Sur une porte, un clic de plus n'est pas une
+     * confirmation : c'est une seconde à perdre, devant la file, et rien à
+     * décider. Les conditions sont déjà vérifiées côté serveur ; le scan les
+     * déclenche et le résultat s'affiche.
+     *
+     * @param  bool  $autoPointage  False quand aucun badge n'autorise ce
+     *                             téléphone : le pointage reste alors un geste
+     *                             volontaire, bouton conservé.
      */
-    protected function cartePointage(Site $site, User $user, ?string $deviceToken)
+    protected function cartePointage(Site $site, User $user, ?string $deviceToken, bool $autoPointage = true)
     {
         $etat = $this->pointageState->forUser($user, $site);
+
+        $hasCheckedIn = (bool) ($etat['day']?->first_check_in_at);
 
         return view('presence.qr.pointage', array_merge($etat, [
             'site'        => $site,
             'user'        => $user,
             'deviceToken' => $deviceToken,
             'prenom'      => $user->personnel?->prenom ?: ($user->prenom ?: $user->name),
+            'autoPointage' => $autoPointage,
+            'journeeOubliee' => app(\App\Services\PointageState::class)->journeeOubliee($user, $etat['stage']),
+            'declarationUrl' => route('presence.depart-oublie'),
         ]));
     }
 
@@ -173,6 +252,37 @@ class QrPointageController extends Controller
             ]);
         }
 
+        // Un compte désactivé ne pointe pas, même par badge de porte : la
+        // règle vaut pour toutes les entrées, pas seulement le navigateur.
+        if ($user->status !== 'actif') {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'account_inactive',
+                'title'      => 'Compte désactivé',
+                'message'    => 'Votre compte est désactivé. Contactez votre administrateur pour être réactivé.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
+        // La route est publique : le refus du scan doit être rejoué ici, sinon
+        // un POST direct sur /p/{token}/process enregistrerait la journée d'un
+        // compte de gestion.
+        if (!$user->peutPointer()) {
+            return view('presence.qr.result', [
+                'status'     => 'rejected',
+                'reasonCode' => 'not_pointable',
+                'title'      => 'Compte non habilité au pointage',
+                'message'    => 'Votre compte ne permet pas le pointage.',
+                'user'       => $user,
+                'site'       => $site,
+                'eventType'  => 'unknown',
+                'time'       => now()->format('H:i'),
+            ]);
+        }
+
         // 2. Un retard exige une observation, comme dans le pointage classique.
         //    On la demande AVANT d'écrire la journée : constater le retard après
         //    coup laisserait la personne sans moyen de s'expliquer.
@@ -220,16 +330,23 @@ class QrPointageController extends Controller
                 'site'      => $site,
                 'time'      => now()->format('H:i'),
                 'event'     => $result['event'] ?? null,
+                'forgotten_departure' => $result['forgotten_departure'] ?? null,
             ]);
         } catch (ValidationException $e) {
             $errorMessage = collect($e->errors())->flatten()->first() ?? "Pointage non autorisé.";
             return view('presence.qr.result', [
-                'status'    => 'rejected',
-                'eventType' => 'rejected',
-                'message'   => $errorMessage,
-                'user'      => $user,
-                'site'      => $site,
-                'time'      => now()->format('H:i'),
+                'status'     => 'rejected',
+                'eventType'  => 'rejected',
+                'message'    => $errorMessage,
+                'user'       => $user,
+                'site'       => $site,
+                'time'       => now()->format('H:i'),
+                // Un refus d'horaire porte son code : sans lui, l'écran de
+                // résultat retomberait sur « Pointage non enregistré » et la
+                // personne ne saurait pas à quelle heure revenir.
+                'reasonCode' => $e instanceof PresenceRefusedException
+                    ? $e->reasonCode
+                    : null,
             ]);
         } catch (\Exception $e) {
             // Un identifiant court est affiché à l'utilisateur pour que l'admin
@@ -264,6 +381,16 @@ class QrPointageController extends Controller
         $user = Auth::user();
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Non authentifié.'], 401);
+        }
+
+        // Un badge qui n'a pas le droit de pointer n'a rien à faire à la porte :
+        // sans ce refus, un compte d'administration promène des jetons valides,
+        // sans date d'expiration, sur une route publique.
+        if (!$user->peutPointer()) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ce compte n'est pas habilité au pointage. Demandez le rôle « Employé » à votre administrateur si vous devez enregistrer vos présences.",
+            ], 422);
         }
 
         $validated = $request->validate([

@@ -26,6 +26,7 @@
     $ringR  = 22; $ringC = 2 * M_PI * $ringR;
     $ringOff = $ringC * (1 - ($pct / 100));
     $reportCount = $task->dailyReports->count();
+    $draftCount  = $task->dailyReports->where('status', 'draft')->count();
 
     $priorityBarGradient = match($task->priority) {
         'urgent' => 'linear-gradient(90deg,#ef4444,#f97316)',
@@ -143,6 +144,33 @@
 .d-btn-dark:hover { background: #222; transform: translateY(-1px); }
 .ws-root.dark .d-btn-dark { background: #fff; color: #0a0a0a; }
 .ws-root.dark .d-btn-dark:hover { background: #e5e5e5; }
+
+/* ── Bouton secondaire (brouillon) ── */
+.d-btn-soft {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 2.5rem; padding: .625rem 1.125rem;
+    background: rgba(0,0,0,.05); color: rgba(0,0,0,.62);
+    font-size: .875rem; font-weight: 500;
+    border: none; border-radius: .75rem;
+    cursor: pointer;
+    transition: background .18s;
+}
+.d-btn-soft:hover { background: rgba(0,0,0,.08); }
+.ws-root.dark .d-btn-soft { background: rgba(255,255,255,.08); color: rgba(255,255,255,.75); }
+.ws-root.dark .d-btn-soft:hover { background: rgba(255,255,255,.14); }
+
+/*
+ * Sur téléphone, un bouton de moins de 44px de haut est difficile à
+ * viser au doigt, et sur une largeur étroite un libellé long se coupe en
+ * trois lignes. Les actions du formulaire passent donc pleine largeur,
+ * avec une cible confortable.
+ */
+@media (max-width: 639px) {
+    .d-btn-dark, .d-btn-soft {
+        width: 100%; height: 2.875rem; justify-content: center;
+        white-space: nowrap;
+    }
+}
 
 .d-btn-ghost {
     display: inline-flex; align-items: center; gap: .375rem;
@@ -542,7 +570,10 @@
 
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <p class="text-sm font-semibold text-black dark:text-white {{ $st->is_completed ? 'line-through opacity-60' : '' }}">
+                                    {{-- Pas de trait barré : la ligne reste cliquable pour
+                                         lire ce qui a été fait. C'est le vert de la carte
+                                         et la coche qui signalent la validation. --}}
+                                    <p class="text-sm font-semibold {{ $st->is_completed ? 'text-emerald-900 dark:text-emerald-200' : 'text-black dark:text-white' }}">
                                         {{ $st->title }}
                                     </p>
 
@@ -687,7 +718,7 @@
                                     @endif
                                 </span>
                                 @endif
-                                <p class="text-xs font-medium text-black/70 dark:text-white/70 {{ $item->is_completed ? 'line-through opacity-50' : '' }}">
+                                <p class="text-xs font-medium {{ $item->is_completed ? 'text-emerald-800 dark:text-emerald-300' : 'text-black/70 dark:text-white/70' }}">
                                     {{ $item->title }}
                                 </p>
                             </div>
@@ -803,7 +834,12 @@
         <div class="flex items-center justify-between px-6 py-4">
             <div>
                 <h3 class="text-sm font-semibold text-black">Rapports d'activité académiques</h3>
-                <p class="text-xs mt-0.5 text-black/40">{{ $reportCount }} rapport{{ $reportCount !== 1 ? 's' : '' }} déposé{{ $reportCount !== 1 ? 's' : '' }}</p>
+                <p class="text-xs mt-0.5 text-black/40">
+                    {{ $reportCount }} rapport{{ $reportCount !== 1 ? 's' : '' }} déposé{{ $reportCount !== 1 ? 's' : '' }}
+                    @if($draftCount > 0)
+                        <span class="text-amber-700">· {{ $draftCount }} brouillon{{ $draftCount > 1 ? 's' : '' }} en attente</span>
+                    @endif
+                </p>
             </div>
             @if($isParticipant && !$task->isCompleted() && !$isFirstReport)
             <span class="text-xs font-medium px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">↓ Rapport du jour en bas</span>
@@ -949,11 +985,26 @@
             $subtasksDone = $useItems ? $myItems->where('is_completed', true)->count() : $subtasksPayload->where('is_completed', true)->count();
             // Rien à valider : l'utilisateur n'a ni items ni sous-tâches à sa charge.
             $hasNothingToValidate = $subtasksTotal === 0;
+
+            // Le dépôt d'un rapport suppose une tâche réellement découpée : sans
+            // sous-tâche ni item, la progression ne peut pas bouger. Le
+            // brouillon reste libre, seule la soumission est refusée.
+            $readiness       = $task->reportReadiness();
+            $canSubmitReport = $readiness['can_submit'];
+            $hasChecklist    = $task->hasChecklistFor($user->id);
+
+            // Un rapport du jour peut être un brouillon : il doit être visible
+            // comme tel, et se soumettre normalement une fois la tâche découpée.
+            $isDraft    = $todayReport && $todayReport->status === 'draft';
         @endphp
 
+
         <div class="px-6 py-5" x-data="{
-            open: {{ $isFirstReport ? 'true' : 'false' }},
+            open: {{ ($isFirstReport || $isDraft) ? 'true' : 'false' }},
             edit: false,
+            canSubmit: {{ $canSubmitReport ? 'true' : 'false' }},
+            hasChecklist: {{ $hasChecklist ? 'true' : 'false' }},
+            block: null,
             useItems: {{ $useItems ? 'true' : 'false' }},
             subtasks: @js($subtasksPayload),
             checkedSubtasks: [],
@@ -972,8 +1023,28 @@
                 const checked = this.checkedSubtasks.map(Number);
                 const remaining = this.subtasks.find(s => !s.is_completed && !checked.includes(Number(s.id)));
                 return remaining ? remaining.title : null;
+            },
+            /*
+             * Le bouton reste toujours cliquable : c'est au clic qu'on
+             * explique ce qui manque, dans une fenêtre, plutôt que de
+             * laisser un bouton grisé sans motif. Le serveur refuse
+             * lui aussi la soumission — cette fenêtre n'est qu'un
+             * raccourci vers l'explication.
+             */
+            guard(event, form) {
+                if (!this.canSubmit) {
+                    event.preventDefault();
+                    this.block = 'breakdown';
+                    return;
+                }
+                if (this.hasChecklist && this.checkedSubtasks.length === 0) {
+                    event.preventDefault();
+                    this.block = 'checklist';
+                    return;
+                }
+                form.submit();
             }
-        }">
+        }" @keydown.escape.window="block = null">
 
             {{-- Toggle header --}}
             <button type="button" @click="open = !open"
@@ -989,9 +1060,13 @@
                     </div>
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-[.15em]"
-                              style="color:#6366f1;">{{ $isFirstReport ? 'Premier rapport' : 'Rapport du jour' }}</span>
+                              style="color:#6366f1;">{{ $isDraft ? 'Brouillon à valider' : ($isFirstReport ? 'Premier rapport' : 'Rapport du jour') }}</span>
                         <p class="text-sm font-semibold mt-0.5 text-black">
-                            {{ $todayReport ? "Rapport déposé aujourd'hui — Modifier ↗" : "Déposer un rapport d'activité" }}
+                            @if($isDraft)
+                                Brouillon enregistré aujourd'hui — il manque juste la validation
+                            @else
+                                {{ $todayReport ? "Rapport déposé aujourd'hui — Modifier ↗" : "Déposer un rapport d'activité" }}
+                            @endif
                         </p>
                     </div>
                 </div>
@@ -1014,16 +1089,25 @@
                     <div class="d-report-done">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center gap-2">
+                                @if($isDraft)
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15">
+                                    <svg class="h-3.5 w-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                    </svg>
+                                </span>
+                                <span class="text-sm font-semibold text-amber-700">Brouillon enregistré · pas encore validé</span>
+                                @else
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15">
                                     <svg class="h-3.5 w-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                     </svg>
                                 </span>
                                 <span class="text-sm font-semibold text-emerald-700">Rapport soumis · {{ (int)$todayReport->task_progress_percent }}%</span>
+                                @endif
                             </div>
                             <button type="button" @click="edit=!edit"
                                class="text-xs font-medium text-black/50 hover:text-black/80 transition hover:underline"
-                               x-text="edit ? 'Annuler' : 'Modifier →'">
+                               x-text="edit ? 'Annuler' : ($isDraft ? 'Compléter et valider →' : 'Modifier →')">
                             </button>
                         </div>
                         <div x-show="!edit" class="space-y-3">
@@ -1052,10 +1136,10 @@
                         </div>
 
                         {{-- ── Formulaire édition inline ── --}}
-                        <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5">
+                        <form x-show="edit" method="POST" action="{{ route('reports.update', $todayReport->id) }}" class="space-y-5" @submit.prevent="guard($event, $el)">
                             @csrf
                             @method('PUT')
-                            <input type="hidden" name="status_action" value="submit">
+                            <input type="hidden" name="status_action" id="report-status-action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
 
                             {{-- Validation des items / sous-tâches --}}
@@ -1110,7 +1194,7 @@
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <span class="text-sm font-semibold"
-                                                          :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
+                                                          :class="st.is_completed ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-900 dark:text-white'"
                                                           x-text="st.title"></span>
                                                     @if($useItems)
                                                     <span class="text-[10px] text-slate-400 dark:text-slate-500"
@@ -1148,23 +1232,23 @@
 
                             {{-- Progression automatique de la tâche (redessinée) --}}
                             <div class="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-4 dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-indigo-950/20 shadow-sm">
-                                <div class="flex items-center justify-between mb-2.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
+                                <div class="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex min-w-0 items-center gap-2.5">
+                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
                                             %
                                         </div>
-                                        <div>
-                                            <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 block">
+                                        <div class="min-w-0">
+                                            <span class="block truncate text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                                                 Progression de la tâche
                                             </span>
-                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 block">
-                                                Augmente automatiquement selon les sous-tâches sélectionnées
+                                            <span class="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                                Augmente selon les sous-tâches cochées
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="text-right">
+                                    <div class="shrink-0 sm:text-right">
                                         <div class="flex items-baseline justify-end gap-1.5">
-                                            <span class="font-mono text-2xl font-black text-slate-900 dark:text-white" x-text="livePercent + '%'"></span>
+                                            <span class="font-mono text-xl font-black text-slate-900 dark:text-white sm:text-2xl" x-text="livePercent + '%'"></span>
                                             <span x-show="checkedSubtasks.length > 0" x-cloak
                                                   class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-md border border-emerald-200/60"
                                                   x-text="'+' + (livePercent - basePercent) + '%'"></span>
@@ -1177,12 +1261,12 @@
                                          :style="`width: ${livePercent}%`"></div>
                                 </div>
 
-                                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                                <div class="mt-2 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-[11px] text-slate-400">
                                     <span class="font-mono">0%</span>
-                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="font-semibold text-indigo-600 dark:text-indigo-400"
-                                          x-text="checkedSubtasks.length + ' sous-tâche(s) sélectionnée(s)'"></span>
-                                    <span x-show="checkedSubtasks.length === 0" class="text-slate-400">
-                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Cochez une sous-tâche pour faire progresser' }}
+                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="truncate text-center font-semibold text-indigo-600 dark:text-indigo-400"
+                                          x-text="checkedSubtasks.length + ' sélectionnée(s)'"></span>
+                                    <span x-show="checkedSubtasks.length === 0" class="truncate text-center text-slate-400">
+                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Coche une sous-tâche pour faire progresser' }}
                                     </span>
                                     <span class="font-mono">100%</span>
                                 </div>
@@ -1229,18 +1313,18 @@
                                 <input type="hidden" name="next_steps" :value="nextStepTitle ? nextStepTitle : 'Toutes les sous-tâches sont terminées'">
                             </div>
 
-                            {{-- Footer formulaire --}}
-                            <div class="flex items-center justify-between pt-1" style="border-top:1.5px solid rgba(99,102,241,.10);">
-                                <button type="button" @click="edit=false"
-                                        class="text-sm font-medium transition rounded-lg px-4 py-2.5"
-                                        style="background:rgba(0,0,0,.05);color:rgba(0,0,0,.55);">
+                            {{-- Footer formulaire (édition d'un rapport) --}}
+                            <div class="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between"
+                                 style="border-top:1.5px solid rgba(99,102,241,.10);">
+                                <button type="button" @click="edit=false" class="d-btn-soft order-1 sm:order-none">
                                     Annuler
                                 </button>
                                 <button type="submit" class="d-btn-dark">
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
                                     </svg>
-                                    Enregistrer les modifications
+                                    <span class="sm:hidden">{{ $isDraft ? 'Valider' : 'Enregistrer' }}</span>
+                                    <span class="hidden sm:inline">{{ $isDraft ? 'Soumettre le brouillon' : 'Enregistrer les modifications' }}</span>
                                 </button>
                             </div>
                         </form>
@@ -1260,9 +1344,9 @@
                             </p>
                         </div>
 
-<form method="POST" action="{{ route('reports.store') }}" class="space-y-5">
+<form method="POST" action="{{ route('reports.store') }}" class="space-y-5" @submit.prevent="guard($event, $el)">
                             @csrf
-                            <input type="hidden" name="status_action" value="submit">
+                            <input type="hidden" name="status_action" id="report-status-action" value="submit">
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
                             <input type="hidden" name="latitude" id="report-latitude" value="">
                             <input type="hidden" name="longitude" id="report-longitude" value="">
@@ -1307,7 +1391,7 @@
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <span class="text-sm font-semibold"
-                                                          :class="st.is_completed ? 'line-through opacity-70' : 'text-slate-900 dark:text-white'"
+                                                          :class="st.is_completed ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-900 dark:text-white'"
                                                           x-text="st.title"></span>
                                                     @if($useItems)
                                                     <span class="text-[10px] text-slate-400 dark:text-slate-500"
@@ -1345,23 +1429,23 @@
 
                             {{-- Progression automatique de la tâche (redessinée) --}}
                             <div class="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-4 dark:border-white/10 dark:from-white/[0.04] dark:via-white/[0.02] dark:to-indigo-950/20 shadow-sm">
-                                <div class="flex items-center justify-between mb-2.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
+                                <div class="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex min-w-0 items-center gap-2.5">
+                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs shadow-sm">
                                             %
                                         </div>
-                                        <div>
-                                            <span class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 block">
+                                        <div class="min-w-0">
+                                            <span class="block truncate text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                                                 Progression de la tâche
                                             </span>
-                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 block">
-                                                Augmente automatiquement selon les sous-tâches sélectionnées
+                                            <span class="block truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                                Augmente selon les sous-tâches cochées
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="text-right">
+                                    <div class="shrink-0 sm:text-right">
                                         <div class="flex items-baseline justify-end gap-1.5">
-                                            <span class="font-mono text-2xl font-black text-slate-900 dark:text-white" x-text="livePercent + '%'"></span>
+                                            <span class="font-mono text-xl font-black text-slate-900 dark:text-white sm:text-2xl" x-text="livePercent + '%'"></span>
                                             <span x-show="checkedSubtasks.length > 0" x-cloak
                                                   class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-md border border-emerald-200/60"
                                                   x-text="'+' + (livePercent - basePercent) + '%'"></span>
@@ -1374,12 +1458,12 @@
                                          :style="`width: ${livePercent}%`"></div>
                                 </div>
 
-                                <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                                <div class="mt-2 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-[11px] text-slate-400">
                                     <span class="font-mono">0%</span>
-                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="font-semibold text-indigo-600 dark:text-indigo-400"
-                                          x-text="checkedSubtasks.length + ' sous-tâche(s) sélectionnée(s)'"></span>
-                                    <span x-show="checkedSubtasks.length === 0" class="text-slate-400">
-                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Cochez une sous-tâche pour faire progresser' }}
+                                    <span x-show="checkedSubtasks.length > 0" x-cloak class="truncate text-center font-semibold text-indigo-600 dark:text-indigo-400"
+                                          x-text="checkedSubtasks.length + ' sélectionnée(s)'"></span>
+                                    <span x-show="checkedSubtasks.length === 0" class="truncate text-center text-slate-400">
+                                        {{ $task->subtasks->isEmpty() ? 'Aucune sous-tâche définie' : 'Coche une sous-tâche pour faire progresser' }}
                                     </span>
                                     <span class="font-mono">100%</span>
                                 </div>
@@ -1424,18 +1508,31 @@
                                 <input type="hidden" name="next_steps" :value="nextStepTitle ? nextStepTitle : 'Toutes les sous-tâches sont terminées'">
                             </div>
 
-                            {{-- Footer formulaire --}}
-                            <div class="flex items-center justify-between pt-1" style="border-top:1.5px solid rgba(99,102,241,.10);">
-                                <p class="text-xs" style="color:rgba(0,0,0,.35);">
-                                    <svg class="inline h-3 w-3 mr-1 opacity-60" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                            {{-- Footer formulaire : sur téléphone les actions s'empilent,
+                                     pleine largeur, la principale en bas (pouce) --}}
+                            <div class="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                                 style="border-top:1.5px solid rgba(99,102,241,.10);">
+                                <p class="text-center text-[11px] sm:max-w-[14rem] sm:text-left sm:text-xs" style="color:rgba(0,0,0,.35);">
+                                    <svg class="mr-1 inline h-3 w-3 opacity-60" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
                                     Un seul rapport par jour
                                 </p>
-                                <button type="submit" class="d-btn-dark">
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
-                                    </svg>
-                                    {{ $isFirstReport ? 'Soumettre le premier rapport' : 'Soumettre le rapport' }}
-                                </button>
+                                {{-- Le brouillon reste possible : seule la soumission est bloquée --}}
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    <button type="submit"
+                                            @click="$el.form.querySelector('#report-status-action').value = 'draft'"
+                                            class="d-btn-soft"
+                                            title="Enregistrer sans valider : tu pourras soumettre plus tard">
+                                        <span class="sm:hidden">Brouillon</span>
+                                        <span class="hidden sm:inline">Enregistrer le brouillon</span>
+                                    </button>
+                                    <button type="submit" class="d-btn-dark">
+                                        <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m6 12-2.7-8.7a.5.5 0 0 1 .67-.6l16.5 8.25a.5.5 0 0 1 0 .9L3.97 20.1a.5.5 0 0 1-.67-.6L6 12Zm0 0h6"/>
+                                        </svg>
+                                        <span class="sm:hidden">{{ $isDraft ? 'Valider' : 'Soumettre' }}</span>
+                                        <span class="hidden sm:inline">{{ $isFirstReport ? 'Soumettre le premier rapport' : 'Soumettre le rapport' }}</span>
+                                    </button>
+                                </div>
                             </div>
 
                         </form>
@@ -1444,7 +1541,159 @@
 
                 </div>
             </div>
-        </div>
+
+            {{-- ── Fenêtre : pourquoi la soumission est refusée ────────────────
+                 Le bouton Soumettre reste toujours cliquable ; c'est ici
+                 qu'on explique l'étape manquante, avec la marche à suivre.
+                 Mise en page mobile d'abord : une colonne, défilement interne,
+                 boutons empilés puis côte à côte dès qu'il y a de la place. --}}
+            <div x-show="block !== null" x-cloak
+                 class="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4"
+                 role="dialog" aria-modal="true">
+
+                <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[3px] transition"
+                     x-show="block !== null" x-transition.opacity
+                     @click="block = null"></div>
+
+                <div class="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-w-md sm:rounded-2xl"
+                     x-show="block !== null"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-6 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+
+                    {{-- ── Tête ── --}}
+                    <div class="flex items-start gap-3 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                              :class="block === 'breakdown' ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600'">
+                            <template x-if="block === 'breakdown'">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+                                </svg>
+                            </template>
+                            <template x-if="block === 'checklist'">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                            </template>
+                        </span>
+
+                        <div class="min-w-0 flex-1">
+                            <template x-if="block === 'breakdown'">
+                                <h3 class="text-base font-semibold leading-6 text-slate-900 sm:text-[17px]">Ta tâche n'est pas encore découpée</h3>
+                            </template>
+                            <template x-if="block === 'checklist'">
+                                <h3 class="text-base font-semibold leading-6 text-slate-900 sm:text-[17px]">Coche ce que tu as terminé</h3>
+                            </template>
+                            <p class="mt-1 text-[13px] leading-5 text-slate-500">
+                                <template x-if="block === 'breakdown'">
+                                    <span>Un rapport se valide sur du travail découpé — c’est ce qui fait monter la progression.</span>
+                                </template>
+                                <template x-if="block === 'checklist'">
+                                    <span>Un rapport validé dit ce qui a été accompli.</span>
+                                </template>
+                            </p>
+                        </div>
+
+                        <button type="button" @click="block = null" aria-label="Fermer"
+                                class="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="min-h-0 flex-1 overflow-y-auto px-5 sm:px-6">
+
+                        {{-- ── Étape 1 : le découpage manquant ── --}}
+                        <template x-if="block === 'breakdown'">
+                            <ul class="space-y-2.5 pb-1">
+                                <li class="flex items-center gap-3 rounded-xl border px-3.5 py-3 {{ $readiness['subtasks'] > 0 ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60' }}">
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $readiness['subtasks'] > 0 ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white' }}">
+                                        @if($readiness['subtasks'] > 0)
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        @else
+                                            <span class="text-[11px] font-bold">1</span>
+                                        @endif
+                                    </span>
+                                    <span class="text-sm font-medium text-slate-800">Une sous-tâche</span>
+                                    <span class="ml-auto text-[11px] font-semibold uppercase tracking-wide {{ $readiness['subtasks'] > 0 ? 'text-emerald-600' : 'text-amber-600' }}">
+                                        {{ $readiness['subtasks'] > 0 ? 'Fait' : 'À faire' }}
+                                    </span>
+                                </li>
+
+                                <li class="flex items-center gap-3 rounded-xl border px-3.5 py-3 {{ $readiness['items'] > 0 ? 'border-emerald-200 bg-emerald-50/60' : 'border-amber-200 bg-amber-50/60' }}">
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full {{ $readiness['items'] > 0 ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white' }}">
+                                        @if($readiness['items'] > 0)
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        @else
+                                            <span class="text-[11px] font-bold">2</span>
+                                        @endif
+                                    </span>
+                                    <span class="text-sm font-medium text-slate-800">Un item dans cette sous-tâche</span>
+                                    <span class="ml-auto text-[11px] font-semibold uppercase tracking-wide {{ $readiness['items'] > 0 ? 'text-emerald-600' : 'text-amber-600' }}">
+                                        {{ $readiness['items'] > 0 ? 'Fait' : 'À faire' }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </template>
+
+                        {{-- ── Étape 2 : le coche des lignes faites ── --}}
+                        <template x-if="block === 'checklist'">
+                            <div class="pb-1">
+                                <p class="text-[13px] leading-5 text-slate-600">
+                                    Coche au moins une
+                                    @if($useItems)
+                                        ligne de tes items
+                                    @else
+                                        sous-tâche
+                                    @endif
+                                    dans la liste au-dessus, puis soumets à nouveau.
+                                </p>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- ── Pied : Astuce + actions ── --}}
+                    <div class="border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+                        <p class="mb-3 flex items-start gap-2 text-[12px] leading-5 text-slate-500">
+                            <svg class="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                            </svg>
+                            <span x-text="block === 'breakdown'
+                                ? 'Ton texte n’est pas perdu : enregistre-le en brouillon, découpe ta tâche, puis valide.'
+                                : 'Rien n’est perdu : ton brouillon et ton texte restent en place.'"></span>
+                        </p>
+
+                        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                            <button type="button" @click="block = null"
+                                    class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto">
+                                Fermer
+                            </button>
+                            <template x-if="block === 'breakdown'">
+                                <a href="{{ encrypted_route('tasks.edit', $task) }}"
+                                   class="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/>
+                                    </svg>
+                                    Créer les sous-tâches
+                                </a>
+                            </template>
+                            <template x-if="block === 'checklist'">
+                                <button type="button" @click="block = null"
+                                        class="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                    </svg>
+                                    Cocher mes tâches
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
         @endif
 
         {{-- ── DISCUSSION D'ÉQUIPE (T-009) : FAB + chat global --}}

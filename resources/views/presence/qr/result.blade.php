@@ -3,8 +3,14 @@
     $isAlreadyCompleted = $status === 'already_completed';
     $isRejected         = !$isApproved && !$isAlreadyCompleted;
 
+    $forgottenDeparture = $forgotten_departure ?? null;
+    $showDepartureReminder = $isApproved && $forgottenDeparture !== null;
+
     $event      = $event ?? null;
-    $reasonCode = $event->reason_code ?? null;
+    // Un refus qui n'a pas d'événement derrière lui (compte désactivé, compte
+    // non habilité) porte son propre code : sinon l'écran retomberait sur le
+    // titre générique et la consigne disparaîtrait.
+    $reasonCode = $event?->reason_code ?? ($reasonCode ?? null);
 
     // Un refus est d'abord une consigne : ce qui s'est passé, puis ce que la
     // personne peut faire dans les secondes qui suivent, devant la porte.
@@ -41,13 +47,57 @@
             'Aucune arrivée enregistrée',
             "Un départ ne peut être enregistré sans arrivée correspondante. Contactez votre responsable pour régulariser la journée.",
         ],
+        'departure_correction_pending' => [
+            'Pointage bloqué — départ à régulariser',
+            "Un départ que vous n'avez pas pointé n'a pas été déclaré dans les délais prévus pour le faire vous-même. Votre pointage est bloqué jusqu'à ce qu'un administrateur rétablisse votre heure de sortie. Présentez-vous à votre responsable : il débloquera votre pointage en quelques minutes.",
+        ],
         'stage_inactive' => [
             'Stage hors période',
             "Votre stage n'est pas actif à cette date. Contactez votre administrateur si les dates doivent être prolongées.",
         ],
+        'account_inactive' => [
+            'Compte désactivé',
+            "Votre compte est désactivé : aucun pointage n'est enregistré. Contactez votre administrateur pour être réactivé.",
+        ],
+        'not_pointable' => [
+            'Compte non habilité au pointage',
+            "Vous êtes connecté avec un compte d'administration ou de supervision, qui ne relève pas du pointage. Si vous exercez aussi un poste sur le terrain, demandez le rôle « Employé » à votre administrateur : votre présence sera alors enregistrée normalement.",
+        ],
+    ];
+
+    // Les refus d'horaire arrivent en ValidationException : sans code, ils
+    // retomberaient tous sur le même texte générique. On les rattache donc à
+    // leur contrôle d'origine pour que la porte dise l'heure à laquelle
+    // repasser, plutôt que « pointage non enregistré ».
+    $scheduleReasons = [
+        'checkin_before_opening' => [
+            'Trop tôt pour pointer',
+            "Le pointage du jour ouvre à 07h30. Revenez à partir de 07h30, votre présence sera enregistrée normalement.",
+        ],
+        'after_expected_departure' => [
+            'Journée de présence terminée',
+            "Les horaires de présence d'aujourd'hui sont écoulés. Si vous êtes resté après l'heure prévue, prévenez votre responsable : il régularisera la journée.",
+        ],
+        'not_a_work_day' => [
+            "Aujourd'hui n'est pas un jour de présence",
+            "Votre planning ne prévoit pas de présence aujourd'hui. Le pointage rouvrira à votre prochain jour de travail.",
+        ],
+        'holiday' => [
+            'Jour férié',
+            "Le pointage est fermé aujourd'hui, jour férié. Aucune présence n'est attendue.",
+        ],
+        'pointage_not_started' => [
+            'Pointage pas encore actif',
+            "Votre prise de poste n'a pas commencé. Le pointage s'ouvrira à la date indiquée par votre responsable.",
+        ],
+        'retard_permission' => [
+            'Permission de retard en cours',
+            "Une permission justifie votre arrivée tardive à partir de l'heure prévue. Revenez à ce moment-là : votre pointage sera accepté.",
+        ],
     ];
 
     [$errorTitle, $errorText] = $reasons[$reasonCode]
+        ?? $scheduleReasons[$reasonCode]
         ?? ['Pointage non enregistré', $message ?? "Votre présence n'a pas pu être validée."];
 
     if ($isApproved) {
@@ -58,8 +108,11 @@
         $heading = $errorTitle;
     }
 
-    $prenom   = $user->prenom ?? $user->name ?? null;
+    $prenom   = $user?->prenom ?? $user?->name ?? null;
     $salut    = now()->hour < 18 ? 'Bonjour' : 'Bonsoir';
+
+    $forgottenDeparture = $forgotten_departure ?? null;
+    $showDepartureReminder = $isApproved && $forgottenDeparture !== null && $eventType === 'check_in';
 @endphp
 <!DOCTYPE html>
 <html lang="fr">
@@ -138,6 +191,27 @@
             </div>
         @endif
 
+        @if($showDepartureReminder && $forgottenDeparture)
+            <div class="notice notice--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+                </svg>
+                <div class="notice-body">
+                    <p class="notice-text">
+                        Hier, votre départ n'a pas été pointé.
+                        La journée du <strong>{{ $forgottenDeparture->attendance_date->format('d/m/Y') }}</strong>
+                        a été clôturée d'office.
+                        Déclarez votre heure réelle de départ pour que votre responsable la valide.
+                    </p>
+                    <p class="mt-3">
+                        <a href="{{ route('presence.depart-oublie') }}" class="btn-ghost">
+                            Déclarer mon départ oublié
+                        </a>
+                    </p>
+                </div>
+            </div>
+        @endif
+
         {{-- L'heure et la date sont portées par l'horloge, le lieu par la
              pastille en tête : il ne reste que la nature du pointage. --}}
         @if($isApproved)
@@ -149,13 +223,9 @@
             </dl>
         @endif
 
-        {{-- Le badge autorise à pointer, pas à entrer dans le compte : hors
-             session, ce lien n'ouvrirait qu'un écran de connexion. --}}
-        @auth
-            <p class="actions">
-                <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
-            </p>
-        @endauth
+        <p class="actions">
+            <a class="btn-ghost" href="{{ route('presence.historique') }}">Mon historique</a>
+        </p>
 
         @if($isApproved)
             <p class="footnote">Votre présence est enregistrée. Vous pouvez fermer cette page.</p>

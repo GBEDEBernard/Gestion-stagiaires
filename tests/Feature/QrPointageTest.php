@@ -14,12 +14,15 @@ beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
 });
 
-function createQrTestUser(string $role = 'employe'): User
+function createQrTestUser(string|array $role = 'employe'): User
 {
+    $roles = (array) $role;
+    $label = implode('-', $roles);
+
     $personnel = Personnel::create([
-        'nom'    => ucfirst($role),
+        'nom'    => ucfirst($label),
         'prenom' => 'Test',
-        'email'  => "{$role}." . Str::random(6) . "@example.com",
+        'email'  => "{$label}." . Str::random(6) . "@example.com",
     ]);
 
     $user = User::create([
@@ -31,9 +34,69 @@ function createQrTestUser(string $role = 'employe'): User
         'status'            => 'actif',
     ]);
 
-    $user->assignRole($role);
+    $user->assignRole($roles);
 
     return $user;
+}
+
+/** Un compte de terrain rattaché à un Employe, comme en production. */
+function attachQrTestEmploye(User $user, Site $site): Domaine
+{
+    $domaine = Domaine::create(['nom' => 'Développement ' . Str::random(4)]);
+    $domaine->sites()->attach($site->id);
+
+    $employe = \App\Models\Employe::create([
+        'personnel_id' => $user->personnel_id,
+        'domaine_id'   => $domaine->id,
+        'site_id'      => $site->id,
+        'poste'        => 'Développeur',
+    ]);
+
+    // Le pointeur polymorphique est ce qui relie la fiche Employe au compte.
+    // Sans lui, $user->domaine reste vide et la page de pointage se dérobe.
+    $user->personnel->update([
+        'personnable_type' => \App\Models\Employe::class,
+        'personnable_id'   => $employe->id,
+    ]);
+
+    $user->unsetRelation('personnel');
+
+    return $domaine;
+}
+
+/** Le badge de la porte porté par le téléphone de $user. */
+function enrollQrTestBadge(User $user, string $fingerprint = 'fp_test'): string
+{
+    $raw = Str::random(64);
+
+    TrustedDevice::create([
+        'user_id'             => $user->id,
+        'device_fingerprint'  => $fingerprint,
+        'pointage_token_hash' => hash('sha256', $raw),
+        'is_qr_badge'         => true,
+        'is_trusted'          => true,
+    ]);
+
+    return $raw;
+}
+
+/** Horaire d'entreprise à 08:00, comme dans le reste de la suite. */
+function setQrTestWorkHours(string $start = '08:00', string $end = '18:00'): void
+{
+    \App\Models\WorkScheduleSetting::query()->delete();
+    \App\Models\WorkScheduleSetting::create(['start_time' => $start, 'end_time' => $end]);
+}
+
+function freezeQrTestClock(string $time): void
+{
+    // Les tests voisins écrivent '07:45:00', d'autres '07:45' : on accepte les
+    // deux plutôt que de leur faire choisir une écriture.
+    $parts = explode(':', $time);
+    $parts[] = '00';
+
+    \Carbon\Carbon::setTestNow(
+        \Carbon\Carbon::parse(today()->toDateString() . ' ' . implode(':', array_slice($parts, 0, 3)))
+    );
 }
 
 function createQrTestSite(): Site
@@ -173,8 +236,9 @@ test('a phone carrying an old second profile still lands on a single scan screen
 });
 
 test('the scan screen is the pointage card itself', function () {
-    // L'unification tient à ceci : le badge tombe sur la carte de pointage,
-    // avec son bouton d'action, et poste sur la route du scan.
+    // L'unification tient à ceci : le badge tombe sur la carte de pointage et
+    // poste sur la route du scan. Le libellé du bouton a changé — le scan suffit
+    // désormais — mais c'est bien la même carte, au même endroit.
     \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse(today()->toDateString() . ' 07:45:00'));
 
     $site = createQrTestSite();
@@ -192,10 +256,9 @@ test('the scan screen is the pointage card itself', function () {
     $this->withCookie('pointage_device_tokens', json_encode([$raw]))
         ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
         ->assertOk()
-        ->assertSee('Pointer mon arrivée', false)
+        ->assertSee('data-auto-pointage="1"', false)
         ->assertSee(route('presence.qr.process', ['site_token' => $site->qr_token]), false)
-        // Hors session, le badge n'ouvre pas le compte : pas de lien historique.
-        ->assertDontSee('Mon historique');
+        ->assertSee('Mon historique');
 
     \Carbon\Carbon::setTestNow();
 });
@@ -581,4 +644,491 @@ test('an on time qr check-in never asks for an observation', function () {
     expect(\App\Models\AttendanceDay::first()->arrival_status)->toBe('ontime');
 
     \Carbon\Carbon::setTestNow();
+});
+
+// ==========================================================================
+//  POINTAGE AUTOMATIQUE : LE SCAN SUFFIT
+// ==========================================================================
+
+test('scanning the qr code arms the pointage without waiting for a click', function () {
+    // Le scan valide les conditions et enregistre : l'écran montre la carte mais
+    // n'attend rien de l'utilisateur. C'est l'attribut du formulaire qui le dit,
+    // le texte du bouton restant dans le HTML pour le cas du réessai.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_auto');
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertSee('data-auto-pointage="1"', false)
+        ->assertSee("pointageForm(false, false, true)", false)
+        ->assertSee('Vérification de votre présence', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('the retry button only appears once the location capture failed', function () {
+    // Tant qu'aucune erreur n'est remontée, le bouton reste masqué : un clic de
+    // plus n'apporterait rien. En cas d'échec GPS, il revient, en « Réessayer »,
+    // pour ne pas obliger à rescanner le code.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_retry');
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee("x-show=\"erreur !== ''\"", false)
+        ->assertSee('Réessayer', false)
+        ->assertDontSee('Pointer mon arrivée', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a late qr scan opens the observation modal without waiting for a click', function () {
+    // Le pointage automatique ne remplace pas la motivation du retard : le motif
+    // ne s'écrit pas à la place de l'intéressé. L'automatisme reste donc armé —
+    // le script ouvre la modale au scan — mais il n'envoie la journée qu'une fois
+    // le motif écrit, si bien qu'aucun clic sur « Pointer mon arrivée » n'est
+    // demandé et qu'aucune arrivée ne peut partir sans raison.
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_late_auto');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('09:30:00');
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee('data-auto-pointage="1"', false)
+        ->assertSee('modalRetard = true', false)
+        ->assertDontSee('Pointer mon arrivée', false)
+        ->assertSee('Vous arrivez après', false);
+
+    // Le scan seul n'écrit rien : la journée n'existe pas tant que le motif
+    // n'a pas été saisi.
+    expect(
+        \App\Models\AttendanceDay::whereDate('attendance_date', today())->exists()
+    )->toBeFalse();
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a late check-in posted without a reason is refused even from the phone badge', function () {
+    // Le scan ouvre la modale et n'écrit rien. Si quelqu'un contourne le
+    // navigateur et poste le formulaire de la porte directement, le serveur
+    // doit encore refuser : la justification du retard est obligatoire, elle
+    // n'est pas une simple confort d'affichage.
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_late_direct');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('09:30:00');
+
+    $this->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+        'latitude'           => 6.3654,
+        'longitude'          => 2.4183,
+        'accuracy_meters'    => 10,
+        'device_fingerprint' => 'fp_late_direct',
+        'user_id'            => $user->id,
+        'device_token'       => $raw,
+    ])
+        ->assertOk()
+        ->assertViewIs('presence.qr.observation');
+
+    expect(\App\Models\AttendanceDay::count())->toBe(0);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('an early departure scan keeps the button, it waits for a permission', function () {
+    // Un départ avant l'heure n'est pas un relevé de position : il faut une
+    // permission approuvée. L'automatisme n'a rien à décider, il s'efface.
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_depart_early');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:30:00');
+
+    // Arrivée pointée, rapport soumis : la seule chose qui reste est l'heure.
+    \App\Models\DailyReport::create([
+        'user_id'    => $user->id,
+        'report_date'=> today(),
+        'status'     => 'submitted',
+    ]);
+
+    $journee = \App\Models\AttendanceDay::create([
+        'user_id'            => $user->id,
+        'attendance_date'    => today(),
+        'first_check_in_at'  => now()->subHours(3),
+        'arrival_status'     => 'ontime',
+    ]);
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee('data-auto-pointage="0"', false)
+        ->assertSee('Pointer mon départ', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('the in app pointage page is untouched and keeps its button', function () {
+    // Le pointage automatique est une règle de la porte, pas de l'application :
+    // depuis le compte, on garde la confirmation, parce qu'on peut y pointer
+    // autrement qu'en sortant de son véhicule.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:45:00');
+
+    $this->actingAs($user)
+        ->get(route('presence.pointage'))
+        ->assertOk()
+        ->assertSee('data-auto-pointage="0"', false)
+        ->assertSee("pointageForm(false, false, false)", false)
+        ->assertSee('Pointer mon arrivée', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a connected user scanning the qr code keeps the automatic door card', function () {
+    // Le cas le plus fréquent : la session reste ouverte d'un scan à l'autre.
+    // Renvoyer vers la page de l'application retirait l'automatisation à cette
+    // personne, sans qu'aucun message n'explique la redirection.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_session_ouverte');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('autoPointage', true)
+        ->assertSee('data-auto-pointage="1"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a connected user without its badge on the phone keeps the manual button', function () {
+    // Sans badge, le scan ne vaut rien tout seul. Le pointage reste possible,
+    // mais volontaire : on ne retire pas une capacité au profit d'un gain.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('autoPointage', false)
+        ->assertSee('data-auto-pointage="0"', false)
+        ->assertSee('Pointer mon arrivée', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a connected user does not inherit another account badge at the door', function () {
+    // Le badge n'automatise que le compte qu'il autorise. Sinon, emprunter le
+    // téléphone d'un collègue suffirait à pointer seul.
+    $user  = createQrTestUser('employe');
+    $autre = createQrTestUser('employe');
+    $site  = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    attachQrTestEmploye($autre, $site);
+    $raw   = enrollQrTestBadge($autre, 'fp_badge_autre');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('07:55:00');
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertViewHas('user', fn (User $vu) => $vu->is($user))
+        ->assertViewHas('autoPointage', false)
+        ->assertSee('data-auto-pointage="0"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a rescan before departure time explains that the departure is not due yet', function () {
+    // Le cas vécu : arrivée déjà pointée le matin, rescan avant 18h. L'écran
+    // proposait un formulaire de départ qui ne pouvait pas aboutir.
+    $user = createQrTestUser('employe');
+    $site = createQrTestSite();
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_rescan');
+
+    setQrTestWorkHours('08:00');
+    freezeQrTestClock('11:15:00');
+
+    \App\Models\DailyReport::create([
+        'user_id'     => $user->id,
+        'report_date' => today(),
+        'status'      => 'submitted',
+    ]);
+
+    \App\Models\AttendanceDay::create([
+        'user_id'           => $user->id,
+        'attendance_date'   => today(),
+        'first_check_in_at' => now()->subMinutes(65),
+        'arrival_status'    => 'ontime',
+    ]);
+
+    $this->actingAs($user)
+        ->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertSee('Départ pas encore ouvert')
+        ->assertSee('Arrivée enregistrée à <strong>10:10</strong>', false)
+        ->assertSee('à partir de <strong>18:00</strong>', false)
+        ->assertSee('Demander une permission')
+        ->assertSee('verif-ouvrir', false)
+        ->assertSee('data-auto-pointage="0"', false);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a departure without a daily report points at the report to deposit', function () {
+    // Le rapport manque avant comme après l'heure de départ : dans les deux cas
+    // le départ est refusé et le modal porte le geste. Avant 18h, le blocage
+    // d'heure se superpose au rapport manquant — le rapport doit primer, sinon
+    // l'écran retombe sur un bouton mort.
+    foreach (['13:09:00', '18:30:00'] as $heure) {
+        $user = createQrTestUser('employe');
+        $site = createQrTestSite();
+        attachQrTestEmploye($user, $site);
+        $raw  = enrollQrTestBadge($user, 'fp_rapport');
+
+        setQrTestWorkHours('08:00');
+        freezeQrTestClock($heure);
+
+        \App\Models\AttendanceDay::create([
+            'user_id'           => $user->id,
+            'attendance_date'   => today(),
+            'first_check_in_at' => now()->subHours(3),
+            'arrival_status'    => 'ontime',
+        ]);
+
+        $this->actingAs($user)
+            ->withCookie('pointage_device_tokens', json_encode([$raw]))
+            ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+            ->assertOk()
+            ->assertSee('Rapport de travail du jour')
+            ->assertSee('une fois votre rapport de travail déposé')
+            ->assertSee(route('reports.index'))
+            // Le bouton de la carte rouvre le modal : fermé, plus rien
+            // n'expliquerait le refus.
+            ->assertSee("@click=\"\$dispatch('verif-ouvrir')\"", false)
+            // Aucun formulaire n'est rendu : rien n'est armé, donc rien ne part.
+            ->assertDontSee('data-auto-pointage', false);
+
+        \App\Models\AttendanceDay::query()->delete();
+        \App\Models\DailyReport::query()->delete();
+    }
+
+    \Carbon\Carbon::setTestNow();
+});
+
+// ==========================================================================
+//  QUI A LE DROIT DE POINTER
+// ==========================================================================
+
+test('a pure admin scanning the qr code is told they cannot point', function () {
+    // L'administrateur du groupe scanne en passant : pas de carte de pointage,
+    // pas d'écriture, et une phrase qui dit quoi faire s'il exerce un poste.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('admin');
+    $raw  = enrollQrTestBadge($user, 'fp_admin');
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.result')
+        ->assertViewHas('status', 'rejected')
+        ->assertViewHas('reasonCode', 'not_pointable')
+        ->assertSee('Compte non habilité au pointage')
+        ->assertDontSee('data-auto-pointage');
+
+    expect(\App\Models\AttendanceEvent::count())->toBe(0)
+        ->and(\App\Models\AttendanceDay::count())->toBe(0);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a superviseur without a pointage role is refused at the door', function () {
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('superviseur');
+    $raw  = enrollQrTestBadge($user, 'fp_superviseur');
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.result')
+        ->assertViewHas('reasonCode', 'not_pointable');
+
+    expect(\App\Models\AttendanceEvent::count())->toBe(0);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('an admin who also carries the employe role points normally', function () {
+    // C'est le rôle qui décide, pas la fiche Employe. Un administrateur qui
+    // exerce un poste sur le terrain est un employé comme les autres.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser(['admin', 'employe']);
+    attachQrTestEmploye($user, $site);
+    $raw  = enrollQrTestBadge($user, 'fp_admin_employe');
+
+    expect($user->peutPointer())->toBeTrue();
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->get(route('presence.qr.scan', ['site_token' => $site->qr_token]))
+        ->assertOk()
+        ->assertViewIs('presence.qr.pointage')
+        ->assertSee('data-auto-pointage="1"', false);
+
+    $this->withCookie('pointage_device_tokens', json_encode([$raw]))
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+            'latitude'           => 6.3654,
+            'longitude'          => 2.4183,
+            'accuracy_meters'    => 10,
+            'device_token'       => $raw,
+            'device_fingerprint' => 'fp_admin_employe',
+        ])
+        ->assertOk()
+        ->assertViewIs('presence.qr.result')
+        ->assertViewHas('status', 'approved')
+        ->assertViewHas('eventType', 'check_in');
+
+    expect(\App\Models\AttendanceDay::count())->toBe(1);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('posting the process route directly as a pure admin is refused', function () {
+    // La route est publique : sans ce garde-fou, un POST direct enregistrerait
+    // la journée d'un compte de gestion, que son scan lui-même refuse.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('admin');
+    $domaine = Domaine::create(['nom' => 'Direction']);
+    $domaine->sites()->attach($site->id);
+    $raw = enrollQrTestBadge($user, 'fp_admin_direct');
+
+    $this->actingAs($user)
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+            'latitude'           => 6.3654,
+            'longitude'          => 2.4183,
+            'accuracy_meters'    => 10,
+            'device_token'       => $raw,
+            'device_fingerprint' => 'fp_admin_direct',
+        ])
+        ->assertOk()
+        ->assertViewIs('presence.qr.result')
+        ->assertViewHas('status', 'rejected')
+        ->assertViewHas('reasonCode', 'not_pointable');
+
+    expect(\App\Models\AttendanceEvent::count())->toBe(0)
+        ->and(\App\Models\AttendanceDay::count())->toBe(0);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+test('a disabled account is told it is disabled, not merely refused', function () {
+    // Le badge ne mène jamais ici : isBadgeActive() écarte déjà un compte inactif
+    // et renvoie vers la connexion. Le cas qui reste est la session ouverte dont
+    // le compte a été désactivé depuis — et là, l'écran doit nommer la cause,
+    // sinon le message générique laisse l'intéressé sans réponse.
+    freezeQrTestClock('07:45:00');
+
+    $site = createQrTestSite();
+    $user = createQrTestUser('employe');
+    $user->update(['status' => 'inactif']);
+
+    $this->actingAs($user)
+        ->post(route('presence.qr.process', ['site_token' => $site->qr_token]), [
+            'latitude'           => 6.3654,
+            'longitude'          => 2.4183,
+            'accuracy_meters'    => 10,
+            'device_fingerprint' => 'fp_desactive',
+        ])
+        ->assertOk()
+        ->assertViewIs('presence.qr.result')
+        ->assertViewHas('status', 'rejected')
+        ->assertViewHas('reasonCode', 'account_inactive')
+        ->assertSee('Compte désactivé');
+
+    expect(\App\Models\AttendanceDay::count())->toBe(0);
+
+    \Carbon\Carbon::setTestNow();
+});
+
+// ==========================================================================
+//  BADGE
+// ==========================================================================
+
+test('a non pointable account cannot turn its phone into a badge', function () {
+    // Un badge de porte qui n'a pas le droit de pointer est un jeton valide
+    // exposed sans raison. Le refus tombe à l'enrôlement, pas au scan.
+    $admin = createQrTestUser('admin');
+
+    $this->actingAs($admin)
+        ->postJson(route('presence.devices.enroll'), [
+            'device_fingerprint' => 'fp_admin_enroll',
+            'device_uuid'        => 'dev_admin',
+            'device_name'        => 'Mon téléphone',
+        ])
+        ->assertStatus(422)
+        ->assertJsonPath('success', false);
+
+    expect($admin->trustedDevices()->activeQrBadges()->exists())->toBeFalse();
+});
+
+test('a pointable account can still enroll its phone', function () {
+    $user = createQrTestUser('employe');
+
+    $this->actingAs($user)
+        ->postJson(route('presence.devices.enroll'), [
+            'device_fingerprint' => 'fp_employe_enroll',
+            'device_uuid'        => 'dev_employe',
+            'device_name'        => 'Mon téléphone',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true);
+
+    expect($user->trustedDevices()->activeQrBadges()->exists())->toBeTrue();
 });

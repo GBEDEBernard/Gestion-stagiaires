@@ -589,6 +589,16 @@
             border: 1px solid rgba(16, 185, 129, .2);
         }
 
+        .tag-violet {
+            background: rgba(139, 92, 246, .12);
+            color: #7c3aed;
+            border: 1px solid rgba(139, 92, 246, .25);
+        }
+
+        .dark .tag-violet {
+            color: #a78bfa;
+        }
+
         .pres-empty {
             text-align: center;
             padding: 3rem 1rem;
@@ -1040,6 +1050,22 @@
                 </div>
 
                 {{-- Desktop --}}
+                @php
+                    $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
+                    // Une exception n'est pas toujours une permission : l'administrateur peut
+// aussi excuser une journée à la main. Sans distinction, une correction
+// manuelle s'affichait comme une permission approuvée.
+                    $excusedDays = ($exceptions ?? collect())
+                        ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
+                        ->map(fn($e) => (object)[
+                            'type' => $e->isAutomatic() ? 'permission' : 'excused',
+                            'record' => $e,
+                        ]);
+                    $allRecords = $attendanceDays
+                        ->map(fn($d) => (object)['type' => 'attendance', 'record' => $d])
+                        ->concat($excusedDays)
+                        ->sortByDesc(fn($r) => $r->record->attendance_date);
+                @endphp
                 <div class="desktop-table">
                     <table class="pres-table">
                         <thead>
@@ -1054,7 +1080,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($attendanceDays->sortByDesc('attendance_date') as $day)
+                            @forelse($allRecords as $item)
+                            @if($item->type === 'attendance')
+                            @php $day = $item->record; @endphp
                             <tr>
                                 <td>
                                     <div style="font-weight:500;">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
@@ -1063,8 +1091,6 @@
                                 <td>{{ $day->first_check_in_at?->format('H:i') ?? '—' }}</td>
                                 <td>
                                     {{ $day->last_check_out_at?->format('H:i') ?? '—' }}
-                                    {{-- Un départ non pointé se voit : la journée compte dans les
-                                         heures, mais elle n'a pas été pointée pour autant. --}}
                                     @if($day->departure_status === 'auto_closed')
                                         <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="Départ non pointé, journée clôturée à l'heure de fin prévue">non pointé</span>
                                     @elseif($day->departure_status === 'claimed')
@@ -1103,7 +1129,6 @@
                                     @if($day->arrival_status === 'late')
                                     <span class="pres-tag tag-amber">En retard</span>
                                     @isset($user)
-                                    {{-- Arrivé à l'heure mais scan impossible : l'heure réelle peut être rétablie. --}}
                                     <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;"
                                         onclick="openTimeCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->first_check_in_at->format('H:i') }}')">Corriger l'heure</button>
                                     @endisset
@@ -1157,6 +1182,27 @@
                                     @endif
                                 </td>
                             </tr>
+                            @else
+                            @php $exception = $item->record; @endphp
+                            <tr style="background:rgba(139,92,246,.05);">
+                                <td>
+                                    <div style="font-weight:500;">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                    <div style="font-size:.75rem;color:var(--muted);">{{ $exception->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
+                                </td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>
+                                    @if($item->type === 'permission')
+                                        <span class="pres-tag tag-violet">Journée permissionnée</span>
+                                    @else
+                                        <span class="pres-tag tag-amber">Journée excusée</span>
+                                    @endif
+                                </td>
+                                <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</td>
+                            </tr>
+                            @endif
                             @empty
                             <tr>
                                 <td colspan="7">
@@ -1173,7 +1219,9 @@
 
                 {{-- Mobile --}}
                 <div class="mobile-cards" style="padding:1rem;">
-                    @forelse($attendanceDays->sortByDesc('attendance_date') as $day)
+                    @forelse($allRecords as $item)
+                    @if($item->type === 'attendance')
+                    @php $day = $item->record; @endphp
                     <div class="mobile-card">
                         <div class="mobile-card-row">
                             <span class="mobile-label">Date</span>
@@ -1222,6 +1270,29 @@
                         </div>
                         @endif
                     </div>
+                    @else
+                    @php $exception = $item->record; @endphp
+                    <div class="mobile-card" style="border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);">
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Date</span>
+                            <span class="mobile-value">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Statut</span>
+                            <span class="mobile-value">
+                                @if($item->type === 'permission')
+                                    <span class="pres-tag tag-violet">Journée permissionnée</span>
+                                @else
+                                    <span class="pres-tag tag-amber">Journée excusée</span>
+                                @endif
+                            </span>
+                        </div>
+                        <div class="mobile-card-row">
+                            <span class="mobile-label">Motif</span>
+                            <span class="mobile-value">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</span>
+                        </div>
+                    </div>
+                    @endif
                     @empty
                     <div class="pres-empty">
                         <div class="pres-empty-icon">📭</div>

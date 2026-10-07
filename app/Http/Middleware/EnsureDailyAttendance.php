@@ -52,13 +52,6 @@ class EnsureDailyAttendance
             }
         }
 
-        // Si le pointage est impossible aujourd'hui (jour férié, pas de stage
-        // actif, pas de domaine, jour de repos), aucun blocage n'est appliqué
-        // pour éviter une impossibilité permanente.
-        if (!$this->canCheckInToday($user)) {
-            return $next($request);
-        }
-
         if ($this->hasCheckedInToday($user)) {
             return $next($request);
         }
@@ -92,35 +85,5 @@ class EnsureDailyAttendance
                 }
             })
             ->exists();
-    }
-
-    /**
-     * Le pointage est-il techniquement possible aujourd'hui pour cet utilisateur ?
-     */
-    protected function canCheckInToday(User $user): bool
-    {
-        $isExempted = HolidayEmergencyExemption::isExempted($user);
-        if (Holiday::todayIsHoliday() && !$user->can('holidays.bypass') && !$isExempted) {
-            return false;
-        }
-
-        if ($user->hasRole('etudiant')) {
-            $etudiant = $user->etudiant;
-
-            if (!$etudiant) {
-                return false;
-            }
-
-            $activeStage = $etudiant->stages()
-                ->where('date_debut', '<=', now())
-                ->where('date_fin', '>=', now())
-                ->orderByDesc('date_debut')
-                ->first();
-
-            return $activeStage && $activeStage->isWorkDay();
-        }
-
-        // Employé / fonctionnaire
-        return (bool) $user->domaine;
     }
 }

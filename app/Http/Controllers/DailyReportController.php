@@ -164,15 +164,43 @@ class DailyReportController extends Controller
         $statusAction = $data['status_action'] ?? null;
         unset($data['status_action']);
 
+        $completedSubtaskIds = $data['completed_subtask_ids'] ?? [];
+        unset($data['completed_subtask_ids']);
+
+        // Même règle qu'au dépôt : pas de soumission sans sous-tâche + item,
+        // et pas de rapport validé sans avoir coché ce qui est terminé.
+        // Elle vaut pour tout le monde, admin compris : elle porte sur le
+        // travail rapporté, pas sur la fonction de qui le rapporte.
+        // Un rapport DÉJÀ déposé reste modifiable même si le découpage a
+        // disparu depuis (sous-tâche supprimée) : la règle s'applique à la
+        // première soumission, pas à la correction d'un rapport existant.
+        $alreadySubmitted = in_array($report->status, ['submitted', 'reviewed', 'approved'], true);
+
+        if ($statusAction === 'submit' && !$alreadySubmitted && !empty($data['task_id'])) {
+            $task = Task::find($data['task_id']);
+
+            if ($task && $task->isParticipant($user->id)) {
+                if (!$task->reportReadiness()['can_submit']) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(['status_action' => $task->reportReadinessMessage()]);
+                }
+
+                if ($task->hasChecklistFor($user->id) && empty($completedSubtaskIds)) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(['completed_subtask_ids' => "Coche au moins une tâche terminée avant de valider ton rapport. "
+                            . "C'est ce qui fait progresser la tâche."]);
+                }
+            }
+        }
+
         if ($statusAction === 'submit') {
             $data['status']       = 'submitted';
             $data['submitted_at'] = now();
         } elseif ($statusAction === 'draft') {
             $data['status'] = 'draft';
         }
-
-        $completedSubtaskIds = $data['completed_subtask_ids'] ?? [];
-        unset($data['completed_subtask_ids']);
 
         // Répercuter la complétion des sous-tâches et recalculer la progression
         if (!empty($data['task_id'])) {

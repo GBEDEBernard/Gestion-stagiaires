@@ -22,6 +22,7 @@ $user = auth()->user();
 
         .ws-root * { font-family: 'DM Sans', system-ui, sans-serif; }
         .ws-mono { font-family: 'DM Mono', monospace; }
+        [x-cloak] { display: none !important; }
 
         /* ── Light mode tokens ── */
         .ws-root {
@@ -362,16 +363,40 @@ $user = auth()->user();
 
                         {{-- Search --}}
                         <div class="p-3 border-b" style="border-color:var(--ws-border);">
-                            <form method="GET" action="{{ route('tasks.index') }}">
+                            <form method="GET" action="{{ route('tasks.index') }}"
+                                  x-data="{
+                                      q: @js(request('q') ?? ''),
+                                      timer: null,
+                                      go() { this.$el.submit() },
+                                      onInput() { clearTimeout(this.timer); this.timer = setTimeout(() => this.go(), 350) }
+                                  }"
+                                  @submit.prevent="go()">
                                 @if($status)<input type="hidden" name="status" value="{{ $status }}">@endif
+                                @if(!empty($selectedParam))<input type="hidden" name="task" value="{{ $selectedParam }}">@endif
                                 <label class="relative flex items-center">
                                     <svg class="pointer-events-none absolute left-3 h-3.5 w-3.5" style="color:var(--ws-icon);" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m1.7-4.3a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"/>
                                     </svg>
-                                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Rechercher…"
-                                        class="ws-input h-9 w-full rounded-lg pl-9 pr-3 text-sm">
+                                    <input type="text" name="q" x-model="q" @input="onInput()"
+                                           placeholder="Rechercher un nom, une tâche…"
+                                           autocomplete="off"
+                                           class="ws-input h-9 w-full rounded-lg pl-9 pr-9 text-sm">
+                                    <button type="button" x-show="q !== ''" x-cloak @click="q = ''; go()"
+                                            class="absolute right-2.5 flex h-5 w-5 items-center justify-center rounded-full"
+                                            style="color:var(--ws-icon);" title="Effacer la recherche">
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
                                 </label>
                             </form>
+
+                            @if(request('q'))
+                            <p class="mt-2 text-[11px]" style="color:var(--ws-text-faint);">
+                                {{ $resultCount }} résultat{{ $resultCount > 1 ? 's' : '' }} pour
+                                <span class="font-medium" style="color:var(--ws-text-tag);">« {{ request('q') }} »</span>
+                            </p>
+                            @endif
 
                             {{-- Filters --}}
                             <div class="mt-2 flex flex-wrap gap-1">
@@ -379,8 +404,8 @@ $user = auth()->user();
                                 @php
                                     $isActive = ($key === '' && empty($status)) || (($status ?? null) === $key);
                                     $url = $key === ''
-                                        ? route('tasks.index', array_filter(['q' => request('q')]))
-                                        : route('tasks.index', array_filter(['status' => $key, 'q' => request('q')]));
+                                        ? route('tasks.index', array_filter(['q' => request('q'), 'task' => $selectedParam ?? null]))
+                                        : route('tasks.index', array_filter(['status' => $key, 'q' => request('q'), 'task' => $selectedParam ?? null]));
                                 @endphp
                                 <a href="{{ $url }}"
                                    class="ws-filter-pill {{ $isActive ? 'active' : '' }} inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium">
@@ -434,11 +459,22 @@ $user = auth()->user();
                             <div class="flex min-h-[280px] flex-col items-center justify-center px-6 text-center">
                                 <div class="flex h-10 w-10 items-center justify-center rounded-xl mb-3" style="background:var(--ws-text-dim);">
                                     <svg class="h-5 w-5" style="color:var(--ws-icon-dim);" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.2-5.2m1.7-4.3a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"/>
                                     </svg>
                                 </div>
+                                @if(request('q'))
+                                <p class="text-sm font-medium" style="color:var(--ws-text-tag);">Aucun résultat</p>
+                                <p class="mt-1 text-xs" style="color:var(--ws-text-faint);">
+                                    Rien ne correspond à « {{ request('q') }} ».
+                                </p>
+                                <a href="{{ route('tasks.index', array_filter(['status' => $status, 'task' => $selectedParam ?? null])) }}"
+                                   class="mt-3 text-xs font-medium underline underline-offset-2" style="color:var(--ws-icon);">
+                                    Effacer la recherche
+                                </a>
+                                @else
                                 <p class="text-sm font-medium" style="color:var(--ws-text-tag);">Aucune tâche</p>
                                 <p class="mt-1 text-xs" style="color:var(--ws-text-faint);">Ajuste le filtre ou crée une tâche.</p>
+                                @endif
                                 @if($canCreate)
                                 <a href="{{ route('tasks.create') }}"
                                     class="ws-btn-primary mt-4 inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-medium">

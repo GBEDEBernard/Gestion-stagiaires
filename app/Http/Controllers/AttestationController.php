@@ -27,11 +27,19 @@ class AttestationController extends Controller
             'attestation.signataires.user.personnel',
         ]);
 
-        $attestation = $stage->attestation;
+        // Une attestation couvre toute la chaîne. Ouvrir celle d'une
+        // prolongation doit donc reprendre celle du stage d'origine, plutôt que
+        // d'en créer une seconde : le stagiaire n'a effectué qu'un stage, plus
+        // long, et deux attestations le proclameraient autrement.
+        $racine = $stage->stageRacine();
+
+        $stage->duree_mois = $racine->totalDurationInMonths();
+
+        $attestation = $racine->attestation()->first();
         if (!$attestation) {
             $reference = $this->generateReference();
-            $attestation = $stage->attestation()->create([
-                'typestage_id' => $stage->typestage?->id,
+            $attestation = $racine->attestation()->create([
+                'typestage_id' => $racine->typestage?->id,
                 'reference'    => $reference,
                 'date_delivrance' => now(),
             ]);

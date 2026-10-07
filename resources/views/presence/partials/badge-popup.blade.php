@@ -1,10 +1,13 @@
 @php
     // Proposé une seule fois, à la première connexion depuis ce téléphone,
     // et seulement si l'utilisateur n'a pas déjà un badge actif.
-    $dejaBadge = auth()->user()?->trustedDevices()->activeQrBadges()->exists();
+    // Un compte de gestion n'a pas de badge à faire : on ne le lui propose pas,
+    // plutôt que de lui laisser un refus en pleine page de pointage.
+    $dejaBadge     = auth()->user()?->trustedDevices()->activeQrBadges()->exists();
+    $peutPointer   = (bool) auth()->user()?->peutPointer();
 @endphp
 
-@if(session('proposer_badge') && !$dejaBadge)
+@if(session('proposer_badge') && !$dejaBadge && $peutPointer)
 <div x-data="badgePopup()" x-show="ouvert" x-cloak
      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
      style="background: rgba(15, 18, 22, .45)"

@@ -43,15 +43,11 @@ class AutoCheckout extends Command
                 return Command::SUCCESS;
             }
 
-            // Une nuit sans cron laissait la journée ouverte pour toujours :
-            // jamais clôturée, jamais réclamée. On remonte donc sur quelques
-            // jours, sans aller chercher un arriéré historique qui noierait
-            // tout le monde sous les notifications au premier déploiement.
             if ($this->option('date')) {
                 $depuis = $jusqua = Carbon::parse($this->option('date'))->startOfDay();
             } else {
                 $jusqua = today()->subDay();
-                $depuis = today()->subDays(max(1, (int) $this->option('days')));
+                $depuis = $jusqua;
             }
 
             $days = $this->openDays($depuis, $jusqua);
@@ -212,19 +208,19 @@ class AutoCheckout extends Command
                     ],
                 ]);
 
-                // Même calcul que sur un départ pointé : la pause est déduite.
-                // Deux formules pour la même journée finissaient par donner
-                // deux volumes horaires différents.
-                $workedMinutes = $day->first_check_in_at
-                    ? $resolver->workedMinutes($day->stage, $day->first_check_in_at, $autoTime)
-                    : 0;
+                // Un départ oublié ne crédite pas le temps : l'heure d'office ne
+                // tient que tant que le responsable n'a pas rétabli l'heure réelle.
+                // On positionne quand même last_check_out_at/departure_status pour
+                // clôturer la journée, mais worked_minutes reste à 0 : la journée
+                // ne comptera qu'une fois la correction posée par l'admin.
+                $workedMinutes = 0;
 
                 $day->check_out_event_id = $event->id;
                 $day->last_check_out_at  = $autoTime;
                 $day->worked_minutes     = $workedMinutes;
                 $day->day_status         = $day->day_status === 'present' ? 'completed' : $day->day_status;
-                // La journée porte sa marque : elle compte dans les heures,
-                // mais elle n'est pas une journée pointée pour autant.
+                // La journée porte sa marque : elle n'est pas une journée pointée,
+                // et son temps n'est compté qu'après correction du responsable.
                 $day->departure_status   = 'auto_closed';
                 $day->save();
 
@@ -232,12 +228,21 @@ class AutoCheckout extends Command
                     'unique_id' => 'depart_automatique_' . (string) Str::uuid(),
                     'user_id'   => $userId,
                     'type'      => 'depart_automatique',
-                    'title'     => 'Départ enregistré automatiquement',
-                    'message'   => "Vous n'avez pas pointé votre départ du {$date->format('d/m/Y')}. La journée a été clôturée d'office à {$autoTime->format('H:i')}. Indiquez votre heure réelle lors de votre prochain pointage, puis voyez votre responsable.",
+                    'title'     => 'Départ non pointé',
+                    'message'   => "Vous n'avez pas pointé votre départ du {$date->format('d/m/Y')}. La journée a été clôturée d'office à {$autoTime->format('H:i')}, mais le temps de travail de ce jour n'est PAS compté. Vous pouvez déclarer l'heure à laquelle vous êtes parti depuis votre page de pointage : votre responsable la rétablira.",
                     'icon'      => 'logout',
-                    'color'     => 'blue',
+                    'color'     => 'amber',
                     'url'       => '/historique',
                 ]);
+
+                // Un rapport non déposé aggrave la situation : le responsable
+                // ne peut ni valider le travail de la journée, ni juger une
+                // déclaration d'heure de départ. Le mail le dit, pour que la
+                // personne ne se contente pas de déclarer son départ.
+                $reportMissing = \App\Models\DailyReport::where('user_id', $userId)
+                    ->whereDate('report_date', $day->attendance_date->toDateString())
+                    ->where('status', 'submitted')
+                    ->doesntExist();
 
                 try {
                     Mail::to($user->email)->send(new DepartAutomatiqueMail(
@@ -245,6 +250,8 @@ class AutoCheckout extends Command
                         $day->first_check_in_at?->format('H:i') ?? '--:--',
                         $autoTime->format('H:i'),
                         round($workedMinutes / 60, 1) . 'h',
+                        $date->format('d/m/Y'),
+                        $reportMissing,
                     ));
                 } catch (\Exception $e) {
                     Log::error("Échec envoi email départ auto à {$user->email}: " . $e->getMessage());
@@ -257,6 +264,6 @@ class AutoCheckout extends Command
             }
         }
 
-        $this->info("{$count} journée(s) clôturée(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} échec(s))" : ''));
+        $this->info("{$count} jour(s) cloturé(s) à l'heure de fin prévue." . ($skipped ? " ({$skipped} echec(s))" : '') . '. A partir de ce moment, les utilisateurs verront le modal de depart oublie sils pointent leur arrivee le lendemain sans avoir declare leur heure de sortie.');
     }
 }

@@ -182,6 +182,71 @@ class Task extends Model
     }
 
     /**
+     * Un rapport ne peut être soumis que sur une tâche réellement découpée.
+     *
+     * La progression d'une tâche se calcule sur ses sous-tâches, puis sur
+     * leurs items : un rapport déposé sur une tâche vide ne peut donc rien
+     * faire bouger, et le pourcentage resterait à 0 quel que soit le texte
+     * écrit. Le dépôt est refusé tant que la tâche n'a pas au moins une
+     * sous-tâche et un item — le découpage minimum qui rend la progression
+     * calculable.
+     *
+     * Le contrôle porte sur la tâche entière, pas sur l'utilisateur : une
+     * équipe qui a déjà découpé ne bloque pas celui dont la sous-tâche n'a
+     * pas encore d'item.
+     *
+     * @return array{subtasks:int, items:int, can_submit:bool, missing:array<int,string>}
+     */
+    public function reportReadiness(): array
+    {
+        $subtasks = $this->subtasks()->count();
+        $items    = SubtaskItem::whereHas('subtask', fn($q) => $q->where('task_id', $this->id))->count();
+
+        $missing = [];
+
+        if ($subtasks === 0) {
+            $missing[] = 'une sous-tâche';
+        }
+
+        if ($items === 0) {
+            $missing[] = 'un item dans cette sous-tâche';
+        }
+
+        return [
+            'subtasks'   => $subtasks,
+            'items'      => $items,
+            'can_submit' => $missing === [],
+            'missing'    => $missing,
+        ];
+    }
+
+    /**
+     * L'utilisateur a-t-il quelque chose à cocher dans son rapport ?
+     *
+     * Le formulaire ne propose que SES sous-tâches (celles qui lui sont
+     * assignées ou libres) et leurs items. Sans ce test, quelqu'un dont le
+     * travail a été découpé par un collègue se retrouverait bloqué
+     * indéfiniment : on ne peut pas demander de cocher une liste qu'il n'a pas.
+     */
+    public function hasChecklistFor(int $userId): bool
+    {
+        return $this->subtasks()
+            ->where(fn($q) => $q->whereNull('assigned_to_user_id')->orWhere('assigned_to_user_id', $userId))
+            ->exists();
+    }
+
+    /** Message expliquant ce qu'il reste à créer avant de pouvoir soumettre. */
+    public function reportReadinessMessage(): string
+    {
+        $readiness = $this->reportReadiness();
+
+        $list = implode(' et ', $readiness['missing']);
+
+        return "Pour soumettre ton rapport, crée d'abord {$list} sur cette tâche. "
+            . "C'est ce qui fait progresser la tâche.";
+    }
+
+    /**
      * Met à jour last_progress_percent depuis les sous-tâches et
      * ajuste le statut automatiquement.
      */

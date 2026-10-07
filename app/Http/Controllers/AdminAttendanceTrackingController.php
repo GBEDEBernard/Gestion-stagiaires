@@ -76,6 +76,138 @@ class AdminAttendanceTrackingController extends Controller
     }
 
     /**
+     * Identifiants des comptes Attachés aux stagiaires en stage ce jour-là.
+     *
+     * @param  \Illuminate\Support\Collection<int, int>  $etudiantIds
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    protected function activeEtudiantUserIds(Carbon $date)
+    {
+        // Le lien stagiaire -> compte passe par le personnel polymorphique :
+        // la colonne etudiants.user_id n'est pas renseignée en pratique, donc
+        // on ne peut pas la lire directement.
+        return Etudiant::whereHas('stages', function ($q) use ($date) {
+            $q->where('date_debut', '<=', $date)
+                ->where('date_fin', '>=', $date);
+        })
+            ->whereHas('user', fn ($q) => $q->where('status', 'actif'))
+            ->with('user')
+            ->get()
+            ->map(fn($etudiant) => $etudiant->user?->id)
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Nombre de jours ouvrés (hors week-end) sur une plage.
+     */
+    protected function countWorkdays(?Carbon $start, ?Carbon $end): int
+    {
+        if (!$start || !$end) {
+            return 0;
+        }
+
+        $count = 0;
+        $cursor = $start->copy();
+        while ($cursor->lte($end)) {
+            if (!$cursor->isWeekend()) {
+                $count++;
+            }
+            $cursor->addDay();
+        }
+
+        return $count;
+    }
+
+/**
+ * Ajoute au regroupement les personnes qui n'ont que des jours excusés.
+ *
+ * Une journée permissionnée ne crée aucune ligne de pointage. Sans ce
+ * rattrapage, une personne entièrement permissionnée sur la plage disparaît
+ * du tableau hebdomadaire, mensuel ou annuel : l'administrateur la croyait
+ * toujours active mais la voyait absente de tous les résumés.
+ *
+ * @param  \Illuminate\Support\Collection  $grouped
+ * @return \Illuminate\Support\Collection
+ */
+protected function withExcusedOnlyOwners($grouped, string $relationKey, ?Carbon $start, ?Carbon $end)
+{
+    if (!$start || !$end || $relationKey !== 'etudiant') {
+        return $grouped;
+    }
+
+    $excusedUserIds = AttendanceException::whereBetween(
+        'attendance_date',
+        [$start->toDateString(), $end->toDateString()]
+    )
+        ->distinct()
+        ->pluck('user_id');
+
+    if ($excusedUserIds->isEmpty()) {
+        return $grouped;
+    }
+
+    // La colonne etudiants.user_id n'est pas renseignée en pratique : le lien
+    // passe par le personnel polymorphique.
+    $missingEtudiants = Etudiant::whereHas('user', fn ($q) => $q->whereIn('users.id', $excusedUserIds))
+        ->whereNotIn('id', $grouped->keys())
+        ->with('user')
+        ->get();
+
+    foreach ($missingEtudiants as $etudiant) {
+        $stub = new AttendanceDay();
+        $stub->setRelation($relationKey, $etudiant);
+        $grouped->put($etudiant->id, collect([$stub]));
+    }
+
+    return $grouped;
+}
+
+/**
+ * Nombre de jours permissionnés sur la plage pour un propriétaire donné.
+     *
+     * Les exceptions sont rattachées au compte, y compris pour un stagiaire :
+     * il faut donc remonter de l'étudiant à son user_id.
+     *
+     * @return int
+     */
+    protected function permissionedDaysFor($owner, string $relationKey, ?Carbon $start, ?Carbon $end): int
+    {
+        if (!$owner || !$start || !$end) {
+            return 0;
+        }
+
+        $userId = $relationKey === 'user' ? $owner->id : $owner->user?->id;
+
+        if (!$userId) {
+            return 0;
+        }
+
+        return AttendanceException::where('user_id', $userId)
+            ->whereBetween('attendance_date', [$start->toDateString(), $end->toDateString()])
+            ->distinct()
+            ->count('attendance_date');
+    }
+
+/**
+     * Nombre de personnes excusées ce jour-là parmi les comptes donnés.
+     *
+     * @param  \Illuminate\Support\Collection<int, int>  $userIds
+     */
+    protected function permissionedCount(Carbon $date, $userIds): int
+    {
+        if ($userIds->isEmpty()) {
+            return 0;
+        }
+
+        return AttendanceException::whereDate('attendance_date', $date->toDateString())
+            ->whereIn('user_id', $userIds)
+            ->distinct()
+            ->count('user_id');
+    }
+
+    /**
      * Données pour un jour spécifique.
      */
     protected function getDailyData(Carbon $date): array
@@ -133,20 +265,34 @@ class AdminAttendanceTrackingController extends Controller
             ->pluck('user_id');
         $employeePresent = $employeePresentIds->count();
 
+        // Une journée permissionnée ne laisse aucune ligne de pointage : la
+        // compter dans le dénominateur la ferait passer pour une absence, et
+        // le taux s'effondrerait d'un cran par jour autorisé. Les exceptions
+        // sont rattachées à user_id, y compris pour un stagiaire.
+        $studentPermissioned = $this->permissionedCount($date, $this->activeEtudiantUserIds($date));
+        $employeePermissioned = $this->permissionedCount($date, $employeeUsersIds);
+
+        $studentExpected = max(0, $studentTotal - $studentPermissioned);
+        $employeeExpected = max(0, $employeeTotal - $employeePermissioned);
+
         $summary = [
             'student_total' => $studentTotal,
             'student_present' => $studentPresent,
+            'student_permissioned' => $studentPermissioned,
             'employee_total' => $employeeTotal,
             'employee_present' => $employeePresent,
-            'student_rate' => $studentTotal > 0 ? round(($studentPresent / $studentTotal) * 100) : 0,
-            'employee_rate' => $employeeTotal > 0 ? round(($employeePresent / $employeeTotal) * 100) : 0,
+            'employee_permissioned' => $employeePermissioned,
+            'student_rate' => $studentExpected > 0 ? round(($studentPresent / $studentExpected) * 100) : 0,
+            'employee_rate' => $employeeExpected > 0 ? round(($employeePresent / $employeeExpected) * 100) : 0,
         ];
 
         return [
             'attendanceStudents' => $studentDays,
             'attendanceEmployees' => $employeeDays,
             'summary' => $summary,
-            'global_rate' => $summary['student_rate'] + $summary['employee_rate'] / 2, // Moyenne générale
+            // La division bind plus fort que l'addition : sans parenthèses
+            // « a + b / 2 » vaut 100 % quand les deux taux valent 100 %.
+            'global_rate' => round(($summary['student_rate'] + $summary['employee_rate']) / 2),
             'displayDate' => $date->translatedFormat('d F Y'),
         ];
     }
@@ -182,8 +328,8 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $studentSummary = $this->groupWeeklySummary($studentDays, 'etudiant');
-        $employeeSummary = $this->groupWeeklySummary($employeeDays, 'user');
+        $studentSummary = $this->groupWeeklySummary($studentDays, 'etudiant', $startOfWeek, $endOfWeek);
+        $employeeSummary = $this->groupWeeklySummary($employeeDays, 'user', $startOfWeek, $endOfWeek);
 
         return [
             'studentWeekData' => $studentSummary,
@@ -194,18 +340,31 @@ class AdminAttendanceTrackingController extends Controller
         ];
     }
 
-    protected function groupWeeklySummary($grouped, string $relationKey): array
+    protected function groupWeeklySummary($grouped, string $relationKey, ?Carbon $start = null, ?Carbon $end = null): array
     {
         $summary = [];
+
+        // Un jour ouvré de la plage, permission déduite : c'est le dénominateur
+        // honnête. Le « /5 » en dur de la vue comptait des samedis.
+        $workdays = $this->countWorkdays($start, $end);
+
+        $grouped = $this->withExcusedOnlyOwners($grouped, $relationKey, $start, $end);
 
         foreach ($grouped as $ownerId => $days) {
             $owner = $days->first()->{$relationKey};
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
 
+            $permissionedDays = $this->permissionedDaysFor($owner, $relationKey, $start, $end);
+            $expectedDays = $workdays > 0
+                ? max(0, $workdays - $permissionedDays)
+                : $presentDays + $permissionedDays;
+
             $summary[$ownerId] = [
                 'owner' => $owner,
                 'present_days' => $presentDays,
+                'permissioned_days' => $permissionedDays,
+                'expected_days' => $expectedDays,
                 'total_late_minutes' => $totalLateMinutes,
                 'days' => $days->sortBy('attendance_date'),
             ];
@@ -243,8 +402,8 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $studentSummary = $this->groupMonthlySummary($studentDays, 'etudiant');
-        $employeeSummary = $this->groupMonthlySummary($employeeDays, 'user');
+        $studentSummary = $this->groupMonthlySummary($studentDays, 'etudiant', $startOfMonth, $endOfMonth);
+        $employeeSummary = $this->groupMonthlySummary($employeeDays, 'user', $startOfMonth, $endOfMonth);
 
         return [
             'studentMonthlySummary' => $studentSummary,
@@ -255,19 +414,24 @@ class AdminAttendanceTrackingController extends Controller
         ];
     }
 
-    protected function groupMonthlySummary($grouped, string $relationKey): array
+    protected function groupMonthlySummary($grouped, string $relationKey, ?Carbon $start = null, ?Carbon $end = null): array
     {
         $summary = [];
+        $workdays = $this->countWorkdays($start, $end);
+        $grouped = $this->withExcusedOnlyOwners($grouped, $relationKey, $start, $end);
 
         foreach ($grouped as $ownerId => $days) {
             $owner = $days->first()->{$relationKey};
             $totalLateMinutes = $days->sum('late_minutes');
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
             $totalWorkedMinutes = $days->sum('worked_minutes');
+            $permissionedDays = $this->permissionedDaysFor($owner, $relationKey, $start, $end);
 
             $summary[$ownerId] = [
                 'owner' => $owner,
                 'present_days' => $presentDays,
+                'permissioned_days' => $permissionedDays,
+                'expected_days' => $workdays > 0 ? max(0, $workdays - $permissionedDays) : $presentDays + $permissionedDays,
                 'total_late_minutes' => $totalLateMinutes,
                 'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
                 'days' => $days->sortBy('attendance_date'),
@@ -308,8 +472,8 @@ class AdminAttendanceTrackingController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $studentSummary = $this->groupYearlySummary($studentDays, 'etudiant');
-        $employeeSummary = $this->groupYearlySummary($employeeDays, 'user');
+        $studentSummary = $this->groupYearlySummary($studentDays, 'etudiant', $startOfYear, $endOfYear);
+        $employeeSummary = $this->groupYearlySummary($employeeDays, 'user', $startOfYear, $endOfYear);
 
         return [
             'studentYearlySummary' => $studentSummary,
@@ -320,9 +484,11 @@ class AdminAttendanceTrackingController extends Controller
         ];
     }
 
-    protected function groupYearlySummary($grouped, string $relationKey): array
+    protected function groupYearlySummary($grouped, string $relationKey, ?Carbon $start = null, ?Carbon $end = null): array
     {
         $summary = [];
+        $workdays = $this->countWorkdays($start, $end);
+        $grouped = $this->withExcusedOnlyOwners($grouped, $relationKey, $start, $end);
 
         foreach ($grouped as $ownerId => $days) {
             $owner = $days->first()->{$relationKey};
@@ -330,10 +496,13 @@ class AdminAttendanceTrackingController extends Controller
             $presentDays = $days->filter(fn($d) => $d->first_check_in_at)->count();
             $totalWorkedMinutes = $days->sum('worked_minutes');
             $anomalies = $days->sum(fn($d) => $d->anomalies->count());
+            $permissionedDays = $this->permissionedDaysFor($owner, $relationKey, $start, $end);
 
             $summary[$ownerId] = [
                 'owner' => $owner,
                 'present_days' => $presentDays,
+                'permissioned_days' => $permissionedDays,
+                'expected_days' => $workdays > 0 ? max(0, $workdays - $permissionedDays) : $presentDays + $permissionedDays,
                 'total_late_minutes' => $totalLateMinutes,
                 'total_worked_hours' => round($totalWorkedMinutes / 60, 1),
                 'anomalies_count' => $anomalies,

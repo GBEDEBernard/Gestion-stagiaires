@@ -83,6 +83,76 @@
                 </svg>
                 Modifier
             </a>
+            @role('admin')
+            @if($stage->estProlongable())
+            <button type="button" onclick="document.getElementById('modalProlongation').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prolonger le stage
+            </button>
+            @else
+            <span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-slate-400 dark:text-gray-500 font-medium cursor-not-allowed"
+                title="{{ $stage->motifProlongationRefusee() }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prolonger le stage
+            </span>
+            @endif
+            @endrole
+        </div>
+    </div>
+
+    <div id="modalProlongation" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-orange-50 dark:bg-gray-900/50">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Prolongation du stage
+                </h2>
+            </div>
+            <form method="POST" action="{{ route('stages.prolonger', $stage) }}" class="p-6 space-y-4">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="prolong_date_debut" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de début *</label>
+                        <input type="date" id="prolong_date_debut" name="date_debut" required
+                            min="{{ $stage->date_fin?->copy()->addDay()->format('Y-m-d') ?? now()->toDateString() }}"
+                            value="{{ old('date_debut', $stage->date_fin?->copy()->addDay()->format('Y-m-d')) }}"
+                            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label for="prolong_date_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date de fin *</label>
+                        <input type="date" id="prolong_date_fin" name="date_fin" required
+                            value="{{ old('date_fin') }}"
+                            class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="prolong_theme" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Libellé de la prolongation</label>
+                    <input type="text" id="prolong_theme" name="theme" value="{{ old('theme', $stage->theme) }}"
+                        class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Ex. Développement web - prolongation">
+                </div>
+                <div class="rounded-xl border border-orange-200 dark:border-orange-800/40 bg-orange-50 dark:bg-orange-900/20 p-3 text-sm text-orange-700 dark:text-orange-300">
+                    La période ajoutée sera enregistrée comme un nouveau segment de stage pour le même étudiant, sans supprimer l’historique précédent.
+                </div>
+                @if(($compteEtudiant = $stage->etudiant?->user) && $compteEtudiant->status !== 'actif')
+                <div class="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+                    Le compte de ce stagiaire est actuellement désactivé. Confirmer la prolongation le
+                    <strong>réactivera</strong> : il pourra à nouveau pointer et rendre ses rapports.
+                </div>
+                @endif
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('modalProlongation').classList.add('hidden')"
+                        class="px-5 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">Annuler</button>
+                    <button type="submit"
+                        class="px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-500 text-white rounded-xl font-medium hover:from-orange-700 hover:to-amber-600 transition shadow-lg shadow-orange-600/20">Confirmer la prolongation</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -391,6 +461,53 @@
                 </div>
             </div>
 
+            {{-- Segments de la même chaîne : ils prolongent CE stage, ils ne
+                 figurent donc pas dans l'historique du stagiaire, mais
+                 l'administrateur doit les avoir sous la main. --}}
+            @if($prolongationsLiees->count() > 0)
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-orange-100 dark:border-orange-900/50 overflow-hidden">
+                <div class="px-6 py-4 border-b border-orange-100 dark:border-orange-900/50 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-gray-800">
+                    <h3 class="text-lg font-bold text-orange-800 dark:text-orange-300 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Prolongations de ce stage
+                        <span class="text-sm font-medium text-orange-600 dark:text-orange-400">({{ $prolongationsLiees->count() }})</span>
+                    </h3>
+                    <p class="mt-1 text-sm text-orange-700 dark:text-orange-300/80">
+                        Ces périodes prolongent le stage affiché. L'attestation porte la durée totale, de {{ $stage->date_debut?->format('d/m/Y') }} à {{ $prolongationsLiees->max('date_fin')?->format('d/m/Y') }}.
+                    </p>
+                </div>
+                <div class="divide-y divide-orange-50 dark:divide-orange-900/30">
+                    @foreach($prolongationsLiees as $prolongation)
+                    <a href="{{ encrypted_route('stages.show', $prolongation) }}" class="block p-4 hover:bg-orange-50/60 dark:hover:bg-orange-950/20 transition">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-xl bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 4.3L2.6 17.6A2 2 0 004.3 20.6h15.4a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-200">{{ $prolongation->theme ?? 'Prolongation' }}</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $prolongation->typestage->libelle ?? 'Type non défini' }} • {{ $prolongation->domaine->nom ?? 'Domaine non défini' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {{ $prolongation->date_debut?->format('d/m/Y') }} - {{ $prolongation->date_fin?->format('d/m/Y') }}
+                                </p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">Prolongation</span>
+                            </div>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- Historical Stages --}}
             @if($stagesTermines->count() > 0)
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -404,7 +521,7 @@
                 </div>
                 <div class="divide-y divide-gray-100 dark:divide-gray-700">
                     @foreach($stagesTermines as $stageHist)
-                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
+                    <a href="{{ encrypted_route('stages.show', $stageHist) }}" class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
                         <div class="flex items-center justify-between gap-4">
                             <div class="flex items-center gap-4">
                                 <div class="h-10 w-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -417,6 +534,15 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400">
                                         {{ $stageHist->typestage->libelle ?? 'Type non défini' }} • {{ $stageHist->domaine->nom ?? 'Domaine non défini' }}
                                     </p>
+                                    {{-- Un segment rattaché à une chaîne porte son stage
+                                         d'origine : sans cette précision, deux
+                                         périodes distinctes de la même direction
+                                         se lisaient comme une suite continue. --}}
+                                    @if($stageHist->estProlongation())
+                                    <p class="mt-1 text-xs text-orange-600 dark:text-orange-400 font-medium">
+                                        Prolongation du stage du {{ $stageHist->stageProlonge?->date_debut?->format('d/m/Y') }}
+                                    </p>
+                                    @endif
                                 </div>
                             </div>
                             <div class="text-right">
@@ -426,7 +552,7 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Terminé</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                     @endforeach
                 </div>
             </div>

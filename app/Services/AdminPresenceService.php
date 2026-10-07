@@ -283,6 +283,26 @@ class AdminPresenceService
             ->get();
     }
 
+    /**
+     * Départs non pointés à régler : les journées clôturées d'office encore
+     * sans correction (auto_closed) et celles déclarées mais pas encore
+     * validées par le responsable (claimed). Trie la plus ancienne d'abord.
+     */
+    public function getPendingDepartureCorrections(int $limit = 20): Collection
+    {
+        return AttendanceDay::forActiveUsers()
+            ->with([
+                'etudiant.user',
+                'stage.site',
+                'user',
+            ])
+            ->whereIn('departure_status', ['auto_closed', 'claimed'])
+            ->whereDate('attendance_date', '<', today())
+            ->orderBy('attendance_date')
+            ->limit($limit)
+            ->get();
+    }
+
     public function resolveAnomaly(int $anomalyId, array $data): bool
     {
         $anomaly = AttendanceAnomaly::findOrFail($anomalyId);
@@ -1553,6 +1573,8 @@ class AdminPresenceService
                 'school'         => $etudiant->ecole ?: null,
                 'site_name'      => $details['site_name'],
                 'status'         => $details['status'],
+                'is_permission'  => $details['is_permission'] ?? false,
+                'permission_reason' => $details['permission_reason'] ?? null,
                 'arrival'        => $details['arrival'],
                 'departure'      => $details['departure'],
                 'worked_minutes' => $details['worked_minutes'],
@@ -1583,6 +1605,8 @@ class AdminPresenceService
                 'school'         => null,
                 'site_name'      => $details['site_name'],
                 'status'         => $details['status'],
+                'is_permission'  => $details['is_permission'] ?? false,
+                'permission_reason' => $details['permission_reason'] ?? null,
                 'arrival'        => $details['arrival'],
                 'departure'      => $details['departure'],
                 'worked_minutes' => $details['worked_minutes'],
@@ -1627,17 +1651,19 @@ class AdminPresenceService
 
         if ($exception) {
             return [
-                'date'         => $date->copy(),
-                'present'      => false,
-                'corrected'    => true,
-                'absent'       => false,
-                'status'       => 'corrected',
-                'arrival'      => null,
-                'departure'    => null,
-                'site_name'    => $expectedSite,
-                'distance'     => null,
-                'late_minutes' => 0,
-                'worked_minutes' => 0,
+                'date'              => $date->copy(),
+                'present'           => false,
+                'corrected'         => true,
+                'absent'            => false,
+                'status'            => 'corrected',
+                'is_permission'     => !is_null($exception->permission_request_id),
+                'permission_reason' => $exception->reason,
+                'arrival'           => null,
+                'departure'         => null,
+                'site_name'         => $expectedSite,
+                'distance'          => null,
+                'late_minutes'      => 0,
+                'worked_minutes'    => 0,
             ];
         }
 
@@ -1664,6 +1690,7 @@ class AdminPresenceService
                 'corrected'    => false,
                 'absent'       => false,
                 'status'       => $isLate ? 'late' : 'on_time',
+                'departure_status' => $attendanceDay->departure_status,
                 'arrival'      => $attendanceDay->first_check_in_at?->format('H:i'),
                 'departure'    => $attendanceDay->last_check_out_at?->format('H:i'),
                 'site_name'    => $siteName,

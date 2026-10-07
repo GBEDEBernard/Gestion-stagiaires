@@ -30,6 +30,7 @@ class Stage extends Model
         'break_minutes',
         'presence_mode',
         'follow_up_status',
+        'prolonge_stage_id',
         'intitule_poste',
         'filiere',
         'niveau_etude',
@@ -47,8 +48,8 @@ class Stage extends Model
                 $mois = (int) $stage->date_debut->format('n');
                 $annee = (int) $stage->date_debut->format('Y');
                 $stage->annee_academique = $mois >= 9
-                    ? $annee . '-' . ($annee + 1)
-                    : ($annee - 1) . '-' . $annee;
+                    ? $annee.'-'.($annee + 1)
+                    : ($annee - 1).'-'.$annee;
             }
         });
     }
@@ -70,6 +71,7 @@ class Stage extends Model
 
     /** Valeurs par défaut affichées dans le formulaire de fiche de poste. */
     public const DEFAULT_INTITULE_POSTE = 'Stagiaire académique en développement web';
+
     public const DEFAULT_INDEMNITE = 'Non rémunéré';
 
     /** Description lisible du type de stage pour la fiche de poste. */
@@ -132,7 +134,7 @@ class Stage extends Model
         $jours = $this->jours;
 
         if ($jours->isEmpty()) {
-            return !$date->isWeekend();
+            return ! $date->isWeekend();
         }
 
         $dayName = match ((int) $date->format('N')) {
@@ -194,6 +196,162 @@ class Stage extends Model
         return $this->hasOne(Attestation::class);
     }
 
+    /**
+     * Stage auquel celui-ci prolonge, s'il en est un.
+     *
+     * Le lien est explicite : deux stages d'un même étudiant qui partagent
+     * domaine et type ne sont pas forcément liés. Un stagiaire qui revient un
+     * an plus tard dans la même direction fait un NOUVEAU stage, avec sa propre
+     * attestation — pas une prolongation d'un an de plus.
+     */
+    public function stageProlonge()
+    {
+        return $this->belongsTo(Stage::class, 'prolonge_stage_id');
+    }
+
+    /**
+     * Segments ajoutés par prolongation de celui-ci.
+     */
+    public function prolongations()
+    {
+        return $this->hasMany(Stage::class, 'prolonge_stage_id');
+    }
+
+    /**
+     * Premier segment de la chaîne : le stage d'origine, pas une prolongation.
+     *
+     * C'est lui qui porte l'attestation. Les attestations sont adossées au
+     * stage d'origine pour qu'une chaîne n'en produise qu'une seule ; une
+     * attestation par segment ferait dire au stagiaire qu'il a effectué deux
+     * stages alors qu'il n'en a fait qu'un, plus long.
+     */
+    public function stageRacine(): Stage
+    {
+        $stage = $this;
+
+        // Garde-fou : une chaîne bouclée ne doit pas faire boucler la page.
+        $vus = [];
+        while ($stage->prolonge_stage_id && ! isset($vus[$stage->id])) {
+            $vus[$stage->id] = true;
+            $parent = $stage->stageProlonge()->first();
+
+            if (! $parent) {
+                break;
+            }
+
+            $stage = $parent;
+        }
+
+        return $stage;
+    }
+
+    public function estProlongation(): bool
+    {
+        return (bool) $this->prolonge_stage_id;
+    }
+
+    /**
+     * Un segment est considéré terminé quand sa date de fin est passée.
+     * Un stage sans date de fin n'est jamais terminé : on ne prolonge pas
+     * une période qui n'a pas de borne.
+     */
+    public function estTermine(): bool
+    {
+        return $this->date_fin !== null && today()->gt($this->date_fin);
+    }
+
+    /**
+     * La chaîne peut-elle être prolongée ? Il faut que TOUS ses segments
+     * soient terminés : prolonger un stage en cours reviendrait à ajouter une
+     * période qui chevauche la précédente, et le compte du stagiaire est
+     * justement encore actif.
+     */
+    public function estProlongable(): bool
+    {
+        return $this->getRelatedSequenceStages()
+            ->reject(fn (Stage $segment) => $segment->date_fin === null)
+            ->every(fn (Stage $segment) => $segment->estTermine());
+    }
+
+    /**
+     * Message expliquant pourquoi la prolongation est refusée, ou null si elle
+     * est possible. La vue et le contrôleur s'appuient tous les deux dessus
+     * pour ne pas diverger.
+     */
+    public function motifProlongationRefusee(): ?string
+    {
+        if (! $this->date_fin) {
+            return 'Ce stage n’a pas de date de fin : la prolongation n’est pas possible.';
+        }
+
+        $segmentsEnCours = $this->getRelatedSequenceStages()
+            ->filter(fn (Stage $segment) => $segment->date_fin === null || today()->lte($segment->date_fin))
+            ->sortBy(fn (Stage $segment) => $segment->date_fin ?? now()->addCentury())
+            ->last();
+
+        if ($segmentsEnCours) {
+            $date = $segmentsEnCours->date_fin?->format('d/m/Y') ?? 'sans date';
+
+            return "Le stage est encore en cours (jusqu’au {$date}). Prolonger une période en cours "
+                .'ajouterait une période qui la chevauche : terminez-la d’abord.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Tous les segments d'une même chaîne, du plus ancien au plus récent.
+     *
+     * Seul le stage d'origine est cherché : une prolongation connaît sa
+     * racine, donc les segments trouvés ici sont exactement ceux qui doivent
+     * être additionnés pour l'attestation.
+     */
+    public function getRelatedSequenceStages(): \Illuminate\Support\Collection
+    {
+        if (! $this->etudiant_id) {
+            return collect([$this]);
+        }
+
+        $racine = $this->stageRacine();
+
+        $segments = static::where(function ($query) use ($racine) {
+            $query->where('id', $racine->id)
+                ->orWhere('prolonge_stage_id', $racine->id);
+        })
+            ->whereNotNull('date_debut')
+            ->whereNotNull('date_fin')
+            ->orderBy('date_debut')
+            ->get();
+
+        return $segments->values();
+    }
+
+    public function totalDurationInDays(): int
+    {
+        $stages = $this->getRelatedSequenceStages();
+
+        if ($stages->isEmpty()) {
+            return $this->date_debut && $this->date_fin
+                ? (int) $this->date_debut->diffInDays($this->date_fin) + 1
+                : 0;
+        }
+
+        return (int) $stages->sum(function ($stage) {
+            if (! $stage->date_debut || ! $stage->date_fin) {
+                return 0;
+            }
+
+            return $stage->date_debut->diffInDays($stage->date_fin) + 1;
+        });
+    }
+
+    public function totalDurationInMonths(): int
+    {
+        $days = $this->totalDurationInDays();
+
+        return $days > 0 ? max(1, (int) round($days / 30)) : 0;
+    }
+
     public function getFinalReportUrlAttribute(): ?string
     {
         return $this->final_report_path
@@ -212,7 +370,7 @@ class Stage extends Model
     {
         $today = today();
 
-        if (!$this->date_debut || !$this->date_fin) {
+        if (! $this->date_debut || ! $this->date_fin) {
             return 'A venir';
         }
 

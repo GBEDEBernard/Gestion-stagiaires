@@ -52,28 +52,44 @@ class StageController extends Controller
             });
         }
 
-        $now = now();
-        $currentYear = $now->month >= 9 ? $now->year . '-' . ($now->year + 1) : ($now->year - 1) . '-' . $now->year;
-
-        $perPage = (int) $request->get('per_page', 10);
-        if (!in_array($perPage, [5, 10, 20, 25, 50, 100], true)) {
-            $perPage = 10;
+        $perPageInput = $request->get('per_page', 10);
+        if ($perPageInput === 'all' || $perPageInput === '' || $perPageInput === '0') {
+            $perPage = 'all';
+        } else {
+            $perPage = (int) $perPageInput;
+            if (!in_array($perPage, [5, 10, 20, 25, 50, 100], true)) {
+                $perPage = 10;
+            }
         }
 
-        if ($request->annee_academique === 'all') {
+        $anneeAcademique = $request->input('annee_academique');
+
+        // "Toutes les années" : affichage complet, groupé par année académique
+        if ($anneeAcademique === 'all' || $anneeAcademique === null || $anneeAcademique === '') {
             $stages = $query->orderBy('annee_academique', 'desc')->orderBy('date_debut', 'desc')->get();
             $stagesParAnnee = $stages->groupBy('annee_academique');
+            $stagesPaginated = false;
+            $perPage = 'all';
         } else {
-            $anneeCible = $request->filled('annee_academique') ? $request->annee_academique : $currentYear;
-            $query->where('annee_academique', $anneeCible);
-            $stages = $query->orderBy('date_debut', 'desc')->paginate($perPage)->withQueryString();
+            $query->where('annee_academique', $anneeAcademique);
+            if ($perPage === 'all') {
+                $stages = $query->orderBy('date_debut', 'desc')->get();
+                $stagesPaginated = false;
+            } else {
+                $stages = $query->orderBy('date_debut', 'desc')->paginate($perPage)->withQueryString();
+                $stagesPaginated = true;
+            }
             $stagesParAnnee = null;
         }
+
+        $stagesTotal = $stages instanceof \Illuminate\Contracts\Pagination\Paginator
+            ? $stages->total()
+            : $stages->count();
 
         $typestages = TypeStage::all();
         $anneesAcademiques = Stage::distinct()->whereNotNull('annee_academique')->orderBy('annee_academique', 'desc')->pluck('annee_academique');
 
-        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques', 'perPage'));
+        return view('admin.stages.index', compact('stagesParAnnee', 'typestages', 'stages', 'anneesAcademiques', 'perPage', 'stagesTotal', 'stagesPaginated'));
     }
 
     public function create()
@@ -249,6 +265,138 @@ class StageController extends Controller
         return redirect()->route('stages.index')->with('success', 'Stage cree avec succes.');
     }
 
+    public function prolonger(Stage $stage, Request $request)
+    {
+        // On refuse de prolonger tant que le stage est en cours. Sans ce
+        // contrôle, l'admin pouvait ajouter une période qui chevauche la
+        // précédente, et le compte du stagiaire restait actif sans raison.
+        if ($motif = $stage->motifProlongationRefusee()) {
+            return back()->withErrors(['date_debut' => $motif])->withInput();
+        }
+
+        $request->validate([
+            'date_debut' => 'required|date',
+            'date_fin' => 'required|date|after_or_equal:date_debut',
+            'theme' => 'nullable|string|max:255',
+        ]);
+
+        $newDateDebut = \Carbon\Carbon::parse($request->date_debut);
+        $newDateFin = \Carbon\Carbon::parse($request->date_fin);
+
+        if (!$stage->date_fin || $newDateDebut->lt($stage->date_fin)) {
+            return back()->withErrors([
+                'date_debut' => 'La nouvelle période doit commencer après la fin du stage actuel.',
+            ])->withInput();
+        }
+
+        $conflictEtudiant = Stage::where('etudiant_id', $stage->etudiant_id)
+            ->where('id', '!=', $stage->id)
+            ->where(function ($query) use ($newDateDebut, $newDateFin) {
+                $query->whereBetween('date_debut', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                    ->orWhereBetween('date_fin', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                    ->orWhere(function ($innerQuery) use ($newDateDebut, $newDateFin) {
+                        $innerQuery->where('date_debut', '<=', $newDateDebut->toDateString())
+                            ->where('date_fin', '>=', $newDateFin->toDateString());
+                    });
+            })->exists();
+
+        if ($conflictEtudiant) {
+            return back()->withErrors([
+                'date_debut' => 'Cette nouvelle période chevauche un autre stage existant pour cet étudiant.',
+            ])->withInput();
+        }
+
+        // Le badge est la propriété de l'étudiant, pas du segment : il ne se
+        // recopie donc pas sur la prolongation. Le numéro reste sur ses autres
+        // stages, et un seul numéro par personne.
+        //
+        // On refuse en revanche de prolonger si le badge est déjà porté par un
+        // stage d'un AUTRE étudiant : sans ce contrôle, la même carte
+        // pointerait pour deux personnes, l'une masking l'autre.
+        if ($stage->badge_id) {
+            $badgeConflict = Stage::where('badge_id', $stage->badge_id)
+                ->where('id', '!=', $stage->id)
+                ->where(function ($query) use ($newDateDebut, $newDateFin) {
+                    $query->whereBetween('date_debut', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                        ->orWhereBetween('date_fin', [$newDateDebut->toDateString(), $newDateFin->toDateString()])
+                        ->orWhere(function ($innerQuery) use ($newDateDebut, $newDateFin) {
+                            $innerQuery->where('date_debut', '<=', $newDateDebut->toDateString())
+                                ->where('date_fin', '>=', $newDateFin->toDateString());
+                        });
+                })->exists();
+
+            if ($badgeConflict) {
+                return back()->withErrors([
+                    'date_debut' => 'Ce badge est déjà attribué à un autre stage durant cette période.',
+                ])->withInput();
+            }
+        }
+
+        $newStage = Stage::create(array_merge($stage->only([
+            'etudiant_id',
+            'typestage_id',
+            'site_id',
+            'supervisor_id',
+            'domaine_id',
+            'expected_check_in_time',
+            'expected_check_out_time',
+            'allowed_late_minutes',
+            'allowed_early_departure_minutes',
+            'break_minutes',
+            'presence_mode',
+            'follow_up_status',
+            'intitule_poste',
+            'filiere',
+            'niveau_etude',
+            'tuteur_academique',
+            'indemnite',
+            'livrables',
+        ]), [
+            'theme' => $request->filled('theme') ? trim($request->theme) : $stage->theme,
+            'date_debut' => $newDateDebut->toDateString(),
+            'date_fin' => $newDateFin->toDateString(),
+            'duree_mois' => max(1, (int) round($newDateDebut->diffInDays($newDateFin) / 30)),
+            // Le lien est porté par le stage d'origine : prolonger une
+            // prolongation rattache le nouveau segment à la même chaîne, sans
+            // quoi les segments se disperseraient en plusieurs attestations.
+            'prolonge_stage_id' => $stage->stageRacine()->id,
+        ]));
+
+        $newStage->jours()->sync($stage->jours->pluck('id'));
+
+        // Le compte du stagiaire a été désactivé à la fin de son dernier
+        // segment. Prolonger le stage le rend de nouveau utilisable : sans
+        // cette réactivation, le stagiaire ne pourrait plus pointer alors que
+        // son stage repart.
+        $compte = $newStage->etudiant?->user;
+        $compteReactive = false;
+
+        if ($compte && $compte->status !== 'actif') {
+            $compte->forceFill(['status' => 'actif'])->save();
+            $compteReactive = true;
+
+            Activity::create([
+                'user_id' => auth()->id(),
+                'action' => 'Compte stagiaire réactivé',
+                'description' => "Le compte de {$newStage->etudiant->personnel->full_name} a été réactivé : le stage est prolongé.",
+            ]);
+        }
+
+        Activity::create([
+            'user_id' => auth()->id(),
+            'action' => 'Prolongation stage',
+            'description' => "Stage prolongé pour l'étudiant {$newStage->etudiant->personnel->full_name} : {$newStage->theme}",
+        ]);
+
+        $message = 'Le stage a bien été prolongé et ajouté à l’historique du stagiaire.';
+
+        if ($compteReactive) {
+            $message .= ' Le compte du stagiaire a été réactivé : il peut à nouveau pointer et rendre ses rapports.';
+        }
+
+        return redirect()->route('stages.show', $newStage)->with('success', $message);
+    }
+
     public function show(Stage $stage)
     {
         $stage->load(['etudiant', 'typestage', 'badge', 'jours', 'domaine', 'site', 'supervisor']);
@@ -279,11 +427,27 @@ class StageController extends Controller
         $etudiant    = $stage->etudiant;
         $nombreStages = $etudiant->stages()->count();
 
+        // Historique : tout ce qui n'est pas le segment affiché. On sépare les
+        // segments de la même chaîne (prolongations) des stages réellement
+        // distincts, sinon deux stages séparés par deux ans paraîtraient
+        // comme la suite immédiate l'un de l'autre.
         $stagesTermines = $etudiant->stages()
             ->where('id', '!=', $stage->id)
+            ->where(function ($query) use ($stage) {
+                $query->where('prolonge_stage_id', '!=', $stage->id)
+                    ->orWhereNull('prolonge_stage_id');
+            })
             ->where('date_fin', '<', now())
             ->with(['typestage', 'domaine'])
             ->orderBy('date_fin', 'desc')
+            ->get();
+
+        // Les segments de prolongation de la chaîne affichée : ils font partie
+        // du même stage, et non de l'historique du stagiaire.
+        $prolongationsLiees = $etudiant->stages()
+            ->where('prolonge_stage_id', $stage->id)
+            ->with(['typestage', 'domaine'])
+            ->orderBy('date_debut')
             ->get();
 
         $attestations = \App\Models\Attestation::whereHas('stage', function ($query) use ($etudiant) {
@@ -315,6 +479,7 @@ class StageController extends Controller
             'selectedSignataireIds',
             'nombreStages',
             'stagesTermines',
+            'prolongationsLiees',
             'attestations',
             'dureeTotale'
         ));

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AttendanceDay;
 use App\Models\AttendanceEvent;
+use App\Models\AttendanceException;
 use App\Models\Holiday;
 use App\Models\HolidayEmergencyExemption;
 use App\Models\PermissionRequest;
@@ -69,6 +70,12 @@ class PresenceController extends Controller
             $expectedIn  = $resolver->expectedArrival($activeStage, now());
             $expectedOut = $resolver->expectedDeparture($activeStage, now());
 
+            // Blocage de l'arrivée si un départ oublié antérieur n'est pas réglé,
+            // et blocage du départ si le rapport de travail du jour n'est pas soumis.
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+            $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
             return view('presence.pointage', [
                 'expectedIn'             => $expectedIn,
                 'expectedOut'            => $expectedOut,
@@ -86,11 +93,10 @@ class PresenceController extends Controller
                 'hasCheckedOut'          => $hasCheckedOut,
                 'isWorkDay'              => $activeStage->isWorkDay(),
                 'workDaysLabel'          => $activeStage->workDaysLabel(),
-                // La veille clôturée d'office, à éclaircir — mais seulement
-                // une fois l'arrivée du jour pointée.
-                'journeeOubliee'         => $hasCheckedIn
-                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, $activeStage)
-                    : null,
+                'arriveeBloquee'         => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+                'journeeBloqueuse'       => $journeeBloqueuse,
+                'rapportSoumis'          => $rapportSoumis,
+                'journeeOubliee'         => app(\App\Services\PointageState::class)->journeeOubliee($user, $activeStage),
             ]);
         } else {
             // Logique pour employé - utilise la vue dédiée aux employés
@@ -101,8 +107,15 @@ class PresenceController extends Controller
                     return redirect()->route('admin.presence.index')
                         ->with('info', "En tant qu'administrateur, vous avez accès au suivi global des présences.");
                 }
-                return redirect()->route('dashboard')
-                    ->with('error', "Votre compte n'est pas rattaché à un domaine de travail. Veuillez contacter un administrateur.");
+                return view('employee.presence.pointage', [
+                    'activeStage'         => null,
+                    'todayHoliday'        => $todayHoliday,
+                    'canBypassHoliday'    => $canBypassHoliday,
+                    'isEmergencyExempted' => $isEmergencyExempted,
+                    'hasCheckedIn'        => false,
+                    'hasCheckedOut'       => false,
+                    'user'                => $user,
+                ]);
             }
 
             // Query today's attendance for employee
@@ -121,6 +134,10 @@ class PresenceController extends Controller
             $expectedIn  = $resolver->expectedArrival(null, now());
             $expectedOut = $resolver->expectedDeparture(null, now());
 
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+            $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
             return view('employee.presence.pointage', [
                 'expectedIn'               => $expectedIn,
                 'expectedOut'              => $expectedOut,
@@ -136,9 +153,10 @@ class PresenceController extends Controller
                 'earlyDeparturePermission' => $earlyDeparturePermission,
                 'hasCheckedIn'             => $hasCheckedIn,
                 'hasCheckedOut'            => $hasCheckedOut,
-                'journeeOubliee'           => $hasCheckedIn
-                    ? app(\App\Services\PointageState::class)->journeeOubliee($user, null)
-                    : null,
+                'arriveeBloquee'           => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+                'journeeBloqueuse'         => $journeeBloqueuse,
+                'rapportSoumis'            => $rapportSoumis,
+                'journeeOubliee'           => app(\App\Services\PointageState::class)->journeeOubliee($user, null),
             ]);
         }
     }
@@ -216,6 +234,28 @@ class PresenceController extends Controller
 
 $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etudiant;
         $isLate = now()->hour >= 8 && now()->minute > 0; // Après 8h00
+
+        // ✅ Permission « retard » approuvée pour aujourd'hui : l'arrivée n'est
+        //    autorisée qu'à partir de l'heure accordée, jamais avant.
+        $approvedRetard = $this->presenceService->approvedRetardForToday($user);
+        if ($approvedRetard) {
+            $retardAllowedAt = $approvedRetard->fields_data['end_time'] ?? null;
+            if ($retardAllowedAt) {
+                try {
+                    $retardGate = today()->setTimeFromTimeString($retardAllowedAt);
+                    if (now()->lt($retardGate)) {
+                        return redirect()->route('presence.pointage')
+                            ->with('error', "Votre permission de retard autorise une arrivée à partir de "
+                                . $retardAllowedAt . ". Vous ne pouvez pas pointer avant cette heure.");
+                    }
+                } catch (\Throwable $e) {
+                    // heure illisible : on laisse passer le flux normal
+                }
+            }
+        }
+        if ($this->presenceService->retardPermissionCoversNow($user)) {
+            $isLate = false;
+        }
 
         if ($user->hasRole('etudiant')) {
             // Logique pour stagiaire
@@ -614,6 +654,13 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
             return redirect()->route('presence.historique')
                 ->with('success', $message);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            request()->session()->forget('pending_pointage');
+
+            $message = collect($e->errors())->flatten()->first() ?? 'Pointage refusé.';
+
+            return redirect()->route('presence.pointage')
+                ->with('error', $message);
         } catch (\Exception $e) {
             Log::error('Pointage confirmation failed: ' . $e->getMessage(), ['user_id' => $request->user()->id]);
             return redirect()->route('presence.pointage')
@@ -665,6 +712,18 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             $dateTo
         );
 
+        $missingDeparture = false;
+        $missingDepartureDay = null;
+
+        if ($user->etudiant) {
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $missingDeparture = (bool) ($pointage['hasForgottenDeparture'] ?? false);
+            $missingDepartureDay = $pointage['journeeOubliee'];
+        } else {
+            $pointage = app(\App\Services\PointageState::class)->forUser($user);
+            $missingDeparture = (bool) ($pointage['hasForgottenDeparture'] ?? false);
+            $missingDepartureDay = $pointage['journeeOubliee'];
+        }
 
         if ($dateFrom || $dateTo) {
             $startDate = $dateFrom ? \Carbon\Carbon::parse($dateFrom) : now()->startOfMonth();
@@ -709,11 +768,13 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        if ($user->hasRole('etudiant')) {
-            return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
-        } else {
-            return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
-        }
+        // Jours excusés (permissions approuvées ou corrections admin) sur la période.
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$startDate->copy()->subDay()->toDateString(), $endDate->toDateString()])
+            ->orderBy('attendance_date')
+            ->get();
+
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions', 'missingDeparture', 'missingDepartureDay'));
     }
 
     /**
@@ -736,6 +797,10 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
         $hasCheckedIn = $attendanceDay && $attendanceDay->first_check_in_at;
         $hasCheckedOut = $attendanceDay && $attendanceDay->last_check_out_at;
 
+        $pointage = app(\App\Services\PointageState::class)->forUser($user);
+        $journeeBloqueuse = $pointage['journeeBloqueuse'] ?? null;
+        $rapportSoumis    = $pointage['rapportSoumis'] ?? true;
+
         return view('employee.presence.pointage', [
             'attendanceDay'            => $attendanceDay,
             'user'                     => $user,
@@ -743,6 +808,9 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
             'earlyDeparturePermission' => $earlyDeparturePermission,
             'hasCheckedIn'             => $hasCheckedIn,
             'hasCheckedOut'            => $hasCheckedOut,
+            'arriveeBloquee'           => $hasCheckedIn ? false : ($journeeBloqueuse !== null),
+            'journeeBloqueuse'         => $journeeBloqueuse,
+            'rapportSoumis'            => $rapportSoumis,
         ]);
     }
 
@@ -832,6 +900,12 @@ $etudiant = $this->profileLinkService->ensureStudentProfile($user) ?? $user->etu
 
         $attendanceDays = $attendanceDaysQuery->get();
 
-        return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo'));
+        // Jours excusés (permissions approuvées ou corrections admin) sur la période.
+        $exceptions = AttendanceException::where('user_id', $user->id)
+            ->whereBetween('attendance_date', [$startDate->copy()->subDay()->toDateString(), $endDate->toDateString()])
+            ->orderBy('attendance_date')
+            ->get();
+
+        return view('employee.presence.historique', compact('attendanceDays', 'period', 'userStats', 'dateFrom', 'dateTo', 'exceptions'));
     }
 }
