@@ -4,6 +4,7 @@
         $canCreate = $user->can('tasks.create');
         $canAssign = $user->can('tasks.assign');
         $canManage = $user->hasRole('admin');
+    @endphp
     <div class="w-full space-y-4 pb-6 text-slate-900 dark:text-slate-100">
 
         <!-- HEADER -->
