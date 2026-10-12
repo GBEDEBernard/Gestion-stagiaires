@@ -1,1489 +1,739 @@
-<x-app-layout title="Statistiques de Présence - Admin">
+<x-app-layout title="Supervision de la Présence - Admin">
 
-    <x-slot name="header">
-        <div class="pres-header">
-            <div class="pres-header-left">
-                <div class="pres-header-badge">Administration</div>
-                <h1 class="pres-header-title">Tableau de Bord Présence</h1>
-                <p class="pres-header-sub">Vue temps réel · Stagiaires & Employés</p>
-            </div>
-            <div class="pres-header-actions">
-                <div class="pres-live-dot"><span></span>Live</div>
-                <a href="{{ route('admin.presence.export') }}" class="pres-btn-export">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Exporter CSV
-                </a>
-            </div>
-        </div>
-    </x-slot>
-
-    {{-- ─── STYLES UNIFIÉS (sans doublons) ─────────────────────── --}}
+    {{-- ════════════════════════════════════════════════════════
+         STYLES IDENTITÉ « MON STAGE » (COMPACT / ZERO ERREUR)
+    ════════════════════════════════════════════════════════ --}}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        body { background: #f1f0ed !important; }
+        .dark body { background: #1f232d !important; }
+        header { background-color: transparent !important; border-bottom: none !important; box-shadow: none !important; }
+        .dark header { background-color: #131519 !important; border-bottom: none !important; box-shadow: none !important; }
 
-        /* ===== MODE CLAIR (par défaut) ===== */
         :root {
-            --bg: #ffffff;
-            --bg2: #f8fafc;
-            --bg3: #f1f5f9;
-            --border: rgba(0, 0, 0, 0.08);
-            --border-hi: rgba(0, 0, 0, 0.14);
-            --text: #0f172a;
-            --muted: #475569;
-            --emerald: #10b981;
-            --emerald-d: #059669;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
-            --blue: #3b82f6;
-            --indigo: #6366f1;
-            --violet: #8b5cf6;
-            --font: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
+            --ks-ink: #241f1b;
+            --ks-blue: #1c3e96;
+            --ks-blue-dark: #162f73;
+            --ks-line: #bfbab2;
+            --ks-muted: #6e6862;
+            --ks-card: #fffefa;
+            --ks-card-bd: #dcdad2;
         }
 
-        /* ===== MODE SOMBRE ===== */
-        .dark {
-            --bg: #0f1117;
-            --bg2: #161b27;
-            --bg3: #1c2333;
-            --border: rgba(255, 255, 255, 0.07);
-            --border-hi: rgba(255, 255, 255, 0.14);
-            --text: #e8eaf0;
-            --muted: #6b7280;
+        .ks-label { font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6e6862; }
+        .dark .ks-label { color: #a89f93 !important; }
+
+        .ks-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #1c3e96; color: #fff; border: 1px solid #1c3e96; border-radius: 6px; font-size: .85rem; font-weight: 600; padding: .4rem .9rem; min-height: 34px; transition: background-color .15s ease, transform .1s ease; }
+        .ks-btn-primary:hover { background: #162f73; border-color: #162f73; }
+        .ks-btn-primary:active { transform: scale(.98); }
+
+        .ks-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #fff; color: #241f1b; border: 1px solid #bfbab2; border-radius: 6px; font-size: .85rem; font-weight: 500; padding: .4rem .9rem; min-height: 34px; transition: all .15s ease; }
+        .dark .ks-btn-secondary { background: #131519; color: #fff; border-color: #222630; }
+        .ks-btn-secondary:hover { border-color: #1c3e96; color: #1c3e96; }
+
+        .ks-btn-xs { min-height: 28px !important; padding: .25rem .65rem !important; font-size: .74rem !important; font-weight: 600; border-radius: 5px !important; flex: none; white-space: nowrap; }
+
+        .ks-sec { background: #fffefa; border: 1px solid #dcdad2; border-radius: 10px; box-shadow: 0 1px 2px rgba(36,31,27,.04); transition: border-color .15s ease, box-shadow .18s ease-out; }
+        .dark .ks-sec { background: #131519 !important; border: 1px solid #222630 !important; border-color: #222630 !important; box-shadow: none; }
+        .ks-sec-head { padding: .65rem .9rem; border-bottom: 1px solid #dcdad2; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .dark .ks-sec-head { border-bottom: 1px solid #222630 !important; border-color: #222630 !important; }
+
+        .ks-stat-card { border: 1px solid #dcdad2; border-radius: 10px; background-color: #fffefa; }
+        .dark .ks-stat-card { background: #131519 !important; border: 1px solid #222630 !important; }
+
+        .ks-stat-icon { width: 32px; height: 32px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+        .ks-stat-icon svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+        .ks-num { font-variant-numeric: tabular-nums; }
+        .ks-stat-change { font-size: .68rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+        .ks-stat-change--positive { color: #15803d; background-color: #ecfdf5; }
+        .dark .ks-stat-change--positive { color: #4ade80 !important; background-color: rgba(22,128,74,0.22) !important; }
+        .ks-stat-change--neutral { color: #475569; background-color: #f1f5f9; }
+        .dark .ks-stat-change--neutral { color: #cbd5e1 !important; background-color: #262a30 !important; }
+        .ks-stat-change--blue { color: #1c3e96; background-color: #eef1fb; }
+        .dark .ks-stat-change--blue { color: #93c5fd !important; background-color: rgba(28,62,150,0.25) !important; }
+        .ks-stat-change--amber { color: #b45309; background-color: #fffbeb; }
+        .dark .ks-stat-change--amber { color: #fbbf24 !important; background-color: rgba(180,83,9,0.22) !important; }
+        .ks-stat-change--negative { color: #b91c1c; background-color: #fef2f2; }
+        .dark .ks-stat-change--negative { color: #f87171 !important; background-color: rgba(185,28,28,0.22) !important; }
+
+        .ap-pill { font-size: .72rem; font-weight: 500; padding: .2rem .55rem; border-radius: 999px; background: #faf9f6; color: #6e6862; border: 1px solid #dcdad2; display: inline-flex; align-items: center; gap: .25rem; }
+        .dark .ap-pill { background: #181c24; color: #94a3b8; border-color: #222630; }
+        .ap-pill b { font-weight: 700; color: #241f1b; }
+        .dark .ap-pill b { color: #f8fafc; }
+
+        /* Dark mode overrides complets */
+        .dark .text-slate-900, .dark .text-slate-800, .dark .text-gray-900 { color: #f8fafc !important; }
+        .dark .text-slate-600, .dark .text-slate-500, .dark .text-gray-600 { color: #94a3b8 !important; }
+        .dark .border-slate-200, .dark .border-slate-300, .dark .border-gray-200 { border-color: #222630 !important; }
+        .dark select, .dark input[type="date"], .dark input[type="text"] {
+            background-color: #181c24 !important;
+            border-color: #222630 !important;
+            color: #f8fafc !important;
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
-        .pres-wrap {
-            font-family: var(--font);
-            color: var(--text);
-            background: var(--bg);
-            min-height: 100vh;
-        }
-
-        /* HEADER */
-        .pres-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding: 1rem 1.5rem 0 1.5rem;
-        }
-
-        .pres-header-badge {
-            display: inline-block;
-            font-size: .7rem;
-            font-weight: 600;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--emerald);
-            background: rgba(16, 185, 129, .12);
-            border: 1px solid rgba(16, 185, 129, .25);
-            border-radius: 999px;
-            padding: .25rem .75rem;
-            margin-bottom: .5rem;
-        }
-
-        .pres-header-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--text);
-            margin: 0;
-            line-height: 1.2;
-        }
-
-        .pres-header-sub {
-            font-size: .9rem;
-            color: var(--muted);
-            margin: .25rem 0 0;
-        }
-
-        .pres-header-actions {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .pres-live-dot {
-            display: flex;
-            align-items: center;
-            gap: .45rem;
-            font-size: .8rem;
-            font-weight: 500;
-            color: var(--emerald);
-            background: rgba(16, 185, 129, .1);
-            border: 1px solid rgba(16, 185, 129, .2);
-            border-radius: 999px;
-            padding: .35rem .85rem;
-        }
-
-        .pres-live-dot span {
-            width: 8px;
-            height: 8px;
-            background: var(--emerald);
-            border-radius: 50%;
-            animation: pulse-dot 1.8s ease-in-out infinite;
-        }
-
-        @keyframes pulse-dot {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, .6);
-            }
-
-            50% {
-                box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
-            }
-        }
-
-        .pres-btn-export {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .55rem 1.2rem;
-            background: var(--emerald);
-            color: #fff;
-            font-size: .85rem;
-            font-weight: 600;
-            border-radius: .6rem;
-            text-decoration: none;
-            transition: all .2s;
-        }
-
-        .pres-btn-export:hover {
-            background: var(--emerald-d);
-            transform: translateY(-1px);
-        }
-
-        /* LAYOUT */
-        .pres-page {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem 1.5rem 3rem;
-        }
-
-        /* TABS */
-        .pres-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .25rem;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: .75rem;
-            padding: .3rem;
-            width: fit-content;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .pres-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .pres-tab {
-            padding: .45rem 1.1rem;
-            border-radius: .5rem;
-            font-size: .83rem;
-            font-weight: 500;
-            color: var(--muted);
-            text-decoration: none;
-            transition: all .2s;
-        }
-
-        .pres-tab:hover {
-            color: var(--text);
-            background: var(--bg3);
-        }
-
-        .pres-tab.active {
-            background: var(--bg3);
-            color: var(--text);
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
-        }
-
-        .pres-tab-indicator {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: var(--emerald);
-            border-radius: 50%;
-            margin-left: .4rem;
-            vertical-align: middle;
-        }
-
-        /* FILTRE */
-        .pres-filter-panel {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            color: var(--text);
-            box-shadow: none;
-        }
-
-        .pres-filter-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            align-items: end;
-        }
-
-        .pres-filter-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--muted);
-        }
-
-        .pres-filter-input {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-
-        .pres-filter-input:focus {
-            outline: none;
-            border-color: var(--emerald);
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-        }
-
-        .pres-filter-actions {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .pres-filter-actions .pres-btn {
-            flex: 1;
-            text-align: center;
-            justify-content: center;
-            white-space: nowrap;
-        }
-
-        @media (max-width: 900px) {
-            .pres-filter-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .pres-filter-actions {
-                grid-column: span 2;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .pres-filter-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pres-filter-actions {
-                grid-column: span 1;
-            }
-        }
-
-        /* BOUTONS */
-        .pres-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .5rem;
-            padding: .85rem 1.1rem;
-            border-radius: .85rem;
-            border: 1px solid transparent;
-            font-weight: 600;
-            font-size: .85rem;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .pres-btn-primary {
-            background: var(--emerald);
-            color: #fff;
-        }
-
-        .pres-btn-secondary {
-            background: transparent;
-            border-color: var(--border);
-            color: var(--text);
-        }
-
-        .pres-btn-secondary:hover {
-            background: var(--bg3);
-        }
-
+        /* Modale Absences */
         .pres-modal-backdrop {
-            display: none;
             position: fixed;
             inset: 0;
-            z-index: 50;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(15, 23, 42, 0.65);
-            padding: 1.5rem;
+            z-index: 1000;
+            padding: 1rem;
         }
-
-        .pres-modal-backdrop.active {
-            display: flex;
-        }
-
+        .pres-modal-backdrop.active { display: flex; }
         .pres-modal {
-            width: min(100%, 560px);
-            background: var(--bg);
-            border-radius: 1.25rem;
-            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+            background: #fffefa;
+            border: 1px solid #dcdad2;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             overflow: hidden;
+            animation: modalIn .2s ease-out;
         }
-
+        .dark .pres-modal {
+            background: #131519 !important;
+            border-color: #222630 !important;
+            color: #f8fafc !important;
+        }
         .pres-modal-header {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            padding: 1.4rem 1.5rem;
-            border-bottom: 1px solid rgba(15, 23, 42, .08);
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #dcdad2;
+            background: #faf9f6;
         }
-
-        .pres-modal-title {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text);
+        .dark .pres-modal-header {
+            border-color: #222630 !important;
+            background: #181c24 !important;
         }
-
-        .pres-modal-meta {
-            margin: .35rem 0 0;
-            color: var(--muted);
-            font-size: .95rem;
-        }
-
+        .pres-modal-title { font-size: 1rem; font-weight: 700; margin: 0; }
+        .pres-modal-meta { font-size: .75rem; color: #6e6862; margin-top: .15rem; }
+        .dark .pres-modal-meta { color: #94a3b8; }
         .pres-modal-close {
-            border: none;
-            background: transparent;
-            color: var(--text);
-            font-size: 1.45rem;
-            line-height: 1;
-            cursor: pointer;
+            background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #6e6862; padding: .25rem; line-height: 1;
         }
-
-        .pres-modal-body {
-            padding: 1.5rem;
-            max-height: min(70vh, 420px);
-            overflow-y: auto;
-        }
-
-        .pres-modal-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: .8rem;
-        }
-
+        .dark .pres-modal-close { color: #94a3b8; }
+        .pres-modal-body { padding: 1rem 1.25rem; max-height: 60vh; overflow-y: auto; }
+        .pres-modal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
         .pres-modal-item {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: .85rem;
-            align-items: center;
-            padding: 1rem 1.1rem;
-            border-radius: .95rem;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            opacity: 0;
-            transform: translateY(12px);
-            animation: slideIn 280ms ease forwards;
-        }
-
-        .pres-modal-item-marker {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            border-radius: 999px;
-            background: rgba(244, 63, 94, 0.12);
-            color: var(--rose);
-            font-size: 0.95rem;
-            font-weight: 700;
-        }
-
-        .pres-modal-item-content {
-            display: grid;
-            gap: .25rem;
-        }
-
-        .pres-modal-item-title {
-            font-weight: 600;
-            color: var(--text);
-            font-size: .95rem;
-        }
-
-        .pres-modal-item-sub {
-            color: var(--muted);
-            font-size: .85rem;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .pres-modal-empty {
-            color: var(--muted);
-            font-size: .95rem;
-            line-height: 1.65;
-        }
-
-        .pres-absence-count-button {
-            border: none;
-            background: transparent;
-            padding: 0;
-            cursor: pointer;
-            font: inherit;
-        }
-
-        /* KPI CARDS */
-        .pres-kpis {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-        }
-
-        @media(max-width:900px) {
-            .pres-kpis {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media(max-width:500px) {
-            .pres-kpis {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-kpi {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.4rem 1.5rem;
-            position: relative;
-            overflow: hidden;
-            transition: border-color .2s, transform .2s;
-        }
-
-        .pres-kpi:hover {
-            border-color: var(--border-hi);
-            transform: translateY(-2px);
-        }
-
-        .pres-kpi-accent {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            border-radius: 1rem 1rem 0 0;
-        }
-
-        .pres-kpi-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: .75rem;
-        }
-
-        .pres-kpi-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: .6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-
-        .pres-kpi-badge {
-            font-size: .72rem;
-            font-weight: 600;
-            padding: .2rem .6rem;
-            border-radius: 999px;
-        }
-
-        .pres-kpi-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1;
-            margin-bottom: .3rem;
-            font-family: var(--mono);
-        }
-
-        .pres-kpi-label {
-            font-size: .82rem;
-            color: var(--muted);
-        }
-
-        .pres-kpi-sub {
-            font-size: .75rem;
-            color: var(--muted);
-            margin-top: .5rem;
-            padding-top: .5rem;
-            border-top: 1px solid var(--border);
-        }
-
-        /* Variantes KPI (les accents restent colorés) */
-        .kpi-emerald .pres-kpi-accent {
-            background: var(--emerald);
-        }
-
-        .kpi-emerald .pres-kpi-icon {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
-
-        .kpi-emerald .pres-kpi-badge {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
-
-        .kpi-amber .pres-kpi-accent {
-            background: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-icon {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-badge {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-blue .pres-kpi-accent {
-            background: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-icon {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-badge {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-rose .pres-kpi-accent {
-            background: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-icon {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-badge {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
-
-        /* SECTIONS */
-        .pres-section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text);
-            margin: 0 0 1rem;
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-        }
-
-        .pres-section-title::before {
-            content: '';
-            display: inline-block;
-            width: 3px;
-            height: 16px;
-            border-radius: 99px;
-            background: var(--emerald);
-        }
-
-        /* CHARTS */
-        .pres-charts-grid {
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 1rem;
-        }
-
-        @media(max-width:900px) {
-            .pres-charts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: border-color .2s;
-        }
-
-        .pres-card:hover {
-            border-color: var(--border-hi);
-        }
-
-        .pres-chart-wrap {
-            position: relative;
-            height: 220px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        .chart-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .75rem 1.25rem;
-            margin-bottom: 1rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: .45rem;
-            font-size: .78rem;
-            font-weight: 500;
-            color: var(--muted);
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* QUICK ACTIONS */
-        .pres-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        @media(max-width:700px) {
-            .pres-actions-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-action-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: .6rem;
-            padding: 1.4rem 1rem;
-            border-radius: 1rem;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: .9rem;
-            text-align: center;
-            transition: all .25s;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid transparent;
-        }
-
-        .pres-action-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transition: opacity .25s;
-        }
-
-        .pres-action-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .pres-action-card:hover::before {
-            opacity: .08;
-        }
-
-        .pres-action-icon {
-            font-size: 1.6rem;
-        }
-
-        .pres-action-count {
-            font-size: 1.3rem;
-            font-weight: 700;
-            font-family: var(--mono);
-        }
-
-        .act-rose {
-            background: linear-gradient(135deg, rgba(244, 63, 94, .18), rgba(244, 63, 94, .08));
-            border-color: rgba(244, 63, 94, .25);
-            color: var(--rose);
-        }
-
-        .act-rose::before {
-            background: var(--rose);
-        }
-
-        .act-emerald {
-            background: linear-gradient(135deg, rgba(16, 185, 129, .18), rgba(16, 185, 129, .08));
-            border-color: rgba(16, 185, 129, .25);
-            color: var(--emerald);
-        }
-
-        .act-emerald::before {
-            background: var(--emerald);
-        }
-
-        .act-blue {
-            background: linear-gradient(135deg, rgba(59, 130, 246, .18), rgba(59, 130, 246, .08));
-            border-color: rgba(59, 130, 246, .25);
-            color: var(--blue);
-        }
-
-        .act-blue::before {
-            background: var(--blue);
-        }
-
-        /* GROUP CARDS */
-        .pres-group-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.4rem;
-        }
-
-        .pres-group-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .pres-group-label {
-            font-size: .95rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .pres-group-role {
-            font-size: .75rem;
-            color: var(--muted);
-            margin-top: .15rem;
-        }
-
-        .pres-group-count {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--text);
-            font-family: var(--mono);
-        }
-
-        .pres-group-denom {
-            font-size: .9rem;
-            color: var(--muted);
-            font-family: var(--mono);
-        }
-
-        .pres-group-avg {
-            font-size: .78rem;
-            color: var(--muted);
-            margin-bottom: .65rem;
-        }
-
-        .pres-progress-bg {
-            height: 6px;
-            background: rgba(255, 255, 255, .07);
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .pres-progress-fill {
-            height: 100%;
-            border-radius: 99px;
-            transition: width .8s cubic-bezier(.34, 1.56, .64, 1);
-        }
-
-        /* TABLES */
-        .pres-table-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            overflow: hidden;
-        }
-
-        .pres-table-head {
-            padding: 1.2rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pres-table-head-title {
-            font-size: .92rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .pres-table-head-meta {
-            font-size: .75rem;
-            color: var(--muted);
-        }
-
-        table.pres-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table.pres-table th {
-            padding: .65rem 1.2rem;
-            text-align: left;
-            font-size: .72rem;
-            font-weight: 600;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            background: rgba(0, 0, 0, 0.02);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .dark table.pres-table th {
-            background: rgba(255, 255, 255, .02);
-        }
-
-        table.pres-table td {
-            padding: .85rem 1.2rem;
-            font-size: .85rem;
-            color: var(--text);
-            border-bottom: 1px solid var(--border);
-        }
-
-        table.pres-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        table.pres-table tbody tr:hover td {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .dark table.pres-table tbody tr:hover td {
-            background: rgba(255, 255, 255, .02);
-        }
-
-        .pres-rank {
-            font-size: .75rem;
-            font-weight: 700;
-            font-family: var(--mono);
-            color: var(--muted);
-        }
-
-        .pres-rank-1 {
-            color: var(--amber);
-        }
-
-        .pres-rank-2 {
-            color: #9ca3af;
-        }
-
-        .pres-rank-3 {
-            color: #92400e;
-        }
+            display: flex; align-items: center; gap: .75rem; padding: .6rem .8rem;
+            border-radius: 8px; background: #faf9f6; border: 1px solid #dcdad2;
+        }
+        .dark .pres-modal-item { background: #181c24; border-color: #222630; }
+        .pres-modal-item-marker { color: #e11d48; font-weight: bold; font-size: .8rem; }
+        .pres-modal-item-title { font-size: .8rem; font-weight: 600; color: #241f1b; }
+        .dark .pres-modal-item-title { color: #f8fafc; }
+        .pres-modal-item-sub { font-size: .72rem; color: #6e6862; }
+        .dark .pres-modal-item-sub { color: #94a3b8; }
+        .pres-modal-empty { text-align: center; color: #6e6862; font-size: .85rem; padding: 1.5rem 0; }
+        .dark .pres-modal-empty { color: #94a3b8; }
+
+        /* Tables & Tags */
+        .pres-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        .pres-table th {
+            text-align: left; padding: .55rem .75rem; font-size: .68rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .05em; color: #6e6862;
+            background: #faf9f6; border-bottom: 1px solid #dcdad2;
+        }
+        .dark .pres-table th { background: #181c24; border-color: #222630; color: #94a3b8; }
+        .pres-table td {
+            padding: .6rem .75rem; border-bottom: 1px solid #ecebe3; color: #241f1b;
+        }
+        .dark .pres-table td { border-color: #222630; color: #f8fafc; }
+        .pres-table tr:hover td { background: #faf9f6; }
+        .dark .pres-table tr:hover td { background: #181c24; }
 
         .pres-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            padding: .2rem .65rem;
-            border-radius: 999px;
-            font-size: .73rem;
-            font-weight: 600;
+            display: inline-flex; align-items: center; gap: .25rem; font-size: .72rem;
+            font-weight: 600; padding: .15rem .45rem; border-radius: 4px; border: none; cursor: pointer;
         }
+        .tag-amber { background: #fffbeb; color: #b45309; }
+        .dark .tag-amber { background: rgba(180,83,9,0.22); color: #fbbf24; }
+        .tag-rose { background: #fef2f2; color: #b91c1c; }
+        .dark .tag-rose { background: rgba(185,28,28,0.22); color: #f87171; }
+        .tag-emerald { background: #ecfdf5; color: #15803d; }
+        .dark .tag-emerald { background: rgba(22,128,74,0.22); color: #4ade80; }
 
-        .tag-amber {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-            border: 1px solid rgba(245, 158, 11, .2);
+        .pres-rank {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 4px; font-size: .7rem; font-weight: 700;
+            background: #ecebe3; color: #6e6862;
         }
+        .dark .pres-rank { background: #222630; color: #94a3b8; }
+        .pres-rank-1 { background: #fef3c7; color: #b45309; }
+        .dark .pres-rank-1 { background: rgba(180,83,9,0.3); color: #fbbf24; }
+        .pres-rank-2 { background: #f1f5f9; color: #475569; }
+        .dark .pres-rank-2 { background: #262a30; color: #cbd5e1; }
+        .pres-rank-3 { background: #ffedd5; color: #c2410c; }
+        .dark .pres-rank-3 { background: rgba(194,65,12,0.3); color: #fb923c; }
 
-        .tag-rose {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-            border: 1px solid rgba(244, 63, 94, .2);
-        }
+        /* Chart Legends */
+        .chart-legend { display: flex; flex-wrap: wrap; gap: .75rem 1rem; font-size: .75rem; color: #6e6862; margin-bottom: .75rem; }
+        .dark .chart-legend { color: #94a3b8; }
+        .legend-item { display: inline-flex; align-items: center; gap: .35rem; font-weight: 500; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-        .tag-emerald {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-            border: 1px solid rgba(16, 185, 129, .2);
-        }
-
-        .pres-empty {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--muted);
-            font-size: .85rem;
-        }
-
-        .pres-empty-icon {
-            font-size: 2rem;
-            margin-bottom: .5rem;
-        }
-
-        /* REPORTS SECTION */
-        .pres-reports-kpis {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.25rem;
-        }
-
-        @media(max-width:900px) {
-            .pres-reports-kpis {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .pres-reports-bottom {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        @media(max-width:700px) {
-            .pres-reports-bottom {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-tips {
-            background: rgba(16, 185, 129, .06);
-            border: 1px solid rgba(16, 185, 129, .15);
-            border-radius: .85rem;
-            padding: 1.2rem 1.4rem;
-        }
-
-        .pres-tips-title {
-            font-size: .87rem;
-            font-weight: 700;
-            color: var(--emerald);
-            margin-bottom: .6rem;
-        }
-
-        .pres-tips ul {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: .4rem;
-        }
-
-        .pres-tips li {
-            font-size: .8rem;
-            color: #6ee7b7;
-            display: flex;
-            align-items: flex-start;
-            gap: .5rem;
-        }
-
-        .pres-tips li::before {
-            content: '›';
-            color: var(--emerald);
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .mt-6 {
-            margin-top: 1.5rem;
-        }
-
-        .mt-4 {
-            margin-top: 1rem;
-        }
-
-        /* RESPONSIVE GENERAL */
-        @media(max-width: 1024px) {
-            .pres-page {
-                padding: 1rem 1rem 2.5rem;
-            }
-
-            .pres-header {
-                gap: .75rem;
-            }
-        }
-
-        @media(max-width: 700px) {
-            .pres-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .pres-header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .pres-header-title {
-                font-size: 1.45rem;
-            }
-
-            .pres-header-sub {
-                font-size: .82rem;
-            }
-
-            .pres-tab {
-                flex: 1 1 auto;
-                min-width: 120px;
-            }
+        @media (max-width: 639px) {
+            .pres-grid-2col { grid-template-columns: 1fr !important; }
         }
     </style>
 
-    <div class="pres-wrap">
-        <h1 class="pres-section-title">
-            Statistiques de Présence
-        </h1>
-        <div class="pres-page">
+    <div class="space-y-3 sm:space-y-3.5 overflow-x-hidden">
 
-            {{-- PERIOD TABS --}}
-            <div class="pres-tabs" style="background-color: #f3f4f6; border-color: rgba(0, 0, 0, 0.08);">
-                @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
-                <a href="{{ route('admin.presence.index', array_filter(['period'=>$k, 'date_from'=>$rangeStart->format('Y-m-d')])) }}" class="pres-tab {{ $period===$k?'active':'' }}" style="font-size: larger; font-weight: 600; color: #111;">
-                    {{ $lbl }}
-                    @if($period===$k)<span class="pres-tab-indicator"></span>@endif
+        {{-- ════════════════════════════════════════════════════════
+             1. BANNIÈRE SUPERVISION PRÉSENCES (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="relative overflow-hidden rounded-[10px] border border-[#dcdad2] dark:border-[#222630] bg-gradient-to-r from-[#1c3e96] via-[#1a3889] to-[#162f73] dark:from-[#131519] dark:via-[#161a22] dark:to-[#131519] shadow-sm">
+            <div class="absolute inset-0 opacity-15 pointer-events-none"
+                style="background-image:url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
+            </div>
+            <div class="relative px-3.5 sm:px-4 py-2.5 sm:py-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="ks-stat-icon !w-6 !h-6 rounded bg-blue-500/20 text-blue-200 dark:bg-blue-500/30 dark:text-blue-300">
+                                <svg class="!w-3.5 !h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </span>
+                            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Supervision des Présences</h1>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                                Live
+                            </span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-blue-100/80 dark:text-gray-400 mt-0.5">Analyses temporelles • Écarts de pointage • Bilan d'assiduité du personnel & stagiaires</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 self-start sm:self-auto">
+                        <a href="{{ route('admin.presence.export') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-blue-200 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Export CSV</span>
+                        </a>
+                        <a href="{{ route('admin.presence.pointage-suivi') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-blue-200 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            </svg>
+                            <span>Suivi Pointage</span>
+                        </a>
+                        <a href="{{ route('admin.presence.corrections') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-blue-200 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Corrections</span>
+                        </a>
+                        <a href="{{ route('admin.presence.anomalies') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-xs font-semibold text-rose-200 transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-rose-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Anomalies</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             2. ONGLETS PÉRIODE & FILTRE PLAGE DE DATE
+        ════════════════════════════════════════════════════════ --}}
+        <div class="ks-sec p-3 sm:p-3.5 space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                {{-- Onglets segmentés Mon Stage --}}
+                <div class="inline-flex items-center p-0.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630] self-start">
+                    @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
+                    <a href="{{ route('admin.presence.index', array_filter(['period'=>$k, 'date_from'=>$rangeStart->format('Y-m-d')])) }}"
+                       class="px-3 py-1 text-xs font-semibold rounded-md transition-all {{ $period===$k ? 'bg-[#1c3e96] text-white shadow-sm' : 'text-[#6e6862] dark:text-[#a89f93] hover:text-[#241f1b] dark:hover:text-white' }}">
+                        {{ $lbl }}
+                    </a>
+                    @endforeach
+                </div>
+
+                <div class="text-xs text-[#6e6862] dark:text-[#a89f93] flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#1c3e96] dark:bg-blue-400"></span>
+                    <span>Période appliquée : <b>{{ $rangeStart->locale('fr')->isoFormat('D MMM YYYY') }}</b> → <b>{{ $rangeEnd->locale('fr')->isoFormat('D MMM YYYY') }}</b></span>
+                </div>
+            </div>
+
+            {{-- Formulaire Date Personnalisée --}}
+            <form method="GET" action="{{ route('admin.presence.index') }}" class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 items-end pt-2 border-t border-[#ecebe3] dark:border-[#222630]">
+                <input type="hidden" name="period" value="custom" />
+                <input type="hidden" name="group" value="{{ $group ?? '' }}" />
+
+                <div>
+                    <label class="ks-label block mb-1">Du</label>
+                    <input type="date" name="date_from" value="{{ $rangeStart->format('Y-m-d') }}"
+                           class="w-full px-2.5 py-1.5 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-[#241f1b] dark:text-[#f8fafc] focus:ring-1 focus:ring-[#1c3e96] transition">
+                </div>
+
+                <div>
+                    <label class="ks-label block mb-1">Au</label>
+                    <input type="date" name="date_to" value="{{ $rangeEnd->format('Y-m-d') }}"
+                           class="w-full px-2.5 py-1.5 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-[#241f1b] dark:text-[#f8fafc] focus:ring-1 focus:ring-[#1c3e96] transition">
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button type="submit" class="ks-btn-primary ks-btn-xs flex-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span>Afficher</span>
+                    </button>
+                    <a href="{{ route('admin.presence.index') }}" class="ks-btn-secondary ks-btn-xs px-2.5" title="Réinitialiser">
+                        <svg class="w-3.5 h-3.5 text-[#6e6862] dark:text-[#a89f93]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             3. CARTES KPIS DE SUPERVISION (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            {{-- KPI 1: Taux de présence --}}
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Taux de Présence</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                            {{ $globalStats['taux_presence'] ?? 0 }}%
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        {{ $globalStats['present_days'] ?? 0 }}/{{ $globalStats['total_days'] ?? 0 }} jours présents
+                    </span>
+                </div>
+                <span class="ks-stat-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </span>
+            </div>
+
+            {{-- KPI 2: Retards Cumulés --}}
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Retards Cumulés</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
+                            {{ round(($globalStats['total_late_minutes'] ?? 0) / 60, 1) }}h
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        {{ ($globalStats['total_late_minutes'] ?? 0) ? formatMinutes($globalStats['total_late_minutes']) : '0min' }} ({{ $globalStats['total_late_days'] ?? 0 }} j)
+                    </span>
+                </div>
+                <span class="ks-stat-icon bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </span>
+            </div>
+
+            {{-- KPI 3: Heures Travaillées --}}
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Heures Travaillées</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold text-[#1c3e96] dark:text-blue-400">
+                            {{ $globalStats['total_worked_hours'] ?? 0 }}h
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        {{ number_format($globalStats['total_days'] ?? 0) }} jours pointés
+                    </span>
+                </div>
+                <span class="ks-stat-icon bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </span>
+            </div>
+
+            {{-- KPI 4: Anomalies Ouvertes --}}
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Anomalies Ouvertes</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold {{ ($globalStats['total_anomalies'] ?? 0) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#241f1b] dark:text-[#f8fafc]' }}">
+                            {{ $globalStats['total_anomalies'] ?? 0 }}
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        {{ \App\Models\AttendanceAnomaly::where('status','resolved')->whereDate('reviewed_at',today())->count() }} résolue(s) auj.
+                    </span>
+                </div>
+                <span class="ks-stat-icon {{ ($globalStats['total_anomalies'] ?? 0) > 0 ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40' : 'bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400 border border-slate-200 dark:border-slate-800' }}">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </span>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             4. ACTIONS RAPIDES & RACCOURCIS
+        ════════════════════════════════════════════════════════ --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <a href="{{ route('admin.presence.anomalies') }}"
+               class="ks-sec p-3 flex items-center justify-between hover:border-rose-500/40 transition group">
+                <div class="flex items-center gap-2.5">
+                    <span class="ks-stat-icon bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40 group-hover:scale-105 transition-transform">
+                        🚨
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-[#241f1b] dark:text-[#f8fafc]">Anomalies Détectées</h3>
+                        <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">Traiter les incohérences</p>
+                    </div>
+                </div>
+                <span class="ks-num text-sm font-bold text-rose-600 dark:text-rose-400">{{ $globalStats['total_anomalies'] ?? 0 }}</span>
+            </a>
+
+            <a href="{{ route('admin.presence.pointage-suivi') }}"
+               class="ks-sec p-3 flex items-center justify-between hover:border-emerald-500/40 transition group">
+                <div class="flex items-center gap-2.5">
+                    <span class="ks-stat-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 group-hover:scale-105 transition-transform">
+                        📍
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-[#241f1b] dark:text-[#f8fafc]">Suivi Pointage Temps Réel</h3>
+                        <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">Historique & géolocalisation</p>
+                    </div>
+                </div>
+                <span class="text-xs text-[#1c3e96] dark:text-blue-400 font-semibold">Accéder ›</span>
+            </a>
+
+            <a href="{{ route('tasks.index') }}"
+               class="ks-sec p-3 flex items-center justify-between hover:border-blue-500/40 transition group">
+                <div class="flex items-center gap-2.5">
+                    <span class="ks-stat-icon bg-blue-50 text-[#1c3e96] dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 group-hover:scale-105 transition-transform">
+                        📋
+                    </span>
+                    <div>
+                        <h3 class="text-xs font-bold text-[#241f1b] dark:text-[#f8fafc]">Tâches & Activités</h3>
+                        <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">Suivi des livrables</p>
+                    </div>
+                </div>
+                <span class="text-xs text-[#1c3e96] dark:text-blue-400 font-semibold">Voir ›</span>
+            </a>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             5. GRAPHIQUES (ÉVOLUTION & HEURES / RETARDS)
+        ════════════════════════════════════════════════════════ --}}
+        @php $hasChartData = !empty($globalStats['chart_data']['labels']); @endphp
+        @if($hasChartData)
+        <div class="ks-sec p-3.5 sm:p-4 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <div>
+                    <h2 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">Évolution · Présence & Ponctualité</h2>
+                    <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">💡 Cliquez sur un point d'une courbe pour afficher le détail du jour</p>
+                </div>
+                <div class="chart-legend mb-0 pt-1 sm:pt-0">
+                    <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présents</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>En retard</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absents</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f97316;border-radius:2px;"></span>Retard (min) →</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;border-radius:2px;"></span>Heures travaillées →</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:rgba(139,92,246,0.3);"></span>Jour férié</div>
+                </div>
+            </div>
+            <div style="position:relative; height:300px; width:100%;">
+                <canvas id="chartGlobal"></canvas>
+            </div>
+        </div>
+
+        <div class="ks-sec p-3.5 sm:p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">Vue d'Ensemble · Heures & Retards</h2>
+            </div>
+            <div style="position:relative; height:300px; width:100%;">
+                <canvas id="chartOverview"></canvas>
+            </div>
+        </div>
+        @endif
+
+        {{-- ════════════════════════════════════════════════════════
+             6. STATS PAR GROUPE (STAGIAIRES & EMPLOYÉS)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {{-- Stagiaires --}}
+            <div class="ks-sec p-3 sm:p-3.5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-[#241f1b] dark:text-[#f8fafc] flex items-center gap-1.5">
+                            <span>👥</span> Stagiaires Actifs
+                        </div>
+                        <div class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">
+                            Moy. {{ $groupStats['etudiants']['avg_worked_hours'] ?? 0 }}h / jour
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="ks-num text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">{{ $groupStats['etudiants']['present'] ?? 0 }}</span>
+                        <span class="text-xs text-[#a89f93]">/ {{ $groupStats['etudiants']['count'] ?? 0 }}</span>
+                    </div>
+                </div>
+                @php
+                    $pctEtudiant = ($groupStats['etudiants']['count'] ?? 0) > 0 ? round(($groupStats['etudiants']['present'] ?? 0) / ($groupStats['etudiants']['count'] ?? 1) * 100) : 0;
+                @endphp
+                <div class="w-full bg-[#faf9f6] dark:bg-[#181c24] h-2 rounded-full overflow-hidden border border-[#dcdad2] dark:border-[#222630]">
+                    <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: {{ $pctEtudiant }}%;"></div>
+                </div>
+                <div class="flex justify-end text-[10px] font-bold text-[#6e6862] dark:text-[#a89f93]">
+                    {{ $pctEtudiant }}% d'assiduité
+                </div>
+            </div>
+
+            {{-- Employés --}}
+            <div class="ks-sec p-3 sm:p-3.5 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-[#241f1b] dark:text-[#f8fafc] flex items-center gap-1.5">
+                            <span>👔</span> Personnel Actif
+                        </div>
+                        <div class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">
+                            Moy. {{ $groupStats['employes']['avg_worked_hours'] ?? 0 }}h / jour
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="ks-num text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">{{ $groupStats['employes']['present'] ?? 0 }}</span>
+                        <span class="text-xs text-[#a89f93]">/ {{ $groupStats['employes']['count'] ?? 0 }}</span>
+                    </div>
+                </div>
+                @php
+                    $pctEmploye = ($groupStats['employes']['count'] ?? 0) > 0 ? round(($groupStats['employes']['present'] ?? 0) / ($groupStats['employes']['count'] ?? 1) * 100) : 0;
+                @endphp
+                <div class="w-full bg-[#faf9f6] dark:bg-[#181c24] h-2 rounded-full overflow-hidden border border-[#dcdad2] dark:border-[#222630]">
+                    <div class="h-full bg-blue-600 rounded-full transition-all duration-500" style="width: {{ $pctEmploye }}%;"></div>
+                </div>
+                <div class="flex justify-end text-[10px] font-bold text-[#6e6862] dark:text-[#a89f93]">
+                    {{ $pctEmploye }}% d'assiduité
+                </div>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             7. SUIVI DES RAPPORTS JOURNALIERS
+        ════════════════════════════════════════════════════════ --}}
+        <div class="ks-sec p-3.5 sm:p-4 space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] flex items-center gap-1.5">
+                    <span>📑</span> Suivi des Rapports Journaliers
+                </h2>
+                <a href="{{ route('tasks.index') }}" class="text-xs font-semibold text-[#1c3e96] dark:text-blue-400 hover:underline">
+                    Gérer les tâches ›
                 </a>
-                @endforeach
             </div>
 
-            {{-- FILTRE DATE RESPONSIVE --}}
-            <div class="pres-filter-panel">
-                <form method="GET" action="{{ route('admin.presence.index') }}" class="pres-filter-form">
-                    <input type="hidden" name="period" value="custom" />
-                    <input type="hidden" name="group" value="{{ $group ?? '' }}" />
-
-                    <div class="pres-filter-grid">
-                        <div class="pres-filter-field">
-                            <label>Du</label>
-                            <input type="date" name="date_from"
-                                value="{{ $rangeStart->format('Y-m-d') }}"
-                                class="pres-filter-input" />
-                        </div>
-
-                        <div class="pres-filter-field">
-                            <label>Au</label>
-                            <input type="date" name="date_to"
-                                value="{{ $rangeEnd->format('Y-m-d') }}"
-                                class="pres-filter-input" />
-                        </div>
-
-                        <div class="pres-filter-actions">
-                            <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
-                            <a href="{{ route('admin.presence.index') }}" class="pres-btn pres-btn-secondary " style="color: #000;font-weight: 600;font-size: 16px; background:#9ca3af; transform: translateY(-1px);">Réinitialiser</a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {{-- KPI CARDS --}}
-            <div class="pres-kpis mt-6">
-                <div class="pres-kpi kpi-emerald">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <rect x="3" y="4" width="18" height="18" rx="2" />
-                                <line x1="16" y1="2" x2="16" y2="6" />
-                                <line x1="8" y1="2" x2="8" y2="6" />
-                                <line x1="3" y1="10" x2="21" y2="10" />
-                                <path d="M9 16l2 2 4-4" />
-                            </svg>
-                        </div>
-                        <span class="pres-kpi-badge">↑ {{ $globalStats['present_days'] ?? 0 }}/{{ $globalStats['total_days'] ?? 0 }}</span>
-                    </div>
-                    <div class="pres-kpi-value">{{ $globalStats['taux_presence'] ?? 0 }}%</div>
-                    <div class="pres-kpi-label">Taux de Présence</div>
-                    <div class="pres-kpi-sub">{{ $globalStats['present_days'] ?? 0 }} jours présents</div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630]">
+                    <span class="ks-label block text-[10px]">Brouillons</span>
+                    <span class="ks-num text-lg font-bold text-[#241f1b] dark:text-[#f8fafc]">{{ $reportStats['drafts'] }}</span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93] block mt-0.5">À compléter auj.</span>
                 </div>
-
-                <div class="pres-kpi kpi-amber">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                        </div>
-                        <span class="pres-kpi-badge">{{ $globalStats['total_late_days'] ?? 0 }} jours</span>
-                    </div>
-                    <div class="pres-kpi-value">{{ round(($globalStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
-                    <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ ($globalStats['total_late_minutes'] ?? 0) ? formatMinutes($globalStats['total_late_minutes']) : '0min' }} au total</div>
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630]">
+                    <span class="ks-label block text-[10px]">En Attente</span>
+                    <span class="ks-num text-lg font-bold text-amber-600 dark:text-amber-400">{{ $reportStats['pending'] }}</span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93] block mt-0.5">À valider</span>
                 </div>
-
-                <div class="pres-kpi kpi-blue">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <rect x="2" y="7" width="20" height="14" rx="2" />
-                                <path d="M16 3h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
-                            </svg>
-                        </div>
-                        <span class="pres-kpi-badge">+{{ $globalStats['total_worked_hours'] ?? 0 }}h</span>
-                    </div>
-                    <div class="pres-kpi-value">{{ $globalStats['total_worked_hours'] ?? 0 }}h</div>
-                    <div class="pres-kpi-label">Heures Travaillées</div>
-                    <div class="pres-kpi-sub">{{ number_format($globalStats['total_days'] ?? 0) }} jours pointés</div>
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630]">
+                    <span class="ks-label block text-[10px]">Approuvés</span>
+                    <span class="ks-num text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ $reportStats['approved'] }}</span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93] block mt-0.5">Cette semaine</span>
                 </div>
-
-                <div class="pres-kpi kpi-rose">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                <line x1="12" y1="9" x2="12" y2="13" />
-                                <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                        </div>
-                        <span class="pres-kpi-badge">‑{{ \App\Models\AttendanceAnomaly::where('status','resolved')->whereDate('reviewed_at',today())->count() }} résolues</span>
-                    </div>
-                    <div class="pres-kpi-value">{{ $globalStats['total_anomalies'] ?? 0 }}</div>
-                    <div class="pres-kpi-label">Anomalies Ouvertes</div>
-                    <div class="pres-kpi-sub">À reviewer</div>
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630]">
+                    <span class="ks-label block text-[10px]">Taux Validation</span>
+                    <span class="ks-num text-lg font-bold text-[#1c3e96] dark:text-blue-400">{{ $reportStats['validation_rate'] }}%</span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93] block mt-0.5">Obj. &gt; 90%</span>
                 </div>
             </div>
+        </div>
 
-            {{-- QUICK ACTIONS --}}
-            <div class="mt-6">
-                <div class="pres-section-title">Actions Rapides</div>
-                <div class="pres-actions-grid">
-                    <a href="{{ route('admin.presence.anomalies') }}" class="pres-action-card act-rose">
-                        <span class="pres-action-icon">🚨</span>
-                        <span class="pres-action-count">{{ $globalStats['total_anomalies'] ?? 0 }}</span>
-                        <span>Anomalies</span>
-                    </a>
-                    <a href="{{ route('admin.presence.pointage-suivi') }}" class="pres-action-card act-emerald">
-                        <span class="pres-action-icon">📍</span>
-                        <span>Suivi Pointage</span>
-                    </a>
-                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue">
-                        <span class="pres-action-icon">📋</span>
-                        <span>Tâches</span>
-                    </a>
+        {{-- ════════════════════════════════════════════════════════
+             8. TOP 10 RETARDS & ABSENCES
+        ════════════════════════════════════════════════════════ --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+            {{-- Top 10 Retards --}}
+            <div class="ks-sec overflow-hidden">
+                <div class="ks-sec-head">
+                    <span class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] flex items-center gap-1.5">
+                        <span>🏆</span> Top Retards
+                    </span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93]">
+                        {{ $period === 'custom' ? ($rangeStart->format('d/m') . ' → ' . $rangeEnd->format('d/m')) : ucfirst($period ?? 'mois') }}
+                    </span>
                 </div>
-            </div>
-
-            {{-- CHARTS --}}
-            @php $hasChartData = !empty($globalStats['chart_data']['labels']); @endphp
-            @if($hasChartData)
-            <div class="mt-6">
-                <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
-                <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">💡 Cliquez sur un point d'une courbe pour afficher le détail du jour.</div>
-                <div class="pres-card">
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présents</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>En retard</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absents</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f97316;border-radius:2px;"></span>Retard (min) →</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;border-radius:2px;"></span>Heures travaillées →</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:rgba(139,92,246,0.3);"></span>Jour férié</div>
-                    </div>
-                    <div class="chart-container" style="height:300px;">
-                        <canvas id="chartGlobal"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pres-card mt-6">
-                <div class="pres-section-title">Vue d'Ensemble · Heures & Retards</div>
-                <div class="chart-container" style="height:300px;">
-                    <canvas id="chartOverview"></canvas>
-                </div>
-            </div>
-            @endif
-
-            {{-- GROUP STATS --}}
-            <div style="display:flex;flex-direction:column;gap:1rem; margin-top:1rem;">
-                <div class="pres-group-card">
-                    <div class="pres-group-head">
-                        <div>
-                            <div class="pres-group-label">👥 Stagiaires</div>
-                            <div class="pres-group-role">Stagiaires actifs</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="pres-group-count">{{ $groupStats['etudiants']['present'] ?? 0 }}</span>
-                            <span class="pres-group-denom">/{{ $groupStats['etudiants']['count'] ?? 0 }}</span>
-                        </div>
-                    </div>
-                    <div class="pres-group-avg">Moy. {{ $groupStats['etudiants']['avg_worked_hours'] ?? 0 }}h/jour</div>
-                    <div class="pres-progress-bg">
-                        <div class="pres-progress-fill" style="width:{{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%;background:var(--emerald);"></div>
-                    </div>
-                    <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
-                        {{ ($groupStats['etudiants']['count']??0)>0 ? round(($groupStats['etudiants']['present']??0)/($groupStats['etudiants']['count']??1)*100) : 0 }}%
-                    </div>
-                </div>
-
-                <div class="pres-group-card">
-                    <div class="pres-group-head">
-                        <div>
-                            <div class="pres-group-label">👔 Employés</div>
-                            <div class="pres-group-role">Personnel actif</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="pres-group-count">{{ $groupStats['employes']['present'] ?? 0 }}</span>
-                            <span class="pres-group-denom">/{{ $groupStats['employes']['count'] ?? 0 }}</span>
-                        </div>
-                    </div>
-                    <div class="pres-group-avg">Moy. {{ $groupStats['employes']['avg_worked_hours'] ?? 0 }}h/jour</div>
-                    <div class="pres-progress-bg">
-                        <div class="pres-progress-fill" style="width:{{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%;background:var(--blue);"></div>
-                    </div>
-                    <div style="display:flex;justify-content:flex-end;margin-top:.4rem;font-size:.72rem;color:var(--muted);font-family:var(--mono);">
-                        {{ ($groupStats['employes']['count']??0)>0 ? round(($groupStats['employes']['present']??0)/($groupStats['employes']['count']??1)*100) : 0 }}%
-                    </div>
-                </div>
-            </div>
-
-            {{-- REPORTS SECTION --}}
-            <div class="mt-6">
-                <div class="pres-section-title">Suivi des Rapports Journaliers</div>
-                <div class="pres-reports-kpis">
-                    <div class="pres-kpi" style="background:var(--bg2);border-color:var(--border);">
-                        <div class="pres-kpi-accent" style="background:var(--muted);"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon" style="background:rgba(107,114,128,.12);color:var(--muted);">✏️</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['drafts'] }}</div>
-                        <div class="pres-kpi-label">Brouillons</div>
-                        <div class="pres-kpi-sub">À compléter aujourd'hui</div>
-                    </div>
-                    <div class="pres-kpi kpi-amber">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">⏳</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['pending'] }}</div>
-                        <div class="pres-kpi-label">En Attente</div>
-                        <div class="pres-kpi-sub">À reviewer par sup.</div>
-                    </div>
-                    <div class="pres-kpi kpi-emerald">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">✅</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['approved'] }}</div>
-                        <div class="pres-kpi-label">Approuvés</div>
-                        <div class="pres-kpi-sub">Cette semaine</div>
-                    </div>
-                    <div class="pres-kpi kpi-blue">
-                        <div class="pres-kpi-accent"></div>
-                        <div class="pres-kpi-top">
-                            <div class="pres-kpi-icon">🏆</div>
-                        </div>
-                        <div class="pres-kpi-value" style="font-size:1.8rem;">{{ $reportStats['validation_rate'] }}%</div>
-                        <div class="pres-kpi-label">Taux Validation</div>
-                        <div class="pres-kpi-sub">Objectif › 90%</div>
-                    </div>
-                </div>
-                <div class="pres-reports-bottom">
-                    <a href="{{ route('tasks.index') }}" class="pres-action-card act-blue" style="padding:1.6rem;">
-                        <span class="pres-action-icon">📊</span>
-                        <span style="font-size:1rem;">Toutes les Tâches</span>
-                    </a>
-                    <div class="pres-tips">
-                        <div class="pres-tips-title">💡 Astuces Suivi</div>
-                        <ul>
-                            <li>Vérifiez la géolocalisation avant validation</li>
-                            <li>Signalez toute anomalie de +15 min de retard</li>
-                            <li>Validez avant 18h pour les stats du jour</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>::
-
-            {{-- TOP RETARDS & ABSENCES --}}
-            <div class="pres-charts-grid mt-6">
-                <div class="pres-table-card">
-                    <div class="pres-table-head">
-                        <span class="pres-table-head-title">🏆 Top 10 Retardataires</span>
-                        <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
-                    </div>
+                <div class="overflow-x-auto">
                     <table class="pres-table">
                         <thead>
                             <tr>
                                 <th>#</th>
                                 <th>Utilisateur</th>
-                                <th>Jours de retard</th>
-                                <th>Total</th>
-                                <th>Moy/jour</th>
+                                <th>Jours</th>
+                                <th>Cumul</th>
+                                <th>Moy/j</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($topLate ?? [] as $i => $user)
                             <tr>
                                 <td><span class="pres-rank {{ $i===0?'pres-rank-1':($i===1?'pres-rank-2':($i===2?'pres-rank-3':'')) }}">{{ $i+1 }}</span></td>
-                                <td style="font-weight:500;">{{ $user->user_name ?? $user->name }}</td>
+                                <td class="font-medium text-xs">{{ $user->user_name ?? $user->name }}</td>
                                 <td>
-                                    <span class="pres-tag tag-amber" title="{{ $user->days_count }} jour(s) de retard">
-                                        {{ $user->days_count }} j
-                                    </span>
+                                    <span class="pres-tag tag-amber">{{ $user->days_count }} j</span>
                                 </td>
                                 <td>
-                                    <span class="pres-tag tag-amber" title="{{ $user->total_late ?? 0 }} min total">
-                                        ⏰ {{ formatMinutes($user->total_late ?? 0) }}
-                                    </span>
+                                    <span class="pres-tag tag-amber font-mono">{{ formatMinutes($user->total_late ?? 0) }}</span>
                                 </td>
-                                <td style="color:var(--amber);font-family:var(--mono);font-size:.8rem;">
-                                    {{ formatMinutes($user->avg_late ?? 0) }}/j
+                                <td class="font-mono text-xs text-amber-600 dark:text-amber-400">
+                                    {{ formatMinutes($user->avg_late ?? 0) }}
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5">
-                                    <div class="pres-empty">
-                                        <div class="pres-empty-icon">✅</div>Aucun retard détecté
-                                    </div>
+                                <td colspan="5" class="text-center py-6 text-xs text-[#6e6862] dark:text-[#a89f93]">
+                                    ✅ Aucun retard détecté sur la période.
                                 </td>
                             </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+            </div>
 
-                <div class="pres-table-card">
-                    <div class="pres-table-head">
-                        <span class="pres-table-head-title">⭕ Absences</span>
-                        <span class="pres-table-head-meta">Période : {{ $period === 'custom' ? (request('date_from') . ' → ' . request('date_to')) : ucfirst($period ?? 'mois') }}</span>
-                    </div>
-                    @if(empty($absences))
-                    <div class="pres-empty">
-                        <div class="pres-empty-icon">🎉</div>Aucune absence détectée
-                    </div>
-                    @else
+            {{-- Absences --}}
+            <div class="ks-sec overflow-hidden">
+                <div class="ks-sec-head">
+                    <span class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] flex items-center gap-1.5">
+                        <span>⭕</span> Bilan Absences
+                    </span>
+                    <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93]">
+                        {{ $period === 'custom' ? ($rangeStart->format('d/m') . ' → ' . $rangeEnd->format('d/m')) : ucfirst($period ?? 'mois') }}
+                    </span>
+                </div>
+                @if(empty($absences))
+                <div class="text-center py-8 text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    🎉 Aucune absence enregistrée sur cette période.
+                </div>
+                @else
+                <div class="overflow-x-auto">
                     <table class="pres-table">
                         <thead>
                             <tr>
                                 <th>Utilisateur</th>
-                                <th>Jours</th>
+                                <th class="text-right">Jours d'absence</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($absenceItems as $item)
                             <tr>
-                                <td style="font-weight:500;">{{ $item['user'] }}</td>
-                                <td>
-                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-index="{{ $loop->index }}">
-                                        {{ $item['count'] }} j
+                                <td class="font-medium text-xs">{{ $item['user'] }}</td>
+                                <td class="text-right">
+                                    <button type="button" class="pres-tag tag-rose pres-absence-count-button" data-index="{{ $loop->index }}" title="Voir les dates d'absence">
+                                        {{ $item['count'] }} jour(s) ›
                                     </button>
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
-                    @endif
                 </div>
-            </div>
-
-            {{-- DÉPARTS NON POINTÉS À RÉGLER --}}
-            <div class="pres-table-card mt-6">
-                <div class="pres-table-head">
-                    <span class="pres-table-head-title">⏳ Départs à régler</span>
-                    <span class="pres-table-head-meta">Départs non pointés, clôturés ou déclarés, sans correction validée</span>
-                </div>
-                @if($pendingCorrections->isEmpty())
-                    <div class="pres-empty">
-                        <div class="pres-empty-icon">✅</div>Aucun départ oublié en attente de correction
-                    </div>
-                @else
-                    <div style="overflow-x:auto;">
-                        <table class="pres-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Utilisateur</th>
-                                    <th>Arrivée</th>
-                                    <th>Clôturé à</th>
-                                    <th>Status</th>
-                                    <th>Déclaration</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($pendingCorrections as $pc)
-                                    @php
-                                        $pcUser    = $pc->user ?: $pc->etudiant?->user;
-                                        $pcName    = $pcUser?->name ?? ($pc->etudiant?->full_name ?? 'Utilisateur');
-                                        $pcRoute   = $pcUser ? route('attendance.tracking.user.historique', $pcUser) : null;
-                                        $pcEtat    = $pc->departure_status === 'claimed' ? 'declaré' : 'clôturé';
-                                        $pcEjEtat  = $pc->departure_status === 'claimed' ? 'tag-amber' : 'tag-rose';
-                                    @endphp
-                                    <tr>
-                                        <td style="white-space:nowrap;">{{ $pc->attendance_date->locale('fr')->isoFormat('dd D MMM YYYY') }}</td>
-                                        <td style="font-weight:500;">{{ $pcName }}</td>
-                                        <td style="font-family:var(--mono);">{{ $pc->first_check_in_at?->format('H:i') }}</td>
-                                        <td style="font-family:var(--mono);">{{ $pc->last_check_out_at?->format('H:i') }}</td>
-                                        <td>
-                                            <span class="pres-tag {{ $pcEjEtat }}">
-                                                {{ $pcEtat }}
-                                                @if($pc->departure_status === 'claimed')
-                                                    <span title="{{ $pc->claimed_check_out_reason ?? '' }}">· {{ $pc->claimed_check_out_at?->format('H:i') }}</span>
-                                                @endif
-                                            </span>
-                                        </td>
-                                        <td style="font-size:.8rem;color:var(--muted);max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                            {{ $pc->claimed_check_out_reason ?? '—' }}
-                                        </td>
-                                        <td>
-                                            @if($pcRoute)
-                                                <a href="{{ $pcRoute }}" class="pres-tag tag-emerald" style="text-decoration:none;">
-                                                    Rétablir l'heure
-                                                </a>
-                                            @else
-                                                <span class="pres-tag" style="color:var(--muted);">—</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
                 @endif
             </div>
-
         </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             9. DÉPARTS NON POINTÉS À RÉGLER (RÉSUMÉ)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="ks-sec overflow-hidden">
+            <div class="ks-sec-head flex-wrap">
+                <div class="flex items-center gap-2">
+                    <span class="ks-stat-icon !w-5 !h-5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+                        <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                    <h2 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">Départs à Régulariser</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('admin.presence.corrections') }}" class="text-xs font-semibold text-[#1c3e96] dark:text-blue-400 hover:underline">
+                        Gérer toutes les corrections ›
+                    </a>
+                </div>
+            </div>
+
+            @if($pendingCorrections->isEmpty())
+                <div class="text-center py-6 text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    ✅ Aucun départ oublié en attente de correction.
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="pres-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Collaborateur</th>
+                                <th>Arrivée</th>
+                                <th>Clôturé à</th>
+                                <th>Statut</th>
+                                <th>Déclaration</th>
+                                <th class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pendingCorrections as $pc)
+                                @php
+                                    $pcUser    = $pc->user ?: $pc->etudiant?->user;
+                                    $pcName    = $pcUser?->name ?? ($pc->etudiant?->full_name ?? 'Utilisateur');
+                                    $pcEtat    = $pc->departure_status === 'claimed' ? 'Déclaré' : 'Clôturé';
+                                    $pcEjEtat  = $pc->departure_status === 'claimed' ? 'tag-amber' : 'tag-rose';
+                                @endphp
+                                <tr>
+                                    <td class="whitespace-nowrap text-xs">{{ $pc->attendance_date->locale('fr')->isoFormat('ddd D MMM YYYY') }}</td>
+                                    <td class="font-medium text-xs">{{ $pcName }}</td>
+                                    <td class="font-mono text-xs">{{ $pc->first_check_in_at?->format('H:i') ?? '—' }}</td>
+                                    <td class="font-mono text-xs">{{ $pc->last_check_out_at?->format('H:i') ?? '—' }}</td>
+                                    <td>
+                                        <span class="pres-tag {{ $pcEjEtat }}">
+                                            {{ $pcEtat }}
+                                            @if($pc->departure_status === 'claimed')
+                                                <span title="{{ $pc->claimed_check_out_reason ?? '' }}">· {{ $pc->claimed_check_out_at?->format('H:i') }}</span>
+                                            @endif
+                                        </span>
+                                    </td>
+                                    <td class="text-xs text-[#6e6862] dark:text-[#a89f93] max-w-[200px] truncate">
+                                        {{ $pc->claimed_check_out_reason ?? '—' }}
+                                    </td>
+                                    <td class="text-right">
+                                        <a href="{{ route('admin.presence.corrections') }}" class="ks-btn-primary ks-btn-xs text-[11px] no-underline">
+                                            Rétablir
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
     </div>
 
+    {{-- ════════════════════════════════════════════════════════
+         MODALES : ABSENCES & DÉTAIL DU JOUR
+    ════════════════════════════════════════════════════════ --}}
     <div class="pres-modal-backdrop" id="absenceModalBackdrop" aria-hidden="true">
         <div class="pres-modal" role="dialog" aria-modal="true" aria-labelledby="absenceModalTitle">
             <div class="pres-modal-header">
@@ -1502,41 +752,37 @@
     {{-- Modale détail d'un jour cliqué sur les graphiques --}}
     <div id="presence-day-modal" x-data="presenceDayApp()" x-show="open" x-cloak
          class="fixed inset-0 z-[10000] flex items-start justify-center p-3 sm:p-6 overflow-y-auto">
-        <div x-show="open" x-transition.opacity @click="open=false" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div x-show="open" x-transition.opacity @click="open=false" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
 
-        <div x-show="open" x-transition.duration.200ms class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl z-10 my-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div x-show="open" x-transition.duration.200ms
+             class="relative bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] rounded-2xl shadow-2xl w-full max-w-5xl z-10 my-4 overflow-hidden">
             {{-- Header --}}
-            <div class="flex items-center justify-between gap-3 px-5 sm:px-7 py-4 border-b border-gray-100 dark:border-gray-700">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="ks-stat-icon bg-blue-50 text-[#1c3e96] dark:bg-blue-950/40 dark:text-blue-300">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                    </div>
+                    </span>
                     <div class="min-w-0">
-                        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
+                        <h3 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] truncate">
                             Détail du jour — <span x-text="prefixLabel"></span>
                         </h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                            <span x-text="fullDateLabel"></span>
-                            (<span x-text="summary.total || 0"></span> personne(s) attendue(s))
+                        <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">
+                            <span x-text="fullDateLabel"></span> (<span x-text="summary.total || 0"></span> personne(s) attendue(s))
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <button @click="exportCsv()" :disabled="csvLoading"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition disabled:opacity-50">
-                        <svg x-show="!csvLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="ks-btn-secondary ks-btn-xs text-xs">
+                        <svg x-show="!csvLoading" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                         </svg>
-                        <svg x-show="csvLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                        Export CSV
+                        <span>Export CSV</span>
                     </button>
-                    <button @click="open=false" class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition flex items-center justify-center">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button @click="open=false" class="p-1 rounded text-[#6e6862] dark:text-[#a89f93] hover:text-[#241f1b] dark:hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
@@ -1544,128 +790,78 @@
             </div>
 
             {{-- Résumé --}}
-            <div x-show="!loading && !error && allRows.length > 0" class="px-5 sm:px-7 pt-4 flex flex-wrap gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                    Pr&eacute;sents <span x-text="summary.present || 0"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                    &Agrave; l'heure <span x-text="summary.on_time || 0"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                    En retard <span x-text="summary.late || 0"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300">
-                    Absents <span x-text="summary.absent || 0"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300" x-show="summary.corrected">
-                    Corrig&eacute;s <span x-text="summary.corrected || 0"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                    Heures <span x-text="fmtHours(summary.worked_minutes)"></span>
-                </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                    Retard <span x-text="fmtMin(summary.late_minutes)"></span>
-                </span>
+            <div x-show="!loading && !error && allRows.length > 0" class="px-4 sm:px-6 pt-3 flex flex-wrap gap-1.5">
+                <span class="ks-stat-change ks-stat-change--positive">Pr&eacute;sents <span x-text="summary.present || 0"></span></span>
+                <span class="ks-stat-change ks-stat-change--blue">&Agrave; l'heure <span x-text="summary.on_time || 0"></span></span>
+                <span class="ks-stat-change ks-stat-change--amber">En retard <span x-text="summary.late || 0"></span></span>
+                <span class="ks-stat-change ks-stat-change--negative">Absents <span x-text="summary.absent || 0"></span></span>
+                <span class="ks-stat-change ks-stat-change--neutral" x-show="summary.corrected">Corrig&eacute;s <span x-text="summary.corrected || 0"></span></span>
+                <span class="ks-stat-change ks-stat-change--neutral">Heures <span x-text="fmtHours(summary.worked_minutes)"></span></span>
+                <span class="ks-stat-change ks-stat-change--amber">Retard <span x-text="fmtMin(summary.late_minutes)"></span></span>
             </div>
 
             {{-- Body --}}
-            <div class="px-5 sm:px-7 py-4" @keydown.escape.window="open=false">
-                <div x-show="loading" class="py-16 text-center">
-                    <div class="w-10 h-10 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-amber-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                    </div>
-                    <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 font-medium">Chargement du jour…</p>
+            <div class="px-4 sm:px-6 py-3.5" @keydown.escape.window="open=false">
+                <div x-show="loading" class="py-12 text-center">
+                    <p class="text-xs text-[#6e6862] dark:text-[#a89f93]">Chargement des détails du jour…</p>
                 </div>
 
-                <div x-show="!loading && error" class="py-16 text-center">
-                    <div class="w-12 h-12 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Impossible de charger les données.</p>
-                    <button @click="loadDay()" class="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 transition">
-                        R&eacute;essayer
-                    </button>
+                <div x-show="!loading && error" class="py-12 text-center text-xs text-rose-600">
+                    Impossible de charger les données du jour.
                 </div>
 
-                <div x-show="!loading && !error && flags.future" class="py-16 text-center">
-                    <div class="text-3xl">🚀</div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Ce jour n'est pas encore arriv&eacute;.</p>
+                <div x-show="!loading && !error && flags.future" class="py-12 text-center text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    Ce jour n'est pas encore arrivé.
                 </div>
-                <div x-show="!loading && !error && flags.weekend" class="py-16 text-center">
-                    <div class="text-3xl">🌴</div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour de week-end — aucune pr&eacute;sence attendue.</p>
+                <div x-show="!loading && !error && flags.weekend" class="py-12 text-center text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    Jour de week-end — aucune présence attendue.
                 </div>
-                <div x-show="!loading && !error && flags.holiday" class="py-16 text-center">
-                    <div class="text-3xl">🎉</div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour f&eacute;ri&eacute; — aucune pr&eacute;sence attendue.</p>
+                <div x-show="!loading && !error && flags.holiday" class="py-12 text-center text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    Jour férié — aucune présence attendue.
                 </div>
-                <div x-show="!loading && !error && flags.before_system" class="py-16 text-center">
-                    <div class="text-3xl">🗓️</div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Jour ant&eacute;rieur &agrave; l'activation du syst&egrave;me.</p>
-                </div>
-                <div x-show="!loading && !error && !flags.future && !flags.weekend && !flags.holiday && !flags.before_system && allRows.length === 0" class="py-16 text-center">
-                    <div class="text-3xl">📭</div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucune donn&eacute;e de pr&eacute;sence pour ce jour.</p>
+                <div x-show="!loading && !error && !flags.future && !flags.weekend && !flags.holiday && allRows.length === 0" class="py-12 text-center text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    Aucune donnée de présence pour ce jour.
                 </div>
 
-                <div x-show="!loading && !error && allRows.length > 0" class="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-xl border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm min-w-[860px]">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                <div x-show="!loading && !error && allRows.length > 0" class="overflow-x-auto max-h-[50vh] overflow-y-auto rounded-lg border border-[#dcdad2] dark:border-[#222630]">
+                    <table class="w-full text-xs">
+                        <thead class="bg-[#faf9f6] dark:bg-[#181c24] sticky top-0 border-b border-[#dcdad2] dark:border-[#222630] text-[#6e6862] dark:text-[#a89f93]">
                             <tr>
-                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Utilisateur</th>
-                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Site</th>
-                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Statut</th>
-                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Entr&eacute;e</th>
-                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sortie</th>
-                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Heures</th>
-                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Retard</th>
+                                <th class="px-3 py-2 text-left font-semibold">Collaborateur</th>
+                                <th class="px-3 py-2 text-left font-semibold">Type</th>
+                                <th class="px-3 py-2 text-left font-semibold">Site</th>
+                                <th class="px-3 py-2 text-left font-semibold">Statut</th>
+                                <th class="px-3 py-2 text-left font-semibold">Entrée</th>
+                                <th class="px-3 py-2 text-right font-semibold">Sortie</th>
+                                <th class="px-3 py-2 text-right font-semibold">Heures</th>
+                                <th class="px-3 py-2 text-right font-semibold">Retard</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody class="divide-y divide-[#ecebe3] dark:divide-[#222630]">
                             <template x-for="r in rows" :key="r.id + '-' + r.group">
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                    <td class="px-5 py-3">
-                                        <div class="font-semibold text-gray-900 dark:text-white" x-text="r.name"></div>
-                                        <div class="text-xs text-gray-400 mt-0.5" x-show="r.school" x-text="r.school"></div>
+                                <tr class="hover:bg-[#faf9f6] dark:hover:bg-[#181c24] transition-colors">
+                                    <td class="px-3 py-2 font-medium text-[#241f1b] dark:text-[#f8fafc]" x-text="r.name"></td>
+                                    <td class="px-3 py-2 text-[#6e6862] dark:text-[#a89f93]" x-text="groupLabel(r.group)"></td>
+                                    <td class="px-3 py-2 text-[#6e6862] dark:text-[#a89f93]" x-text="r.site_name || '—'"></td>
+                                    <td class="px-3 py-2">
+                                        <span class="ks-stat-change" :class="rowBadge(r).cls" x-text="rowBadge(r).label"></span>
                                     </td>
-                                    <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="groupLabel(r.group)"></td>
-                                    <td class="px-5 py-3 text-gray-700 dark:text-gray-300" x-text="r.site_name || '—'"></td>
-                                    <td class="px-5 py-3">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                                            :class="rowBadge(r).cls">
-                                            <span class="w-1.5 h-1.5 rounded-full" :class="rowBadge(r).dot"></span>
-                                            <span x-text="rowBadge(r).label"></span>
-                                        </span>
-                                    </td>
-                                    <td class="px-5 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300" x-text="r.arrival || '—'"></td>
-                                    <td class="px-5 py-3 whitespace-nowrap text-right text-gray-700 dark:text-gray-300" x-text="r.departure || '—'"></td>
-                                    <td class="px-5 py-3 whitespace-nowrap text-right text-gray-700 dark:text-gray-300" x-text="fmtHours(r.worked_minutes)"></td>
-                                    <td class="px-5 py-3 whitespace-nowrap text-right" x-text="fmtMin(r.late_minutes)" :class="r.late_minutes > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-400'"></td>
+                                    <td class="px-3 py-2 font-mono" x-text="r.arrival || '—'"></td>
+                                    <td class="px-3 py-2 font-mono text-right" x-text="r.departure || '—'"></td>
+                                    <td class="px-3 py-2 font-mono text-right" x-text="fmtHours(r.worked_minutes)"></td>
+                                    <td class="px-3 py-2 font-mono text-right" x-text="fmtMin(r.late_minutes)"></td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Pagination --}}
-                <div x-show="!loading && !error && allRows.length > 0" class="mt-4 flex items-center justify-between gap-3 flex-wrap">
-                    <p class="text-xs text-gray-500 dark:text-gray-400"
-                       x-text="`Page ${page} / ${lastPage} — ${allRows.length} personne(s) au total`"></p>
-                    <div class="flex gap-2">
-                        <button @click="prevPage()" :disabled="page <= 1"
-                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                            ‹ Pr&eacute;c&eacute;dent
-                        </button>
-                        <button @click="nextPage()" :disabled="page >= lastPage"
-                            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                            Suivant ›
-                        </button>
+                {{-- Pagination modal --}}
+                <div x-show="!loading && !error && allRows.length > 0" class="mt-3 flex items-center justify-between text-xs text-[#6e6862] dark:text-[#a89f93]">
+                    <span x-text="`Page ${page} / ${lastPage} (${allRows.length} total)`"></span>
+                    <div class="flex gap-1.5">
+                        <button @click="prevPage()" :disabled="page <= 1" class="ks-btn-secondary ks-btn-xs" :class="{ 'opacity-50 cursor-not-allowed': page <= 1 }">‹ Précédent</button>
+                        <button @click="nextPage()" :disabled="page >= lastPage" class="ks-btn-secondary ks-btn-xs" :class="{ 'opacity-50 cursor-not-allowed': page >= lastPage }">Suivant ›</button>
                     </div>
                 </div>
             </div>
@@ -1744,22 +940,18 @@
 
                 statusBadge(status) {
                     const map = {
-                        on_time:   { label: "À l'heure", cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300', dot: 'bg-blue-500' },
-                        late:      { label: 'En retard', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300', dot: 'bg-amber-500' },
-                        present:   { label: 'Présent', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', dot: 'bg-emerald-500' },
-                        absent:    { label: 'Absent', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300', dot: 'bg-rose-500' },
-                        corrected: { label: 'Corrigé', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300', dot: 'bg-violet-500' },
+                        on_time:   { label: "À l'heure", cls: 'ks-stat-change--blue' },
+                        late:      { label: 'En retard', cls: 'ks-stat-change--amber' },
+                        present:   { label: 'Présent', cls: 'ks-stat-change--positive' },
+                        absent:    { label: 'Absent', cls: 'ks-stat-change--negative' },
+                        corrected: { label: 'Corrigé', cls: 'ks-stat-change--neutral' },
                     };
-                    return map[status] || { label: status || '—', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', dot: 'bg-gray-400' };
+                    return map[status] || { label: status || '—', cls: 'ks-stat-change--neutral' };
                 },
 
                 rowBadge(r) {
                     if (r.status === 'corrected' && r.is_permission) {
-                        return {
-                            label: 'Journée permissionnée',
-                            cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-                            dot: 'bg-violet-500',
-                        };
+                        return { label: 'Permission', cls: 'ks-stat-change--blue' };
                     }
                     return this.statusBadge(r.status);
                 },
@@ -1838,16 +1030,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Récupération des couleurs thème pour les graphiques
             const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#e8eaf0' : '#0f172a';
-            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-            const mutedColor = isDark ? '#6b7280' : '#475569';
+            const textColor = isDark ? '#f8fafc' : '#241f1b';
+            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+            const mutedColor = isDark ? '#94a3b8' : '#6e6862';
 
-            Chart.defaults.font.family = "'DM Sans', sans-serif";
+            Chart.defaults.font.family = "'Figtree', 'DM Sans', sans-serif";
             Chart.defaults.color = textColor;
 
-            /* Helper JS : minutes → Xh Ymin */
             const fmtMin = (m) => {
                 if (!m || m <= 0) return '0min';
                 const h = Math.floor(m / 60), mins = m % 60;
@@ -1869,7 +1059,6 @@
 
             const onTime = present.map((v, i) => v - (lateDays[i] ?? 0));
 
-            /* Plugin : bandes verticales pour jours fériés */
             const holidayPlugin = {
                 id: 'holidayBands',
                 beforeDraw(chart) {
@@ -1880,7 +1069,7 @@
                         if (isHoliday) {
                             const xPos = x.getPixelForValue(i) - gap / 2;
                             ctx.save();
-                            ctx.fillStyle = 'rgba(139,92,246,0.07)';
+                            ctx.fillStyle = 'rgba(139,92,246,0.08)';
                             ctx.fillRect(xPos, top, gap, bottom - top);
                             ctx.restore();
                         }
@@ -1888,7 +1077,6 @@
                 }
             };
 
-            /* Clic sur un point d'un graphique → ouvrir le détail du jour */
             const openDayFromChart = (evt, items) => {
                 let idx = (items && items.length) ? items[0].index : null;
                 const chart = evt?.chart;
@@ -1919,9 +1107,9 @@
                     return '<div class="pres-modal-empty">Aucune date d\'absence disponible pour cet utilisateur.</div>';
                 }
                 return `<ul class="pres-modal-list">${days.map((day, index) => `
-                    <li class="pres-modal-item" style="animation-delay: ${index * 80}ms;">
+                    <li class="pres-modal-item">
                         <span class="pres-modal-item-marker">✖</span>
-                        <div class="pres-modal-item-content">
+                        <div>
                             <div class="pres-modal-item-title">${day.label}</div>
                             <div class="pres-modal-item-sub">${day.date}</div>
                         </div>
@@ -1931,9 +1119,7 @@
 
             const openAbsenceModal = (index) => {
                 const item = absenceItems[index] ?? null;
-                if (!item) {
-                    return;
-                }
+                if (!item) return;
                 absenceModalTitle.textContent = `Absences de ${item.user}`;
                 absenceModalMeta.textContent = `${item.count} jour${item.count > 1 ? 's' : ''} d'absence`;
                 absenceModalBody.innerHTML = renderAbsenceDays(item.details);
@@ -1963,11 +1149,7 @@
                 });
             }
 
-            /* ══════════════════════════════════════════════════════════
-               GRAPHIQUE 1 — Courbes : Présence, Retards, Absences
-               Axe gauche : nombre de personnes
-               Axe droit  : minutes / heures
-            ══════════════════════════════════════════════════════════ */
+            /* Chart 1: Global Line */
             const ctx = document.getElementById('chartGlobal');
             if (ctx && labels.length > 0) {
                 const g = ctx.getContext('2d');
@@ -1978,13 +1160,13 @@
                     return grad;
                 };
                 const tooltipStyle = {
-                    backgroundColor: isDark ? '#1c2333' : '#ffffff',
-                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    backgroundColor: isDark ? '#131519' : '#fffefa',
+                    borderColor: isDark ? '#222630' : '#dcdad2',
                     borderWidth: 1,
-                    titleColor: isDark ? '#fff' : '#0f172a',
-                    bodyColor: isDark ? '#d1d5db' : '#475569',
-                    padding: 12,
-                    cornerRadius: 10,
+                    titleColor: isDark ? '#f8fafc' : '#241f1b',
+                    bodyColor: isDark ? '#94a3b8' : '#6e6862',
+                    padding: 10,
+                    cornerRadius: 8,
                 };
 
                 new Chart(ctx, {
@@ -1992,68 +1174,57 @@
                     plugins: [holidayPlugin],
                     data: {
                         labels,
-                        datasets: [{
+                        datasets: [
+                            {
                                 label: 'Présents',
                                 data: present,
                                 borderColor: '#10b981',
-                                backgroundColor: mkGrad('rgba(16,185,129,0.22)', 'rgba(16,185,129,0.02)'),
+                                backgroundColor: mkGrad('rgba(16,185,129,0.2)', 'rgba(16,185,129,0.01)'),
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
-                                borderWidth: 3,
-                                pointRadius: present.map(v => v ? 5 : 0),
-                                pointHoverRadius: 8,
+                                tension: 0.35,
+                                borderWidth: 2.5,
+                                pointRadius: present.map(v => v ? 4 : 0),
+                                pointHoverRadius: 7,
                                 pointBackgroundColor: '#10b981',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
                                 label: "À l'heure",
                                 data: onTime,
-                                borderColor: '#3b82f6',
-                                backgroundColor: mkGrad('rgba(59,130,246,0.18)', 'rgba(59,130,246,0.02)'),
+                                borderColor: '#1c3e96',
+                                backgroundColor: mkGrad('rgba(28,62,150,0.18)', 'rgba(28,62,150,0.01)'),
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
+                                tension: 0.35,
                                 borderWidth: 2,
-                                pointRadius: onTime.map(v => v ? 4 : 0),
-                                pointHoverRadius: 7,
-                                pointBackgroundColor: '#3b82f6',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
+                                pointRadius: onTime.map(v => v ? 3.5 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#1c3e96',
                                 yAxisID: 'yCount'
                             },
                             {
                                 label: 'En retard',
                                 data: lateDays,
                                 borderColor: '#f59e0b',
-                                backgroundColor: mkGrad('rgba(245,158,11,0.16)', 'rgba(245,158,11,0.02)'),
+                                backgroundColor: mkGrad('rgba(245,158,11,0.15)', 'rgba(245,158,11,0.01)'),
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
+                                tension: 0.35,
                                 borderWidth: 2,
-                                pointRadius: lateDays.map(v => v ? 4 : 0),
-                                pointHoverRadius: 7,
+                                pointRadius: lateDays.map(v => v ? 3.5 : 0),
+                                pointHoverRadius: 6,
                                 pointBackgroundColor: '#f59e0b',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
                                 label: 'Absents',
                                 data: absences,
                                 borderColor: '#f43f5e',
-                                backgroundColor: mkGrad('rgba(244,63,94,0.16)', 'rgba(244,63,94,0.02)'),
+                                backgroundColor: mkGrad('rgba(244,63,94,0.15)', 'rgba(244,63,94,0.01)'),
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
+                                tension: 0.35,
                                 borderWidth: 2,
-                                pointRadius: absences.map(v => v ? 4 : 0),
-                                pointHoverRadius: 7,
+                                pointRadius: absences.map(v => v ? 3.5 : 0),
+                                pointHoverRadius: 6,
                                 pointBackgroundColor: '#f43f5e',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
                                 yAxisID: 'yCount'
                             },
                             {
@@ -2064,12 +1235,10 @@
                                 fill: false,
                                 tension: 0.35,
                                 borderWidth: 2,
-                                borderDash: [6, 4],
-                                pointRadius: lateMinutes.map(v => v > 0 ? 4 : 0),
+                                borderDash: [5, 4],
+                                pointRadius: lateMinutes.map(v => v > 0 ? 3.5 : 0),
                                 pointHoverRadius: 6,
                                 pointBackgroundColor: '#f97316',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             },
                             {
@@ -2078,13 +1247,11 @@
                                 borderColor: '#8b5cf6',
                                 backgroundColor: 'transparent',
                                 fill: false,
-                                tension: 0.4,
+                                tension: 0.35,
                                 borderWidth: 2,
-                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
+                                pointRadius: workedMinutes.map(v => v > 0 ? 3.5 : 0),
                                 pointHoverRadius: 6,
                                 pointBackgroundColor: '#8b5cf6',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 1,
                                 yAxisID: 'yMinutes'
                             }
                         ]
@@ -2092,20 +1259,12 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: {
-                            duration: 900,
-                            easing: 'easeOutQuart'
-                        },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        animation: { duration: 700, easing: 'easeOutQuart' },
+                        interaction: { mode: 'index', intersect: false },
                         onClick: openDayFromChart,
                         onHover: chartCursor,
                         plugins: {
-                            legend: {
-                                display: false
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 ...tooltipStyle,
                                 callbacks: {
@@ -2121,70 +1280,27 @@
                         },
                         scales: {
                             x: {
-                                grid: {
-                                    color: gridColor
-                                },
-                                ticks: {
-                                    color: mutedColor,
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45,
-                                    maxTicksLimit: 20
-                                }
+                                grid: { color: gridColor },
+                                ticks: { color: mutedColor, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 20 }
                             },
                             yCount: {
-                                type: 'linear',
-                                position: 'left',
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Nombre de personnes',
-                                    color: mutedColor,
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    color: mutedColor,
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    color: gridColor
-                                }
+                                type: 'linear', position: 'left', beginAtZero: true,
+                                title: { display: true, text: 'Personnes', color: mutedColor, font: { size: 10 } },
+                                ticks: { color: mutedColor, font: { size: 10 } },
+                                grid: { color: gridColor }
                             },
                             yMinutes: {
-                                type: 'linear',
-                                position: 'right',
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Minutes / Heures',
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: (v) => fmtMin(v),
-                                    color: '#f97316',
-                                    font: {
-                                        size: 10
-                                    }
-                                }
+                                type: 'linear', position: 'right',
+                                grid: { drawOnChartArea: false },
+                                title: { display: true, text: 'Temps', color: '#f97316', font: { size: 10 } },
+                                ticks: { callback: (v) => fmtMin(v), color: '#f97316', font: { size: 10 } }
                             }
                         }
                     }
                 });
             }
 
-            /* ══════════════════════════════════════════════════════════
-               GRAPHIQUE 2 — Barres : Heures travaillées + Retard (min)
-            ══════════════════════════════════════════════════════════ */
+            /* Chart 2: Bars */
             const ctxOv = document.getElementById('chartOverview');
             if (ctxOv && labels.length > 0) {
                 new Chart(ctxOv, {
@@ -2192,27 +1308,26 @@
                     plugins: [holidayPlugin],
                     data: {
                         labels,
-                        datasets: [{
+                        datasets: [
+                            {
                                 label: 'Heures travaillées',
                                 data: workedHours,
-                                backgroundColor: 'rgba(59,130,246,0.75)',
-                                borderColor: '#3b82f6',
+                                backgroundColor: '#1c3e96',
+                                borderColor: '#1c3e96',
                                 borderWidth: 1,
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.65,
+                                borderRadius: 4,
+                                barPercentage: 0.6,
                                 categoryPercentage: 0.75,
                                 yAxisID: 'yHours'
                             },
                             {
                                 label: 'Retard (min)',
                                 data: lateMinutes,
-                                backgroundColor: 'rgba(245,158,11,0.7)',
+                                backgroundColor: 'rgba(245,158,11,0.85)',
                                 borderColor: '#f59e0b',
                                 borderWidth: 1,
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.65,
+                                borderRadius: 4,
+                                barPercentage: 0.6,
                                 categoryPercentage: 0.75,
                                 yAxisID: 'yMin'
                             }
@@ -2221,36 +1336,23 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart'
-                        },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        animation: { duration: 600, easing: 'easeOutQuart' },
+                        interaction: { mode: 'index', intersect: false },
                         onClick: openDayFromChart,
                         onHover: chartCursor,
                         plugins: {
                             legend: {
                                 position: 'top',
-                                labels: {
-                                    color: textColor,
-                                    usePointStyle: true,
-                                    padding: 14,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
+                                labels: { color: textColor, usePointStyle: true, padding: 12, font: { size: 11 } }
                             },
                             tooltip: {
-                                backgroundColor: isDark ? '#1c2333' : '#ffffff',
-                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                backgroundColor: isDark ? '#131519' : '#fffefa',
+                                borderColor: isDark ? '#222630' : '#dcdad2',
                                 borderWidth: 1,
-                                titleColor: isDark ? '#fff' : '#0f172a',
-                                bodyColor: isDark ? '#d1d5db' : '#475569',
-                                padding: 12,
-                                cornerRadius: 10,
+                                titleColor: isDark ? '#f8fafc' : '#241f1b',
+                                bodyColor: isDark ? '#94a3b8' : '#6e6862',
+                                padding: 10,
+                                cornerRadius: 8,
                                 callbacks: {
                                     label(ctx) {
                                         const v = ctx.parsed.y;
@@ -2263,63 +1365,20 @@
                         },
                         scales: {
                             x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    color: mutedColor,
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45,
-                                    maxTicksLimit: 20
-                                }
+                                grid: { display: false },
+                                ticks: { color: mutedColor, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 20 }
                             },
                             yHours: {
-                                type: 'linear',
-                                position: 'left',
-                                min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Heures',
-                                    color: '#3b82f6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + 'h',
-                                    color: '#3b82f6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    color: gridColor
-                                }
+                                type: 'linear', position: 'left', min: 0,
+                                title: { display: true, text: 'Heures', color: '#1c3e96', font: { size: 10 } },
+                                ticks: { callback: v => v + 'h', color: '#1c3e96', font: { size: 10 } },
+                                grid: { color: gridColor }
                             },
                             yMin: {
-                                type: 'linear',
-                                position: 'right',
-                                min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Retard (min)',
-                                    color: '#f59e0b',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + ' min',
-                                    color: '#f59e0b',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                }
+                                type: 'linear', position: 'right', min: 0,
+                                title: { display: true, text: 'Retard (min)', color: '#f59e0b', font: { size: 10 } },
+                                ticks: { callback: v => v + ' min', color: '#f59e0b', font: { size: 10 } },
+                                grid: { drawOnChartArea: false }
                             }
                         }
                     }
