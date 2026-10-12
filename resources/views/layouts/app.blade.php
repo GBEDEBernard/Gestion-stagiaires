@@ -930,6 +930,7 @@
                 else if (href.includes('/holidays')) tplId = 'sk-tpl-holidays';
                 else if (href.includes('/presence/pointage') || href.includes('/pointage')) tplId = 'sk-tpl-pointage';
                 else if (href.includes('/presence/historique') || href.includes('/historique')) tplId = 'sk-tpl-historique';
+                else if (href.includes('/tasks-tracking')) tplId = 'sk-tpl-tasks-tracking';
                 else if (href.includes('/tasks')) tplId = 'sk-tpl-tasks';
                 else if (href.includes('/permissions')) tplId = 'sk-tpl-permissions';
                 else if (href.includes('/reports')) tplId = 'sk-tpl-reports';

@@ -25,6 +25,8 @@
             <x-skeletons.pointage />
         @elseif(request()->routeIs('presence.historique'))
             <x-skeletons.historique />
+        @elseif(request()->routeIs('admin.tasks.tracking*') || $r === 'admin.tasks.tracking')
+            <x-skeletons.tasks-tracking />
         @elseif(request()->routeIs('tasks.*'))
             <x-skeletons.tasks />
         @elseif(request()->routeIs('permissions.*'))
@@ -62,6 +64,7 @@
 <template id="sk-tpl-holidays"><x-skeletons.holidays /></template>
 <template id="sk-tpl-pointage"><x-skeletons.pointage /></template>
 <template id="sk-tpl-historique"><x-skeletons.historique /></template>
+<template id="sk-tpl-tasks-tracking"><x-skeletons.tasks-tracking /></template>
 <template id="sk-tpl-tasks"><x-skeletons.tasks /></template>
 <template id="sk-tpl-permissions"><x-skeletons.permissions /></template>
 <template id="sk-tpl-reports"><x-skeletons.reports /></template>
