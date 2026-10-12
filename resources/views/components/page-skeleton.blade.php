@@ -49,6 +49,30 @@
             <x-skeletons.personnels />
         @elseif(request()->routeIs('badges.*') || $r === 'badges.index')
             <x-skeletons.badges />
+        @elseif(request()->routeIs('jours.*') || $r === 'jours.index')
+            <x-skeletons.jours />
+        @elseif(request()->routeIs('ecoles.*') || $r === 'ecoles.index')
+            <x-skeletons.ecoles />
+        @elseif(request()->routeIs('type_stages.*') || $r === 'type_stages.index')
+            <x-skeletons.type-stages />
+        @elseif(request()->routeIs('domaines.*') || $r === 'domaines.index')
+            <x-skeletons.domaines />
+        @elseif(request()->routeIs('sites.*') || $r === 'sites.index')
+            <x-skeletons.sites />
+        @elseif(request()->routeIs('admin.evaluations.criteres.*') || $r === 'admin.evaluations.criteres.index')
+            <x-skeletons.criteres />
+        @elseif(request()->routeIs('stages.*') || $r === 'stages.index')
+            <x-skeletons.stages />
+        @elseif(request()->routeIs('corbeille.*') || request()->routeIs('stages.trash') || $r === 'corbeille.index')
+            <x-skeletons.corbeille />
+        @elseif(request()->routeIs('admin.logs.*') || $r === 'admin.logs.index')
+            <x-skeletons.logs />
+        @elseif(request()->routeIs('admin.notifications.urgent.*') || $r === 'admin.notifications.urgent.index')
+            <x-skeletons.urgent-notifications />
+        @elseif(request()->routeIs('admin.roles.*') || $r === 'admin.roles.index')
+            <x-skeletons.roles />
+        @elseif(request()->routeIs('admin.users.*') || $r === 'admin.users.index')
+            <x-skeletons.users />
         @elseif(request()->routeIs('dashboard'))
             @if(auth()->user()?->hasRole('employe'))
                 <x-skeletons.employe-dashboard />
@@ -86,4 +110,16 @@
 <template id="sk-tpl-etudiants"><x-skeletons.etudiants /></template>
 <template id="sk-tpl-personnels"><x-skeletons.personnels /></template>
 <template id="sk-tpl-badges"><x-skeletons.badges /></template>
+<template id="sk-tpl-jours"><x-skeletons.jours /></template>
+<template id="sk-tpl-ecoles"><x-skeletons.ecoles /></template>
+<template id="sk-tpl-type-stages"><x-skeletons.type-stages /></template>
+<template id="sk-tpl-domaines"><x-skeletons.domaines /></template>
+<template id="sk-tpl-sites"><x-skeletons.sites /></template>
+<template id="sk-tpl-criteres"><x-skeletons.criteres /></template>
+<template id="sk-tpl-stages"><x-skeletons.stages /></template>
+<template id="sk-tpl-corbeille"><x-skeletons.corbeille /></template>
+<template id="sk-tpl-logs"><x-skeletons.logs /></template>
+<template id="sk-tpl-urgent-notifications"><x-skeletons.urgent-notifications /></template>
+<template id="sk-tpl-roles"><x-skeletons.roles /></template>
+<template id="sk-tpl-users"><x-skeletons.users /></template>
 <template id="sk-tpl-generic"><x-skeletons.generic /></template>

@@ -937,11 +937,23 @@
                 else if (href.includes('/reports')) tplId = 'sk-tpl-reports';
                 else if (href.includes('/summaries')) tplId = 'sk-tpl-summaries';
                 else if (href.includes('/profile')) tplId = 'sk-tpl-profile';
+                else if (href.includes('/notifications/urgent')) tplId = 'sk-tpl-urgent-notifications';
                 else if (href.includes('/notifications')) tplId = 'sk-tpl-notifications';
                 else if (href.includes('/admin/employes') || href.includes('/employes')) tplId = 'sk-tpl-employes';
                 else if (href.includes('/admin/etudiants') || href.includes('/etudiants')) tplId = 'sk-tpl-etudiants';
                 else if (href.includes('/admin/personnels') || href.includes('/personnels')) tplId = 'sk-tpl-personnels';
                 else if (href.includes('/admin/badges') || href.includes('/badges')) tplId = 'sk-tpl-badges';
+                else if (href.includes('/admin/jours') || href.includes('/jours')) tplId = 'sk-tpl-jours';
+                else if (href.includes('/admin/ecoles') || href.includes('/ecoles')) tplId = 'sk-tpl-ecoles';
+                else if (href.includes('/admin/type_stages') || href.includes('/type_stages')) tplId = 'sk-tpl-type-stages';
+                else if (href.includes('/admin/domaines') || href.includes('/domaines')) tplId = 'sk-tpl-domaines';
+                else if (href.includes('/admin/sites') || href.includes('/sites')) tplId = 'sk-tpl-sites';
+                else if (href.includes('/evaluations/criteres')) tplId = 'sk-tpl-criteres';
+                else if (href.includes('/corbeille') || href.includes('/trash')) tplId = 'sk-tpl-corbeille';
+                else if (href.includes('/admin/stages') || href.includes('/stages')) tplId = 'sk-tpl-stages';
+                else if (href.includes('/admin/logs') || href.includes('/logs')) tplId = 'sk-tpl-logs';
+                else if (href.includes('/admin/roles') || href.includes('/roles')) tplId = 'sk-tpl-roles';
+                else if (href.includes('/admin/users') || href.includes('/users')) tplId = 'sk-tpl-users';
                 else if (href.includes('/dashboard')) tplId = 'sk-tpl-dashboard';
 
                 if (tplId) {

@@ -1,45 +1,48 @@
 <x-app-layout>
 <style>
     :root {
-        --brand:       #0f6fff;
-        --brand-light: #e8f0fe;
-        --brand-dark:  #0050d0;
+        --brand:       #2563eb;
+        --brand-light: #eff6ff;
+        --brand-dark:  #1d4ed8;
         --surface:     #ffffff;
-        --surface-alt: #f6f8fc;
-        --border:      #e3e8f0;
-        --text:        #0d1b2a;
-        --muted:       #6b7a99;
-        --radius-sm:   10px;
-        --radius-md:   16px;
-        --radius-lg:   24px;
-        --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+        --surface-alt: #f8fafc;
+        --border:      #e2e8f0;
+        --text:        #0f172a;
+        --muted:       #64748b;
+        --radius-sm:   8px;
+        --radius-md:   12px;
+        --radius-lg:   16px;
+        --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
     }
     .dark {
-        --brand-light: #0f2d5e;
-        --surface:     #111827;
-        --surface-alt: #1a2233;
-        --border:      #263047;
-        --text:        #f0f4ff;
-        --muted:       #7a8aaa;
+        --brand:       #3b82f6;
+        --brand-light: #1e293b;
+        --brand-dark:  #2563eb;
+        --surface:     #161a22;
+        --surface-alt: #131519;
+        --border:      #222630;
+        --text:        #f8fafc;
+        --muted:       #94a3b8;
+        --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
     }
 
-    .si-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .si-wrap { width: 100%; max-width: 100%; margin: 0; padding: 0 0 2rem; }
 
     .si-header {
         display: flex; align-items: flex-start; justify-content: space-between;
-        gap: 1rem; flex-wrap: wrap; margin-bottom: 1.75rem;
+        gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
     }
     .si-eyebrow {
-        font-size: .72rem; font-weight: 700; letter-spacing: .12em;
-        text-transform: uppercase; color: var(--brand); margin-bottom: .3rem;
+        font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+        text-transform: uppercase; color: var(--brand); margin-bottom: .2rem;
     }
-    .si-header h1 { font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 .25rem; }
-    .si-header p  { font-size: .875rem; color: var(--muted); margin: 0; }
-    .si-header-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
+    .si-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0 0 .15rem; }
+    .si-header p  { font-size: .82rem; color: var(--muted); margin: 0; }
+    .si-header-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 
     .btn-ghost {
-        display: inline-flex; align-items: center; gap: .45rem;
-        padding: .6rem 1.1rem; font-size: .82rem; font-weight: 600;
+        display: inline-flex; align-items: center; gap: .4rem;
+        padding: .5rem .875rem; font-size: .75rem; font-weight: 600;
         color: var(--muted); background: var(--surface-alt);
         border: 1px solid var(--border); border-radius: var(--radius-sm);
         text-decoration: none; white-space: nowrap;
@@ -47,10 +50,11 @@
     }
     .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
     .btn-primary {
-        display: inline-flex; align-items: center; gap: .5rem;
-        padding: .65rem 1.25rem; font-size: .875rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: .4rem;
+        padding: .5rem .875rem; font-size: .75rem; font-weight: 600;
         color: #fff; background: var(--brand); border: none;
         border-radius: var(--radius-sm); text-decoration: none; white-space: nowrap;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         transition: background .15s, transform .1s;
     }
     .btn-primary:hover { background: var(--brand-dark); }
@@ -329,9 +333,9 @@
     /* ── Responsive colonnes ── */
     @media (max-width: 900px)  { .col-jours  { display: none; } }
     @media (max-width: 768px)  { .col-suivi  { display: none; } }
-    @media (max-width: 640px)  { .col-org    { display: none; } }
 </style>
 
+<div class="w-full space-y-3.5 pb-8 text-slate-900 dark:text-[#f8fafc]">
 <div class="si-wrap">
 
     {{-- ── En-tête ── --}}
@@ -757,6 +761,7 @@
     </div>{{-- #stages-table-container --}}
 
 </div>{{-- .si-wrap --}}
+</div>{{-- .w-full --}}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
