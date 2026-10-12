@@ -7,6 +7,8 @@
     <div id="page-skeleton-content" class="w-full">
         @if(request()->routeIs('student.stage') || $r === 'student.stage')
             <x-skeletons.mon-stage />
+        @elseif(request()->routeIs('attendance.tracking.*') || $r === 'attendance.tracking.index')
+            <x-skeletons.attendance-tracking />
         @elseif(request()->routeIs('presence.pointage') || request()->routeIs('presence.index'))
             <x-skeletons.pointage />
         @elseif(request()->routeIs('presence.historique'))
@@ -39,6 +41,7 @@
 
 {{-- ── TEMPLATES CLIENTS POUR TRANSITION INSTANTANÉE AU CLIC ── --}}
 <template id="sk-tpl-mon-stage"><x-skeletons.mon-stage /></template>
+<template id="sk-tpl-attendance-tracking"><x-skeletons.attendance-tracking /></template>
 <template id="sk-tpl-pointage"><x-skeletons.pointage /></template>
 <template id="sk-tpl-historique"><x-skeletons.historique /></template>
 <template id="sk-tpl-tasks"><x-skeletons.tasks /></template>
