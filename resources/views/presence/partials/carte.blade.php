@@ -108,7 +108,7 @@
     $expressionBouton = $autoActif ? "erreur !== ''" : 'true';
 @endphp
 
-<div class="max-w-4xl mx-auto px-4 sm:px-6">
+<div class="w-full">
 
     {{-- Contexte : le lieu d'abord, la date en légende.
 
@@ -121,64 +121,81 @@
          propre ligne, bornée à deux lignes, et la date redescend dessous :
          l'endroit, puis le moment. `break-words` couvre un libellé d'un seul
          tenant, `title` garde le nom complet pour qui le veut en entier. --}}
-    <div class="mb-6">
-        <span class="inline-flex max-w-full items-start gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-700/40"
-              title="{{ $lieu }}">
-            <span class="mt-1.5 w-2 h-2 flex-shrink-0 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="min-w-0 text-sm sm:text-base font-semibold leading-snug text-emerald-700 dark:text-emerald-300 line-clamp-2 break-words">{{ $lieu }}</span>
-        </span>
-
-        <p class="mt-2 text-xs sm:text-sm font-medium capitalize text-slate-500 dark:text-slate-400">
+    <div class="mb-3 sm:mb-4 flex items-center justify-between gap-2.5">
+        <p class="text-[11px] sm:text-xs font-medium capitalize text-[#6e6862] dark:text-[#a89f93]">
             {{ now()->isoFormat('dddd D MMMM YYYY') }}
         </p>
+
+        <span class="inline-flex max-w-[55%] sm:max-w-none items-center gap-1.5 px-2.5 py-1 rounded-[6px] bg-[#dcfce7] dark:bg-[rgba(22,128,74,0.22)] border border-[#15803d]/30 text-[#15803d] dark:text-[#4ade80] shrink-0"
+              title="{{ $lieu }}">
+            <span class="w-1.5 h-1.5 flex-shrink-0 rounded-full bg-[#15803d] animate-pulse"></span>
+            <span class="min-w-0 text-xs sm:text-sm font-semibold leading-tight truncate">{{ $lieu }}</span>
+        </span>
     </div>
 
-    {{-- Ce qui empêche de pointer aujourd'hui est porté par le modal de
-         vérification, plus bas : un bandeau par cas finirait par annoncer une
-         action qui n'est pas sur l'écran. --}}
+    <style>
+        .carte-pointage-radial {
+            background: radial-gradient(ellipse at 85% 20%, rgba(220, 252, 231, 0.7) 0%, rgba(240, 253, 244, 0.35) 45%, #fffefa 75%) !important;
+            border-color: #d6ded8 !important;
+        }
+        .dark .carte-pointage-radial {
+            background: radial-gradient(ellipse at 85% 20%, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0.04) 45%, #131519 75%) !important;
+            border-color: #202923 !important;
+        }
+    </style>
 
-    {{-- Carte principale : layout split (image + contenu) --}}
-    <div class="overflow-hidden rounded-2xl shadow-lg bg-gradient-to-b {{ $heroTint }} ring-1 ring-slate-200 dark:ring-slate-800">
-        <div class="flex flex-col lg:flex-row">
-          {{-- Image à droite sur grand écran, en haut sur mobile --}}
-<div class="lg:w-1/2 w-full order-1 lg:order-2">
-    <div class="relative w-full aspect-[16/10] sm:aspect-[21/9] lg:aspect-auto lg:h-full overflow-hidden">
-        <img
-            src="/images/imagepointage.jpeg"
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            class="absolute inset-0 w-full h-full object-cover object-[center_25%]"
-        >
-    </div>
-</div>
+    {{-- Carte principale : style 'Mon Stage' avec halo émeraude pastel subtil --}}
+    <div class="carte-pointage-radial overflow-hidden rounded-[10px] border shadow-[0_1px_2px_rgba(36,31,27,0.05),0_8px_24px_-16px_rgba(36,31,27,0.12)] dark:shadow-none md:min-h-[460px] lg:min-h-[490px]">
+        <div class="flex flex-col md:flex-row md:min-h-[460px] lg:min-h-[490px]">
+          {{-- Image à droite sur tablette et PC, en haut sur mobile --}}
+          <div class="md:w-1/2 w-full order-1 md:order-2 flex items-center justify-center">
+              <div class="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-auto md:h-full min-h-0 md:min-h-[460px] lg:min-h-[490px] p-5 sm:p-7 md:p-8 flex items-center justify-center">
+                  <img
+                      src="/images/imagepointage1.png"
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      class="max-w-full max-h-[300px] sm:max-h-[340px] md:max-h-[410px] w-auto h-auto object-contain object-center select-none pointer-events-none"
+                  >
+              </div>
+          </div>
 
-            {{-- Contenu principal --}}
-            <div class="lg:w-1/2 w-full p-6 sm:p-8 order-2 lg:order-1 flex flex-col justify-between">
+            {{-- Contenu principal : centré verticalement en face de l'illustration --}}
+            <div class="md:w-1/2 w-full p-6 sm:p-8 lg:p-10 order-2 md:order-1 flex flex-col justify-center md:min-h-[460px] lg:min-h-[490px]">
                 <div>
-                    <p class="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-300 text-center">{{ now()->hour < 18 ? 'Bonjour' : 'Bonsoir' }}, <span class="font-extrabold text-violet-700 dark:text-violet-300">{{ $prenom }}</span></p>
-                    <p class="mt-3 text-4xl sm:text-5xl font-extralight tracking-tight tabular-nums leading-none text-center bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400"
-                       x-data="{ h: '' }" x-init="h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}); setInterval(() => h = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), 10000)"
-                       x-text="h">--:--</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-[#241f1b] dark:text-[#f8fafc] text-center">{{ now()->hour < 18 ? 'Bonjour' : 'Bonsoir' }}, <span class="font-extrabold text-[#7e22ce] dark:text-[#c084fc]">{{ $prenom }}</span></p>
+                    <p class="mt-4 sm:mt-5 text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight tabular-nums leading-none text-center bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400"
+                       x-data="{
+                           time: '',
+                           sec: '',
+                           tick() {
+                               const d = new Date();
+                               this.time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                               this.sec = String(d.getSeconds()).padStart(2, '0');
+                           }
+                       }"
+                       x-init="tick(); setInterval(() => tick(), 1000)">
+                        <span x-text="time">--:--</span><span class="text-2xl sm:text-3xl lg:text-4xl font-thin opacity-70 ml-1" x-text="':' + sec">:00</span>
+                    </p>
 
                     {{-- Timeline compacte --}}
-                    <div class="mt-6 grid grid-cols-2 gap-4 items-center">
+                    <div class="mt-4 sm:mt-8 grid grid-cols-2 gap-4 items-center">
                         <div class="text-center">
-                            <p class="text-xs font-semibold uppercase text-slate-400">Arrivée</p>
-                            <p class="mt-1 text-lg font-semibold tabular-nums {{ !$aPointeArrivee ? 'text-slate-300 dark:text-slate-600' : ($arriveeEnRetard ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">{{ $day?->first_check_in_at?->format('H:i') ?? '--:--' }}</p>
-                            <p class="mt-1 text-xs text-slate-400">@if($arriveeEnRetard && ($day->late_minutes ?? 0) > 0) {{ $day->late_minutes }} min de retard @else prévue {{ $expIn?->format('H:i') ?? '--:--' }} @endif</p>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93]">Arrivée</p>
+                            <p class="mt-1 text-lg font-semibold tabular-nums {{ !$aPointeArrivee ? 'text-[#bfbab2] dark:text-slate-600' : ($arriveeEnRetard ? 'text-[#b45309] dark:text-amber-400' : 'text-[#15803d] dark:text-emerald-400') }}">{{ $day?->first_check_in_at?->format('H:i') ?? '--:--' }}</p>
+                            <p class="mt-1 text-xs text-[#6e6862] dark:text-[#a89f93]">@if($arriveeEnRetard && ($day->late_minutes ?? 0) > 0) {{ $day->late_minutes }} min de retard @else prévue {{ $expIn?->format('H:i') ?? '--:--' }} @endif</p>
                         </div>
 
                         <div class="text-center">
-                            <p class="text-xs font-semibold uppercase text-slate-400">Départ</p>
-                            <p class="mt-1 text-lg font-semibold tabular-nums {{ !$aPointeDepart ? 'text-slate-300 dark:text-slate-600' : ($departAnticipe ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400') }}">{{ $day?->last_check_out_at?->format('H:i') ?? '--:--' }}</p>
-                            <p class="mt-1 text-xs text-slate-400">{{ $departAnticipe ? 'départ anticipé' : 'prévu ' . ($expOut?->format('H:i') ?? '--:--') }}</p>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93]">Départ</p>
+                            <p class="mt-1 text-lg font-semibold tabular-nums {{ !$aPointeDepart ? 'text-[#bfbab2] dark:text-slate-600' : ($departAnticipe ? 'text-[#b45309] dark:text-amber-400' : 'text-[#15803d] dark:text-emerald-400') }}">{{ $day?->last_check_out_at?->format('H:i') ?? '--:--' }}</p>
+                            <p class="mt-1 text-xs text-[#6e6862] dark:text-[#a89f93]">{{ $departAnticipe ? 'départ anticipé' : 'prévu ' . ($expOut?->format('H:i') ?? '--:--') }}</p>
                         </div>
                     </div>
                 </div>
 
                 {{-- Action area --}}
-                <div class="mt-6">
+                <div class="mt-4 sm:mt-8">
                     @if($verifModal && ! ($etat === 'depart' && ! $departBloqueRapport))
                         {{-- À la porte : un seul bouton, il rappelle le constat
                              au modal. Rien n'est armé, donc rien ne part.
@@ -189,12 +206,15 @@
                              permission. Le rapport manquant prime sur tout le
                              reste, même avant l'heure de départ. --}}
                         <button type="button" @click="$dispatch('verif-ouvrir')"
-                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition {{ $verifModal['ton'] === 'danger' ? 'bg-red-600 hover:bg-red-700' : ($verifModal['ton'] === 'warning' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-slate-600 hover:bg-slate-700') }}">
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-white text-sm sm:text-base transition {{ $verifModal['ton'] === 'danger' ? 'bg-red-600 hover:bg-red-700' : ($verifModal['ton'] === 'warning' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-slate-600 hover:bg-slate-700') }}">
                             {{ $verifModal['bouton'] }}
                         </button>
 
                     @elseif(! $isWorkDay)
-                        <p class="text-sm text-slate-600 dark:text-slate-300">Aujourd'hui n'est pas un jour de présence. <span class="block text-slate-400">Jours prévus : {{ $workDaysLabel ?? '—' }}</span></p>
+                        <div class="px-3 py-2 sm:px-4 sm:py-3 rounded-[10px] bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630] text-center">
+                            <p class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] leading-tight">Aujourd'hui n'est pas un jour de présence</p>
+                            <p class="text-[11px] sm:text-xs text-[#6e6862] dark:text-[#a89f93] mt-0.5 leading-tight">Jours prévus : <span class="font-medium text-[#241f1b] dark:text-[#f8fafc]">{{ $workDaysLabel ?? '—' }}</span></p>
+                        </div>
 
                     @elseif($departBloqueRapport)
                         {{-- Rapport manquant : le bouton reste cliquable et
@@ -204,7 +224,7 @@
                              départ est refusé et part directement déposer le
                              rapport, qui est l'action attendue. --}}
                         <button type="button" @click="$dispatch('verif-ouvrir')"
-                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition bg-amber-500 hover:bg-amber-600">
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] font-semibold text-white text-base transition bg-[#b45309] hover:bg-[#92400e]">
                             Pointer mon départ
                         </button>
 
@@ -213,10 +233,10 @@
                              cette page, l'heure doit être rétablie par un
                              responsable. Le bouton reste donc inerte, et le
                              bandeau plus haut explique pourquoi. --}}
-                        <button type="button" disabled class="w-full px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400">Un départ oublié doit être réglé d'abord</button>
+                        <button type="button" disabled class="w-full px-4 py-3 rounded-[8px] bg-[#ecebe3] dark:bg-[#262a30] text-[#6e6862] dark:text-[#a89f93]">Un départ oublié doit être réglé d'abord</button>
 
                     @elseif($etat === 'termine')
-                        <div class="flex items-center gap-2 px-4 py-3 rounded-lg bg-emerald-100/70 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 font-medium text-sm">Journée complète — à demain</div>
+                        <div class="flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] bg-[#dcfce7] dark:bg-[rgba(22,128,74,0.22)] border border-[#15803d]/30 text-[#15803d] dark:text-[#4ade80] font-semibold text-sm">Journée complète — à demain</div>
 
                     @else
                         <form method="POST" action="{{ $action }}"
@@ -247,13 +267,13 @@
                                  que le téléphone se positionne. Le bouton ne revient
                                  qu'en cas d'échec, pour réessayer sans rescanner. --}}
                             @if($autoActif)
-                                <div class="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-sm" x-cloak x-show="erreur === ''">
+                                <div class="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-[8px] bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630] text-[#241f1b] dark:text-[#f8fafc] font-medium text-sm" x-cloak x-show="erreur === ''">
                                     <svg class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" stroke="currentColor" stroke-width="4" cx="12" cy="12" r="10"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
                                     <span x-text="etape || 'Vérification de votre présence…'">Vérification de votre présence…</span>
                                 </div>
                             @endif
 
-                            <button type="submit" x-cloak x-show="{!! $expressionBouton !!}" x-bind:disabled="busy" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-white text-base transition {{ $etat === 'arrivee' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700' }}">
+                            <button type="submit" x-cloak x-show="{!! $expressionBouton !!}" x-bind:disabled="busy" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] font-semibold text-white text-base transition shadow-sm {{ $etat === 'arrivee' ? 'bg-[#15803d] hover:bg-[#14532d]' : 'bg-[#1c3e96] hover:bg-[#162f73]' }}">
                                 <svg x-show="busy" x-cloak class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" stroke="currentColor" stroke-width="4" cx="12" cy="12" r="10"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
                                 <span x-show="!busy">{{ $autoActif ? 'Réessayer' : ($etat === 'arrivee' ? "Pointer mon arrivée" : "Pointer mon départ") }}</span>
                                 <span x-show="busy" x-cloak x-text="etape"></span>
@@ -263,12 +283,12 @@
                                  se relance sans rescanner. On dit donc ce qui bloque,
                                  ce qu'il reste à faire, et le bouton « Réessayer »
                                  reste juste au-dessus. --}}
-                            <div x-show="erreur" x-cloak class="mt-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50">
-                                <p class="flex items-start gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+                            <div x-show="erreur" x-cloak class="mt-3 px-4 py-3 rounded-[10px] bg-[#fef3c7] dark:bg-[rgba(180,83,9,0.22)] border border-[#b45309]/30">
+                                <p class="flex items-start gap-2 text-sm font-semibold text-[#b45309] dark:text-[#fbbf24]">
                                     <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.3 4.3L2.6 17.6A2 2 0 004.3 20.6h15.4a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z"/></svg>
                                     <span x-text="erreur"></span>
                                 </p>
-                                <p class="mt-2 pl-6 text-sm text-amber-800 dark:text-amber-300/90">
+                                <p class="mt-2 pl-6 text-sm text-[#b45309]/90 dark:text-[#fbbf24]/90">
                                     Sortez quelques secondes vers l'extérieur ou approchez-vous d'une baie vitrée, puis relancez la localisation. Rescanner n'est pas nécessaire.
                                 </p>
                             </div>
@@ -306,8 +326,8 @@
     @endif
 
     @if($historiqueUrl)
-        <div class="mt-6 text-center">
-            <a href="{{ $historiqueUrl }}" class="font-sans inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-base font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm hover:text-violet-700 dark:hover:text-violet-300 transition">Mon historiques</a>
+        <div class="mt-4 sm:mt-6 text-center">
+            <a href="{{ $historiqueUrl }}" class="font-sans inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-2.5 rounded-[10px] text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] shadow-sm hover:border-[#1c3e96] hover:text-[#1c3e96] transition">Mon historique</a>
         </div>
     @endif
 </div>

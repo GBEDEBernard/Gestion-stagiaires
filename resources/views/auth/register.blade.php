@@ -68,7 +68,7 @@
 
             <div class="tfg-card-header">
                 <div class="tfg-logo-ring">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo Stage TFG">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo Stage TFG">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot"></span>Nouveau compte</span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

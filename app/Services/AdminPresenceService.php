@@ -335,9 +335,11 @@ class AdminPresenceService
      */
     public function resolvePeriodRange(string $period = 'today', ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        // Recherche manuelle explicite (Du + Au tous les deux remplis, bouton "Afficher")
-        if ($period === 'custom' && $dateFrom && $dateTo) {
-            return [Carbon::parse($dateFrom)->startOfDay(), Carbon::parse($dateTo)->endOfDay()];
+        // Recherche manuelle explicite (Du + Au tous les deux remplis, bouton "Afficher" ou période personnalisée)
+        if (($period === 'custom' || ($dateFrom && $dateTo)) && ($dateFrom || $dateTo)) {
+            $start = $dateFrom ? Carbon::parse($dateFrom)->startOfDay() : now()->startOfMonth();
+            $end   = $dateTo   ? Carbon::parse($dateTo)->endOfDay()     : now()->endOfDay();
+            return [$start, $end];
         }
 
         $reference = $dateFrom ? Carbon::parse($dateFrom)->startOfDay() : now();

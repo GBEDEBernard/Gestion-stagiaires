@@ -1,1476 +1,879 @@
 <x-app-layout title="Historique de présence">
+    @php
+        $chartData = $userStats['chart_data'] ?? [];
+        $hasChartData = !empty($chartData['labels']);
+
+        // Fonction Sparkline SVG (identique à mon-stage)
+        $spark = function(array $raw, string $accent) {
+            $data = array_values(array_map('floatval', $raw));
+            if (count($data) < 2) { $data = array_pad($data, 5, $data[0] ?? 0); }
+            $max = max($data); $min = min($data); $range = ($max - $min) > 0 ? ($max - $min) : 1;
+            $n = count($data); $pts = [];
+            foreach ($data as $i => $v) {
+                $x = round(($i / ($n - 1)) * 100, 2);
+                $y = round(30 - (($v - $min) / $range) * 24 + 3, 2);
+                $pts[] = "$x,$y";
+            }
+            $line = 'M' . implode(' L', $pts);
+            return ['line' => $line, 'area' => $line . ' L100,36 L0,36 Z', 'accent' => $accent];
+        };
+
+        $chartPresent = $userStats['chart_data']['present'] ?? [];
+        $chartLate = $userStats['chart_data']['late_minutes'] ?? [];
+        $chartHours = $userStats['chart_data']['worked_hours'] ?? [];
+        $chartAbs = $userStats['chart_data']['absences'] ?? [];
+
+        $spPresence = $spark(!empty($chartPresent) ? $chartPresent : [1, 1, 1, 1, 1], '#16804a');
+        $spRetard = $spark(!empty($chartLate) ? $chartLate : [0, 0, 0, 0, 0], '#b45309');
+        $spHeures = $spark(!empty($chartHours) ? $chartHours : [7, 7, 7, 7, 7], '#1c3e96');
+        $spAbsence = $spark(!empty($chartAbs) ? $chartAbs : [0, 0, 0, 0, 0], '#b91c1c');
+
+        $totalDays = $userStats['total_days'] ?? 0;
+        $presentDays = $userStats['present_days'] ?? 0;
+        $presentRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : 0;
+        $absentDays = max(0, $totalDays - $presentDays);
+        $totalLateMin = $userStats['total_late_minutes'] ?? 0;
+        $totalWorkedHours = $userStats['total_worked_hours'] ?? 0;
+        $avgDailyHours = $userStats['avg_daily_hours'] ?? 0;
+        $openAnomalies = $userStats['open_anomalies'] ?? 0;
+
+        // Préparation des enregistrements du tableau
+        $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
+        $excusedDays = ($exceptions ?? collect())
+            ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
+            ->map(fn($e) => (object)[
+                'type' => $e->isAutomatic() ? 'permission' : 'excused',
+                'record' => $e,
+            ]);
+        $allRecords = $attendanceDays
+            ->map(fn($d) => (object)['type' => 'attendance', 'record' => $d])
+            ->concat($excusedDays)
+            ->sortByDesc(fn($r) => $r->record->attendance_date);
+    @endphp
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        /* Harmonisation de la page avec mon-stage */
+        body { background: #f1f0ed !important; }
+        .dark body { background: #1f232d !important; }
+        header { background-color: transparent !important; border-bottom: none !important; border-color: transparent !important; box-shadow: none !important; }
+        .dark header { background-color: #131519 !important; border-bottom: none !important; border-color: transparent !important; box-shadow: none !important; }
+        .dark header button.rounded-lg, .dark header button.rounded-xl { background-color: #1f232d !important; }
 
-        /* ===== MODE CLAIR (par défaut) ===== */
         :root {
-            --bg: #ffffff;
-            --bg2: #f8fafc;
-            --bg3: #f1f5f9;
-            --border: rgba(0, 0, 0, 0.08);
-            --border-hi: rgba(0, 0, 0, 0.14);
-            --text: #0f172a;
-            --muted: #475569;
-            --emerald: #10b981;
-            --emerald-d: #059669;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
-            --blue: #3b82f6;
-            --font: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
-        }
-
-        /* ===== MODE SOMBRE (classe .dark) ===== */
-        .dark {
-            --bg: #0f1117;
-            --bg2: #161b27;
-            --bg3: #1c2333;
-            --border: rgba(255, 255, 255, 0.07);
-            --border-hi: rgba(255, 255, 255, 0.14);
-            --text: #e8eaf0;
-            --muted: #6b7280;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        .pres-wrap {
-            font-family: var(--font);
-            color: var(--text);
-            background: var(--bg);
-            min-height: 100vh;
-        }
-
-        /* HEADER */
-        .pres-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding: 1.5rem;
-        }
-
-        .pres-header-badge {
-            display: inline-block;
-            font-size: .7rem;
-            font-weight: 600;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--emerald);
-            background: rgba(16, 185, 129, .12);
-            border: 1px solid rgba(16, 185, 129, .25);
-            border-radius: 999px;
-            padding: .25rem .75rem;
-            margin-bottom: .5rem;
-        }
-
-        .pres-header-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--text);
-            margin: 0;
-            line-height: 1.2;
-        }
-
-        .pres-header-sub {
-            font-size: .9rem;
-            color: var(--muted);
-            margin: .25rem 0 0;
-        }
-
-        .pres-header-actions {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .pres-btn-export {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .55rem 1.2rem;
-            background: var(--emerald);
-            color: #fff;
-            font-size: .85rem;
-            font-weight: 600;
-            border-radius: .6rem;
-            text-decoration: none;
-            transition: all .2s;
-        }
-
-        .pres-btn-export:hover {
-            background: var(--emerald-d);
-            transform: translateY(-1px);
-        }
-
-        /* LAYOUT */
-        .pres-page {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem 1.5rem 3rem;
-        }
-
-        /* TABS */
-        .pres-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .25rem;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: .75rem;
-            padding: .3rem;
-            width: fit-content;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .pres-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .pres-tab {
-            padding: .45rem 1.1rem;
-            border-radius: .5rem;
-            font-size: .83rem;
-            font-weight: 500;
-            color: var(--muted);
-            text-decoration: none;
-            transition: all .2s;
-            white-space: nowrap;
-        }
-
-        .pres-tab:hover {
-            color: var(--text);
-            background: var(--bg3);
-        }
-
-        .pres-tab.active {
-            background: var(--bg3);
-            color: var(--text);
-            font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .pres-tab-indicator {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: var(--emerald);
-            border-radius: 50%;
-            margin-left: .4rem;
-            vertical-align: middle;
-        }
-
-        /* FILTER */
-        .pres-filter-panel {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .pres-filter-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            align-items: end;
-        }
-
-        .pres-filter-field {
-            display: flex;
-            flex-direction: column;
-            gap: .5rem;
-            font-size: .85rem;
-            font-weight: 500;
-            color: var(--muted);
-        }
-
-        .pres-filter-input {
-            width: 100%;
-            padding: .85rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: .75rem;
-            background: var(--bg);
-            color: var(--text);
-            font-size: .9rem;
-            transition: all .2s;
-        }
-
-        .pres-filter-input:focus {
-            outline: none;
-            border-color: var(--emerald);
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, .2);
-        }
-
-        .pres-filter-actions {
-            display: flex;
-            gap: .75rem;
-            flex-wrap: wrap;
-        }
-
-        .pres-filter-actions .pres-btn {
-            flex: 1;
-            text-align: center;
-            justify-content: center;
-            white-space: nowrap;
-        }
-
-        @media(max-width:900px) {
-            .pres-filter-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .pres-filter-actions {
-                grid-column: span 2;
-            }
-        }
-
-        @media(max-width:640px) {
-            .pres-filter-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pres-filter-actions {
-                grid-column: span 1;
-            }
-        }
-
-        /* BUTTONS */
-        .pres-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .5rem;
-            padding: .85rem 1.1rem;
-            border-radius: .85rem;
-            border: 1px solid transparent;
-            font-weight: 600;
-            font-size: .85rem;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .pres-btn-primary {
-            background: var(--emerald);
-            color: #fff;
-        }
-
-        .pres-btn-secondary {
-            background: transparent;
-            border-color: var(--border);
-            color: var(--text);
-        }
-
-        .pres-btn-secondary:hover {
-            background: var(--bg3);
-        }
-
-        /* KPI CARDS */
-        .pres-kpis {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-        }
-
-        @media(max-width:900px) {
-            .pres-kpis {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media(max-width:500px) {
-            .pres-kpis {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .pres-kpi {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.4rem 1.5rem;
-            position: relative;
-            overflow: hidden;
-            transition: border-color .2s, transform .2s;
-        }
-
-        .pres-kpi:hover {
-            border-color: var(--border-hi);
-            transform: translateY(-2px);
-        }
-
-        .pres-kpi-accent {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            border-radius: 1rem 1rem 0 0;
-        }
-
-        .pres-kpi-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: .75rem;
-        }
-
-        .pres-kpi-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: .6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-
-        .pres-kpi-badge {
-            font-size: .72rem;
-            font-weight: 600;
-            padding: .2rem .6rem;
-            border-radius: 999px;
-        }
-
-        .pres-kpi-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text);
-            line-height: 1;
-            margin-bottom: .3rem;
-            font-family: var(--mono);
-        }
-
-        .pres-kpi-label {
-            font-size: .82rem;
-            color: var(--muted);
-        }
-
-        .pres-kpi-sub {
-            font-size: .75rem;
-            color: var(--muted);
-            margin-top: .5rem;
-            padding-top: .5rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .kpi-emerald .pres-kpi-accent {
-            background: var(--emerald);
-        }
-
-        .kpi-emerald .pres-kpi-icon {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
-
-        .kpi-emerald .pres-kpi-badge {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
-
-        .kpi-amber .pres-kpi-accent {
-            background: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-icon {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-amber .pres-kpi-badge {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-        }
-
-        .kpi-blue .pres-kpi-accent {
-            background: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-icon {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-blue .pres-kpi-badge {
-            background: rgba(59, 130, 246, .12);
-            color: var(--blue);
-        }
-
-        .kpi-rose .pres-kpi-accent {
-            background: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-icon {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
-
-        .kpi-rose .pres-kpi-badge {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-        }
-
-        /* SECTIONS */
-        .pres-section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text);
-            margin: 0 0 1rem;
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-        }
-
-        .pres-section-title::before {
-            content: '';
-            display: inline-block;
-            width: 3px;
-            height: 16px;
-            border-radius: 99px;
-            background: var(--emerald);
-        }
-
-        /* CARDS / CHARTS */
-        .pres-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: border-color .2s;
-        }
-
-        .pres-card:hover {
-            border-color: var(--border-hi);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        /* LEGEND */
-        .chart-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .75rem 1.25rem;
-            margin-bottom: 1rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: .45rem;
-            font-size: .78rem;
-            font-weight: 500;
-            color: var(--muted);
-        }
-
-        .obs-clickable {
-            position: relative;
-        }
-        .obs-clickable::after {
-            content: '';
-            display: inline-block;
-            width: 0; height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 5px solid var(--amber);
-            margin-left: 4px;
-            vertical-align: middle;
-            opacity: 0.6;
-        }
-        .obs-clickable:hover {
-            text-decoration: underline;
-            opacity: 0.85;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* TABLE */
-        .pres-table-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            overflow: hidden;
-        }
-
-        .pres-table-head {
-            padding: 1.2rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pres-table-head-title {
-            font-size: .92rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .pres-table-head-meta {
-            font-size: .75rem;
-            color: var(--muted);
-        }
-
-        table.pres-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table.pres-table th {
-            padding: .65rem 1.2rem;
-            text-align: left;
-            font-size: .72rem;
+            --ks-ink: #241f1b;
+            --ks-blue: #1c3e96;
+            --ks-blue-dark: #162f73;
+            --ks-line: #bfbab2;
+            --ks-muted: #6e6862;
+            --ks-card: #fffefa;
+            --ks-card-bd: #dcdad2;
+            --ks-green: #15803d;
+            --ks-green-bg: #dcfce7;
+            --ks-red: #b91c1c;
+            --ks-red-bg: #fee2e2;
+            --ks-yellow: #b45309;
+            --ks-yellow-bg: #fef3c7;
+        }
+
+        .ks-label {
+            font-size: .68rem;
             font-weight: 600;
             letter-spacing: .08em;
             text-transform: uppercase;
-            color: var(--muted);
-            background: rgba(0, 0, 0, 0.02);
-            border-bottom: 1px solid var(--border);
+            color: #6e6862;
         }
+        .dark .ks-label { color: #a89f93; }
 
-        .dark table.pres-table th {
-            background: rgba(255, 255, 255, .02);
-        }
-
-        table.pres-table td {
-            padding: .85rem 1.2rem;
-            font-size: .85rem;
-            color: var(--text);
-            border-bottom: 1px solid var(--border);
-        }
-
-        table.pres-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        table.pres-table tbody tr:hover td {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .dark table.pres-table tbody tr:hover td {
-            background: rgba(255, 255, 255, .02);
-        }
-
-        .pres-tag {
+        .ks-btn-primary {
             display: inline-flex;
             align-items: center;
-            gap: .3rem;
-            padding: .2rem .65rem;
-            border-radius: 999px;
-            font-size: .73rem;
-            font-weight: 600;
-        }
-
-        .tag-amber {
-            background: rgba(245, 158, 11, .12);
-            color: var(--amber);
-            border: 1px solid rgba(245, 158, 11, .2);
-        }
-
-        .tag-rose {
-            background: rgba(244, 63, 94, .12);
-            color: var(--rose);
-            border: 1px solid rgba(244, 63, 94, .2);
-        }
-
-        .tag-emerald {
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-            border: 1px solid rgba(16, 185, 129, .2);
-        }
-
-        .tag-violet {
-            background: rgba(139, 92, 246, .12);
-            color: #7c3aed;
-            border: 1px solid rgba(139, 92, 246, .25);
-        }
-
-        .dark .tag-violet {
-            color: #a78bfa;
-        }
-
-        .pres-empty {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--muted);
+            justify-content: center;
+            gap: .45rem;
+            background: #1c3e96;
+            color: #fff;
+            border: 1px solid #1c3e96;
+            border-radius: 6px;
             font-size: .85rem;
+            font-weight: 600;
+            padding: .45rem .9rem;
+            transition: all .15s ease;
         }
+        .ks-btn-primary:hover { background: #162f73; border-color: #162f73; }
+        .ks-btn-primary:active { transform: scale(.98); }
 
-        .pres-empty-icon {
-            font-size: 2rem;
-            margin-bottom: .5rem;
-        }
-
-        /* FLASH MESSAGES */
-        .pres-flash {
-            display: flex;
+        .ks-btn-secondary {
+            display: inline-flex;
             align-items: center;
-            gap: .6rem;
-            padding: .8rem 1rem;
-            border-radius: .8rem;
+            justify-content: center;
+            gap: .45rem;
+            background: #fff;
+            color: #241f1b;
+            border: 1px solid #bfbab2;
+            border-radius: 6px;
             font-size: .85rem;
             font-weight: 500;
-            margin-top: 1rem;
+            padding: .45rem .9rem;
+            transition: all .15s ease;
         }
+        .dark .ks-btn-secondary { background: #131519; color: #fff; border-color: #222630; }
+        .ks-btn-secondary:hover { border-color: #1c3e96; color: #1c3e96; }
 
-        .pres-flash-success {
-            background: rgba(16, 185, 129, .12);
-            border: 1px solid rgba(16, 185, 129, .3);
-            color: var(--emerald);
-        }
-
-        .pres-flash-error {
-            background: rgba(244, 63, 94, .1);
-            border: 1px solid rgba(244, 63, 94, .3);
-            color: var(--rose);
-        }
-
-        /* PANEL CORRECTION ABSENCES */
-        .corr-panel {
-            margin-top: 1.5rem;
-            border: 1px dashed var(--border-hi);
-        }
-
-        .corr-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        @media(max-width:768px) {
-            .corr-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .corr-col {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: .85rem;
-            padding: 1rem;
-        }
-
-        .corr-col-title {
-            font-size: .8rem;
-            font-weight: 700;
-            color: var(--text);
-            margin: 0 0 .25rem;
-            display: flex;
-            align-items: center;
-            gap: .45rem;
-        }
-
-        .corr-col-sub {
-            font-size: .75rem;
-            color: var(--muted);
-            margin: 0 0 .75rem;
-        }
-
-        .corr-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: .75rem;
-            padding: .55rem 0;
-            border-bottom: 1px solid var(--border);
-            font-size: .85rem;
-            flex-wrap: wrap;
-        }
-
-        .corr-row:last-child {
-            border-bottom: none;
-        }
-
-        .corr-date {
+        .ks-btn-xs {
+            min-height: 28px !important;
+            padding: .25rem .6rem !important;
+            font-size: .75rem !important;
             font-weight: 600;
-            color: var(--text);
+            border-radius: 6px !important;
+            white-space: nowrap;
         }
 
-        .corr-reason {
-            font-size: .75rem;
-            color: var(--muted);
+        /* Cartes KPI compactes */
+        .ks-stat-card {
+            border: 1px solid #dcdad2;
+            border-radius: 10px;
+            background-color: #fffefa;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .dark .ks-stat-card {
+            background: #131519 !important;
+            border: 1px solid #222630 !important;
+        }
+        .ks-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0,0,0,.05);
         }
 
-        .corr-btn {
+        .ks-stat-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             display: inline-flex;
             align-items: center;
-            gap: .35rem;
-            border: none;
-            border-radius: .6rem;
-            padding: .42rem .9rem;
-            font-size: .78rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .2s;
+            justify-content: center;
+            flex: none;
+            background-color: var(--ks-stat-icon-bg, #eef1fb);
+            color: var(--ks-stat-icon-color, #1c3e96);
         }
+        .ks-stat-icon svg { width: 16px; height: 16px; stroke-width: 1.8; }
 
-        .corr-btn-fix {
-            background: var(--emerald);
-            color: #fff;
-        }
+        .ks-stat-card--green { --ks-stat-accent: #16804a; --ks-stat-icon-bg: #ecfdf5; --ks-stat-icon-color: #15803d; }
+        .ks-stat-card--blue { --ks-stat-accent: #1c3e96; --ks-stat-icon-bg: #eef1fb; --ks-stat-icon-color: #1c3e96; }
+        .ks-stat-card--amber { --ks-stat-accent: #b45309; --ks-stat-icon-bg: #fffbeb; --ks-stat-icon-color: #b45309; }
+        .ks-stat-card--red { --ks-stat-accent: #b91c1c; --ks-stat-icon-bg: #fff1f2; --ks-stat-icon-color: #b91c1c; }
 
-        .corr-btn-fix:hover {
-            background: var(--emerald-d);
-            transform: translateY(-1px);
-        }
+        .dark .ks-stat-card--green { --ks-stat-icon-bg: rgba(22,128,74,0.22); --ks-stat-icon-color: #4ade80; }
+        .dark .ks-stat-card--blue { --ks-stat-icon-bg: rgba(28,62,150,0.25); --ks-stat-icon-color: #60a5fa; }
+        .dark .ks-stat-card--amber { --ks-stat-icon-bg: rgba(180,83,9,0.22); --ks-stat-icon-color: #fbbf24; }
+        .dark .ks-stat-card--red { --ks-stat-icon-bg: rgba(185,28,28,0.22); --ks-stat-icon-color: #f87171; }
 
-        .corr-btn-undo {
-            background: transparent;
-            border: 1px solid var(--border-hi);
-            color: var(--rose);
-        }
-
-        .corr-btn-undo:hover {
-            background: rgba(244, 63, 94, .1);
-        }
-
-        .corr-btn-sm {
-            padding: .3rem .7rem;
+        .ks-stat-change {
+            border-radius: 4px;
             font-size: .72rem;
-        }
-
-        .corr-badge {
-            display: inline-block;
-            font-size: .68rem;
-            font-weight: 700;
-            padding: .15rem .5rem;
-            border-radius: 999px;
-            background: rgba(16, 185, 129, .12);
-            color: var(--emerald);
-        }
-
-        .corr-empty {
-            font-size: .8rem;
-            color: var(--muted);
-            padding: .5rem 0;
-        }
-
-        .mt-6 {
-            margin-top: 1.5rem;
-        }
-
-        .mt-4 {
-            margin-top: 1rem;
-        }
-
-        /* MOBILE */
-        .mobile-cards {
-            display: none;
-        }
-
-        .desktop-table {
-            display: block;
-        }
-
-        @media(max-width:768px) {
-            .mobile-cards {
-                display: block;
-            }
-
-            .desktop-table {
-                display: none;
-            }
-        }
-
-        .mobile-card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-bottom: .75rem;
-        }
-
-        .mobile-card-row {
-            display: flex;
-            justify-content: space-between;
-            padding: .4rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .mobile-card-row:last-child {
-            border-bottom: none;
-        }
-
-        .mobile-label {
-            color: var(--muted);
-            font-size: .8rem;
-        }
-
-        .mobile-value {
             font-weight: 600;
-            font-size: .85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            padding: .15rem .45rem;
+        }
+        .ks-stat-change--positive { color: #166534; background-color: #dcfce7; }
+        .ks-stat-change--negative { color: #b91c1c; background-color: #fee2e2; }
+        .ks-stat-change--neutral { color: #475569; background-color: #f1f5f9; }
+        .dark .ks-stat-change--positive { color: #4ade80 !important; background-color: rgba(22,128,74,0.25) !important; }
+        .dark .ks-stat-change--negative { color: #f87171 !important; background-color: rgba(185,28,28,0.25) !important; }
+        .dark .ks-stat-change--neutral { color: #cbd5e1 !important; background-color: #262a30 !important; }
+
+        .ks-num { font-variant-numeric: tabular-nums; }
+
+        /* Conteneurs et cartes de section */
+        .ks-sec {
+            background: #fffefa;
+            border: 1px solid #dcdad2;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(36,31,27,.04);
+        }
+        .dark .ks-sec {
+            background: #131519 !important;
+            border: 1px solid #222630 !important;
+            box-shadow: none;
+        }
+        .ks-sec-head {
+            padding: .65rem .85rem;
+            border-bottom: 1px solid #dcdad2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+        }
+        .dark .ks-sec-head {
+            border-bottom: 1px solid #222630 !important;
         }
 
-        /* RESPONSIVE HEADER */
-        @media(max-width:1024px) {
-            .pres-page {
-                padding: 1rem 1rem 2.5rem;
-            }
-        }
+        @keyframes ks-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .ks-rise { animation: ks-rise .35s cubic-bezier(.2,.8,.2,1) both; }
 
-        @media(max-width:700px) {
-            .pres-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .pres-header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .pres-header-title {
-                font-size: 1.45rem;
-            }
-        }
+        /* Scrollbars fines */
+        * { scrollbar-width: thin; scrollbar-color: rgba(28,62,150,.35) transparent; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(28,62,150,.35); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: rgba(28,62,150,.6); }
     </style>
 
-    {{-- ICI : on met le x-data sur .pres-wrap pour que les modals (placés après .pres-page) soient dans la portée --}}
-    <div class="pres-wrap" x-data="{ obsModal: false, obsText: '', obsDate: '', corrModal: false, corrDate: '', corrLabel: '', corrReason: '', timeModal: false, timeDayId: null, timeLabel: '', timeCurrent: '', timeValue: '', timeReason: '', outModal: false, outDayId: null, outLabel: '', outCurrent: '', outClaimed: '', outClaimReason: '', outValue: '', outReason: '' }" @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''" @open-time-correction.window="timeModal = true; timeDayId = $event.detail.id; timeLabel = $event.detail.label; timeCurrent = $event.detail.current; timeValue = ''; timeReason = ''"
-     @open-departure-correction.window="outModal = true; outDayId = $event.detail.id; outLabel = $event.detail.label; outCurrent = $event.detail.current; outClaimed = $event.detail.claimed; outClaimReason = $event.detail.claimReason; outValue = $event.detail.claimed; outReason = ''">
+    <div class="w-full space-y-3 pb-6"
+         x-data="{
+             obsModal: false, obsText: '', obsDate: '',
+             corrModal: false, corrDate: '', corrLabel: '', corrReason: '',
+             timeModal: false, timeDayId: null, timeLabel: '', timeCurrent: '', timeValue: '', timeReason: '',
+             outModal: false, outDayId: null, outLabel: '', outCurrent: '', outClaimed: '', outClaimReason: '', outValue: '', outReason: ''
+         }"
+         @open-correction.window="corrModal = true; corrDate = $event.detail.date; corrLabel = $event.detail.label; corrReason = ''"
+         @open-time-correction.window="timeModal = true; timeDayId = $event.detail.id; timeLabel = $event.detail.label; timeCurrent = $event.detail.current; timeValue = ''; timeReason = ''"
+         @open-departure-correction.window="outModal = true; outDayId = $event.detail.id; outLabel = $event.detail.label; outCurrent = $event.detail.current; outClaimed = $event.detail.claimed; outClaimReason = $event.detail.claimReason; outValue = $event.detail.claimed; outReason = ''">
 
-        <div class="pres-header">
-            <div class="pres-header-left">
-                <div class="pres-header-badge">Mon espace</div>
-                <h1 class="pres-header-title">
+        {{-- 1. EN-TÊTE COMPACT --}}
+        <div class="ks-rise flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4" style="animation-delay:.02s">
+            <div class="min-w-0">
+                <span class="ks-label">Présence · Historique</span>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[#241f1b] dark:text-white mt-0.5 truncate">
                     @isset($user)
-                    Pointages de {{ $user->name }}
+                        Pointages de {{ $user->name }}
                     @else
-                    Mon historique de présence
+                        Mon historique de présence
                     @endisset
                 </h1>
-                <p class="pres-header-sub">Vue personnelle · Statistiques détaillées</p>
             </div>
-            <div class="pres-header-actions">
-                <a href="{{ route('presence.pointage') }}" class="pres-btn-export">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
+            <div class="flex items-center flex-wrap gap-2">
+                <a href="{{ route('presence.pointage') }}" class="ks-btn-primary ks-btn-xs !text-[13px] !px-3.5 !py-1.5 shrink-0 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Nouveau pointage
                 </a>
             </div>
         </div>
 
-        {{-- .pres-page ne contient plus le x-data --}}
-        <div class="pres-page">
-
-            {{-- PERIOD TABS --}}
-            <div class="pres-tabs">
+        {{-- 2. BARRE DE FILTRES ET ONGLETS DE PÉRIODE COMPACTE --}}
+        <div class="ks-rise flex flex-wrap items-center justify-between gap-2.5 bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] rounded-xl p-2 shadow-sm" style="animation-delay:.04s">
+            {{-- Onglets de périodes rapides --}}
+            <div class="flex items-center gap-1 bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630] p-1 rounded-lg overflow-x-auto max-w-full">
                 @foreach(['today'=>"Aujourd'hui",'week'=>'Semaine','month'=>'Mois','year'=>'Année'] as $k=>$lbl)
-                <a href="?period={{ $k }}" class="pres-tab {{ request('period', 'month')===$k ? 'active' : '' }}">
+                <a href="?period={{ $k }}"
+                   class="px-2.5 py-1 text-xs rounded-md transition-all font-medium shrink-0 whitespace-nowrap {{ request('period', 'month') === $k ? 'bg-[#1c3e96] text-white shadow-sm font-semibold' : 'text-[#6e6862] dark:text-slate-400 hover:text-[#241f1b] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/5' }}">
                     {{ $lbl }}
-                    @if(request('period')===$k)<span class="pres-tab-indicator"></span>@endif
                 </a>
                 @endforeach
             </div>
 
-            {{-- FILTRE DATE --}}
-            <div class="pres-filter-panel">
-                <form method="GET" action="{{ route('presence.historique') }}">
-                    <input type="hidden" name="period" value="custom" />
-                    <div class="pres-filter-grid">
-                        <div class="pres-filter-field">
-                            <label>Du</label>
-                            <input type="date" name="date_from" value="{{ request('date_from', today()->format('Y-m-d')) }}" class="pres-filter-input" />
-                        </div>
-                        <div class="pres-filter-field">
-                            <label>Au</label>
-                            <input type="date" name="date_to" value="{{ request('date_to', today()->format('Y-m-d')) }}" class="pres-filter-input" />
-                        </div>
-                        <div class="pres-filter-actions">
-                            <button type="submit" class="pres-btn pres-btn-primary">Afficher</button>
-                            <a href="{{ route('presence.historique') }}" class="pres-btn pres-btn-secondary">Réinitialiser</a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            {{-- KPI CARDS --}}
-            <div class="pres-kpis mt-6">
-                <div class="pres-kpi kpi-emerald">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">✓</div>
-                        <span class="pres-kpi-badge">{{ $userStats['present_days'] ?? 0 }}/{{ $userStats['total_days'] ?? 0 }}</span>
-                    </div>
-                    <div class="pres-kpi-value">
-                        {{ ($userStats['total_days'] ?? 0) > 0 ? round((($userStats['present_days'] ?? 0) / ($userStats['total_days'] ?? 1)) * 100) : 0 }}%
-                    </div>
-                    <div class="pres-kpi-label">Taux de Présence</div>
-                    <div class="pres-kpi-sub">{{ $userStats['present_days'] ?? 0 }} jours présents</div>
+            {{-- Formulaire de dates personnalisées inline --}}
+            <form method="GET" action="{{ url()->current() }}" class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <input type="hidden" name="period" value="custom" />
+                <div class="flex items-center gap-1.5 text-xs text-[#6e6862] dark:text-slate-400 shrink-0">
+                    <span class="font-medium">Du</span>
+                    <input type="date" name="date_from" value="{{ request('date_from', $dateFrom ?? today()->startOfMonth()->format('Y-m-d')) }}"
+                           class="h-7 px-2 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] text-[#241f1b] dark:text-slate-200 focus:outline-none focus:border-[#1c3e96]" />
+                    <span class="font-medium">Au</span>
+                    <input type="date" name="date_to" value="{{ request('date_to', $dateTo ?? today()->endOfMonth()->format('Y-m-d')) }}"
+                           class="h-7 px-2 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] text-[#241f1b] dark:text-slate-200 focus:outline-none focus:border-[#1c3e96]" />
                 </div>
+                <button type="submit" class="ks-btn-primary ks-btn-xs !text-xs !py-1 !px-2.5 shrink-0 whitespace-nowrap">
+                    Filtrer
+                </button>
+                @if(request('period') === 'custom' || request('date_from') || request('date_to'))
+                <a href="{{ url()->current() }}" class="ks-btn-secondary ks-btn-xs !text-xs !py-1 !px-2.5 shrink-0 whitespace-nowrap">
+                    Réinitialiser
+                </a>
+                @endif
+            </form>
+        </div>
 
-                <div class="pres-kpi kpi-amber">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">⏱</div>
-                        <span class="pres-kpi-badge">{{ $userStats['late_days'] ?? 0 }} jours</span>
-                    </div>
-                    <div class="pres-kpi-value">{{ round(($userStats['total_late_minutes'] ?? 0) / 60, 1) }}h</div>
-                    <div class="pres-kpi-label">Retards Cumulés</div>
-                    <div class="pres-kpi-sub">{{ ($userStats['total_late_minutes'] ?? 0) ? formatMinutes($userStats['total_late_minutes']) : '0min' }} au total</div>
-                </div>
+        {{-- FLASH MESSAGES --}}
+        @if(session('success'))
+        <div class="rounded-lg border border-emerald-200 bg-[#ecfdf5] dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-200 px-3.5 py-2 text-xs text-[#15803d]">
+            ✓ {{ session('success') }}
+        </div>
+        @endif
+        @if($errors->any())
+        <div class="rounded-lg border border-rose-200 bg-[#fff1f2] dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200 px-3.5 py-2 text-xs text-[#b91c1c]">
+            ✗ {{ $errors->first() }}
+        </div>
+        @endif
 
-                <div class="pres-kpi kpi-blue">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">💼</div>
-                        <span class="pres-kpi-badge">{{ $userStats['total_worked_hours'] ?? 0 }}h</span>
+        {{-- 3. STRIP KPI FAÇON MON-STAGE --}}
+        <section aria-label="Statistiques de présence" class="ks-rise grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3" style="animation-delay:.06s">
+            {{-- 1. Taux de présence --}}
+            <div class="ks-stat-card ks-stat-card--green border shadow-none h-full">
+                <div class="p-3 flex flex-col justify-between h-full">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[#6e6862] dark:text-slate-400 font-semibold truncate text-[13px]">Taux de Présence</span>
+                        <span class="ks-stat-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M8.5 12.5l2.5 2.5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
                     </div>
-                    <div class="pres-kpi-value">{{ $userStats['total_worked_hours'] ?? 0 }}h</div>
-                    <div class="pres-kpi-label">Heures Travaillées</div>
-                    <div class="pres-kpi-sub">{{ $userStats['avg_daily_hours'] ?? 0 }}h/jour moyenne</div>
-                </div>
-
-                <div class="pres-kpi kpi-rose">
-                    <div class="pres-kpi-accent"></div>
-                    <div class="pres-kpi-top">
-                        <div class="pres-kpi-icon">!</div>
-                        <span class="pres-kpi-badge">{{ ($userStats['total_days'] ?? 0) - ($userStats['present_days'] ?? 0) }} jours</span>
+                    <div class="my-1 flex items-baseline gap-1.5">
+                        <span class="font-bold text-[#241f1b] dark:text-white ks-num text-2xl leading-none">{{ $presentRate }}%</span>
+                        <span class="font-medium text-[#6e6862] dark:text-slate-400 text-xs">({{ $presentDays }}/{{ $totalDays }} j)</span>
                     </div>
-                    <div class="pres-kpi-value">{{ ($userStats['total_days'] ?? 0) - ($userStats['present_days'] ?? 0) }}</div>
-                    <div class="pres-kpi-label">Absences</div>
-                    <div class="pres-kpi-sub">{{ $userStats['open_anomalies'] ?? 0 }} anomalies ouvertes</div>
+                    <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                        <span class="badge ks-stat-change ks-stat-change--{{ $presentRate >= 80 ? 'positive' : ($presentRate >= 50 ? 'neutral' : 'negative') }}">
+                            {{ $presentDays }} présents
+                        </span>
+                        <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true">
+                            <path d="{{ $spPresence['area'] }}" fill="{{ $spPresence['accent'] }}" opacity="0.12"/>
+                            <path d="{{ $spPresence['line'] }}" fill="none" stroke="{{ $spPresence['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
 
-            {{-- FLASH MESSAGES --}}
-            @if(session('success'))
-            <div class="pres-flash pres-flash-success">✓ {{ session('success') }}</div>
-            @endif
-            @if($errors->any())
-            <div class="pres-flash pres-flash-error">✗ {{ $errors->first() }}</div>
-            @endif
+            {{-- 2. Retards Cumulés --}}
+            <div class="ks-stat-card ks-stat-card--amber border shadow-none h-full">
+                <div class="p-3 flex flex-col justify-between h-full">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[#6e6862] dark:text-slate-400 font-semibold truncate text-[13px]">Retards Cumulés</span>
+                        <span class="ks-stat-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 7v5l3 2" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="my-1 flex items-baseline gap-1.5">
+                        <span class="font-bold text-[#241f1b] dark:text-white ks-num text-2xl leading-none">{{ round($totalLateMin / 60, 1) }}h</span>
+                        <span class="font-medium text-[#6e6862] dark:text-slate-400 text-xs">({{ $userStats['late_days'] ?? 0 }} retards)</span>
+                    </div>
+                    <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                        <span class="badge ks-stat-change ks-stat-change--{{ $totalLateMin > 0 ? 'negative' : 'positive' }}">
+                            {{ $totalLateMin > 0 ? formatMinutes($totalLateMin) : '0 min' }}
+                        </span>
+                        <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true">
+                            <path d="{{ $spRetard['area'] }}" fill="{{ $spRetard['accent'] }}" opacity="0.12"/>
+                            <path d="{{ $spRetard['line'] }}" fill="none" stroke="{{ $spRetard['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
 
-            {{-- PANEL CORRECTION DES ABSENCES (admin) --}}
-            @isset($user)
-            <div class="pres-card corr-panel">
-                <div class="pres-section-title">✏️ Corriger les absences</div>
-                <p style="font-size:.85rem;color:var(--muted);margin:0 0 1rem;">
-                    Cliquez sur un jour absent dans la liste ci-dessous pour le corriger
-                    . Une fois corrigé, il ne sera plus compté comme absence.
-                </p>
-                <div class="corr-grid">
-                    <div class="corr-col">
-                        <h4 class="corr-col-title">Absences détectées
-                            <span class="corr-badge">{{ count($absenceDates ?? []) }}</span>
-                        </h4>
-                        <p class="corr-col-sub">Ces jours sont actuellement comptés comme absents.</p>
+            {{-- 3. Heures Travaillées --}}
+            <div class="ks-stat-card ks-stat-card--blue border shadow-none h-full">
+                <div class="p-3 flex flex-col justify-between h-full">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[#6e6862] dark:text-slate-400 font-semibold truncate text-[13px]">Heures Travaillées</span>
+                        <span class="ks-stat-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="my-1 flex items-baseline gap-1.5">
+                        <span class="font-bold text-[#241f1b] dark:text-white ks-num text-2xl leading-none">{{ $totalWorkedHours }}h</span>
+                        <span class="font-medium text-[#6e6862] dark:text-slate-400 text-xs">moy. {{ $avgDailyHours }}h/j</span>
+                    </div>
+                    <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                        <span class="badge ks-stat-change ks-stat-change--neutral">
+                            {{ $avgDailyHours }}h/jour
+                        </span>
+                        <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true">
+                            <path d="{{ $spHeures['area'] }}" fill="{{ $spHeures['accent'] }}" opacity="0.12"/>
+                            <path d="{{ $spHeures['line'] }}" fill="none" stroke="{{ $spHeures['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 4. Absences & Anomalies --}}
+            <div class="ks-stat-card ks-stat-card--red border shadow-none h-full">
+                <div class="p-3 flex flex-col justify-between h-full">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[#6e6862] dark:text-slate-400 font-semibold truncate text-[13px]">Absences & Anomalies</span>
+                        <span class="ks-stat-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 7.5h.008v.008H12v-.008z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="my-1 flex items-baseline gap-1.5">
+                        <span class="font-bold text-[#241f1b] dark:text-white ks-num text-2xl leading-none">{{ $absentDays }}</span>
+                        <span class="font-medium text-[#6e6862] dark:text-slate-400 text-xs">jour(s) absent(s)</span>
+                    </div>
+                    <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                        <span class="badge ks-stat-change ks-stat-change--{{ $openAnomalies > 0 ? 'negative' : 'neutral' }}">
+                            {{ $openAnomalies }} anomalie(s)
+                        </span>
+                        <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true">
+                            <path d="{{ $spAbsence['area'] }}" fill="{{ $spAbsence['accent'] }}" opacity="0.12"/>
+                            <path d="{{ $spAbsence['line'] }}" fill="none" stroke="{{ $spAbsence['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- 4. PANEL DE CORRECTION DES ABSENCES (ADMIN) --}}
+        @isset($user)
+        <div class="ks-sec ks-rise p-3 space-y-2.5" style="animation-delay:.08s">
+            <div class="flex items-center justify-between pb-2 border-b border-[#ecebe3] dark:border-[#222630]">
+                <div class="flex items-center gap-2">
+                    <span class="ks-stat-icon !w-6 !h-6 !bg-amber-500/10 !text-amber-600 dark:!text-amber-400">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                    </span>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-[#241f1b] dark:text-white">Corriger les absences administratives</h3>
+                </div>
+                <span class="text-[11px] text-[#6e6862] dark:text-slate-400">Cliquez sur un jour pour régulariser ou annuler</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {{-- Absences détectées --}}
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630]">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-[#241f1b] dark:text-white">Absences détectées</span>
+                        <span class="badge ks-stat-change ks-stat-change--negative">{{ count($absenceDates ?? []) }}</span>
+                    </div>
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         @forelse($absenceDates ?? [] as $absence)
-                        <div class="corr-row">
+                        <div class="flex items-center justify-between p-1.5 rounded bg-white dark:bg-[#131519] border border-[#ecebe3] dark:border-[#222630]">
                             <div>
-                                <span class="corr-date">{{ $absence['label'] }}</span>
-                                <div class="corr-reason">Aucun pointage enregistré</div>
+                                <div class="font-medium text-[#241f1b] dark:text-slate-200">{{ $absence['label'] }}</div>
+                                <div class="text-[11px] text-[#6e6862] dark:text-slate-400">Aucun pointage</div>
                             </div>
-                            <button type="button" class="corr-btn corr-btn-fix" onclick="openCorrection('{{ $absence['date'] }}', '{{ $absence['label'] }}')">Corriger</button>
+                            <button type="button" class="ks-btn-primary ks-btn-xs !py-0.5 !px-2 !text-[11px]" onclick="openCorrection('{{ $absence['date'] }}', '{{ $absence['label'] }}')">
+                                Corriger
+                            </button>
                         </div>
                         @empty
-                        <p class="corr-empty">Aucune absence détectée sur la période.</p>
+                        <p class="text-[11px] text-[#6e6862] dark:text-slate-400 italic py-2 text-center">Aucune absence détectée sur cette période.</p>
                         @endforelse
                     </div>
-                    <div class="corr-col">
-                        <h4 class="corr-col-title">Jours corrigés
-                            <span class="corr-badge">{{ $exceptions->count() }}</span>
-                        </h4>
-                        <p class="corr-col-sub">Ces jours ne sont plus comptés comme absents.</p>
+                </div>
+
+                {{-- Jours corrigés --}}
+                <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630]">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-[#241f1b] dark:text-white">Jours déjà corrigés</span>
+                        <span class="badge ks-stat-change ks-stat-change--positive">{{ $exceptions->count() }}</span>
+                    </div>
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                         @forelse($exceptions as $exception)
-                        <div class="corr-row">
-                            <div>
-                                <span class="corr-date">{{ \Carbon\Carbon::parse($exception->attendance_date)->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</span>
-                                <div class="corr-reason">
-                                    @if($exception->reason){{ $exception->reason }}@endif
-                                    @if($exception->creator)@if($exception->reason) — @endif par {{ $exception->creator->name }}@endif
-                                </div>
+                        <div class="flex items-center justify-between p-1.5 rounded bg-white dark:bg-[#131519] border border-[#ecebe3] dark:border-[#222630]">
+                            <div class="min-w-0 pr-2">
+                                <div class="font-medium text-[#241f1b] dark:text-slate-200 truncate">{{ \Carbon\Carbon::parse($exception->attendance_date)->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</div>
+                                <div class="text-[11px] text-[#6e6862] dark:text-slate-400 truncate">{{ $exception->reason ?: 'Corrigé' }}</div>
                             </div>
-                            <form method="POST" action="{{ route('attendance.tracking.user.exception.destroy', [$user, $exception]) }}" onsubmit="return confirm('Annuler cette correction ? Le jour sera de nouveau compté comme absence.')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="corr-btn corr-btn-undo corr-btn-sm">Annuler</button>
+                            <form method="POST" action="{{ route('attendance.tracking.user.exception.destroy', [$user, $exception]) }}" onsubmit="return confirm('Annuler cette correction ?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="ks-btn-secondary ks-btn-xs !py-0.5 !px-2 !text-[11px] text-rose-600 hover:text-rose-700">
+                                    Annuler
+                                </button>
                             </form>
                         </div>
                         @empty
-                        <p class="corr-empty">Aucune correction enregistrée.</p>
+                        <p class="text-[11px] text-[#6e6862] dark:text-slate-400 italic py-2 text-center">Aucune correction enregistrée.</p>
                         @endforelse
                     </div>
                 </div>
             </div>
-            @endisset
+        </div>
+        @endisset
 
-            {{-- CHARTS --}}
-            @php
-            $chartData = $userStats['chart_data'] ?? [];
-            $hasChartData = !empty($chartData['labels']);
-            @endphp
-
-            @if($hasChartData)
-            <div class="mt-6">
-                <div class="pres-section-title">Évolution · Présence & Ponctualité</div>
-                <div class="pres-card">
-                    {{-- Légende manuelle pour clarté --}}
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Présent</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>À l'heure</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>En retard</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f43f5e"></span>Absent</div>
-                        <div class="legend-item"><span class="legend-dot" style="background:#f97316; border-radius:2px;"></span>Retard (min) →</div>
+        {{-- 5. GRAPHIQUES COMPACTS CÔTE À CÔTE --}}
+        @if($hasChartData)
+        <div class="ks-rise grid grid-cols-1 lg:grid-cols-2 gap-3.5" style="animation-delay:.09s">
+            {{-- Graphique 1 : Évolution --}}
+            <div class="ks-sec overflow-hidden">
+                <div class="ks-sec-head">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-[#241f1b] dark:text-white">Évolution · Présence & Ponctualité</span>
+                    <div class="flex items-center gap-2 text-[10px] text-[#6e6862] dark:text-slate-400">
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Présent</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>À l'heure</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>Retard</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Absent</span>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="chartPresence"></canvas>
-                    </div>
+                </div>
+                <div class="p-2.5 h-[210px]">
+                    <canvas id="chartPresence" class="w-full h-full"></canvas>
                 </div>
             </div>
 
-            <div class="pres-card mt-6">
-                <div class="pres-section-title">Vue d'Ensemble · Heures & Retards</div>
-                <div class="chart-container">
-                    <canvas id="chartOverview"></canvas>
+            {{-- Graphique 2 : Heures & Retards --}}
+            <div class="ks-sec overflow-hidden">
+                <div class="ks-sec-head">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-[#241f1b] dark:text-white">Volume travaillé & Retards (min)</span>
+                    <div class="flex items-center gap-2 text-[10px] text-[#6e6862] dark:text-slate-400">
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2 rounded-sm bg-blue-500"></span>Heures (h)</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2 rounded-sm bg-amber-500"></span>Retard (min)</span>
+                    </div>
+                </div>
+                <div class="p-2.5 h-[210px]">
+                    <canvas id="chartOverview" class="w-full h-full"></canvas>
                 </div>
             </div>
-            @endif
+        </div>
+        @endif
 
-            {{-- TABLEAU --}}
-            <div class="pres-table-card mt-6">
-                <div class="pres-table-head">
-                    <span class="pres-table-head-title">📋 Pointages récents</span>
-                    <span class="pres-table-head-meta">
-                        Période : {{ $period === 'custom' ? (request('date_from').' → '.request('date_to')) : ucfirst($period ?? 'mois') }}
-                        · {{ $attendanceDays->count() }} enregistrements
-                    </span>
+        {{-- 6. TABLEAU DES POINTAGES RÉCENTS --}}
+        <div class="ks-sec ks-rise overflow-hidden" style="animation-delay:.11s">
+            <div class="ks-sec-head">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-[#241f1b] dark:text-white">Historique des pointages</span>
+                    <span class="text-[11px] text-[#6e6862] dark:text-slate-400">· {{ $period === 'custom' ? (request('date_from').' → '.request('date_to')) : ucfirst($period ?? 'mois') }}</span>
                 </div>
+                <span class="badge ks-stat-change ks-stat-change--neutral font-medium">
+                    {{ $attendanceDays->count() }} enregistrements
+                </span>
+            </div>
 
-                {{-- Desktop --}}
-                @php
-                    $coveredDates = $attendanceDays->map(fn($d) => $d->attendance_date->toDateString())->flip();
-                    // Une exception n'est pas toujours une permission : l'administrateur peut
-// aussi excuser une journée à la main. Sans distinction, une correction
-// manuelle s'affichait comme une permission approuvée.
-                    $excusedDays = ($exceptions ?? collect())
-                        ->reject(fn($e) => isset($coveredDates[$e->attendance_date->toDateString()]))
-                        ->map(fn($e) => (object)[
-                            'type' => $e->isAutomatic() ? 'permission' : 'excused',
-                            'record' => $e,
-                        ]);
-                    $allRecords = $attendanceDays
-                        ->map(fn($d) => (object)['type' => 'attendance', 'record' => $d])
-                        ->concat($excusedDays)
-                        ->sortByDesc(fn($r) => $r->record->attendance_date);
-                @endphp
-                <div class="desktop-table">
-                    <table class="pres-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Arrivée</th>
-                                <th>Départ</th>
-                                <th>Heures</th>
-                                <th>Retard</th>
-                                <th>Statut</th>
-                                <th>Observation (retard)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($allRecords as $item)
+            {{-- Version Desktop --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-[#faf9f6] dark:bg-[#181c24] border-b border-[#dcdad2] dark:border-[#222630] text-[11px] font-semibold text-[#6e6862] dark:text-slate-400 uppercase tracking-wider">
+                            <th class="py-2.5 px-3.5">Date</th>
+                            <th class="py-2.5 px-3">Arrivée</th>
+                            <th class="py-2.5 px-3">Départ</th>
+                            <th class="py-2.5 px-3">Heures</th>
+                            <th class="py-2.5 px-3">Retard</th>
+                            <th class="py-2.5 px-3">Statut</th>
+                            <th class="py-2.5 px-3.5">Observation / Rapport</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#ecebe3] dark:divide-[#222630]">
+                        @forelse($allRecords as $item)
                             @if($item->type === 'attendance')
-                            @php $day = $item->record; @endphp
-                            <tr>
-                                <td>
-                                    <div style="font-weight:500;">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
-                                    <div style="font-size:.75rem;color:var(--muted);">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
-                                </td>
-                                <td>{{ $day->first_check_in_at?->format('H:i') ?? '—' }}</td>
-                                <td>
-                                    {{ $day->last_check_out_at?->format('H:i') ?? '—' }}
-                                    @if($day->departure_status === 'auto_closed')
-                                        <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="Départ non pointé, journée clôturée à l'heure de fin prévue">non pointé</span>
-                                    @elseif($day->departure_status === 'claimed')
-                                        <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="{{ $day->claimed_check_out_reason }}">
-                                            déclaré · {{ $day->claimed_check_out_at?->format('H:i') }}
-                                        </span>
-                                    @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
-                                        <span class="pres-tag tag-emerald" style="margin-left:.25rem;" title="{{ $day->correctionDepart->reason }}">
-                                            rétabli · d'office {{ $day->correctionDepart->original_check_out_at?->format('H:i') }}
-                                        </span>
-                                    @endif
+                                @php $day = $item->record; @endphp
+                                <tr class="hover:bg-[#faf9f6] dark:hover:bg-[#181c24] transition-colors">
+                                    <td class="py-2.5 px-3.5">
+                                        <div class="font-semibold text-[#241f1b] dark:text-white">{{ $day->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                        <div class="text-[11px] text-[#6e6862] dark:text-slate-400 capitalize">{{ $day->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono font-medium text-[#241f1b] dark:text-slate-200">
+                                        {{ $day->first_check_in_at?->format('H:i') ?? '—' }}
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="font-mono font-medium text-[#241f1b] dark:text-slate-200">{{ $day->last_check_out_at?->format('H:i') ?? '—' }}</span>
+                                            @if($day->departure_status === 'auto_closed')
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40" title="Départ non pointé, clôturé à l'heure prévue">non pointé</span>
+                                            @elseif($day->departure_status === 'claimed')
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40" title="{{ $day->claimed_check_out_reason }}">
+                                                    déclaré · {{ $day->claimed_check_out_at?->format('H:i') }}
+                                                </span>
+                                            @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40" title="{{ $day->correctionDepart->reason }}">
+                                                    rétabli {{ $day->correctionDepart->original_check_out_at?->format('H:i') }}
+                                                </span>
+                                            @endif
 
-                                    @isset($user)
-                                        @if(in_array($day->departure_status, ['auto_closed', 'claimed'], true))
-                                            <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;"
-                                                onclick="openDepartureCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->last_check_out_at?->format('H:i') }}', '{{ $day->claimed_check_out_at?->format('H:i') }}', @js($day->claimed_check_out_reason))">Rétablir l'heure</button>
-                                        @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
-                                            <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correctionDepart]) }}" style="display:inline;"
-                                                  onsubmit="return confirm('Annuler cette correction ? La clôture d'office sera rétablie.')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="corr-btn corr-btn-sm" style="margin-left:.35rem;">Annuler</button>
-                                            </form>
+                                            @isset($user)
+                                                @if(in_array($day->departure_status, ['auto_closed', 'claimed'], true))
+                                                    <button type="button" class="ks-btn-primary ks-btn-xs !py-0.5 !px-1.5 !text-[10px]"
+                                                        onclick="openDepartureCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->last_check_out_at?->format('H:i') }}', '{{ $day->claimed_check_out_at?->format('H:i') }}', @js($day->claimed_check_out_reason))">
+                                                        Rétablir
+                                                    </button>
+                                                @elseif($day->departure_status === 'corrected' && $day->correctionDepart)
+                                                    <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correctionDepart]) }}" class="inline" onsubmit="return confirm('Annuler cette correction ?')">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="ks-btn-secondary ks-btn-xs !py-0.5 !px-1.5 !text-[10px] text-rose-600">Annuler</button>
+                                                    </form>
+                                                @endif
+                                            @endisset
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono font-semibold text-[#1c3e96] dark:text-indigo-400">
+                                        {{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1).'h' : '—' }}
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        @if($day->late_minutes > 0)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#fffbeb] text-[#b45309] border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40">
+                                                {{ formatMinutes($day->late_minutes) }}
+                                            </span>
+                                        @else
+                                            <span class="text-[#6e6862] dark:text-slate-400">—</span>
                                         @endif
-                                    @endisset
-                                </td>
-                                <td style="font-family:var(--mono);">{{ $day->worked_minutes > 0 ? round($day->worked_minutes / 60, 1).'h' : '—' }}</td>
-                                <td>
-                                    @if($day->late_minutes > 0)
-                                    <span class="pres-tag tag-amber">{{ formatMinutes($day->late_minutes) }}</span>
-                                    @else
-                                    <span style="color:var(--muted);">—</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($day->first_check_in_at)
-                                    @if($day->arrival_status === 'late')
-                                    <span class="pres-tag tag-amber">En retard</span>
-                                    @isset($user)
-                                    <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;"
-                                        onclick="openTimeCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->first_check_in_at->format('H:i') }}')">Corriger l'heure</button>
-                                    @endisset
-                                    @elseif($day->correction)
-                                    <span class="pres-tag tag-emerald">À l'heure</span>
-                                    <span class="pres-tag tag-amber" style="margin-left:.25rem;" title="{{ $day->correction->reason }}">
-                                        corrigé · {{ $day->correction->original_check_in_at?->format('H:i') }}
-                                    </span>
-                                    @isset($user)
-                                    <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correction]) }}" style="display:inline;"
-                                          onsubmit="return confirm('Annuler cette correction ? Le pointage constaté sera rétabli et le retard recomptera.')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="corr-btn corr-btn-sm" style="margin-left:.35rem;">Annuler</button>
-                                    </form>
-                                    @endisset
-                                    @else
-                                    <span class="pres-tag tag-emerald">À l'heure</span>
-                                    @endif
-                                    @else
-                                    <span class="pres-tag tag-rose">Absent</span>
-                                    @isset($user)
-                                    <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;" onclick="openCorrection('{{ $day->attendance_date->format('Y-m-d') }}', '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}')">Corriger</button>
-                                    @endisset
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($day->arrival_status === 'late')
-                                    @php $obs = $day->late_observation; @endphp
-                                    @if($obs)
-                                    <span class="pres-tag tag-amber obs-clickable" @click="obsText = {{ json_encode($obs) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer; white-space:normal; display:inline-block; max-width:220px;">
-                                        {{ Str::limit($obs, 60) }}
-                                    </span>
-                                    @else
-                                    <span class="pres-tag tag-amber">Retard sans observation</span>
-                                    @endif
-                                    @else
-                                    @php $report = $day->dailyReports->first(); @endphp
-                                    @if($report)
-                                    @if($report->status === 'approved')
-                                    <span class="pres-tag tag-emerald">Rapport approuvé</span>
-                                    @elseif($report->status === 'submitted')
-                                    <span class="pres-tag tag-emerald">Rapport soumis</span>
-                                    @elseif($report->status === 'draft')
-                                    <span class="pres-tag tag-amber">Brouillon rapport</span>
-                                    @else
-                                    <span class="pres-tag">{{ ucfirst($report->status) }}</span>
-                                    @endif
-                                    @else
-                                    <span style="color:var(--muted);font-size:.8rem;">—</span>
-                                    @endif
-                                    @endif
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td class="py-2.5 px-3">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            @if($day->first_check_in_at)
+                                                @if($day->arrival_status === 'late')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#fffbeb] text-[#b45309] border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40">
+                                                        En retard
+                                                    </span>
+                                                    @isset($user)
+                                                    <button type="button" class="ks-btn-primary ks-btn-xs !py-0.5 !px-1.5 !text-[10px]"
+                                                        onclick="openTimeCorrection({{ $day->id }}, '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}', '{{ $day->first_check_in_at->format('H:i') }}')">
+                                                        Corriger
+                                                    </button>
+                                                    @endisset
+                                                @elseif($day->correction)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#ecfdf5] text-[#15803d] border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40">
+                                                        À l'heure
+                                                    </span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40" title="{{ $day->correction->reason }}">
+                                                        corrigé {{ $day->correction->original_check_in_at?->format('H:i') }}
+                                                    </span>
+                                                    @isset($user)
+                                                    <form method="POST" action="{{ route('attendance.tracking.user.correction.destroy', [$user, $day->correction]) }}" class="inline" onsubmit="return confirm('Annuler cette correction ?')">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="ks-btn-secondary ks-btn-xs !py-0.5 !px-1.5 !text-[10px] text-rose-600">Annuler</button>
+                                                    </form>
+                                                    @endisset
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#ecfdf5] text-[#15803d] border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40">
+                                                        À l'heure
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#fff1f2] text-[#b91c1c] border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40">
+                                                    Absent
+                                                </span>
+                                                @isset($user)
+                                                <button type="button" class="ks-btn-primary ks-btn-xs !py-0.5 !px-1.5 !text-[10px]" onclick="openCorrection('{{ $day->attendance_date->format('Y-m-d') }}', '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}')">
+                                                    Corriger
+                                                </button>
+                                                @endisset
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-3.5">
+                                        @if($day->arrival_status === 'late')
+                                            @php $obs = $day->late_observation; @endphp
+                                            @if($obs)
+                                                <button type="button"
+                                                        @click="obsText = {{ json_encode($obs) }}; obsDate = '{{ $day->attendance_date?->format('d/m/Y') ?? '--' }}'; obsModal = true"
+                                                        class="text-left max-w-[200px] truncate text-amber-700 dark:text-amber-300 hover:underline cursor-pointer block text-xs">
+                                                    {{ Str::limit($obs, 50) }}
+                                                </button>
+                                            @else
+                                                <span class="text-[#6e6862] dark:text-slate-400 text-[11px] italic">Sans observation</span>
+                                            @endif
+                                        @else
+                                            @php $report = $day->dailyReports->first(); @endphp
+                                            @if($report)
+                                                @if($report->status === 'approved')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">Rapport approuvé</span>
+                                                @elseif($report->status === 'submitted')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">Rapport soumis</span>
+                                                @elseif($report->status === 'draft')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Brouillon</span>
+                                                @else
+                                                    <span class="text-[11px] text-[#6e6862] dark:text-slate-400 capitalize">{{ $report->status }}</span>
+                                                @endif
+                                            @else
+                                                <span class="text-[#6e6862] dark:text-slate-400">—</span>
+                                            @endif
+                                        @endif
+                                    </td>
+                                </tr>
                             @else
-                            @php $exception = $item->record; @endphp
-                            <tr style="background:rgba(139,92,246,.05);">
-                                <td>
-                                    <div style="font-weight:500;">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
-                                    <div style="font-size:.75rem;color:var(--muted);">{{ $exception->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
-                                </td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>—</td>
-                                <td>
-                                    @if($item->type === 'permission')
-                                        <span class="pres-tag tag-violet">Journée permissionnée</span>
-                                    @else
-                                        <span class="pres-tag tag-amber">Journée excusée</span>
-                                    @endif
-                                </td>
-                                <td style="font-size:.8rem;color:var(--muted);max-width:220px;white-space:normal;">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</td>
-                            </tr>
+                                @php $exception = $item->record; @endphp
+                                <tr class="bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50/70 transition-colors">
+                                    <td class="py-2.5 px-3.5">
+                                        <div class="font-semibold text-[#241f1b] dark:text-white">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</div>
+                                        <div class="text-[11px] text-[#6e6862] dark:text-slate-400 capitalize">{{ $exception->attendance_date->locale('fr')->isoFormat('dddd') }}</div>
+                                    </td>
+                                    <td class="py-2.5 px-3 font-mono text-[#6e6862] dark:text-slate-400">—</td>
+                                    <td class="py-2.5 px-3 font-mono text-[#6e6862] dark:text-slate-400">—</td>
+                                    <td class="py-2.5 px-3 font-mono text-[#6e6862] dark:text-slate-400">—</td>
+                                    <td class="py-2.5 px-3 font-mono text-[#6e6862] dark:text-slate-400">—</td>
+                                    <td class="py-2.5 px-3">
+                                        @if($item->type === 'permission')
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#faf5ff] text-[#7e22ce] border border-purple-200/60 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/40">
+                                                Journée permissionnée
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#ecfeff] text-[#0891b2] border border-cyan-200/60 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/40">
+                                                Journée excusée
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2.5 px-3.5 text-xs text-[#6e6862] dark:text-slate-400">
+                                        {{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}
+                                    </td>
+                                </tr>
                             @endif
-                            @empty
+                        @empty
                             <tr>
-                                <td colspan="7">
-                                    <div class="pres-empty">
-                                        <div class="pres-empty-icon">📭</div>
-                                        Aucun pointage trouvé pour cette période
-                                    </div>
+                                <td colspan="7" class="py-8 text-center text-xs text-[#6e6862] dark:text-slate-400 italic">
+                                    Aucun pointage trouvé pour cette période.
                                 </td>
                             </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- Mobile --}}
-                <div class="mobile-cards" style="padding:1rem;">
-                    @forelse($allRecords as $item)
-                    @if($item->type === 'attendance')
-                    @php $day = $item->record; @endphp
-                    <div class="mobile-card">
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Date</span>
-                            <span class="mobile-value">{{ $day->attendance_date->locale('fr')->isoFormat('D MMM') }}</span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Arrivée</span>
-                            <span class="mobile-value">{{ $day->first_check_in_at?->format('H:i') ?? '—' }}</span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Départ</span>
-                            <span class="mobile-value">{{ $day->last_check_out_at?->format('H:i') ?? '—' }}</span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Heures</span>
-                            <span class="mobile-value">{{ $day->worked_minutes > 0 ? round($day->worked_minutes/60,1).'h' : '—' }}</span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Statut</span>
-                            <span class="mobile-value">
-                                @if($day->first_check_in_at)
-                                @if($day->arrival_status === 'late')
-                                <span class="pres-tag tag-amber">En retard</span>
-                                @else
-                                <span class="pres-tag tag-emerald">À l'heure</span>
-                                @endif
-                                @else
-                                <span class="pres-tag tag-rose">Absent</span>
-                                @isset($user)
-                                <button type="button" class="corr-btn corr-btn-fix corr-btn-sm" style="margin-left:.35rem;" onclick="openCorrection('{{ $day->attendance_date->format('Y-m-d') }}', '{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}')">Corriger</button>
-                                @endisset
-                                @endif
-                            </span>
-                        </div>
-                        @if($day->arrival_status === 'late')
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Observation</span>
-                            @php $obsMobile = $day->late_observation; @endphp
-                            @if($obsMobile)
-                            <span class="mobile-value obs-clickable" @click="obsText = {{ json_encode($obsMobile) }}; obsDate = '{{ $day->date?->format('d/m/Y') ?? '--' }}'; obsModal = true" style="cursor:pointer;">
-                                {{ Str::limit($obsMobile, 50) }}
-                            </span>
-                            @else
-                            <span class="mobile-value">Aucune observation</span>
-                            @endif
-                        </div>
-                        @endif
-                    </div>
-                    @else
-                    @php $exception = $item->record; @endphp
-                    <div class="mobile-card" style="border:1px solid rgba(139,92,246,.2);background:rgba(139,92,246,.04);">
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Date</span>
-                            <span class="mobile-value">{{ $exception->attendance_date->locale('fr')->isoFormat('D MMMM YYYY') }}</span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Statut</span>
-                            <span class="mobile-value">
-                                @if($item->type === 'permission')
-                                    <span class="pres-tag tag-violet">Journée permissionnée</span>
-                                @else
-                                    <span class="pres-tag tag-amber">Journée excusée</span>
-                                @endif
-                            </span>
-                        </div>
-                        <div class="mobile-card-row">
-                            <span class="mobile-label">Motif</span>
-                            <span class="mobile-value">{{ $exception->reason ?: ($item->type === 'permission' ? 'Permission approuvée' : 'Correction administrative') }}</span>
-                        </div>
-                    </div>
-                    @endif
-                    @empty
-                    <div class="pres-empty">
-                        <div class="pres-empty-icon">📭</div>
-                        Aucun pointage trouvé pour cette période
-                    </div>
-                    @endforelse
-                </div>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
-        </div> {{-- fin de .pres-page --}}
+            {{-- Version Mobile (Cartes compactes) --}}
+            <div class="block md:hidden p-2.5 space-y-2">
+                @forelse($allRecords as $item)
+                    @if($item->type === 'attendance')
+                        @php $day = $item->record; @endphp
+                        <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630] text-xs space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-[#241f1b] dark:text-white">{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMM YYYY') }}</span>
+                                @if($day->first_check_in_at)
+                                    @if($day->arrival_status === 'late')
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#fffbeb] text-[#b45309] border border-amber-200/60">En retard</span>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#ecfdf5] text-[#15803d] border border-emerald-200/60">À l'heure</span>
+                                    @endif
+                                @else
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#fff1f2] text-[#b91c1c] border border-rose-200/60">Absent</span>
+                                @endif
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 py-1 text-[11px] text-[#6e6862] dark:text-slate-400 border-y border-[#ecebe3] dark:border-[#222630]">
+                                <div>Arrivée : <strong class="text-[#241f1b] dark:text-slate-200 font-mono">{{ $day->first_check_in_at?->format('H:i') ?? '—' }}</strong></div>
+                                <div>Départ : <strong class="text-[#241f1b] dark:text-slate-200 font-mono">{{ $day->last_check_out_at?->format('H:i') ?? '—' }}</strong></div>
+                                <div>Total : <strong class="text-[#1c3e96] dark:text-indigo-400 font-mono">{{ $day->worked_minutes > 0 ? round($day->worked_minutes/60,1).'h' : '—' }}</strong></div>
+                            </div>
+                            @if($day->arrival_status === 'late' && $day->late_observation)
+                                <div class="text-[11px] text-amber-700 dark:text-amber-400 flex items-center justify-between">
+                                    <span class="truncate">Obs : {{ Str::limit($day->late_observation, 40) }}</span>
+                                    <button type="button" @click="obsText = {{ json_encode($day->late_observation) }}; obsDate = '{{ $day->attendance_date?->format('d/m/Y') }}'; obsModal = true" class="underline text-[10px] ml-1">Voir</button>
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        @php $exception = $item->record; @endphp
+                        <div class="p-2.5 rounded-lg bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 text-xs space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-[#241f1b] dark:text-white">{{ $exception->attendance_date->locale('fr')->isoFormat('dddd D MMM YYYY') }}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">{{ $item->type === 'permission' ? 'Permission' : 'Excusé' }}</span>
+                            </div>
+                            <p class="text-[11px] text-[#6e6862] dark:text-slate-400">{{ $exception->reason ?: 'Journée régularisée' }}</p>
+                        </div>
+                    @endif
+                @empty
+                    <p class="text-center text-xs text-[#6e6862] dark:text-slate-400 italic py-4">Aucun pointage trouvé.</p>
+                @endforelse
+            </div>
+        </div>
 
-        {{-- ==================== MODALS ==================== --}}
+        {{-- ==================== MODALES HARMONISÉES ==================== --}}
         {{-- Modal Observation --}}
-        <div x-show="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="obsModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+        <div x-show="obsModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]" @click.self="obsModal = false">
+            <div class="w-full max-w-md rounded-xl bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-[#ecebe3] dark:border-[#222630] pb-2.5">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Observation</p>
-                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="'du ' + obsDate"></p>
+                        <span class="ks-label">Observation du retard</span>
+                        <div class="text-xs text-[#6e6862] dark:text-slate-400" x-text="'Date : ' + obsDate"></div>
                     </div>
-                    <button @click="obsModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                    <button @click="obsModal = false" class="text-[#6e6862] hover:text-[#241f1b] dark:hover:text-white p-1">✕</button>
                 </div>
-                <div class="mt-4">
-                    <p class="text-base font-medium text-slate-900 dark:text-slate-100" x-text="obsText"></p>
+                <div class="py-2">
+                    <p class="text-xs leading-relaxed text-[#241f1b] dark:text-slate-200 bg-[#faf9f6] dark:bg-[#181c24] p-3 rounded-lg border border-[#ecebe3] dark:border-[#222630]" x-text="obsText"></p>
                 </div>
-                <div class="mt-6 flex justify-end">
-                    <button @click="obsModal = false" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors">Fermer</button>
+                <div class="flex justify-end pt-1">
+                    <button @click="obsModal = false" class="ks-btn-primary ks-btn-xs !text-xs !py-1 !px-3">Fermer</button>
                 </div>
             </div>
         </div>
 
-        {{-- Modal Correction Absence (admin) --}}
+        {{-- Modales Administrateur --}}
         @isset($user)
-        <div x-show="corrModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="corrModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+        {{-- Modal Correction Absence --}}
+        <div x-show="corrModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]" @click.self="corrModal = false">
+            <div class="w-full max-w-md rounded-xl bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-[#ecebe3] dark:border-[#222630] pb-2.5">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Corriger une absence</p>
-                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="corrLabel ? 'Jour : ' + corrLabel : ''"></p>
+                        <span class="ks-label">Régulariser une absence</span>
+                        <div class="text-xs text-[#6e6862] dark:text-slate-400" x-text="corrLabel ? 'Jour : ' + corrLabel : ''"></div>
                     </div>
-                    <button @click="corrModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                    <button @click="corrModal = false" class="text-[#6e6862] hover:text-[#241f1b] dark:hover:text-white p-1">✕</button>
                 </div>
-                <form method="POST" action="{{ route('attendance.tracking.user.exception.store', $user) }}">
+                <form method="POST" action="{{ route('attendance.tracking.user.exception.store', $user) }}" class="space-y-3">
                     @csrf
                     <input type="hidden" name="attendance_date" x-model="corrDate" />
-                    <div class="mt-4">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Motif de la correction (optionnel)</label>
-                        <textarea name="reason" x-model="corrReason" rows="3" placeholder="Ex : Site pas encore en ligne ce jour-là" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
+                    <div>
+                        <label class="block text-xs font-medium text-[#6e6862] dark:text-slate-400 mb-1">Motif de la régularisation (optionnel)</label>
+                        <textarea name="reason" x-model="corrReason" rows="2" placeholder="Ex : Ordre de mission, problème de matériel..."
+                                  class="w-full text-xs p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#181c24] text-[#241f1b] dark:text-white focus:outline-none focus:border-[#1c3e96]"></textarea>
                     </div>
-                    <div class="mt-6 flex justify-end gap-2">
-                        <button type="button" @click="corrModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
-                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Confirmer la correction</button>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" @click="corrModal = false" class="ks-btn-secondary ks-btn-xs !text-xs !py-1 !px-3">Annuler</button>
+                        <button type="submit" class="ks-btn-primary ks-btn-xs !text-xs !py-1 !px-3">✓ Confirmer</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        {{-- Rétablissement d'une heure d'arrivée mal enregistrée --}}
-        <div x-show="timeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="timeModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+        {{-- Modal Heure Arrivée --}}
+        <div x-show="timeModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]" @click.self="timeModal = false">
+            <div class="w-full max-w-md rounded-xl bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-[#ecebe3] dark:border-[#222630] pb-2.5">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Rétablir l'heure d'arrivée</p>
-                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="timeLabel ? 'Jour : ' + timeLabel : ''"></p>
+                        <span class="ks-label">Rétablir l'heure d'arrivée</span>
+                        <div class="text-xs text-[#6e6862] dark:text-slate-400" x-text="timeLabel ? 'Jour : ' + timeLabel : ''"></div>
                     </div>
-                    <button @click="timeModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">✕</button>
+                    <button @click="timeModal = false" class="text-[#6e6862] hover:text-[#241f1b] dark:hover:text-white p-1">✕</button>
                 </div>
-
-                <form method="POST" :action="timeDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + timeDayId + '/correction' : '#'">
+                <form method="POST" :action="timeDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + timeDayId + '/correction' : '#'" class="space-y-3">
                     @csrf
-
-                    <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                        À utiliser quand la personne est bien arrivée à l'heure mais n'a pas pu pointer —
-                        lecteur en panne, téléphone déchargé, GPS introuvable. Le retard cessera de compter,
-                        mais l'heure enregistrée restera consultable.
-                    </p>
-
-                    <div class="mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm">
-                        <span class="text-slate-500 dark:text-slate-400">Heure enregistrée :</span>
-                        <strong class="text-slate-800 dark:text-slate-100" x-text="timeCurrent"></strong>
+                    <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630] text-xs">
+                        <span class="text-[#6e6862] dark:text-slate-400">Heure enregistrée :</span>
+                        <strong class="font-mono text-[#241f1b] dark:text-white ml-1" x-text="timeCurrent"></strong>
                     </div>
-
-                    <div class="mt-4">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Heure réelle d'arrivée</label>
+                    <div>
+                        <label class="block text-xs font-medium text-[#6e6862] dark:text-slate-400 mb-1">Heure réelle d'arrivée</label>
                         <input type="time" name="time" x-model="timeValue" required
-                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none">
+                               class="w-full h-8 px-2 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#181c24] text-[#241f1b] dark:text-white focus:outline-none focus:border-[#1c3e96]" />
                     </div>
-
-                    <div class="mt-4">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Motif <span class="text-rose-500">*</span>
-                        </label>
-                        <textarea name="reason" x-model="timeReason" rows="3" required minlength="5"
-                            placeholder="Ex : lecteur QR hors service à l'entrée, arrivée constatée par le responsable de site"
-                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Obligatoire : la ponctualité entre dans la note de stage, une correction sans
-                            justification serait indéfendable.
-                        </p>
+                    <div>
+                        <label class="block text-xs font-medium text-[#6e6862] dark:text-slate-400 mb-1">Motif obligatoire</label>
+                        <textarea name="reason" x-model="timeReason" rows="2" required minlength="5" placeholder="Ex : Lecteur QR en panne..."
+                                  class="w-full text-xs p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#181c24] text-[#241f1b] dark:text-white focus:outline-none focus:border-[#1c3e96]"></textarea>
                     </div>
-
-                    <div class="mt-6 flex justify-end gap-2">
-                        <button type="button" @click="timeModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
-                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Rétablir l'heure</button>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" @click="timeModal = false" class="ks-btn-secondary ks-btn-xs !text-xs !py-1 !px-3">Annuler</button>
+                        <button type="submit" class="ks-btn-primary ks-btn-xs !text-xs !py-1 !px-3">✓ Rétablir l'heure</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        {{-- ── Rétablir une heure de départ oubliée ─────────────────────── --}}
-        <div x-show="outModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none; background: rgba(0,0,0,0.5);" @click.self="outModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+        {{-- Modal Heure Départ --}}
+        <div x-show="outModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]" @click.self="outModal = false">
+            <div class="w-full max-w-md rounded-xl bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] p-4 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-[#ecebe3] dark:border-[#222630] pb-2.5">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Rétablir l'heure de départ</p>
-                        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="outLabel ? 'Jour : ' + outLabel : ''"></p>
+                        <span class="ks-label">Rétablir l'heure de départ</span>
+                        <div class="text-xs text-[#6e6862] dark:text-slate-400" x-text="outLabel ? 'Jour : ' + outLabel : ''"></div>
                     </div>
-                    <button @click="outModal = false" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600">✕</button>
+                    <button @click="outModal = false" class="text-[#6e6862] hover:text-[#241f1b] dark:hover:text-white p-1">✕</button>
                 </div>
-
-                <form method="POST" :action="outDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + outDayId + '/correction-depart' : '#'">
+                <form method="POST" :action="outDayId ? '{{ url('admin/attendance-tracking/user/' . ($user->id ?? 0) . '/days') }}/' + outDayId + '/correction-depart' : '#'" class="space-y-3">
                     @csrf
-
-                    <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
-                        Le départ n'a pas été pointé : la journée a été clôturée à l'heure de fin prévue,
-                        jamais au-delà. Vous posez ici l'heure réelle, après avoir vu la personne.
-                    </p>
-
-                    <div class="mt-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm">
-                        <span class="text-slate-500 dark:text-slate-400">Clôturé d'office à :</span>
-                        <strong class="text-slate-800 dark:text-slate-100" x-text="outCurrent"></strong>
+                    <div class="p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#ecebe3] dark:border-[#222630] text-xs space-y-1">
+                        <div>
+                            <span class="text-[#6e6862] dark:text-slate-400">Clôturé d'office à :</span>
+                            <strong class="font-mono text-[#241f1b] dark:text-white ml-1" x-text="outCurrent"></strong>
+                        </div>
+                        <div x-show="outClaimed" class="text-amber-700 dark:text-amber-300">
+                            <span>Déclaré par l'intéressé :</span>
+                            <strong class="font-mono ml-1" x-text="outClaimed"></strong>
+                            <div class="italic text-[11px] mt-0.5" x-text="outClaimReason"></div>
+                        </div>
                     </div>
-
-                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/20 px-4 py-3 text-sm"
-                         x-show="outClaimed" x-cloak>
-                        <p class="text-amber-800 dark:text-amber-300">
-                            <span class="text-amber-700/80 dark:text-amber-400/80">Déclaré par l'intéressé :</span>
-                            <strong x-text="outClaimed"></strong>
-                        </p>
-                        <p class="mt-1 text-amber-700/85 dark:text-amber-400/85" x-text="outClaimReason"></p>
-                    </div>
-                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400" x-show="!outClaimed" x-cloak>
-                        Rien n'a été déclaré pour cette journée.
-                    </p>
-
-                    <div class="mt-4">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Heure réelle de départ</label>
+                    <div>
+                        <label class="block text-xs font-medium text-[#6e6862] dark:text-slate-400 mb-1">Heure réelle de départ</label>
                         <input type="time" name="time" x-model="outValue" required
-                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none">
+                               class="w-full h-8 px-2 text-xs rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#181c24] text-[#241f1b] dark:text-white focus:outline-none focus:border-[#1c3e96]" />
                     </div>
-
-                    <div class="mt-4">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Motif <span class="text-rose-500">*</span>
-                        </label>
-                        <textarea name="reason" x-model="outReason" rows="3" required minlength="5"
-                            placeholder="Ex : départ à 18h30 confirmé par le responsable de site"
-                            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm focus:border-emerald-500 focus:outline-none"></textarea>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Obligatoire : le volume horaire entre dans la note de stage, une correction
-                            sans justification serait indéfendable.
-                        </p>
+                    <div>
+                        <label class="block text-xs font-medium text-[#6e6862] dark:text-slate-400 mb-1">Motif obligatoire</label>
+                        <textarea name="reason" x-model="outReason" rows="2" required minlength="5" placeholder="Ex : Départ confirmé par le tuteur..."
+                                  class="w-full text-xs p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#181c24] text-[#241f1b] dark:text-white focus:outline-none focus:border-[#1c3e96]"></textarea>
                     </div>
-
-                    <div class="mt-6 flex justify-end gap-2">
-                        <button type="button" @click="outModal = false" class="rounded-xl bg-slate-100 dark:bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Fermer</button>
-                        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 transition-colors">✓ Rétablir l'heure</button>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" @click="outModal = false" class="ks-btn-secondary ks-btn-xs !text-xs !py-1 !px-3">Annuler</button>
+                        <button type="submit" class="ks-btn-primary ks-btn-xs !text-xs !py-1 !px-3">✓ Rétablir</button>
                     </div>
                 </form>
             </div>
         </div>
         @endisset
 
-    </div> {{-- fin de .pres-wrap --}}
+    </div>
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1479,11 +882,9 @@
         function openCorrection(date, label) {
             window.dispatchEvent(new CustomEvent('open-correction', { detail: { date, label } }));
         }
-
         function openTimeCorrection(id, label, current) {
             window.dispatchEvent(new CustomEvent('open-time-correction', { detail: { id, label, current } }));
         }
-
         function openDepartureCorrection(id, label, current, claimed, claimReason) {
             window.dispatchEvent(new CustomEvent('open-departure-correction', {
                 detail: { id, label, current: current || '--:--', claimed: claimed || '', claimReason: claimReason || '' }
@@ -1492,10 +893,13 @@
         @endisset
 
         document.addEventListener('DOMContentLoaded', () => {
-            Chart.defaults.font.family = "'DM Sans', sans-serif";
-            Chart.defaults.color = '#9ca3af';
+            const isDark = document.documentElement.classList.contains('dark');
+            const fontColor = isDark ? '#94a3b8' : '#6e6862';
+            const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
 
-            /* ── Données injectées depuis PHP ─────────────────────────── */
+            Chart.defaults.font.family = "Figtree, system-ui, sans-serif";
+            Chart.defaults.color = fontColor;
+
             @php
             $chartDataSafe = $userStats['chart_data'] ?? [
                 'labels' => [],
@@ -1510,7 +914,6 @@
             @endphp
 
             const cd = @json($chartDataSafe);
-
             const labels = cd.labels ?? [];
             const dates = cd.dates ?? [];
             const present = cd.present ?? [];
@@ -1529,144 +932,90 @@
                 return h + 'h ' + mins + 'min';
             };
 
-            if (!labels.length) return; // pas de données → pas de graphique
-
-            /* ── Helpers ──────────────────────────────────────────────── */
-            const mkGradient = (ctx, top, bottom) => {
-                const g = ctx.createLinearGradient(0, 0, 0, 300);
-                g.addColorStop(0, top);
-                g.addColorStop(1, bottom);
-                return g;
-            };
+            if (!labels.length) return;
 
             const tooltipStyle = {
-                backgroundColor: '#1c2333',
-                borderColor: 'rgba(255,255,255,0.1)',
+                backgroundColor: isDark ? '#15181f' : '#241f1b',
+                borderColor: isDark ? '#222630' : '#dcdad2',
                 borderWidth: 1,
                 titleColor: '#fff',
-                bodyColor: '#d1d5db',
-                padding: 12,
-                cornerRadius: 10,
+                bodyColor: '#e2e8f0',
+                padding: 10,
+                cornerRadius: 8,
             };
 
-            /* ══════════════════════════════════════════════════════════
-               GRAPHIQUE 1 — Courbes binaires + minutes retard
-            ══════════════════════════════════════════════════════════ */
+            // GRAPHIQUE 1 : Évolution Présence & Ponctualité
             const ctx1 = document.getElementById('chartPresence');
             if (ctx1) {
-                const g1 = ctx1.getContext('2d');
                 new Chart(ctx1, {
                     type: 'line',
                     data: {
                         labels,
-                        datasets: [{
+                        datasets: [
+                            {
                                 label: 'Présent',
                                 data: present,
-                                borderColor: '#10b981',
-                                backgroundColor: mkGradient(g1, 'rgba(16,185,129,.22)', 'rgba(16,185,129,.02)'),
+                                borderColor: '#15803d',
+                                backgroundColor: 'rgba(22,128,74,0.12)',
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
-                                borderWidth: 2.5,
-                                pointRadius: present.map(v => v ? 5 : 0),
-                                pointHoverRadius: 8,
-                                pointBackgroundColor: '#10b981',
+                                tension: 0.35,
+                                borderWidth: 2,
+                                pointRadius: present.map(v => v ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#15803d',
                                 pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
+                                pointBorderWidth: 1.5,
                                 yAxisID: 'yBin',
                             },
                             {
                                 label: "À l'heure",
                                 data: onTime,
-                                borderColor: '#3b82f6',
-                                backgroundColor: mkGradient(g1, 'rgba(59,130,246,.18)', 'rgba(59,130,246,.02)'),
+                                borderColor: '#1c3e96',
+                                backgroundColor: 'rgba(28,62,150,0.08)',
                                 fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
-                                borderWidth: 2,
-                                pointRadius: onTime.map(v => v ? 5 : 0),
-                                pointHoverRadius: 7,
-                                pointBackgroundColor: '#3b82f6',
+                                tension: 0.35,
+                                borderWidth: 1.8,
+                                pointRadius: onTime.map(v => v ? 3.5 : 0),
+                                pointHoverRadius: 5.5,
+                                pointBackgroundColor: '#1c3e96',
                                 pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
+                                pointBorderWidth: 1.5,
                                 yAxisID: 'yBin',
                             },
                             {
                                 label: 'En retard',
                                 data: lateDays,
-                                borderColor: '#f59e0b',
-                                backgroundColor: mkGradient(g1, 'rgba(245,158,11,.18)', 'rgba(245,158,11,.02)'),
-                                fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
-                                borderWidth: 2,
-                                pointRadius: lateDays.map(v => v ? 5 : 0),
-                                pointHoverRadius: 7,
-                                pointBackgroundColor: '#f59e0b',
+                                borderColor: '#b45309',
+                                backgroundColor: 'transparent',
+                                tension: 0.35,
+                                borderWidth: 1.8,
+                                pointRadius: lateDays.map(v => v ? 4 : 0),
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#b45309',
                                 pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
+                                pointBorderWidth: 1.5,
                                 yAxisID: 'yBin',
                             },
                             {
                                 label: 'Absent',
                                 data: absences,
-                                borderColor: '#f43f5e',
-                                backgroundColor: mkGradient(g1, 'rgba(244,63,94,.16)', 'rgba(244,63,94,.02)'),
-                                fill: true,
-                                tension: 0.4,
-                                cubicInterpolationMode: 'monotone',
-                                borderWidth: 2,
-                                pointRadius: absences.map(v => v ? 5 : 0),
-                                pointHoverRadius: 7,
-                                pointBackgroundColor: '#f43f5e',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                yAxisID: 'yBin',
-                            },
-                            {
-                                label: 'Retard (min)',
-                                data: lateMinutes,
-                                borderColor: '#f97316',
+                                borderColor: '#b91c1c',
                                 backgroundColor: 'transparent',
-                                fill: false,
                                 tension: 0.35,
-                                borderWidth: 2,
-                                borderDash: [6, 4],
-                                pointRadius: lateMinutes.map(v => v > 0 ? 4 : 0),
+                                borderWidth: 1.8,
+                                pointRadius: absences.map(v => v ? 4 : 0),
                                 pointHoverRadius: 6,
-                                pointBackgroundColor: '#f97316',
+                                pointBackgroundColor: '#b91c1c',
                                 pointBorderColor: '#fff',
-                                pointBorderWidth: 1,
-                                yAxisID: 'yMin',
-                            },
-                            {
-                                label: 'Heures travaillées',
-                                data: workedMinutes,
-                                borderColor: '#8b5cf6',
-                                backgroundColor: 'transparent',
-                                fill: false,
-                                tension: 0.4,
-                                borderWidth: 2,
-                                pointRadius: workedMinutes.map(v => v > 0 ? 4 : 0),
-                                pointHoverRadius: 6,
-                                pointBackgroundColor: '#8b5cf6',
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 1,
-                                yAxisID: 'yMin',
+                                pointBorderWidth: 1.5,
+                                yAxisID: 'yBin',
                             },
                         ],
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: {
-                            duration: 900,
-                            easing: 'easeOutQuart'
-                        },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         onClick: (evt, items, chart) => {
                             if (typeof openCorrection !== 'function' || !items.length) return;
                             const ds = chart.data.datasets[items[0].datasetIndex];
@@ -1674,27 +1023,14 @@
                             const date = dates[items[0].index];
                             if (date) openCorrection(date, labels[items[0].index]);
                         },
-                        onHover: (evt, item, chart) => {
-                            if (typeof openCorrection !== 'function') return;
-                            let pointer = false;
-                            if (item.length) {
-                                const ds = chart.data.datasets[item[0].datasetIndex];
-                                pointer = ds.label === 'Absent' && ds.data[item[0].index] === 1;
-                            }
-                            evt.native.target.style.cursor = pointer ? 'pointer' : 'default';
-                        },
                         plugins: {
-                            legend: {
-                                display: false
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 ...tooltipStyle,
                                 callbacks: {
                                     label(ctx) {
                                         const v = ctx.parsed.y;
                                         const lbl = ctx.dataset.label;
-                                        if (lbl === 'Retard (min)') return `Retard: ${fmtMin(v)}`;
-                                        if (lbl === 'Heures travaillées') return `Heures: ${fmtMin(v)}`;
                                         return `${lbl}: ${v === 1 ? 'Oui' : 'Non'}`;
                                     },
                                 },
@@ -1702,101 +1038,54 @@
                         },
                         scales: {
                             x: {
-                                grid: {
-                                    color: 'rgba(255,255,255,0.04)'
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45,
-                                    maxTicksLimit: 14
-                                },
+                                grid: { color: gridColor },
+                                ticks: { font: { size: 10 }, color: fontColor, maxRotation: 45, maxTicksLimit: 12 },
                             },
                             yBin: {
                                 type: 'linear',
-                                position: 'left',
                                 min: -0.1,
-                                max: 1.4,
-                                title: {
-                                    display: true,
-                                    text: '0 = Non  /  1 = Oui',
-                                    color: '#6b7280',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
+                                max: 1.3,
                                 ticks: {
                                     stepSize: 1,
                                     callback: v => v === 0 ? '0' : v === 1 ? '1' : '',
-                                    color: '#6b7280',
-                                    font: {
-                                        size: 10
-                                    },
+                                    color: fontColor,
+                                    font: { size: 10 },
                                 },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                },
-                            },
-                            yMin: {
-                                type: 'linear',
-                                position: 'right',
-                                min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Minutes / Heures',
-                                    color: '#8b5cf6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => fmtMin(v),
-                                    color: '#8b5cf6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                },
+                                grid: { color: gridColor },
                             },
                         },
                     },
                 });
             }
 
-            /* ══════════════════════════════════════════════════════════
-               GRAPHIQUE 2 — Barres : heures travaillées + retard (min)
-            ══════════════════════════════════════════════════════════ */
+            // GRAPHIQUE 2 : Barres Volume & Retards
             const ctx2 = document.getElementById('chartOverview');
             if (ctx2) {
                 new Chart(ctx2, {
                     type: 'bar',
                     data: {
                         labels,
-                        datasets: [{
+                        datasets: [
+                            {
                                 label: 'Heures travaillées',
                                 data: workedHours,
-                                backgroundColor: 'rgba(59,130,246,.75)',
-                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(28,62,150,0.75)',
+                                borderColor: '#1c3e96',
                                 borderWidth: 1,
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.65,
-                                categoryPercentage: 0.75,
+                                borderRadius: 4,
+                                barPercentage: 0.6,
+                                categoryPercentage: 0.7,
                                 yAxisID: 'yHours',
                             },
                             {
                                 label: 'Retard (min)',
                                 data: lateMinutes,
-                                backgroundColor: 'rgba(245,158,11,.7)',
-                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(180,83,9,0.7)',
+                                borderColor: '#b45309',
                                 borderWidth: 1,
-                                borderRadius: 5,
-                                borderSkipped: false,
-                                barPercentage: 0.65,
-                                categoryPercentage: 0.75,
+                                borderRadius: 4,
+                                barPercentage: 0.6,
+                                categoryPercentage: 0.7,
                                 yAxisID: 'yMin',
                             },
                         ],
@@ -1804,96 +1093,37 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: {
-                            duration: 800,
-                            easing: 'easeOutQuart'
-                        },
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    color: '#e5e7eb',
-                                    usePointStyle: true,
-                                    padding: 14,
-                                    font: {
-                                        size: 12
-                                    }
-                                },
-                            },
+                            legend: { display: false },
                             tooltip: {
                                 ...tooltipStyle,
                                 callbacks: {
                                     label(ctx) {
                                         const v = ctx.parsed.y;
-                                        return ctx.dataset.label === 'Heures travaillées' ?
-                                            `Heures: ${v}h` :
-                                            `Retard: ${fmtMin(v)}`;
+                                        return ctx.dataset.label === 'Heures travaillées' ? `Heures: ${v}h` : `Retard: ${fmtMin(v)}`;
                                     },
                                 },
                             },
                         },
                         scales: {
                             x: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 10
-                                    },
-                                    maxRotation: 45,
-                                    maxTicksLimit: 14
-                                },
+                                grid: { display: false },
+                                ticks: { font: { size: 10 }, color: fontColor, maxRotation: 45, maxTicksLimit: 12 },
                             },
                             yHours: {
                                 type: 'linear',
                                 position: 'left',
                                 min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Heures',
-                                    color: '#3b82f6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + 'h',
-                                    color: '#3b82f6',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(255,255,255,0.05)'
-                                },
+                                ticks: { callback: v => v + 'h', color: '#1c3e96', font: { size: 10 } },
+                                grid: { color: gridColor },
                             },
                             yMin: {
                                 type: 'linear',
                                 position: 'right',
                                 min: 0,
-                                title: {
-                                    display: true,
-                                    text: 'Retard (min)',
-                                    color: '#f59e0b',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                ticks: {
-                                    callback: v => v + ' min',
-                                    color: '#f59e0b',
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                },
+                                ticks: { callback: v => v + 'm', color: '#b45309', font: { size: 10 } },
+                                grid: { drawOnChartArea: false },
                             },
                         },
                     },

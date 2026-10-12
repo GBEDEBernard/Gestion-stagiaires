@@ -1,135 +1,199 @@
 <x-app-layout>
-<div class="max-w-2xl mx-auto px-4 sm:px-0">
+    <style>
+        body { background: #f1f0ed !important; }
+        .dark body { background: #15181f !important; }
+        header { background-color: transparent !important; border-bottom: none !important; border-color: transparent !important; box-shadow: none !important; }
+        .dark header { background-color: #131519 !important; border-bottom: none !important; border-color: transparent !important; box-shadow: none !important; }
 
-    {{-- ── En-tête ── --}}
-    <div class="mb-8">
-        <div class="flex items-center gap-3 mb-2">
-            <a href="{{ route('employes.index') }}"
-               class="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm" title="Retour">
-                <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
+        .ks-sec {
+            background: #fffefa;
+            border: 1px solid #dcdad2;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(36,31,27,.05), 0 8px 24px -16px rgba(36,31,27,.12);
+        }
+        .dark .ks-sec {
+            background: #131519 !important;
+            border-color: #222630 !important;
+            box-shadow: none;
+        }
+
+        .ks-btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            background: #1c3e96;
+            color: #fff;
+            border: 1px solid #1c3e96;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 600;
+            padding: .45rem .85rem;
+            transition: all .15s ease;
+        }
+        .ks-btn-primary:hover {
+            background: #162f73;
+            border-color: #162f73;
+        }
+
+        .ks-btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            background: #fff;
+            color: #241f1b;
+            border: 1px solid #dcdad2;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 500;
+            padding: .45rem .85rem;
+            transition: all .15s ease;
+        }
+        .dark .ks-btn-secondary {
+            background: #131519;
+            color: #f8fafc;
+            border-color: #222630;
+        }
+        .ks-btn-secondary:hover {
+            border-color: #1c3e96;
+            color: #1c3e96;
+        }
+    </style>
+
+    <div class="w-full max-w-2xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 pb-8 space-y-4">
+
+        {{-- ── En-tête Compact ── --}}
+        <div class="flex items-center gap-2.5 pb-1 border-b border-[#dcdad2] dark:border-[#222630]">
+            <a href="{{ route('employes.index') }}" class="ks-btn-secondary !p-1.5" title="Retour à la liste">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
             </a>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Gestion du personnel</p>
-                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Nouvel employé</h1>
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-[#1c3e96] dark:bg-[#60a5fa]"></span>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93]">
+                        Gestion du personnel · Nouveau Collaborateur
+                    </p>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[#241f1b] dark:text-[#f8fafc] mt-0.5">
+                    Ajouter un employé
+                </h1>
             </div>
         </div>
-        <p class="text-sm text-gray-500 dark:text-gray-400 ml-11">Renseignez les informations. Le compte de connexion pourra être généré ultérieurement.</p>
-    </div>
 
-    {{-- ── Erreurs ── --}}
-    @if($errors->any())
-    <div class="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-300">
-        <ul class="space-y-1 list-disc list-inside">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-    {{-- ── Formulaire ── --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <form action="{{ route('employes.store') }}" method="POST" class="p-6 space-y-6">
-            @csrf
-
-            {{-- Identité --}}
-            <div>
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Identité</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Nom <span class="text-red-500">*</span></label>
-                        <input type="text" name="nom" value="{{ old('nom') }}" required
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                        @error('nom') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Prénom <span class="text-red-500">*</span></label>
-                        <input type="text" name="prenom" value="{{ old('prenom') }}" required
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                        @error('prenom') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Email <span class="text-red-500">*</span></label>
-                        <input type="email" name="email" value="{{ old('email') }}" required
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                        @error('email') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Téléphone</label>
-                        <input type="text" name="telephone" value="{{ old('telephone') }}"
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Genre</label>
-                        <select name="genre" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                            <option value="">Sélectionner</option>
-                            <option value="Masculin" {{ old('genre') == 'Masculin' ? 'selected' : '' }}>Masculin</option>
-                            <option value="Féminin"  {{ old('genre') == 'Féminin'  ? 'selected' : '' }}>Féminin</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Date de naissance</label>
-                        <input type="date" name="date_naissance" value="{{ old('date_naissance') }}"
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                    </div>
-                </div>
+        {{-- ── Erreurs de validation ── --}}
+        @if($errors->any())
+            <div class="p-3 rounded-[10px] bg-[#fee2e2] dark:bg-[rgba(185,28,28,0.22)] border border-[#b91c1c]/30 text-[#b91c1c] dark:text-[#f87171] text-xs">
+                <p class="font-bold mb-1">Veuillez corriger les informations suivantes :</p>
+                <ul class="list-disc list-inside space-y-0.5 pl-2 opacity-90">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
+        @endif
 
-            <hr class="border-gray-100 dark:border-gray-700">
+        {{-- ── Formulaire Compact ── --}}
+        <div class="ks-sec overflow-hidden">
+            <form action="{{ route('employes.store') }}" method="POST" class="p-4 sm:p-5 space-y-4">
+                @csrf
 
-            {{-- Informations professionnelles --}}
-            <div>
-                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Informations professionnelles</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                   
+                {{-- Section 1 : Identité & Contact --}}
                 <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Site <span class="text-red-500">*</span></label>
-                        <select name="site_id" required
-                                class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                            <option value="">Sélectionner un site</option>
-                            @foreach($sites as $s)
-                                <option value="{{ $s->id }}" {{ old('site_id') == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('site_id') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-[#241f1b] dark:text-[#f8fafc] pb-2 border-b border-[#dcdad2]/60 dark:border-[#222630] mb-3">
+                        Identité & Coordonnées
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Nom <span class="text-[#b91c1c]">*</span></label>
+                            <input type="text" name="nom" value="{{ old('nom') }}" required
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                            @error('nom') <p class="mt-1 text-[10.5px] text-[#b91c1c]">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Prénom <span class="text-[#b91c1c]">*</span></label>
+                            <input type="text" name="prenom" value="{{ old('prenom') }}" required
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                            @error('prenom') <p class="mt-1 text-[10.5px] text-[#b91c1c]">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Email professionnel <span class="text-[#b91c1c]">*</span></label>
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                            @error('email') <p class="mt-1 text-[10.5px] text-[#b91c1c]">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Téléphone</label>
+                            <input type="text" name="telephone" value="{{ old('telephone') }}"
+                                   placeholder="06 12 34 56 78"
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Genre</label>
+                            <select name="genre" class="w-full h-8.5 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                                <option value="">Sélectionner</option>
+                                <option value="Masculin" {{ old('genre') == 'Masculin' ? 'selected' : '' }}>Masculin</option>
+                                <option value="Féminin"  {{ old('genre') == 'Féminin'  ? 'selected' : '' }}>Féminin</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Date de naissance</label>
+                            <input type="date" name="date_naissance" value="{{ old('date_naissance') }}"
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                        </div>
                     </div>
-                   <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Domaine <span class="text-red-500">*</span></label>
-                        <select name="domaine_id" required
-                                class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                            <option value="">Sélectionner un domaine</option>
-                            @foreach($domaines as $d)
-                                <option value="{{ $d->id }}" {{ old('domaine_id') == $d->id ? 'selected' : '' }}>{{ $d->nom }}</option>
-                            @endforeach
-                        </select>
-                        @error('domaine_id') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">Poste</label>
-                        <input type="text" name="poste" value="{{ old('poste') }}"
-                               placeholder="Ex : Développeur, Comptable…"
-                               class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                    </div>
-
                 </div>
-            </div>
 
-            {{-- Boutons --}}
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <a href="{{ route('employes.index') }}"
-                   class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                    Annuler
-                </a>
-                <button type="submit"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    Enregistrer
-                </button>
-            </div>
-        </form>
+                {{-- Section 2 : Affectation Professionnelle --}}
+                <div class="pt-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-[#241f1b] dark:text-[#f8fafc] pb-2 border-b border-[#dcdad2]/60 dark:border-[#222630] mb-3">
+                        Affectation en entreprise
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Domaine <span class="text-[#b91c1c]">*</span></label>
+                            <select name="domaine_id" required
+                                    class="w-full h-8.5 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                                <option value="">Sélectionner un domaine</option>
+                                @foreach($domaines as $d)
+                                    <option value="{{ $d->id }}" {{ old('domaine_id') == $d->id ? 'selected' : '' }}>{{ $d->nom }}</option>
+                                @endforeach
+                            </select>
+                            @error('domaine_id') <p class="mt-1 text-[10.5px] text-[#b91c1c]">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Site de travail <span class="text-[#b91c1c]">*</span></label>
+                            <select name="site_id" required
+                                    class="w-full h-8.5 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                                <option value="">Sélectionner un site</option>
+                                @foreach($sites as $s)
+                                    <option value="{{ $s->id }}" {{ old('site_id') == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('site_id') <p class="mt-1 text-[10.5px] text-[#b91c1c]">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6e6862] dark:text-[#a89f93] mb-1">Intitulé du poste</label>
+                            <input type="text" name="poste" value="{{ old('poste') }}"
+                                   placeholder="Ex : Développeur Web, Responsable Administratif, Technicien..."
+                                   class="w-full h-8.5 px-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-xs text-[#241f1b] dark:text-[#f8fafc] focus:outline-none focus:border-[#1c3e96]">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Boutons d'action --}}
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-[#dcdad2]/60 dark:border-[#222630]">
+                    <a href="{{ route('employes.index') }}" class="ks-btn-secondary">
+                        Annuler
+                    </a>
+                    <button type="submit" class="ks-btn-primary">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        <span>Enregistrer l'employé</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
     </div>
-</div>
 </x-app-layout>

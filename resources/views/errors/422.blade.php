@@ -19,7 +19,7 @@
         <div class="tfg-card" style="max-width: 440px;">
             <div class="tfg-card-header" style="background: linear-gradient(135deg, #92400e 0%, #b45309 100%);">
                 <div class="tfg-logo-ring" style="background: linear-gradient(135deg, #b45309, #d97706); box-shadow: 0 8px 24px rgba(217, 119, 6, 0.25);">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo TFG">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot" style="background: #fcd34d;"></span><span style="color: rgba(255,255,255,0.55);">Erreur de validation</span></span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

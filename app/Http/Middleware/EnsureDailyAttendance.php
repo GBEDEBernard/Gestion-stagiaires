@@ -27,8 +27,8 @@ class EnsureDailyAttendance
 
         $routeName = $request->route()?->getName() ?? '';
 
-        // Les routes du flux de pointage, impersonation et déconnexion restent accessibles.
-        if (Str::startsWith($routeName, 'presence.') || $routeName === 'logout' || $routeName === 'impersonate.leave') {
+        // Les routes du flux de pointage, profil (gestion appareil), impersonation et déconnexion restent accessibles.
+        if (Str::startsWith($routeName, 'presence.') || Str::startsWith($routeName, 'profile.') || $routeName === 'logout' || $routeName === 'impersonate.leave') {
             return $next($request);
         }
 

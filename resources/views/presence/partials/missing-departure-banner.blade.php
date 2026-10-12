@@ -23,14 +23,14 @@
                 </p>
             </div>
         </div>
-        <div class="shrink-0 flex gap-2">
+        <div class="shrink-0 flex items-center gap-2">
             <button type="button"
-                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-amber-900 font-semibold text-sm hover:bg-amber-50 transition"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-amber-900 font-semibold text-xs shadow-2xs hover:bg-amber-50 transition"
                 @click="openDeclaration">
                 Déclarer mon départ
             </button>
             <button type="button"
-                class="px-3 py-2 rounded-lg text-amber-900 font-medium text-sm hover:bg-white/20 transition"
+                class="px-2.5 py-1.5 rounded-md text-amber-900 font-medium text-xs hover:bg-white/20 transition"
                 @click="dismiss">
                 Masquer
             </button>

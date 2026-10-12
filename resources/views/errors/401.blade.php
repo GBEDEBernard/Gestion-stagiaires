@@ -19,7 +19,7 @@
         <div class="tfg-card" style="max-width: 440px;">
             <div class="tfg-card-header">
                 <div class="tfg-logo-ring">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo TFG">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot"></span><span style="color: rgba(255,255,255,0.55);">Authentification requise</span></span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

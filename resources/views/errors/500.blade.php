@@ -19,7 +19,7 @@
         <div class="tfg-card" style="max-width: 440px;">
             <div class="tfg-card-header" style="background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);">
                 <div class="tfg-logo-ring" style="background: linear-gradient(135deg, #6d28d9, #8b5cf6); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.25);">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo TFG">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot" style="background: #c4b5fd;"></span><span style="color: rgba(255,255,255,0.55);">Erreur serveur</span></span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

@@ -23,7 +23,7 @@
     <button @click="open = !open" 
             type="button" 
             title="Consulter les messages d'urgence"
-            class="group relative inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-[1.03] active:scale-95 transition-all duration-300 border border-red-400/40 ring-2 ring-red-500/20 cursor-pointer">
+            class="group relative inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-[1.03] active:scale-95 transition-all duration-300 border border-red-400/40 ring-2 ring-red-500/20 cursor-pointer shrink-0">
         
         {{-- Gyrophare animé pro --}}
         <div class="relative flex items-center justify-center shrink-0">
@@ -33,8 +33,8 @@
             <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
         </div>
 
-        {{-- Texte animé "Message d'urgence" avec Shimmer & Glow Pro --}}
-        <div class="flex items-center">
+        {{-- Texte animé "Message d'urgence" (masqué sur petit mobile pour préserver la navbar) --}}
+        <div class="hidden sm:flex items-center">
             <span class="urgent-text-animated text-[11px] sm:text-xs whitespace-nowrap">
                 Message d'urgence
             </span>

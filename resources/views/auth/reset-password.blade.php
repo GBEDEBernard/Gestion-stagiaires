@@ -5,7 +5,7 @@
         <div class="tfg-card">
             <div class="tfg-card-header">
                 <div class="tfg-logo-ring">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG Sarl">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo TFG Sarl">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot"></span>Espace sécurisé</span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

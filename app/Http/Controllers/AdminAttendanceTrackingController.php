@@ -568,28 +568,50 @@ protected function withExcusedOnlyOwners($grouped, string $relationKey, ?Carbon 
     public function userHistorique(Request $request, User $user)
     {
         $period = $request->get('period', 'month');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
 
         $etudiant = $user->etudiant;
         $ownerType = $etudiant ? 'etudiant' : 'user';
         $ownerId = $etudiant ? $etudiant->id : $user->id;
 
-        $userStats = app(\App\Services\AdminPresenceService::class)->getUserDetailedStats($user->id, $period);
+        $userStats = app(\App\Services\AdminPresenceService::class)->getUserDetailedStats($user->id, $period, $dateFrom, $dateTo);
 
-        $dateFrom = match ($period) {
-            'week' => now()->subWeek()->startOfWeek(),
-            'month' => now()->subMonth()->startOfMonth(),
-            'year' => now()->subYear()->startOfYear(),
-            default => now()->subWeek()
-        };
+        if ($dateFrom || $dateTo) {
+            $startDate = $dateFrom ? Carbon::parse($dateFrom) : now()->startOfMonth();
+            $endDate = $dateTo ? Carbon::parse($dateTo) : now()->endOfMonth();
+        } else {
+            switch ($period) {
+                case 'today':
+                    $startDate = today();
+                    $endDate = today();
+                    break;
+                case 'week':
+                    $startDate = now()->startOfWeek();
+                    $endDate = now()->endOfWeek();
+                    break;
+                case 'month':
+                    $startDate = now()->startOfMonth();
+                    $endDate = now()->endOfMonth();
+                    break;
+                case 'year':
+                    $startDate = now()->startOfYear();
+                    $endDate = now()->endOfYear();
+                    break;
+                default:
+                    $startDate = now()->subWeek();
+                    $endDate = now();
+            }
+        }
 
         $filters = [
-            'date_from' => $dateFrom->format('Y-m-d'),
-            'date_to' => now()->format('Y-m-d'),
+            'date_from' => $startDate->format('Y-m-d'),
+            'date_to' => $endDate->format('Y-m-d'),
             $etudiant ? 'etudiant_id' : 'user_id' => $ownerId,
         ];
 
         $attendanceDaysQuery = app(\App\Services\AdminPresenceService::class)->listAttendanceDays($filters, 100)
-            ->with(['stage.site', 'anomalies', 'dailyReports', 'checkInEvent.geofence.site']);
+            ->with(['stage.site', 'anomalies', 'dailyReports', 'checkInEvent.geofence.site', 'lateAnomaly']);
 
         $attendanceDays = $attendanceDaysQuery->get();
 
@@ -607,12 +629,12 @@ protected function withExcusedOnlyOwners($grouped, string $relationKey, ?Carbon 
 
         // ── Jours déjà corrigés (exceptions) ───────────────────────────────────
         $exceptions = AttendanceException::where('user_id', $user->id)
-            ->whereBetween('attendance_date', [$dateFrom->format('Y-m-d'), now()->format('Y-m-d')])
+            ->whereBetween('attendance_date', [$startDate->copy()->subDay()->toDateString(), $endDate->toDateString()])
             ->with('creator')
             ->orderByDesc('attendance_date')
             ->get();
 
-        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user', 'absenceDates', 'exceptions'));
+        return view('presence.historique', compact('attendanceDays', 'period', 'userStats', 'user', 'absenceDates', 'exceptions', 'dateFrom', 'dateTo'));
     }
 
     /**

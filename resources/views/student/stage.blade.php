@@ -1,643 +1,501 @@
 <x-app-layout>
-    @php $user = auth()->user(); @endphp
+    @php
+        $user = auth()->user();
+        $prenom = $user?->personnel?->prenom ?: ($user?->prenom ?: explode(' ', trim($user?->name ?? 'Stagiaire'))[0]);
+        $initiales = strtoupper(substr(preg_replace('/\s+/', '', $user?->name ?? 'ST'), 0, 2));
+        $heure = now()->hour;
+        $salut = $heure < 18 ? 'Bonjour' : 'Bonsoir';
+        $hasIn = (bool) $attendanceDay?->first_check_in_at;
+        $hasOut = (bool) $attendanceDay?->last_check_out_at;
+        $hasRep = in_array($todayReport?->status ?? null, ['submitted','reviewed','approved'], true);
+        if (!$hasIn) { $nextTitre = 'Pointe ton arrivée pour démarrer ta journée'; $nextCta = 'Pointer mon arrivée'; $nextRoute = route('presence.pointage'); $nextSecond = null; }
+        elseif (!$hasRep) { $nextTitre = 'Ta présence est ok — il reste ton rapport du jour'; $nextCta = 'Remplir mon rapport'; $nextRoute = route('tasks.index'); $nextSecond = ['Pointer mon départ', route('presence.pointage')]; }
+        elseif (!$hasOut) { $nextTitre = 'Rapport envoyé — pense à pointer ton départ'; $nextCta = 'Pointer mon départ'; $nextRoute = route('presence.pointage'); $nextSecond = null; }
+        else { $nextTitre = 'Journée terminée, à demain'; $nextCta = 'Voir mon historique'; $nextRoute = route('presence.historique'); $nextSecond = null; }
+        $ringR = 26; $ringC = 2 * pi() * $ringR; $ringOff = $ringC * (1 - ($progressionStage ?? 0) / 100);
+        $tasksOpen = $tasks->where('status', '!=', 'completed');
+        $tasksDone = $tasks->where('status', 'completed');
+    @endphp
     <style>
-        @keyframes clignote {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.02); }
+        /* Page en #fffffe (remplace le bg-gray-50 #f9fafb du layout, uniquement sur mon-stage) */
+        body{background:#f1f0ed!important;}
+        .dark body{background:#1f232d!important;}
+        header{background-color:transparent!important;border-bottom:none!important;border-color:transparent!important;box-shadow:none!important;}
+        .dark header{background-color:#131519!important;border-bottom:none!important;border-color:transparent!important;box-shadow:none!important;}
+        .dark header button.rounded-lg, .dark header button.rounded-xl{background-color:#1f232d!important;}
+        .stage-shell{overflow-x:hidden;width:100%;}
+        .ks-shell{background:transparent;border:0;border-radius:0;overflow:visible;}
+        .dark .ks-shell{background:transparent;border:0;}
+        .ks-pad{padding:0 0 1.5rem;}
+        :root{--ks-ink:#241f1b;--ks-blue:#1c3e96;--ks-blue-dark:#162f73;--ks-line:#bfbab2;--ks-muted:#6e6862;--ks-card:#fffefa;--ks-card-bd:#dcdad2;--ks-green:#15803d;--ks-green-bg:#dcfce7;--ks-red:#b91c1c;--ks-red-bg:#fee2e2;--ks-yellow:#b45309;--ks-yellow-bg:#fef3c7;}
+        .ks-label{font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6e6862;}
+        .dark .ks-label{color:#a89f93;}
+        .ks-hero{background:#faf9f6;border:1px solid #bfbab2;border-left:4px solid #1c3e96;border-radius:6px;padding:1rem 1.1rem;}
+        .dark .ks-hero{background:#131519;border-color:#222630;border-left-color:#1c3e96;}
+        .ks-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;background:#1c3e96;color:#fff;border:1px solid #1c3e96;border-radius:6px;font-size:.9rem;font-weight:600;padding:.8rem 1.2rem;min-height:44px;transition:background-color .15s ease,transform .1s ease;}
+        .ks-btn-primary:hover{background:#162f73;border-color:#162f73;}
+        .ks-btn-primary:active{transform:scale(.98);}
+        .ks-btn-primary:focus-visible,.ks-btn-secondary:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid #1c3e96;outline-offset:2px;}
+        .ks-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;background:#fff;color:#241f1b;border:1px solid #bfbab2;border-radius:6px;font-size:.9rem;font-weight:500;padding:.8rem 1.2rem;min-height:44px;transition:all .15s ease;}
+        .dark .ks-btn-secondary{background:#131519;color:#fff;border-color:#222630;}
+        .ks-btn-secondary:hover{border-color:#1c3e96;color:#1c3e96;}
+        /* Boutons compacts inline (timeline, lignes) — pas les gros CTA */
+        .ks-btn-xs{min-height:30px!important;padding:.3rem .7rem!important;font-size:.74rem!important;font-weight:600;border-radius:5px!important;flex:none;white-space:nowrap;}
+        /* Bordures #dcdad2, radius 12px */
+        .ks-stat-card{border:1px solid #dcdad2;border-radius:10px;background-color:#fffefa;transition:transform .2s ease,box-shadow .2s ease;}
+        .dark .ks-stat-card{background:#131519!important;border:1px solid #222630!important;border-color:#222630!important;}
+        .ks-stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06);}
+        .ks-stat-icon{width:32px;height:32px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;flex:none;background-color:var(--ks-stat-icon-bg,#eef1fb);color:var(--ks-stat-icon-color,#1c3e96);}
+        .ks-stat-icon svg{width:16px;height:16px;stroke-width:1.75;}
+        .ks-stat-card--green{--ks-stat-accent:#16804a;--ks-stat-icon-bg:#ecfdf5;--ks-stat-icon-color:#15803d;}
+        .ks-stat-card--blue{--ks-stat-accent:#1c3e96;--ks-stat-icon-bg:#eef1fb;--ks-stat-icon-color:#1c3e96;}
+        .ks-stat-card--amber{--ks-stat-accent:#b45309;--ks-stat-icon-bg:#fffbeb;--ks-stat-icon-color:#b45309;}
+        .ks-stat-card--red{--ks-stat-accent:#b91c1c;--ks-stat-icon-bg:#fff1f2;--ks-stat-icon-color:#b91c1c;}
+        .ks-stat-card--indigo{--ks-stat-accent:#4338ca;--ks-stat-icon-bg:#eef2ff;--ks-stat-icon-color:#4338ca;}
+        .ks-stat-card--violet{--ks-stat-accent:#7e22ce;--ks-stat-icon-bg:#faf5ff;--ks-stat-icon-color:#7e22ce;}
+        .ks-stat-footer{border-top:0!important;}
+        .ks-stat-change{border-radius:4px;font-size:.72rem;font-weight:600;display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .45rem;}
+        .ks-stat-change--positive{color:#166534;background-color:#dcfce7;}
+        .ks-stat-change--negative{color:#b91c1c;background-color:#fee2e2;}
+        .ks-stat-change--neutral{color:#475569;background-color:#f1f5f9;}
+        .ks-num{font-variant-numeric:tabular-nums;}
+        .ks-sec{background:#fffefa;border:1px solid #dcdad2;border-radius:10px;box-shadow:0 1px 2px rgba(36,31,27,.05),0 8px 24px -16px rgba(36,31,27,.12);transition:border-color .15s ease,box-shadow .18s ease-out;}
+        .dark .ks-sec{background:#131519!important;border:1px solid #222630!important;border-color:#222630!important;box-shadow:none;}
+        .ks-sec-head{padding:.8rem 1rem;border-bottom:1px solid #dcdad2;display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+        .dark .ks-sec-head{border-bottom:1px solid #222630!important;border-color:#222630!important;}
+        .ks-row{display:flex;align-items:center;gap:.75rem;padding:.8rem 1rem;border-bottom:1px solid #ecebe3;min-height:56px;color:inherit;text-decoration:none;transition:background-color .12s ease,transform .12s ease;}
+        .dark .ks-row{border-color:#222630!important;}
+        .ks-row:last-child{border-bottom:0;}
+        .ks-row:hover{background:#faf9f6;}
+        .dark .ks-row:hover{background:#262a30;}
+        .ks-row:active{transform:scale(.995);}
+        .ks-hero h1{letter-spacing:-.02em;}
+        /* C. Entrée premium : fade-up léger en cascade */
+        @keyframes ks-rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        .ks-rise{animation:ks-rise .45s cubic-bezier(.2,.8,.2,1) both;}
+        @media(prefers-reduced-motion:reduce){.ks-rise{animation:none;}}
+        .ks-track{background:#ecebe3;border-radius:999px;overflow:hidden;}
+        .dark .ks-track{background:#262a30;}
+        /* Ma journée : posée à même le main, pas de carte dans une carte */
+        .ks-day{margin:0;padding:.2rem 0 0;}
+        .ks-day-head{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;flex-wrap:wrap;padding:.1rem 0 .5rem;}
+        .ks-tl{position:relative;list-style:none;margin:0;padding:0;}
+        .ks-tl::before{content:"";position:absolute;left:15px;top:12px;bottom:12px;width:2px;background:#bfbab2;border-radius:2px;opacity:.55;}
+        .dark .ks-tl::before{background:#222630!important;}
+        .ks-step{position:relative;display:flex;gap:.7rem;padding:.55rem 0;align-items:flex-start;}
+        .ks-bullet{position:relative;z-index:1;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:#fffefa;border:1px solid #dcdad2;color:#6e6862;font-size:.85rem;}
+        .dark .ks-bullet{background:#131519!important;border:1px solid #222630!important;}
+        .ks-step.done .ks-bullet{background:#dcfce7;border-color:#15803d;color:#15803d;}
+        .ks-step.now .ks-bullet{background:#1c3e96;border-color:#1c3e96;color:#fff;box-shadow:0 0 0 4px rgba(28,62,150,.14);}
+        .ks-step.todo .ks-bullet{background:#fffefa;border-style:dashed;}
+        .ks-step-body{min-width:0;flex:1;}
+        @media(max-width:480px){
+            .ks-tl::before{left:13px;}
+            .ks-bullet{width:28px;height:28px;font-size:.75rem;}
+            .ks-step{gap:.6rem;padding:.5rem 0;}
+            .ks-step-body p{overflow-wrap:anywhere;}
         }
-        .btn-modifier {
-            animation: clignote 1.2s ease-in-out infinite;
+        details.ks-details summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.8rem 1rem;font-size:.82rem;font-weight:600;color:#57544f;min-height:44px;}
+        details.ks-details summary::-webkit-details-marker{display:none;}
+        details.ks-details summary:hover{color:#0f0e0d;}
+        .ks-sticky{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,254,.92);backdrop-filter:blur(12px);border-top:1px solid #e3e0da;padding:.6rem .9rem calc(.6rem + env(safe-area-inset-bottom));display:flex;gap:.6rem;}
+        .dark .ks-sticky{background:rgba(36,31,27,.92);border-color:#222630!important;}
+        @media(min-width:1024px){.ks-sticky{display:none;}}
+        .stage-shell{overflow-x:clip;} .stage-shell *{min-width:0;}
+        @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+        /* ——— Dark Hope UI / Kaisss : textes froids, lisibilité totale ——— */
+        .dark .text-gray-400,.dark .text-gray-500,.dark .text-slate-400{color:#9aa0a6!important;}
+        .dark h1,.dark h2,.dark h3{color:#f8fafc!important;}
+        .dark .ks-label{color:#a89f93!important;}
+
+        /* Rendre visible les classes Bootstrap utilisées dans les cartes */
+        .dark .text-dark{color:#f8fafc!important;}
+        .dark .text-secondary{color:#94a3b8!important;}
+        .dark .text-muted{color:#94a3b8!important;}
+
+        /* Rendre visible les textes de couleurs en dur du thème */
+        .dark .text-\[\#241f1b\]{color:#f8fafc!important;}
+        .dark .text-\[\#6e6862\]{color:#94a3b8!important;}
+        .dark .text-\[\#1c3e96\]{color:#60a5fa!important;}
+        .dark .text-\[\#57544f\]{color:#cbd5e1!important;}
+
+        /* KPI cards en dark mode */
+        .dark .ks-stat-card--green{--ks-stat-icon-bg:rgba(22,128,74,0.22);--ks-stat-icon-color:#4ade80;}
+        .dark .ks-stat-card--blue{--ks-stat-icon-bg:rgba(28,62,150,0.25);--ks-stat-icon-color:#60a5fa;}
+        .dark .ks-stat-card--amber{--ks-stat-icon-bg:rgba(180,83,9,0.22);--ks-stat-icon-color:#fbbf24;}
+        .dark .ks-stat-card--red{--ks-stat-icon-bg:rgba(185,28,28,0.22);--ks-stat-icon-color:#f87171;}
+        .dark .ks-stat-card--indigo{--ks-stat-icon-bg:rgba(67,56,202,0.25);--ks-stat-icon-color:#818cf8;}
+        .dark .ks-stat-card--violet{--ks-stat-icon-bg:rgba(126,34,206,0.25);--ks-stat-icon-color:#c084fc;}
+
+        .dark .ks-stat-change--positive{color:#4ade80!important;background-color:rgba(22,128,74,0.25)!important;}
+        .dark .ks-stat-change--negative{color:#f87171!important;background-color:rgba(185,28,28,0.25)!important;}
+        .dark .ks-stat-change--neutral{color:#cbd5e1!important;background-color:#262a30!important;}
+        .dark .ks-eyebrow{background:#262a30!important;color:#d9d2c8!important;}
+
+        .dark .ks-stat-card--violet .ks-num{color:#c084fc!important;}
+        .dark .ks-stat-card--violet .text-uppercase{color:#c084fc!important;}
+        .dark .ks-stat-card--violet .ks-stat-change{background:rgba(126,34,206,0.2)!important;color:#c8a2f0!important;}
+        .dark .ks-stat-card--indigo .badge{background:rgba(218,107,64,0.2)!important;color:#fb923c!important;}
+        .dark .ks-stat-card--indigo .ks-stat-icon{background-color:rgba(218,107,64,0.2)!important;color:#fb923c!important;}
+
+        /* Cartes de tâches en dark mode */
+        .dark .group.rounded-md{background-color:#15181f!important;border:1px solid #222630!important;border-color:#222630!important;}
+        .dark .ks-track{background:#262a30!important;}
+        .dark .bg-\[\#1c3e96\]{background-color:#3b82f6!important;}
+        .dark .bg-\[\#eef1fb\]{background-color:rgba(59,130,246,0.2)!important;color:#93c5fd!important;}
+        .dark .bg-\[\#faf9f6\]{background-color:#181c24!important;}
+
+        /* ——— Remplacement strict de toutes les bordures claires en mode dark ——— */
+        .dark .border,
+        .dark .border-t,
+        .dark .border-b,
+        .dark [class*="border-[#dcdad2]"],
+        .dark [class*="border-[#ecebe3]"],
+        .dark [class*="border-[#bfbab2]"],
+        .dark [class*="border-[#d8d4cc]"],
+        .dark [class*="border-[#a7f3d0]"],
+        .dark .border-\[\#ecebe3\],
+        .dark .border-\[\#dcdad2\],
+        .dark .border-\[\#bfbab2\],
+        .dark .border-\[\#d8d4cc\],
+        .dark .border-\[\#a7f3d0\]{
+            border-color:#222630!important;
         }
-        .btn-modifier:hover {
-            animation: none;
-            opacity: 1;
-            transform: scale(1.05);
+        .dark [class*="border-dashed"]{
+            border-color:#282f3d!important;
         }
-        .stage-shell {
-            overflow-x: hidden;
-        }
-        .stage-shell * {
-            min-width: 0;
-        }
-        @media (max-width: 640px) {
-            .stage-mobile-card {
-                padding: 1rem;
-            }
-            .stage-mobile-meta {
-                grid-template-columns: 1fr;
-            }
-        }
+
+        /* Cadre du stage en dark mode */
+        .dark [aria-label="Cadre du stage"] p.font-semibold{color:#f8fafc!important;}
+        .dark [aria-label="Cadre du stage"] .bg-\[\#ecfdf5\]{background-color:rgba(34,197,94,0.2)!important;color:#4ade80!important;}
+        .dark [aria-label="Cadre du stage"] .bg-\[\#fef3c7\]{background-color:rgba(245,158,11,0.2)!important;color:#fbbf24!important;}
+        .dark [aria-label="Cadre du stage"] .bg-\[\#f1f5f9\]{background-color:rgba(148,163,184,0.2)!important;color:#cbd5e1!important;}
+        .dark [aria-label="Cadre du stage"] [x-text]{color:#f8fafc!important;}
+        .dark [aria-label="Cadre du stage"] input{background-color:#15181f!important;border-color:#222630!important;color:#f8fafc!important;}
+
+        /* Rapport final & parcours en dark mode */
+        .dark [aria-label="Rapport final"] label{background-color:#15181f!important;border-color:#282f3d!important;color:#94a3b8!important;}
+        .dark [aria-label="Mon parcours"] li span.font-semibold{color:#f8fafc!important;}
+        .dark [aria-label="Mon parcours"] li span.text-gray-400{color:#94a3b8!important;}
+
+        /* Scrollbars + sélection teintées primaire */
+        *{scrollbar-width:thin;scrollbar-color:rgba(28,62,150,.45) transparent;}
+        ::-webkit-scrollbar{width:10px;height:10px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background-color:rgba(28,62,150,.45);border-radius:10px;border:2px solid transparent;background-clip:content-box;}
+        ::-webkit-scrollbar-thumb:hover{background-color:rgba(28,62,150,.75);}
+        ::selection{background:rgba(28,62,150,.25);}
     </style>
 
-    <div class="max-w-7xl mx-auto space-y-6 px-3 sm:px-4 lg:px-0 overflow-x-hidden stage-shell">
-        
-        <!-- En-tête / Banner Premium -->
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 px-6 sm:px-8 py-8 sm:py-10 text-white shadow-xl ring-1 ring-white/10">
-            <!-- Éléments décoratifs -->
-            <div class="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-white/5 blur-3xl"></div>
-            <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"></div>
-            
-            <div class="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                <div class="max-w-3xl">
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-200/90">Espace stagiaire</p>
-                    <h1 class="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight">Mon stage</h1>
-                    <p class="mt-2 max-w-2xl text-sm text-indigo-100/80">
-                        Une vue claire pour suivre ma présence, mes tâches du jour et l'état du rapport sans passer par tout le back-office.
-                    </p>
-                </div>
+    <div class="w-full stage-shell">
+        <span class="sr-only">Mon stage - Tâches du stage</span>
+        <div class="ks-shell"><div class="ks-pad space-y-4">
 
-                <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('presence.pointage') }}" class="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-indigo-900/20 hover:bg-slate-100 transition-all">
-                        Pointer ma présence
-                    </a>
-                    <a href="{{ route('tasks.index') }}" class="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/20 transition-all">
-                        Ouvrir le rapport du jour
-                    </a>
-                </div>
+        @if(!$activeStage)
+            <div class="ks-sec p-5 text-center">
+                <p class="font-semibold text-gray-900 dark:text-white">Aucun stage actif</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Rattaché à aucun stage aujourd'hui — vois avec l'administration.</p>
             </div>
-        </div>
-
-        @if (! $activeStage)
-        <div class="rounded-2xl border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/40 p-5 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/60 shadow-sm">
-            <p class="font-bold text-base">Aucun stage actif</p>
-            <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">Aucun stage actif n'est rattaché à ton compte pour aujourd'hui. Vérifie avec l'administration.</p>
-        </div>
         @else
+        @php
+            $stMap = ['late'=>['En retard','#b45309'],'present'=>['Présent','#15803d'],'absent'=>['Absent','#b91c1c'],'incomplete'=>['Incomplet','#b45309'],'pending'=>['En attente','#1b38a7'],'completed'=>['Terminé','#15803d']];
+            $stKey = $attendanceDay?->day_status; $stLib = $stMap[$stKey][0] ?? ($stKey ? ucfirst($stKey) : 'Non pointé'); $stCol = $stMap[$stKey][1] ?? '#57544f';
+            if($etudiant->user_id ?? auth()->id()){
+                if(\App\Models\AttendanceException::where('user_id', $etudiant->user_id ?? auth()->id())->whereDate('attendance_date', today())->exists()){ $stLib='Jour permissionné'; $stCol='#0e7490'; }
+            }
+            $repMap = ['submitted'=>'Soumis','reviewed'=>'Validé','approved'=>'Approuvé','draft'=>'Brouillon','pending'=>'En attente','rejected'=>'Rejeté'];
+            $repLib = $repMap[$todayReport?->status ?? ''] ?? ($todayReport?->status ? ucfirst($todayReport->status) : 'En attente');
+        @endphp
         @if(session('success'))
-        <div class="rounded-2xl border-l-4 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
-            {{ session('success') }}
-        </div>
+            <div role="status" class="rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-200 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
         @endif
 
-        <!-- Grille 1 : Informations générales -->
-        <div class="grid gap-6 lg:grid-cols-4">
-            <!-- Carte 1 : Thème, Site & Superviseur -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 lg:col-span-2 stage-mobile-card min-w-0"
-                 x-data="{ editing: false, theme: @js($activeStage->theme ?? '') }">
-                <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-700/80 pb-4">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Thème du stage</p>
-                    <button @click="editing = true" x-show="!editing" class="btn-modifier inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-all">
-                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
-                        Modifier le thème
-                    </button>
-                </div>
-                
-                <template x-if="!editing">
-                    <h2 class="mt-4 text-xl font-bold text-slate-900 dark:text-white leading-snug break-words overflow-hidden" x-text="theme || 'Stage sans thème'"></h2>
-                </template>
-                
-                <template x-if="editing">
-                    <form method="POST" action="{{ route('student.theme.update') }}" class="mt-4">
-                        @csrf
-                        @method('PUT')
-                        <div class="flex flex-col gap-3">
-                            <input type="text" name="theme" x-model="theme"
-                                class="w-full rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-base font-medium text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow"
-                                placeholder="Ex: Développement web, marketing digital...">
-                            <div class="flex gap-2">
-                                <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors">
-                                    Enregistrer
-                                </button>
-                                <button type="button" @click="editing = false; theme = @js($activeStage->theme ?? '')"
-                                    class="rounded-xl border border-slate-200 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
-                                    Annuler
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </template>
-
-                <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-xl bg-slate-50 dark:bg-gray-900/60 p-4 border border-slate-100 dark:border-gray-700/60">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-400">Site d'affectation</p>
-                        <p class="mt-1.5 text-sm font-bold text-slate-900 dark:text-white truncate">{{ $activeStage->site?->name ?: 'Site non défini' }}</p>
-                        <p class="text-xs text-slate-500 dark:text-gray-400 truncate">{{ $activeStage->site?->city ?: 'Ville non définie' }}</p>
-                    </div>
-                    <div class="rounded-xl bg-slate-50 dark:bg-gray-900/60 p-4 border border-slate-100 dark:border-gray-700/60">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-400">Superviseur</p>
-                        <p class="mt-1.5 text-sm font-bold text-slate-900 dark:text-white truncate">{{ $activeStage->supervisor?->name ?: 'Aucun superviseur' }}</p>
-                        <p class="text-xs text-slate-500 dark:text-gray-400 truncate">{{ $activeStage->supervisor?->email ?: 'Email non défini' }}</p>
-                    </div>
-                </div>
+        <div x-data="{ editing:false, theme:@js($activeStage->theme ?? '') }">
+            {{-- 1. Actions à droite --}}
+            <div class="ks-rise flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full" style="animation-delay:.03s">
+                <a href="{{ $nextRoute }}" class="ks-btn-primary ks-btn-xs !text-[13px] !px-4 !py-2 shrink-0 whitespace-nowrap">{{ $nextCta }}</a>
+                @if($nextSecond)<a href="{{ $nextSecond[1] }}" class="ks-btn-secondary ks-btn-xs !text-[13px] !px-4 !py-2 shrink-0 whitespace-nowrap">{{ $nextSecond[0] }}</a>@endif
             </div>
 
-            <!-- Carte 2 : Présence du jour -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between stage-mobile-card min-w-0">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Présence du jour</p>
-                    @php
-                        $statusMap = [
-                            'late' => ['En retard', 'text-amber-600 dark:text-amber-400'],
-                            'present' => ['Présent', 'text-emerald-600 dark:text-emerald-400'],
-                            'absent' => ['Absent', 'text-rose-600 dark:text-rose-400'],
-                            'incomplete' => ['Incomplet', 'text-amber-600 dark:text-amber-400'],
-                            'pending' => ['En attente', 'text-blue-600 dark:text-blue-400'],
-                            'completed' => ['Terminé', 'text-emerald-600 dark:text-emerald-400'],
-                        ];
-                        $statusKey = $attendanceDay?->day_status;
-                        $statusInfo = $statusMap[$statusKey] ?? [$statusKey ? ucfirst($statusKey) : 'Non pointé', 'text-slate-700 dark:text-gray-300'];
-                    @endphp
-                    @php
-                        // Si aucune journée pointée mais des exceptions (permissions) ce jour-là, afficher un état "Permission"
-                        $today = today();
-                        $userId = $etudiant->user_id ?? auth()->id();
-                        $hasPermissionToday = false;
-                        if ($userId) {
-                            $hasPermissionToday = \App\Models\AttendanceException::where('user_id', $userId)
-                                ->whereDate('attendance_date', $today)
-                                ->exists();
-                        }
-                        if ($hasPermissionToday) {
-                            $statusInfo = ['Jour permissionné', 'text-sky-600 dark:text-sky-400'];
-                        }
-                    @endphp
-                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $statusInfo[1] }} break-words">{{ $statusInfo[0] }}</p>
-                    <div class="mt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-                        <div>
-                            <span class="block text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-gray-500">Arrivée</span>
-                            <span class="font-bold text-slate-800 dark:text-gray-200">{{ $attendanceDay?->first_check_in_at?->format('H:i') ?: '--:--' }}</span>
+            {{-- 2. STRIP KPI façon MRR Kaisss : même bordure 1px #eaedf2 + graphe sparkline --}}
+            @php
+                $spark = function(array $raw, string $accent) {
+                    $data = array_values(array_map('floatval', $raw));
+                    if (count($data) < 2) { $data = array_pad($data, 5, $data[0] ?? 0); }
+                    $max = max($data); $min = min($data); $range = ($max - $min) > 0 ? ($max - $min) : 1;
+                    $n = count($data); $pts = [];
+                    foreach ($data as $i => $v) {
+                        $x = round(($i / ($n - 1)) * 100, 2);
+                        $y = round(30 - (($v - $min) / $range) * 24 + 3, 2);
+                        $pts[] = "$x,$y";
+                    }
+                    $line = 'M' . implode(' L', $pts);
+                    return ['line' => $line, 'area' => $line . ' L100,36 L0,36 Z', 'accent' => $accent];
+                };
+                $jp = $joursPresentSemaine ?? 0;
+                $spPresence = $spark([max(0,$jp-2), max(0,$jp-1), max(0,$jp-0.5), $jp, $jp], '#16804a');
+                $cr = $todayReport?->completion_rate ?? 0;
+                $spRapport = $spark([0, $cr*0.3, $cr*0.6, $cr, $cr], '#1c3e96');
+                $pg = $progressionStage ?? 0;
+                $spStage = $spark([max(0,$pg-15), max(0,$pg-10), max(0,$pg-5), $pg, $pg], '#1c3e96');
+                $accPresence = ($attendanceDay?->day_status === 'absent') ? 'red' : ($hasIn ? 'green' : 'amber');
+                $chgPresence = ($attendanceDay?->day_status === 'absent') ? 'Absent' : (($joursPresentSemaine ?? 0) . '/' . ($joursTrackesSemaine ?? 0) . ' sem.');
+                $typePresence = ($attendanceDay?->day_status === 'absent') ? 'negative' : ($hasIn ? 'positive' : 'neutral');
+                $accRapport = in_array($todayReport?->status ?? null, ['reviewed','approved']) ? 'green' : (($todayReport?->status === 'rejected') ? 'red' : (($todayReport?->status === 'submitted') ? 'blue' : 'amber'));
+                $typeRapport = in_array($todayReport?->status ?? null, ['reviewed','approved','submitted']) ? 'positive' : (($todayReport?->status === 'rejected') ? 'negative' : 'neutral');
+            @endphp
+            {{-- 2. STRIP KPI : 4 cartes — Site et Superviseur ont chacun la leur, plus rien de coincé --}}
+            <section aria-label="État du jour" class="ks-rise mt-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3" style="animation-delay:.06s">
+                <div class="ks-stat-card ks-stat-card--{{ $accPresence }} border shadow-none h-100">
+                    <div class="p-3 flex flex-col justify-between h-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-secondary font-semibold truncate" style="font-size:.8125rem;">Présence</span>
+                            <span class="ks-stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg></span>
                         </div>
-                        <div>
-                            <span class="block text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-gray-500">Départ</span>
-                            <span class="font-bold text-slate-800 dark:text-gray-200">{{ $attendanceDay?->last_check_out_at?->format('H:i') ?: '--:--' }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-5 border-t border-slate-100 dark:border-gray-700/80 pt-4">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Présence semaine</span>
-                        <span class="font-bold text-slate-800 dark:text-gray-200">{{ $presenceSemaine }}%</span>
-                    </div>
-                    <div class="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-gray-700 overflow-hidden">
-                        <div class="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-700" style="width: {{ $presenceSemaine }}%"></div>
-                    </div>
-                    <p class="mt-1.5 text-[11px] text-slate-500 dark:text-gray-400">{{ $joursPresentSemaine }} jour(s) pointé(s) sur {{ $joursTrackesSemaine }}</p>
-                </div>
-            </div>
-
-            <!-- Carte 3 : Rapport du jour -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 flex flex-col justify-between stage-mobile-card min-w-0">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Rapport du jour</p>
-                    @php
-                        $reportStatusMap = [
-                            'submitted' => ['Soumis', 'text-blue-600 dark:text-blue-400'],
-                            'reviewed' => ['Validé', 'text-emerald-600 dark:text-emerald-400'],
-                            'approved' => ['Approuvé', 'text-emerald-600 dark:text-emerald-400'],
-                            'draft' => ['Brouillon', 'text-slate-600 dark:text-gray-300'],
-                            'pending' => ['En attente', 'text-amber-600 dark:text-amber-400'],
-                            'rejected' => ['Rejeté', 'text-rose-600 dark:text-rose-400'],
-                        ];
-                        $todayReportStatus = $todayReport?->status ? ($reportStatusMap[$todayReport->status] ?? [ucfirst($todayReport->status), 'text-slate-800 dark:text-gray-200']) : ['En attente', 'text-amber-600 dark:text-amber-400'];
-                    @endphp
-                    <p class="mt-2 text-2xl sm:text-3xl font-extrabold {{ $todayReportStatus[1] }} break-words">{{ $todayReportStatus[0] }}</p>
-                    <div class="mt-4 space-y-2 text-xs text-slate-500 dark:text-gray-400">
-                        <div class="flex justify-between">
-                            <span>Dernière mise à jour :</span>
-                            <span class="font-bold text-slate-800 dark:text-gray-200">{{ $todayReport?->updated_at?->format('d/m/Y H:i') ?: 'Aucune' }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Progression déclarée :</span>
-                            <span class="font-bold text-slate-800 dark:text-gray-200">{{ $todayReport?->completion_rate ?? 0 }}%</span>
+                        <div class="my-1 flex items-baseline gap-1"><span class="font-bold text-dark ks-num" style="font-size:1.45rem;line-height:1.15;white-space:nowrap;">{{ $attendanceDay?->first_check_in_at?->format('H:i') ?: '--:--' }}</span><span class="font-semibold text-muted text-uppercase" style="font-size:.775rem;">→ {{ $attendanceDay?->last_check_out_at?->format('H:i') ?: '--:--' }} · {{ $stLib }}</span></div>
+                        <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                            <span class="badge ks-stat-change ks-stat-change--{{ $typePresence }}">{{ $chgPresence }}</span>
+                            <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true"><path d="{{ $spPresence['area'] }}" fill="{{ $spPresence['accent'] }}" opacity="0.12"/><path d="{{ $spPresence['line'] }}" fill="none" stroke="{{ $spPresence['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-5 border-t border-slate-100 dark:border-gray-700/80 pt-4">
-                    <a href="{{ route('tasks.index') }}" class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors">
-                        Consulter mon rapport
-                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Grille 2 : Tâches & Cadre -->
-        <div class="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-            
-            <!-- Section Tâches du stage -->
-            <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-gray-700/80 pb-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Tâches du stage</h2>
-                        <p class="text-xs text-slate-500 dark:text-gray-400">Suivi rapide de ce qui est en cours et de ce qui est déjà bouclé.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-600/20">
-                            <svg class="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            {{ $completedTasksCount }} terminée(s)
-                        </span>
-                        <span class="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20">
-                            <svg class="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            {{ $openTasksCount }} à suivre
-                        </span>
+                <div class="ks-stat-card ks-stat-card--violet border shadow-none h-100">
+                    <div class="p-3 flex flex-col justify-between h-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-secondary font-semibold truncate" style="font-size:.8125rem;">Rapport</span>
+                            <span class="ks-stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg></span>
+                        </div>
+                        <div class="my-1 flex items-baseline gap-1"><span class="font-bold ks-num" style="font-size:1.45rem;line-height:1.15;color:#7e22ce;">{{ $todayReport?->completion_rate ?? 0 }}%</span><span class="font-semibold text-uppercase" style="font-size:.775rem;color:#7e22ce;">{{ $repLib }}</span></div>
+                        <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                            <span class="badge ks-stat-change" style="background:#faf5ff;color:#7e22ce;">maj {{ $todayReport?->updated_at?->format('H:i') ?: '—' }}</span>
+                            <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true"><path d="{{ $spRapport['area'] }}" fill="#7e22ce" opacity="0.12"/><path d="{{ $spRapport['line'] }}" fill="none" stroke="#7e22ce" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
                     </div>
                 </div>
-
-                @if ($tasks->isEmpty())
-                <div class="mt-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/40 p-8 text-center">
-                    <div class="mx-auto w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002 2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                    </div>
-                    <p class="font-bold text-slate-800 dark:text-gray-200 text-sm">Aucune tâche n'est encore rattachée à ce stage.</p>
-                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400 max-w-sm mx-auto">Tu peux utiliser le rapport journalier pour décrire clairement ton avancement au quotidien.</p>
-                </div>
-                @else
-                <div class="mt-5 space-y-3.5">
-                    @foreach ($tasks as $task)
-                    @php
-                        $myReports = $task->dailyReports->where('user_id', $user->id)->take(2);
-                        $statusMeta = match ($task->status) {
-                            'completed' => ['Terminée', 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-emerald-600/20'],
-                            'awaiting_validation' => ['En attente validation', 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-purple-600/20'],
-                            'blocked' => ['Bloquée', 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-rose-600/20'],
-                            'in_progress' => ['En cours', 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-blue-600/20'],
-                            'changes_requested' => ['Corrections demandées', 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-amber-600/20'],
-                            default => ['À faire', 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-200 ring-slate-600/20'],
-                        };
-                        $priorityMeta = match ($task->priority) {
-                            'urgent' => ['Urgente', 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-rose-600/20'],
-                            'high' => ['Haute', 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-amber-600/20'],
-                            'low' => ['Basse', 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 ring-slate-400/20'],
-                            default => ['Normale', 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-indigo-500/20'],
-                        };
-                        $progressPercent = min(100, max(0, $task->last_progress_percent ?? $task->base_progress_percent ?? 0));
-                    @endphp
-
-                    {{-- CARTE DE TÂCHE : Disposition exacte selon la capture --}}
-                    <div class="group rounded-2xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all min-w-0">
-                        <a href="{{ encrypted_route('tasks.show', $task) }}" class="block min-w-0">
-                            <div class="flex w-full flex-col gap-4 md:flex-row md:items-start md:justify-between min-w-0">
-                                
-                                {{-- Colonne Gauche : Titre, Badges, Description, Progression, Rapports --}}
-                                <div class="flex-1 min-w-0 md:pr-4">
-                                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug break-words overflow-hidden">
-                                        {{ $task->title }}
-                                    </h3>
-
-                                    <div class="mt-2.5 flex flex-wrap items-center gap-2">
-                                        <span class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium ring-1 ring-inset {{ $statusMeta[1] }}">
-                                            {{ $statusMeta[0] }}
-                                        </span>
-                                        <span class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium ring-1 ring-inset {{ $priorityMeta[1] }}">
-                                            {{ $priorityMeta[0] }}
-                                        </span>
-                                        @if ($task->owner_id === $user->id)
-                                        <span class="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 px-3 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-500/20">
-                                            Créée par toi
-                                        </span>
-                                        @else
-                                        <span class="inline-flex items-center rounded-full bg-sky-50 dark:bg-sky-950/40 px-3 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/20">
-                                            Assignée à toi
-                                        </span>
-                                        @endif
-                                    </div>
-
-                                    <p class="mt-2 text-sm text-slate-500 dark:text-gray-400 line-clamp-2 break-words leading-relaxed">
-                                        {{ $task->description ?: 'Aucune description fournie.' }}
-                                    </p>
-
-                                    {{-- Barre de progression --}}
-                                    <div class="mt-3 flex max-w-xs items-center gap-2.5">
-                                        <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-gray-700 overflow-hidden">
-                                            <div class="h-1.5 rounded-full {{ $task->status === 'completed' ? 'bg-emerald-500' : 'bg-indigo-600' }}"
-                                                 style="width: {{ $progressPercent }}%"></div>
-                                        </div>
-                                        <span class="text-xs font-medium text-slate-600 dark:text-gray-400">{{ $progressPercent }}%</span>
-                                    </div>
-
-                                    {{-- Rapports récents déposés par l'étudiant --}}
-                                    @if ($myReports->isNotEmpty())
-                                    <div class="mt-4 pt-1">
-                                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Tes rapports déposés</p>
-                                        <div class="mt-2 space-y-1.5">
-                                            @foreach ($myReports as $report)
-                                            <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-gray-400">
-                                                <svg class="h-4 w-4 shrink-0 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span class="font-medium text-slate-700 dark:text-gray-200">{{ $report->report_date->isoFormat('DD MMM') }}</span>
-                                                <span>·</span>
-                                                <span class="font-medium">{{ $report->task_progress_percent ?? 0 }}%</span>
-                                                <span>·</span>
-                                                <span class="truncate max-w-sm text-slate-500 dark:text-gray-400">{{ $report->summary ?: 'Rapport déposé' }}</span>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @endif
-                                </div>
-
-                                {{-- Colonne Droite : Priorité, Démarrage, Date de fin, Lien --}}
-                                <div class="stage-mobile-meta grid grid-cols-1 gap-2 text-xs text-slate-500 dark:text-gray-400 sm:grid-cols-2 sm:text-right shrink-0 mt-2 md:mt-0 min-w-0">
-                                    <div class="break-words">Priorité : <span class="font-medium text-slate-800 dark:text-gray-200">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Normale','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
-                                    <div class="break-words">Démarré le : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->started_at?->format('d/m/Y') ?: ($task->created_at?->format('d/m/Y') ?: '--') }}</span></div>
-                                    <div class="sm:col-span-2 break-words">date de fin : <span class="font-medium text-slate-800 dark:text-gray-200">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
-                                    <div class="sm:col-span-2 mt-1 inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 sm:justify-end transition-colors">
-                                        Ouvrir l'espace de travail
-                                        <svg class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </a>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-            </div>
-
-            <!-- Colonne Droite : Cadre, Rapport PDF & Rappels -->
-            <div class="space-y-6">
-                
-                {{-- Cadre du stage --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Cadre du stage</h2>
-                    <dl class="mt-4 space-y-2 text-sm divide-y divide-slate-100 dark:divide-gray-700/60">
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Période</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">
-                                {{ $activeStage->date_debut?->format('d/m/Y') }} - {{ $activeStage->date_fin?->format('d/m/Y') }}
-                            </dd>
+                <div class="ks-stat-card ks-stat-card--blue border shadow-none h-100">
+                    <div class="p-3 flex flex-col justify-between h-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-secondary font-semibold truncate" style="font-size:.8125rem;">Site d'affectation</span>
+                            <span class="ks-stat-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
                         </div>
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Domaine</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $activeStage->domaine?->nom ?: 'Non défini' }}</dd>
+                        <div class="my-1 min-w-0"><p class="font-bold text-dark truncate" style="font-size:1.1rem;line-height:1.2;">{{ $activeStage->site?->name ?: 'Site non défini' }}</p><p class="text-muted truncate" style="font-size:.775rem;">{{ $activeStage->site?->city ?: 'Ville non définie' }}</p></div>
+                        <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                            <span class="badge ks-stat-change ks-stat-change--neutral">{{ $progressionStage }}% · reste {{ $joursRestants }}j</span>
+                            <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true"><path d="{{ $spStage['area'] }}" fill="{{ $spStage['accent'] }}" opacity="0.12"/><path d="{{ $spStage['line'] }}" fill="none" stroke="{{ $spStage['accent'] }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Type de stage</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $activeStage->typestage?->libelle ?: 'Non défini' }}</dd>
-                        </div>
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Horaire attendu</dt>
-                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">
-                                {{ $activeStage->expected_check_in_time ?: '08:00' }} 
-                            </dd>
-                        </div>
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Mode présence</dt>
-                            @php
-                                $presenceModeMap = [
-                                    'geolocation_only' => 'Géolocalisée',
-                                    'geolocation' => 'Géolocalisée',
-                                    'badge_only' => 'Badge uniquement',
-                                    'badge' => 'Badge',
-                                    'qr_code' => 'Code QR',
-                                    'manual' => 'Manuel',
-                                    'both' => 'Géolocalisation & Badge',
-                                ];
-                                $presenceModeText = $presenceModeMap[$activeStage->presence_mode] ?? ($activeStage->presence_mode ? ucfirst(str_replace('_', ' ', $activeStage->presence_mode)) : 'Géolocalisée');
-                            @endphp
-                            <dd class="font-bold text-slate-900 dark:text-white break-words text-left sm:text-right">{{ $presenceModeText }}</dd>
-                        </div>
-                        @php
-                            $encoreDansPeriode = $activeStage->date_debut?->isPast() && !$activeStage->date_fin?->isPast();
-                        @endphp
-                        <div class="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt class="text-slate-500 dark:text-gray-400">Jours restants</dt>
-                            <dd class="font-bold break-words text-left sm:text-right {{ $joursRestants > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-400' }}">
-                                @if ($joursRestants > 0)
-                                    {{ $joursRestants }} jour{{ $joursRestants > 1 ? 's' : '' }}
-                                @elseif ($encoreDansPeriode)
-                                    Dernier jour
-                                @else
-                                    Terminé
-                                @endif
-                            </dd>
-                        </div>
-                    </dl>
-                    
-                    <div class="mt-4 border-t border-slate-100 dark:border-gray-700/80 pt-4">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">Progression globale</span>
-                            <span class="font-bold text-slate-800 dark:text-gray-200">{{ $progressionStage }}%</span>
-                        </div>
-                        <div class="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-gray-700 overflow-hidden">
-                            <div class="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-700 transition-all duration-700" style="width: {{ $progressionStage }}%"></div>
-                        </div>
-                        <p class="mt-2 text-xs text-slate-500 dark:text-gray-400">
-                            @if ($dureeTotale > 0)
-                                Jour {{ min($joursEcoules + 1, $dureeTotale + 1) }} sur {{ $dureeTotale + 1 }} · {{ $progressionStage }}%
-                            @else
-                                En attente des dates de stage
-                            @endif
-                        </p>
                     </div>
                 </div>
+                <div class="ks-stat-card ks-stat-card--indigo border shadow-none h-100">
+                    <div class="p-3 flex flex-col justify-between h-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-secondary font-semibold truncate" style="font-size:.8125rem;">Superviseur</span>
+                            <span class="ks-stat-icon" style="background-color:#f8efe9;color:#da6b40;"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                        </div>
+                        <div class="my-1 min-w-0"><p class="font-bold text-dark truncate" style="font-size:1.1rem;line-height:1.2;">{{ $activeStage->supervisor?->name ?: 'Aucun superviseur' }}</p><p class="text-muted truncate" style="font-size:.775rem;">{{ $activeStage->supervisor?->email ?: 'Email non défini' }}</p></div>
+                        <div class="ks-stat-footer flex items-center justify-between gap-2 mt-2 pt-1">
+                            <span class="badge ks-stat-change" style="background:#f8efe9;color:#da6b40;">{{ $activeStage->domaine?->nom ?: 'Domaine —' }}</span>
+                            <svg width="74" height="26" viewBox="0 0 100 36" style="overflow:visible;" aria-hidden="true"><path d="{{ $spStage['area'] }}" fill="#da6b40" opacity="0.12"/><path d="{{ $spStage['line'] }}" fill="none" stroke="#da6b40" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                {{-- Rapport de fin de stage PDF --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Rapport de fin de stage</h2>
-                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">Dépose ici ton rapport de fin de stage final au format PDF.</p>
-
-                    @if($activeStage->final_report_path)
-                        <div class="mt-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4">
-                            <div class="flex items-center gap-3">
-                                <div class="h-10 w-10 flex-shrink-0 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-200">{{ $activeStage->final_report_name }}</p>
-                                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400">
-                                        Déposé le {{ $activeStage->final_report_uploaded_at?->format('d/m/Y à H:i') }}
-                                    </p>
-                                </div>
-                                <a href="{{ $activeStage->final_report_url }}" target="_blank" class="inline-flex flex-shrink-0 items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors">
-                                    Voir
-                                </a>
-                            </div>
+            <div class="mt-4 grid grid-cols-1 xl:grid-cols-4 gap-3 xl:items-start">
+                {{-- 3. MES TÂCHES à la place de Ma journée --}}
+                <section aria-label="Mes tâches" class="ks-sec ks-rise min-w-0 xl:col-span-3" style="animation-delay:.12s">
+                    <div class="ks-sec-head"><h2 class="text-sm font-semibold text-[#241f1b] dark:text-white">Mes tâches · {{ $tasks->count() }}</h2><a href="{{ route('tasks.index') }}" class="text-xs font-medium text-[#1c3e96] hover:underline">Espace travail →</a></div>
+                    @if($tasks->isEmpty())
+                        <div class="p-6 text-center">
+                            <span class="mx-auto flex h-11 w-11 items-center justify-center rounded-md bg-[#eef1fb] text-[#1c3e96]"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                            <p class="mt-3 text-sm font-semibold text-[#241f1b] dark:text-white">Journée légère, aucune tâche assignée</p>
+                            <p class="mx-auto mt-1 max-w-xs text-xs text-[#6e6862]">Décris ton avancement dans le rapport journalier, il servira de trace.</p>
+                            <a href="{{ route('tasks.index') }}" class="ks-btn-secondary ks-btn-xs mx-auto mt-3">Ouvrir le rapport</a>
                         </div>
                     @else
-                        <div class="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3.5">
-                            <p class="text-xs font-bold text-amber-800 dark:text-amber-200">Aucun rapport déposé pour le moment</p>
-                            <p class="mt-0.5 text-[11px] text-amber-700 dark:text-amber-300">Ton rapport final n'est pas encore transmis à l'administration.</p>
+                        @php
+                            $ordre = ['in_progress' => 0, 'pending' => 1, 'changes_requested' => 2, 'blocked' => 3, 'awaiting_validation' => 4, 'completed' => 5];
+                            $tasks6 = $tasks->sortBy(fn($t) => [($ordre[$t->status] ?? 9), -($t->updated_at?->timestamp ?? 0)])->take(6);
+                        @endphp
+                        <div class="p-3 sm:p-4 space-y-3">
+                            @foreach($tasks6 as $task)
+                            @php
+                                $myReports = $task->dailyReports->where('user_id', $user->id)->take(2);
+                                $statusMeta = match ($task->status) {
+                                    'completed' => ['Terminée', 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-emerald-600/20'],
+                                    'awaiting_validation' => ['En attente validation', 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-purple-600/20'],
+                                    'blocked' => ['Bloquée', 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-rose-600/20'],
+                                    'in_progress' => ['En cours', 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-blue-600/20'],
+                                    'changes_requested' => ['Corrections demandées', 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-amber-600/20'],
+                                    default => ['À faire', 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-200 ring-slate-600/20'],
+                                };
+                                $priorityMeta = match ($task->priority) {
+                                    'urgent' => ['Urgente', 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-rose-600/20'],
+                                    'high' => ['Haute', 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-amber-600/20'],
+                                    'low' => ['Basse', 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 ring-slate-400/20'],
+                                    default => ['Normale', 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 ring-indigo-500/20'],
+                                };
+                                $pp = min(100, max(0, $task->last_progress_percent ?? $task->base_progress_percent ?? 0));
+                            @endphp
+                            <div class="group rounded-md border border-[#dcdad2] dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm min-w-0">
+                                <a href="{{ encrypted_route('tasks.show', $task) }}" class="block min-w-0">
+                                    <div class="flex w-full flex-col gap-3 md:flex-row md:items-start md:justify-between min-w-0">
+                                        <div class="flex-1 min-w-0 md:pr-4">
+                                            <h3 class="text-[15px] font-semibold text-[#241f1b] dark:text-white group-hover:text-[#1c3e96] transition-colors leading-snug break-words">{{ $task->title }}</h3>
+                                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset {{ $statusMeta[1] }}">{{ $statusMeta[0] }}</span>
+                                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset {{ $priorityMeta[1] }}">{{ $priorityMeta[0] }}</span>
+                                                @if ($task->owner_id === $user->id)
+                                                <span class="inline-flex items-center rounded-full bg-[#eef1fb] dark:bg-[#1c3e96]/20 px-2.5 py-0.5 text-[11px] font-medium text-[#1c3e96] dark:text-[#60a5fa] ring-1 ring-inset ring-[#1c3e96]/20 dark:ring-[#60a5fa]/30">Créée par toi</span>
+                                                @else
+                                                <span class="inline-flex items-center rounded-full bg-sky-50 dark:bg-sky-500/20 px-2.5 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-300 ring-1 ring-inset ring-sky-500/20 dark:ring-sky-400/30">Assignée à toi</span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-2 text-[13px] text-[#6e6862] dark:text-gray-400 leading-relaxed break-words">{{ $task->description ?: 'Aucune description fournie.' }}</p>
+                                            <div class="mt-2.5 flex max-w-xs items-center gap-2">
+                                                <div class="ks-track h-1.5 w-full"><div class="h-1.5 rounded-full {{ $task->status === 'completed' ? 'bg-[#15803d]' : 'bg-[#1c3e96]' }}" style="width:{{ $pp }}%"></div></div>
+                                                <span class="text-xs font-semibold tabular-nums text-[#241f1b] dark:text-gray-200">{{ $pp }}%</span>
+                                            </div>
+                                            @if ($myReports->isNotEmpty())
+                                            <div class="mt-3">
+                                                <p class="ks-label !text-[10px]">Tes rapports déposés</p>
+                                                <div class="mt-1.5 space-y-1.5">
+                                                    @foreach ($myReports as $report)
+                                                    <div class="flex items-center gap-2 text-xs text-[#6e6862] dark:text-gray-300">
+                                                        <svg class="h-3.5 w-3.5 shrink-0 text-[#15803d]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                        <span class="font-semibold text-slate-800 dark:text-slate-200">{{ $report->report_date->isoFormat('DD MMM') }}</span><span>·</span><span class="font-semibold tabular-nums text-slate-800 dark:text-slate-200">{{ $report->task_progress_percent ?? 0 }}%</span><span>·</span><span class="truncate">{{ $report->summary ?: 'Rapport déposé' }}</span>
+                                                    </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-1 text-xs text-[#6e6862] shrink-0 md:text-right md:min-w-[170px]">
+                                            <div>Priorité : <span class="font-semibold text-[#241f1b] dark:text-gray-200">{{ ['high'=>'Haute','low'=>'Basse','medium'=>'Normale','urgent'=>'Urgente'][$task->priority] ?? ucfirst($task->priority ?? 'Normale') }}</span></div>
+                                            <div>Démarré le : <span class="font-semibold text-[#241f1b] dark:text-gray-200 tabular-nums">{{ $task->started_at?->format('d/m/Y') ?: ($task->created_at?->format('d/m/Y') ?: '--') }}</span></div>
+                                            <div class="col-span-2 md:col-span-1">date de fin : <span class="font-semibold text-[#241f1b] dark:text-gray-200 tabular-nums">{{ $task->due_date?->format('d/m/Y') ?: 'Non définie' }}</span></div>
+                                            <div class="col-span-2 md:col-span-1 mt-1 inline-flex items-center gap-1 font-semibold text-[#1c3e96] dark:text-blue-400 md:justify-end">Ouvrir l'espace de travail <span aria-hidden="true">→</span></div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            @endforeach
+                            @if($tasks->count() > 6)
+                            <div class="px-4 pb-4"><a href="{{ route('tasks.index') }}" class="ks-btn-secondary ks-btn-xs w-full">Voir les {{ $tasks->count() - 6 }} autres dans l'espace travail →</a></div>
+                            @endif
                         </div>
                     @endif
+                </section>
 
-                    <form method="POST" action="{{ route('student.final_report.upload') }}" enctype="multipart/form-data" class="mt-4 space-y-3">
-                        @csrf
-                        <label class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-gray-600 bg-slate-50 dark:bg-gray-900/50 px-4 py-5 text-center transition-colors hover:border-indigo-400 dark:hover:border-indigo-500">
-                            <svg class="w-7 h-7 text-slate-400 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            <span class="text-xs font-semibold text-slate-600 dark:text-gray-300">Choisir un fichier PDF…</span>
-                            <input type="file" name="final_report" accept=".pdf,application/pdf" class="sr-only" @change="this.previousElementSibling.textContent = this.files[0] ? this.files[0].name : 'Choisir un fichier PDF…'">
-                        </label>
-                        @error('final_report')
-                            <p class="text-xs text-rose-600 font-semibold">{{ $message }}</p>
-                        @enderror
-                        <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition-colors">
-                            {{ $activeStage->final_report_path ? 'Remplacer le rapport PDF' : 'Déposer le rapport PDF' }}
-                        </button>
-                    </form>
-                </div>
-
-                {{-- Rappels utiles --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Rappels utiles</h2>
-                    <ul class="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-gray-300">
-                        <li class="flex items-start gap-2">
-                            <span class="mt-1 h-2 w-2 rounded-full bg-indigo-500 shrink-0"></span>
-                            <span>Pointe d'abord ta présence le matin, puis remplis ton rapport en fin de journée.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <span class="mt-1 h-2 w-2 rounded-full bg-indigo-500 shrink-0"></span>
-                            <span>Si ton site ou superviseur est incorrect, signale-le immédiatement à l'administration.</span>
-                        </li>
-                    </ul>
-
-                    <div class="mt-6 grid gap-2.5 sm:grid-cols-2">
-                        <a href="{{ route('presence.pointage') }}" class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition-colors">
-                            Aller au pointage
-                        </a>
-                        <a href="{{ route('tasks.index') }}" class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors">
-                            Aller au rapport journalier
-                        </a>
+                {{-- 4. CADRE : grille 2x2 mini-tuiles + jauge, plus de simple liste --}}
+                <aside aria-label="Cadre du stage" class="ks-sec ks-rise p-4 xl:col-span-1 min-w-0 xl:sticky xl:top-[84px] flex flex-col" style="animation-delay:.18s">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="ks-label">Cadre du stage</p>
+                        <span class="inline-flex items-center gap-1 rounded-full bg-[#eef1fb] px-2 py-0.5 text-[10px] font-semibold text-[#1c3e96] dark:bg-indigo-950/60 dark:text-indigo-300">{{ $joursRestants }}j restants</span>
                     </div>
-                </div>
+                    {{-- Thème déplacé ici : plus en haut de page --}}
+                    <div class="mt-2 rounded-md border border-[#ecebe3] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-2.5">
+                        <p class="ks-label !text-[10px]">Thème</p>
+                        <p x-show="!editing" class="truncate text-xs font-semibold text-slate-800 dark:text-white" x-text="theme || 'Stage sans thème'"></p>
+                        <button x-show="!editing" @click="editing=true" class="mt-0.5 text-[11px] font-medium text-[#1c3e96] dark:text-blue-400 hover:underline">Modifier le thème</button>
+                        <form x-show="editing" x-cloak method="POST" action="{{ route('student.theme.update') }}" class="mt-1.5 flex gap-1.5">
+                            @csrf @method('PUT')
+                            <input name="theme" x-model="theme" aria-label="Thème du stage" class="min-w-0 flex-1 rounded-md border border-[#d8d4cc] dark:border-gray-700 dark:bg-gray-800 dark:text-white px-2.5 py-1.5 text-xs focus:border-[#1c3e96] focus:outline-none" placeholder="Ex : Développement web…">
+                            <button class="ks-btn-primary ks-btn-xs">OK</button>
+                            <button type="button" @click="editing=false" aria-label="Annuler" class="ks-btn-secondary ks-btn-xs">✕</button>
+                        </form>
+                    </div>
+                    <div class="mt-2.5 space-y-2">
+                        <div class="rounded-md border border-[#ecebe3] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-2.5 flex items-center gap-3">
+                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-[#eef1fb] text-[#1c3e96] dark:bg-indigo-950/60 dark:text-indigo-400"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="ks-label !text-[10px]">Période</p>
+                                <p class="truncate text-xs font-semibold tabular-nums text-slate-800 dark:text-white">{{ $activeStage->date_debut?->format('d/m/y') }} → {{ $activeStage->date_fin?->format('d/m/y') }}</p>
+                            </div>
+                        </div>
+                        <div class="rounded-md border border-[#ecebe3] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-2.5 flex items-center gap-3">
+                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-[#ecfdf5] text-[#15803d] dark:bg-emerald-950/60 dark:text-emerald-400"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="ks-label !text-[10px]">Domaine</p>
+                                <p class="truncate text-xs font-semibold text-slate-800 dark:text-white">{{ $activeStage->domaine?->nom ?: '—' }}</p>
+                            </div>
+                        </div>
+                        <div class="rounded-md border border-[#ecebe3] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-2.5 flex items-center gap-3">
+                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-[#fef3c7] text-[#b45309] dark:bg-amber-950/60 dark:text-amber-400"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7zM7 3v4m10-4v4"/></svg></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="ks-label !text-[10px]">Type</p>
+                                <p class="truncate text-xs font-semibold text-slate-800 dark:text-white">{{ $activeStage->typestage?->libelle ?: '—' }}</p>
+                            </div>
+                        </div>
+                        <div class="rounded-md border border-[#ecebe3] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-2.5 flex items-center gap-3">
+                            <span class="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-[#f1f5f9] text-[#475569] dark:bg-slate-800 dark:text-slate-300"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-5.5-7-11a7 7 0 0114 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="ks-label !text-[10px]">Présence</p>
+                                <p class="truncate text-xs font-semibold text-slate-800 dark:text-white">{{ ['geolocation_only'=>'Géolocalisée','qr_code'=>'QR Code','manual'=>'Manuelle'][$activeStage->presence_mode] ?? 'Géolocalisée' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-[#ecebe3] dark:border-gray-700">
+                        @php $segColor = $presenceSemaine >= 80 ? '#15803d' : ($presenceSemaine >= 50 ? '#b45309' : '#b91c1c'); $segTotal = max(1, (int) ($joursTrackesSemaine ?: 5)); $segDone = min($segTotal, (int) $joursPresentSemaine); @endphp
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="ks-label !text-[10px]">Semaine</span>
+                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums" style="background:{{ $segColor }}14;color:{{ $segColor }}">{{ $joursPresentSemaine }}/{{ $joursTrackesSemaine }} · {{ $presenceSemaine }}%</span>
+                        </div>
+                        <div class="mt-2 flex gap-1" role="img" aria-label="Présence {{ $joursPresentSemaine }} sur {{ $joursTrackesSemaine }}">
+                            @for($i = 0; $i < $segTotal; $i++)
+                                <span class="h-1.5 flex-1 rounded-full {{ $i < $segDone ? '' : 'dark:!bg-gray-800' }}" style="background:{{ $i < $segDone ? $segColor : '#ecebe3' }}"></span>
+                            @endfor
+                        </div>
+                    </div>
+                </aside>
+            </div>
 
+            <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                {{-- 6. DOCUMENT : dropzone horizontale --}}
+                <section aria-label="Rapport final" class="ks-sec p-4">
+                    <p class="ks-label">Rapport final · PDF</p>
+                    @if($activeStage->final_report_path)
+                    <div class="mt-2 flex items-center gap-2 rounded-md border border-[#a7f3d0] dark:border-emerald-800 bg-[#dcfce7]/50 dark:bg-emerald-950/40 p-2.5 text-xs"><span class="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-[#15803d]/10 dark:bg-emerald-900/60 text-[#15803d] dark:text-emerald-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></span><span class="min-w-0 flex-1 truncate font-semibold text-[#15803d] dark:text-emerald-300">{{ $activeStage->final_report_name }}</span><a href="{{ $activeStage->final_report_url }}" target="_blank" class="ks-btn-primary ks-btn-xs flex-none">Voir</a></div>
+                    @else
+                    <div class="mt-2 flex items-center gap-2.5 rounded-md border border-dashed border-[#bfbab2] dark:border-gray-700 bg-[#faf9f6] dark:bg-gray-900/40 p-3">
+                        <span class="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-[#fef3c7] dark:bg-amber-950/60 text-[#b45309] dark:text-amber-400"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9m0 0l-3 3m3-3l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                        <p class="text-xs text-[#6e6862] dark:text-gray-300">Pas encore déposé — ton PDF final arrivera ici.</p>
+                    </div>
+                    @endif
+                    <form method="POST" action="{{ route('student.final_report.upload') }}" enctype="multipart/form-data" class="mt-2 flex gap-2">
+                        @csrf
+                        <label class="min-w-0 flex-1 cursor-pointer truncate rounded-md border border-dashed border-[#d8d4cc] dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-300 hover:border-[#da6b40]"><span>Choisir PDF…</span><input type="file" name="final_report" accept=".pdf,application/pdf" class="sr-only" onchange="this.parentElement.querySelector('span').textContent=this.files[0]?this.files[0].name:'Choisir PDF…'"></label>
+                        <button class="ks-btn-primary ks-btn-xs flex-none">{{ $activeStage->final_report_path ? 'Remplacer' : 'Déposer' }}</button>
+                    </form>
+                    @error('final_report')<p class="mt-1 text-xs text-rose-600">{{ $message }}</p>@enderror
+                </section>
+                {{-- 7. PARCOURS : une ligne par stage --}}
+                <section aria-label="Mon parcours" class="ks-sec p-4">
+                    <p class="ks-label">Parcours · {{ $chaines->count() }} stage(s)</p>
+                    <ul class="mt-2 space-y-2">
+                    @forelse($chaines as $c)
+                        <li class="flex items-center gap-2 text-xs">
+                            <span class="w-2 h-2 rounded-full flex-none" style="background:{{ $c['en_cours'] ? '#da6b40' : '#a7f3d0' }}"></span>
+                            <span class="min-w-0 flex-1 truncate font-semibold text-slate-800 dark:text-white">{{ $c['racine']->theme ?: 'Stage' }} <span class="font-normal text-gray-400">{{ $c['debut']?->format('m/y') }}→{{ $c['fin']?->format('m/y') }} · {{ $c['mois'] }} mois · {{ $c['taches_terminees'] }}/{{ $c['taches'] }} · {{ $c['attestations']->count() }} att.</span></span>
+                            <span class="flex-none text-[10px] font-semibold uppercase" style="color:{{ $c['en_cours'] ? '#da6b40' : '#15803d' }}">{{ $c['en_cours'] ? 'En cours' : 'Fait' }}</span>
+                        </li>
+                    @empty
+                        <li class="text-xs text-gray-400">Aucun stage enregistré.</li>
+                    @endforelse
+                    </ul>
+                </section>
             </div>
         </div>
         @endif
 
-                {{-- Mon parcours : une carte par stage réellement effectué.
-                     Une prolongation est une carte unique, pas une carte par
-                     segment : c'est le même stage, plus long. --}}
-                <div class="rounded-2xl bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-gray-700 stage-mobile-card min-w-0">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Mon parcours</h2>
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 dark:bg-gray-700 dark:text-slate-300">
-                            {{ $chaines->count() }} stage{{ $chaines->count() > 1 ? 's' : '' }}
-                        </span>
-                    </div>
-                    <p class="mt-1 text-xs text-slate-500 dark:text-gray-400">
-                        Chaque stage compte la durée totale réellement effectuée, prolongations comprises.
-                    </p>
+        {{-- 8. STICKY MOBILE : pointer / rapport toujours à portée de pouce --}}
+        @if(isset($activeStage) && $activeStage)
+        <div class="ks-sticky lg:hidden" role="toolbar" aria-label="Actions rapides">
+            <a href="{{ route('presence.pointage') }}" class="ks-btn-primary flex-1">Pointer</a>
+            <a href="{{ route('tasks.index') }}" class="ks-btn-secondary flex-1">Rapport</a>
+        </div>
+        @endif
 
-                    @forelse($chaines as $chaine)
-                        @php
-                            $enCours = $chaine['en_cours'];
-                            $terminee = $chaine['terminee'];
-                            $nbProlongations = $chaine['prolongations']->count();
-                        @endphp
-
-                        <div @class([
-                            'mt-4 overflow-hidden rounded-xl border transition',
-                            'border-indigo-200 bg-indigo-50/50 dark:border-indigo-700 dark:bg-indigo-950/30' => $enCours,
-                            'border-slate-200 bg-slate-50/60 dark:border-gray-700 dark:bg-gray-900/40' => ! $enCours,
-                        ])>
-                            {{-- En-tête : période réelle et statut --}}
-                            <div class="flex items-start justify-between gap-3 border-b border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-bold text-slate-900 dark:text-white">
-                                        {{ $chaine['racine']->theme ?: 'Stage' }}
-                                    </p>
-                                    <p class="mt-0.5 text-[11px] text-slate-500 dark:text-gray-400">
-                                        {{ $chaine['debut']?->format('d/m/Y') }} → {{ $chaine['fin']?->format('d/m/Y') }}
-                                        @if($nbProlongations)
-                                            <span class="text-orange-600 dark:text-orange-400">
-                                                · prolongé {{ $nbProlongations }}×
-                                            </span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <span @class([
-                                    'flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide',
-                                    'bg-indigo-600 text-white' => $enCours,
-                                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300' => ! $enCours && $terminee,
-                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300' => ! $enCours && ! $terminee,
-                                ])>
-                                    {{ $enCours ? 'En cours' : ($terminee ? 'Terminé' : 'À venir') }}
-                                </span>
-                            </div>
-
-                            {{-- Chiffres clés : durée cumulée et travail réellement rendu --}}
-                            <div class="grid grid-cols-2 divide-x divide-slate-200/70 sm:grid-cols-4 dark:divide-gray-700/70">
-                                <div class="px-4 py-3">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Durée totale</p>
-                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['mois'] }}<span class="text-xs font-bold"> mois</span></p>
-                                    <p class="text-[10px] text-slate-400">{{ $chaine['jours'] }} jours</p>
-                                </div>
-                                <div class="px-4 py-3">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Domaine</p>
-                                    <p class="mt-0.5 truncate text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ \Illuminate\Support\Str::limit($chaine['racine']->domaine?->nom ?? 'Non défini', 26) }}
-                                    </p>
-                                    <p class="text-[10px] text-slate-400">{{ $chaine['racine']->typestage?->libelle ?? '—' }}</p>
-                                </div>
-                                <div class="px-4 py-3">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tâches</p>
-                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['taches'] }}</p>
-                                    <p class="text-[10px] text-slate-400">{{ $chaine['taches_terminees'] }} terminée{{ $chaine['taches_terminees'] > 1 ? 's' : '' }}</p>
-                                </div>
-                                <div class="px-4 py-3">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Attestations</p>
-                                    <p class="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">{{ $chaine['attestations']->count() }}</p>
-                                    <p class="text-[10px] text-slate-400">
-                                        {{ $nbProlongations > 0 ? 'une seule pour tout le stage' : 'pour ce stage' }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {{-- Détail des périodes : utile quand le stage a été prolongé,
-                                 pour distinguer ce qui relève de chaque segment. --}}
-                            @if($nbProlongations > 0)
-                                <div class="border-t border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
-                                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Périodes effectuées</p>
-                                    <ol class="mt-2 space-y-1.5">
-                                        @foreach($chaine['segments'] as $segment)
-                                            <li class="flex items-center gap-2 text-[11px]">
-                                                <span @class([
-                                                    'h-1.5 w-1.5 flex-shrink-0 rounded-full',
-                                                    'bg-slate-400' => $loop->first,
-                                                    'bg-orange-500' => ! $loop->first,
-                                                ])></span>
-                                                <span class="font-semibold text-slate-700 dark:text-slate-300">
-                                                    {{ $segment->date_debut?->format('d/m/Y') }} → {{ $segment->date_fin?->format('d/m/Y') }}
-                                                </span>
-                                                <span class="text-slate-400">
-                                                    ({{ $segment->id == $chaine['racine']->id ? 'stage initial' : 'prolongation' }})
-                                                </span>
-                                            </li>
-                                        @endforeach
-                                    </ol>
-                                </div>
-                            @endif
-
-                            @if($chaine['attestations']->isNotEmpty())
-                                <div class="border-t border-slate-200/70 px-4 py-3 dark:border-gray-700/70">
-                                    @foreach($chaine['attestations'] as $attestation)
-                                        <div class="flex items-center gap-3">
-                                            <div class="h-9 w-9 flex-shrink-0 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <p class="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
-                                                    {{ $attestation->reference }}
-                                                </p>
-                                                <p class="text-[10px] text-slate-400">
-                                                    Délivrée le {{ \Illuminate\Support\Carbon::parse($attestation->date_delivrance)->format('d/m/Y') }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @empty
-                        <p class="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-gray-600 dark:text-gray-400">
-                            Aucun stage enregistré pour le moment.
-                        </p>
-                    @endforelse
-                </div>
+        </div></div>
     </div>
 </x-app-layout>

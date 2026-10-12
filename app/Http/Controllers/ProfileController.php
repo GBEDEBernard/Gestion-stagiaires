@@ -19,19 +19,22 @@ class ProfileController extends Controller
         $user = $request->user()->load([
             'personnel',
             'personnel.personnable',
-            'personnel.personnable.supervisor',
-            'personnel.personnable.supervisor.personnel',
-            'personnel.personnable.site',
-            'personnel.personnable.domaine',
         ]);
 
         $profil = $user->personnel?->personnable;
-        if ($profil instanceof Etudiant) {
-            $user->load([
-                'personnel.personnable.stages.typestage',
-                'personnel.personnable.stages.domaine',
-                'personnel.personnable.stages.site',
-                'personnel.personnable.stages.badge',
+        if ($profil instanceof \App\Models\Employe) {
+            $profil->load([
+                'supervisor.personnel',
+                'site',
+                'domaine',
+            ]);
+        } elseif ($profil instanceof Etudiant) {
+            $profil->load([
+                'supervisor.personnel',
+                'stages.typestage',
+                'stages.domaine',
+                'stages.site',
+                'stages.badge',
             ]);
         }
 

@@ -12,26 +12,206 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:300,400,500,600&display=swap" rel="stylesheet" />
    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+            if (localStorage.getItem('sidebar-collapsed') === 'true' && window.innerWidth >= 1024) {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        })();
+
+        window.toggleSidebar = function() {
+            if (window.innerWidth < 1024) {
+                var isOpen = document.documentElement.classList.toggle('sidebar-mobile-open');
+                window.dispatchEvent(new CustomEvent('toggle-sidebar-mobile', { detail: { open: isOpen } }));
+            } else {
+                var isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+                if (window.Alpine && window.Alpine.store('sidebar')) {
+                    window.Alpine.store('sidebar').collapsed = isCollapsed;
+                }
+            }
+        };
+
+        window.closeSidebarMobile = function() {
+            document.documentElement.classList.remove('sidebar-mobile-open');
+            window.dispatchEvent(new CustomEvent('close-sidebar'));
+        };
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024 && document.documentElement.classList.contains('sidebar-mobile-open')) {
+                window.closeSidebarMobile();
+            }
+        });
+    </script>
 
     <style>
         [x-cloak] {
             display: none !important;
         }
 
+        html {
+            height: 100%;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f1f0ed;
+        }
+
+        html.dark {
+            background-color: #1f232d !important;
+        }
+
+        body {
+            height: 100%;
+            min-height: 100%;
+            max-height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden !important;
+            background-color: #f1f0ed;
+        }
+
+        html.dark body, body.dark {
+            background-color: #1f232d !important;
+        }
+
         .main-content {
-            transition: margin-left 0.3s ease;
+            margin: 0.5rem;
+            height: calc(100vh - 1rem);
+            height: calc(100dvh - 1rem);
+            max-height: calc(100vh - 1rem);
+            max-height: calc(100dvh - 1rem);
+            border-radius: 10px;
+            border: 1px solid #e3e0da;
+            background-color: #ffffff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: margin 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark .main-content {
+            background-color: #131519;
+            border-color: #222630;
+        }
+
+        .sidebar {
+            width: 250px;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #f1f0ed;
+        }
+
+        html.dark .sidebar, body.dark .sidebar {
+            background-color: #1f232d !important;
+        }
+
+        @media (max-width: 1023px) {
+            .sidebar {
+                z-index: 50 !important;
+                transform: translateX(-100%);
+            }
+            html.sidebar-mobile-open .sidebar {
+                transform: translateX(0) !important;
+            }
+            .sidebar-overlay-backdrop {
+                display: none;
+            }
+            html.sidebar-mobile-open .sidebar-overlay-backdrop {
+                display: block !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+            }
         }
 
         @media (min-width: 1024px) {
             .main-content {
-                margin-left: 18rem;
+                margin: 0.5rem 0.5rem 0.5rem calc(250px + 0.5rem);
+                height: calc(100vh - 1rem);
+                height: calc(100dvh - 1rem);
+                max-height: calc(100vh - 1rem);
+                max-height: calc(100dvh - 1rem);
+                border-radius: 10px;
+                border: 1px solid #e3e0da;
+                transition: margin 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }
+
+            .dark .main-content {
+                border-color: #222630;
+            }
+
+            html.sidebar-collapsed .sidebar {
+                width: 4.5rem !important;
+            }
+
+            html.sidebar-collapsed .main-content {
+                margin: 0.5rem 0.5rem 0.5rem calc(4.5rem + 0.5rem) !important;
+            }
+
+            html.sidebar-collapsed .sidebar .sidebar-logo-text,
+            html.sidebar-collapsed .sidebar .sidebar-profile-text,
+            html.sidebar-collapsed .sidebar .sidebar-profile-chevron,
+            html.sidebar-collapsed .sidebar [x-collapse],
+            html.sidebar-collapsed .sidebar button svg.rotate-90,
+            html.sidebar-collapsed .sidebar button svg.transform,
+            html.sidebar-collapsed .sidebar span.truncate {
+                display: none !important;
+            }
+
+            html.sidebar-collapsed .sidebar a.group,
+            html.sidebar-collapsed .sidebar button.group,
+            html.sidebar-collapsed .sidebar a,
+            html.sidebar-collapsed .sidebar button {
+                justify-content: center !important;
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+
+            html.sidebar-collapsed .sidebar .sidebar-logo-container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+                display: flex !important;
+                justify-content: center !important;
+            }
+
+            html.sidebar-collapsed .sidebar .sidebar-logo-container a {
+                justify-content: center !important;
+                gap: 0 !important;
+            }
+
+            html.sidebar-collapsed .sidebar .sidebar-logo-container img {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+            }
+
+            html.sidebar-collapsed .sidebar .sidebar-menu-header {
+                display: none !important;
+            }
+
+            html.sidebar-collapsed .sidebar .flex.items-center.gap-3.min-w-0 {
+                gap: 0 !important;
+                justify-content: center !important;
+                width: 100% !important;
+            }
+        }
+
+        .main-content-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
         }
 
         .custom-scrollbar::-webkit-scrollbar {
@@ -108,173 +288,190 @@
             }
         }
 
-        #loader-overlay {
-            position: fixed;
+        /* Animation Shimmer Skeleton Mon-Stage */
+        @keyframes ks-sk-shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .ks-sk-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ks-sk-shimmer::after {
+            position: absolute;
             inset: 0;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            transform: translateX(-100%);
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.45) 45%,
+                rgba(255, 255, 255, 0.75) 50%,
+                rgba(255, 255, 255, 0.45) 55%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: ks-sk-shimmer 1.8s infinite;
+            content: '';
         }
 
-        #loader-overlay.active {
-            opacity: 1;
-            pointer-events: all;
+        .dark .ks-sk-shimmer::after {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.04) 45%,
+                rgba(255, 255, 255, 0.09) 50%,
+                rgba(255, 255, 255, 0.04) 55%,
+                rgba(255, 255, 255, 0) 100%
+            );
         }
 
-        .dark #loader-overlay {
-            background: rgba(17, 24, 39, 0.7);
+        .ks-sk-block {
+            background-color: #e4e1d9;
+            border-radius: 6px;
+        }
+        .dark .ks-sk-block {
+            background-color: #1e222c;
         }
     </style>
 </head>
 
-<body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+<body class="font-sans antialiased bg-[#f1f0ed] dark:bg-[#1f232d] overflow-hidden m-0 p-0">
 
-    <div id="loader-overlay">
-        <div class="spinner"></div>
-    </div>
+    {{-- Volet mobile : Notifications uniquement (Palette et style Mon Stage) --}}
+    <div x-data="mobilePanel()" x-cloak @open-mobile-panel.window="isOpen = true; fetchNotifs()">
+        {{-- Backdrop léger et subtil --}}
+        <div x-show="isOpen"
+             x-cloak
+             x-transition.opacity.duration.250ms
+             @click="isOpen = false"
+             class="fixed inset-0 bg-black/25 backdrop-blur-[1px] z-[9998] lg:hidden"
+             style="display: none;"></div>
 
-    {{-- Mobile modal (profil / notifs / thème) --}}
-    <div x-data="mobilePanel()" @open-mobile-panel.window="isOpen = true; tab = $event.detail?.tab ?? 'notifs'">
-        <div x-show="isOpen" x-transition.opacity @click="isOpen = false" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] lg:hidden"></div>
-        <div x-show="isOpen" x-transition.duration.300ms class="fixed bottom-0 left-0 right-0 z-[9999] lg:hidden bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col">
-            <div class="flex justify-center pt-3 pb-1">
-                <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-            </div>
-            <div class="px-5 pt-2 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-                <div class="flex items-center gap-3">
-                    @if(Auth::user()->avatar)
-                    <img src="{{ asset('storage/'.Auth::user()->avatar) }}" class="w-10 h-10 rounded-2xl object-cover ring-2 ring-indigo-500/30">
-                    @else
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                        {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
-                    </div>
-                    @endif
-                    <div>
-                        <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-gray-400">{{ Auth::user()->email }}</p>
-                    </div>
-                </div>
-                <button @click="isOpen = false" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+        {{-- Tiroir inférieur mobile --}}
+        <div x-show="isOpen"
+             x-cloak
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="translate-y-full"
+             x-transition:enter-end="translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="translate-y-0"
+             x-transition:leave-end="translate-y-full"
+             class="fixed bottom-0 left-0 right-0 z-[9999] lg:hidden bg-[#fffefa] dark:bg-[#131519] border-t border-[#dcdad2] dark:border-[#222630] rounded-t-[20px] shadow-2xl max-h-[85vh] flex flex-col overflow-hidden"
+             style="display: none;">
+
+            {{-- Poignée supérieure --}}
+            <div class="flex justify-center pt-2.5 pb-1">
+                <div class="w-10 h-1 bg-[#dcdad2] dark:bg-[#262a34] rounded-full"></div>
             </div>
 
-            <div class="flex gap-1 px-5 pt-3 pb-2">
-                <button @click="tab='notifs'; fetchNotifs()" :class="tab==='notifs' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    Notifs <span x-show="notifCount > 0" x-text="notifCount" class="min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold"></span>
-                </button>
-                <button @click="tab='profil'" :class="tab==='profil' ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Profil
-                </button>
-                <button @click="tab='theme'" :class="tab==='theme' ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    Thème
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-5 pb-6">
-                {{-- Notifications --}}
-                <div x-show="tab==='notifs'" class="pt-2 space-y-2">
-                    <div x-show="notifCount > 0" class="flex justify-end mb-1">
-                        <button @click="markAllRead()" class="text-xs text-indigo-600 font-semibold hover:underline">Tout marquer comme lu</button>
-                    </div>
-                    <template x-if="loadingNotifs">
-                        <div class="space-y-2 pt-2"><template x-for="i in 3">
-                                <div class="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse h-16"></div>
-                            </template></div>
-                    </template>
-                    <template x-if="!loadingNotifs && notifications.length === 0">
-                        <div class="py-12 text-center">
-                            <div class="w-16 h-16 mx-auto rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3"><svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg></div>
-                            <p class="font-semibold text-gray-700 dark:text-gray-300">Tout est à jour !</p>
-                        </div>
-                    </template>
-                    <template x-if="!loadingNotifs && notifications.length > 0">
-                        <div class="space-y-2">
-                            <template x-for="notif in notifications" :key="notif.id">
-                                <a :href="notif.url" @click="markRead(notif.id)" class="flex items-start gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300">
-                                    <div class="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" :class="{'bg-blue-100 text-blue-600': notif.color==='blue', 'bg-amber-100 text-amber-600': notif.color==='amber', 'bg-green-100 text-green-600': true}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-sm font-semibold text-gray-800 dark:text-white truncate" x-text="notif.title"></p>
-                                        <p class="text-xs text-gray-500 mt-0.5" x-text="notif.message"></p>
-                                        <p class="text-xs text-gray-400 mt-1" x-text="notif.created_at"></p>
-                                    </div>
-                                </a>
-                            </template>
-                        </div>
-                    </template>
-                </div>
-
-                {{-- Profil --}}
-                <div x-show="tab==='profil'" class="pt-3 space-y-3">
-                    <a href="{{ route('profile.edit') }}" @click="open=false" class="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-                        <div class="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg></div>
-                        <div>
-                            <p class="font-semibold text-gray-900 dark:text-white text-sm">Paramètres du profil</p>
-                            <p class="text-xs text-gray-500">Avatar, mot de passe, infos</p>
-                        </div>
-                        <svg class="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            {{-- En-tête : Notifications & Actions --}}
+            <div class="px-4 py-3 flex items-center justify-between border-b border-[#ecebe3] dark:border-[#222630]">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-[8px] bg-[#eef1fb] dark:bg-[rgba(28,62,150,0.25)] border border-[#1c3e96]/20 text-[#1c3e96] dark:text-[#60a5fa] flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                         </svg>
-                    </a>
-                    <div class="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border space-y-2">
-                        <p class="text-xs font-semibold text-gray-500 uppercase">Informations</p>
-                        <div class="flex gap-2"><span class="text-xs text-gray-400">Nom :</span><span class="text-sm font-medium">{{ Auth::user()->name }}</span></div>
-                        <div class="flex gap-2"><span class="text-xs text-gray-400">Email :</span><span class="text-sm font-medium truncate">{{ Auth::user()->email }}</span></div>
-                        <div class="flex gap-2"><span class="text-xs text-gray-400">Membre depuis :</span><span class="text-sm font-medium">{{ Auth::user()->created_at->format('d/m/Y') }}</span></div>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 font-semibold text-sm hover:bg-red-100">Se déconnecter</button></form>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-semibold text-[15px] text-[#241f1b] dark:text-[#f8fafc]">Notifications</h3>
+                        <span x-show="notifCount > 0"
+                              x-text="notifCount"
+                              class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#1c3e96] text-white shadow-sm"></span>
+                    </div>
                 </div>
 
-                {{-- Thème --}}
-                <div x-show="tab==='theme'" class="pt-3">
-                    <div class="grid grid-cols-2 gap-3">
-                        <button @click="setTheme('light')" :class="!isDark ? 'ring-2 ring-amber-400 bg-amber-50' : 'bg-gray-50 dark:bg-gray-800'" class="p-5 rounded-2xl border flex flex-col items-center gap-2">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-300 to-orange-400 flex items-center justify-center text-white text-2xl">☀️</div>
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">Mode Clair</p>
-                            <div class="w-4 h-4 rounded-full border-2 mt-1" :class="!isDark ? 'bg-amber-400 border-amber-400' : 'border-gray-300'"></div>
-                        </button>
-                        <button @click="setTheme('dark')" :class="isDark ? 'ring-2 ring-indigo-400 bg-indigo-50' : 'bg-gray-50 dark:bg-gray-800'" class="p-5 rounded-2xl border flex flex-col items-center gap-2">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-slate-800 flex items-center justify-center text-white text-2xl">🌙</div>
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 text-sm">Mode Sombre</p>
-                            <div class="w-4 h-4 rounded-full border-2 mt-1" :class="isDark ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'"></div>
-                        </button>
-                    </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button x-show="notifCount > 0"
+                            @click="markAllRead()"
+                            type="button"
+                            class="text-xs text-[#1c3e96] dark:text-[#60a5fa] font-semibold hover:underline">
+                        Tout marquer comme lu
+                    </button>
+                    <button @click="isOpen = false"
+                            type="button"
+                            aria-label="Fermer"
+                            class="h-8 w-8 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] flex items-center justify-center transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
+            </div>
+
+            {{-- Liste scrollable des notifications --}}
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 space-y-2">
+                {{-- Chargement skeleton --}}
+                <template x-if="loadingNotifs">
+                    <div class="space-y-2 pt-1">
+                        <template x-for="i in 3">
+                            <div class="p-3 rounded-[10px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#222630] animate-pulse h-16"></div>
+                        </template>
+                    </div>
+                </template>
+
+                {{-- État vide --}}
+                <template x-if="!loadingNotifs && notifications.length === 0">
+                    <div class="py-12 text-center flex flex-col items-center justify-center">
+                        <div class="w-14 h-14 rounded-[12px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] flex items-center justify-center mb-3 text-[#6e6862] dark:text-[#94a3b8]">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                            </svg>
+                        </div>
+                        <p class="font-semibold text-sm text-[#241f1b] dark:text-[#f8fafc]">Tout est à jour !</p>
+                        <p class="text-xs text-[#6e6862] dark:text-[#a89f93] mt-1">Vous n'avez aucune notification en attente.</p>
+                    </div>
+                </template>
+
+                {{-- Liste des notifications --}}
+                <template x-if="!loadingNotifs && notifications.length > 0">
+                    <div class="space-y-2">
+                        <template x-for="notif in notifications" :key="notif.id">
+                            <a :href="notif.url"
+                               @click="markRead(notif.id)"
+                               class="flex items-start gap-3 p-3 rounded-[10px] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] hover:border-[#1c3e96]/40 dark:hover:border-[#60a5fa]/40 hover:bg-[#f8f7f4] dark:hover:bg-[#181b22] transition-colors group">
+                                <div class="shrink-0 w-8 h-8 rounded-[8px] flex items-center justify-center"
+                                     :class="{
+                                         'bg-[#dcfce7] text-[#15803d] border border-[#15803d]/30': notif.color==='green',
+                                         'bg-[#eef1fb] text-[#1c3e96] border border-[#1c3e96]/30': notif.color==='blue',
+                                         'bg-[#fef3c7] text-[#b45309] border border-[#b45309]/30': notif.color==='amber',
+                                         'bg-[#fee2e2] text-[#b91c1c] border border-[#b91c1c]/30': notif.color==='red'
+                                     }">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] truncate" x-text="notif.title"></p>
+                                    <p class="text-xs text-[#6e6862] dark:text-[#a89f93] mt-0.5" x-text="notif.message"></p>
+                                    <p class="text-[11px] text-[#bfbab2] dark:text-[#64748b] mt-1" x-text="notif.created_at"></p>
+                                </div>
+                            </a>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            {{-- Pied de page / Lien historique --}}
+            <div class="px-4 py-3 border-t border-[#ecebe3] dark:border-[#222630] bg-[#f8f7f4] dark:bg-[#181b22]">
+                <a href="{{ route('notifications.index') }}"
+                   @click="isOpen = false"
+                   class="w-full flex items-center justify-center gap-2 py-2.5 rounded-[8px] bg-white dark:bg-[#131519] border border-[#dcdad2] dark:border-[#262a34] text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] hover:border-[#1c3e96] hover:text-[#1c3e96] dark:hover:border-[#60a5fa] dark:hover:text-[#60a5fa] transition-colors">
+                    <span>Consulter l'historique des notifications</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
             </div>
         </div>
     </div>
 
     {{-- Layout principal --}}
-    <div class="min-h-screen flex overflow-x-hidden w-full max-w-full">
+    <div class="h-full h-screen h-[100dvh] flex overflow-hidden w-full max-w-full bg-[#f1f0ed] dark:bg-[#1f232d]">
         @include('layouts.navigation')
 
-        <div class="flex-1 flex flex-col main-content min-w-0 overflow-x-hidden">
+        <div class="flex-1 flex flex-col main-content min-w-0">
+            <div class="main-content-scroll custom-scrollbar">
             @if(session()->has('impersonate_user_id'))
             @php $impersonated = \App\Models\User::find(session('impersonate_user_id')); @endphp
             @if($impersonated)
@@ -297,142 +494,205 @@
             </div>
             @endif
             @endif
-            <header class="sticky top-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-                <div class="px-4 sm:px-6 lg:px-8">
-                    <div class="flex items-center h-14 sm:h-16 gap-3">
-                        <div class="lg:hidden w-5 mr-8 flex-shrink-0"></div>
-                       <h2 class="flex-1 text-sm xs:text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
-                        @php
-                            $routeName = Route::currentRouteName();
-                            $title = 'Tableau de bord';
-                            
-                            if ($routeName) {
-                                // Nettoyer le nom de la route
-                                $cleaned = str_replace(['admin.', 'web.', 'app.'], '', $routeName);
+            <header class="sticky top-0 z-30 bg-white/90 dark:bg-[#131519] backdrop-blur-xl border-none shadow-none">
+                <div class="px-3 sm:px-6 lg:px-8">
+                    <div class="flex items-center h-14 gap-2 sm:gap-3">
+                        {{-- Bouton Toggle Sidebar (à gauche comme sur l'image) --}}
+                        <button onclick="window.toggleSidebar()"
+                                type="button"
+                                title="Basculer le menu latéral"
+                                class="h-8 w-8 sm:h-9 sm:w-9 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] hover:border-[#bfbab2] dark:hover:border-[#383e4d] transition-all flex items-center justify-center shrink-0 cursor-pointer">
+                            <svg class="w-4 h-4 sm:w-4.5 sm:h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="3" />
+                                <path d="M9 3v18" />
+                                <path d="M4.75 8h1.5" />
+                                <path d="M4.75 12h1.5" />
+                                <path d="M4.75 16h1.5" />
+                            </svg>
+                        </button>
+
+                        <nav aria-label="Fil d'Ariane" class="flex-1 min-w-0 flex items-center justify-start">
+                            @php
+                                $routeName = Route::currentRouteName() ?? '';
                                 
-                                // Traductions spécifiques
                                 $translations = [
-                                    'stages' => 'Stages',
-                                    'ecoles' => 'Écoles de provenance',
-                                    'badges' => 'Badges',
-                                    'users' => 'Utilisateurs',
-                                    'roles' => 'Rôles',
-                                    'etudiants' => 'Stagiaires',
-                                    'employes' => 'Employés',
-                                    'personnels' => 'Personnels',
-                                    'sites' => 'Sites',
-                                    'domaines' => 'Domaines',
-                                    'presence' => 'Présence',
-                                    'attestation' => 'Attestations',
-                                    'rapports' => 'Rapports',
-                                    'all' => 'Tous',
-                                    'notifications' => 'Notifications',
-                                    'profile' => 'Profil',
-                                    'dashboard' => 'Tableau de bord',
-                                    'corbeille' => 'Corbeille',
-                                    'trash' => 'Corbeille',
-                                    'create' => 'Création',
-                                    'edit' => 'Modification',
-                                    'show' => 'Détails',
-                                    'index' => 'Liste',
-                                    'generate' => 'Génération',
-                                    'download' => 'Téléchargement',
-                                    'print' => 'Impression',
-                                    'approve' => 'Approbation',
-                                    'review' => 'Révision',
-                                    'audit' => 'Audit',
-                                    'checkin' => 'Pointage entrée',
-                                    'checkout' => 'Pointage sortie',
-                                    'statistics' => 'Statistiques',
-                                    'settings' => 'Paramètres',
-                                    'maintenance' => 'Maintenance',
+                                    'dashboard'      => 'Tableau de bord',
+                                    'stages'         => 'Stages',
+                                    'stage'          => 'Mon Stage',
+                                    'type_stages'    => 'Types de stages',
+                                    'ecoles'         => 'Écoles de provenance',
+                                    'badges'         => 'Badges',
+                                    'users'          => 'Utilisateurs',
+                                    'roles'          => 'Rôles',
+                                    'etudiants'      => 'Stagiaires',
+                                    'employes'       => 'Employés',
+                                    'personnels'     => 'Personnels',
+                                    'sites'          => 'Sites',
+                                    'domaines'       => 'Domaines',
+                                    'presence'       => 'Présence',
+                                    'pointage'       => 'Pointage',
+                                    'historique'     => 'Historique',
+                                    'anomalies'      => 'Anomalies',
+                                    'attestation'    => 'Attestations',
+                                    'attestations'   => 'Attestations',
+                                    'rapports'       => 'Rapports',
+                                    'reports'        => 'Rapports',
+                                    'tasks'          => 'Tâches',
+                                    'taches'         => 'Tâches',
+                                    'notifications'  => 'Notifications',
+                                    'profile'        => 'Profil',
+                                    'corbeille'      => 'Corbeille',
+                                    'trash'          => 'Corbeille',
+                                    'holidays'       => 'Jours fériés',
+                                    'jours'          => 'Jours de présence',
+                                    'settings'       => 'Paramètres',
+                                    'permissions'    => 'Permissions',
+                                    'logs'           => 'Journaux',
+                                    'statistics'     => 'Statistiques',
+                                    'statistiques'   => 'Statistiques',
+                                    'evaluations'    => 'Évaluations',
+                                    'criteria'       => 'Critères',
+                                    'work-schedules' => 'Horaires',
+                                    'work_schedules' => 'Horaires',
+                                    'create'         => 'Nouveau',
+                                    'edit'           => 'Modifier',
+                                    'show'           => 'Détails',
+                                    'detail'         => 'Détails',
+                                    'details'        => 'Détails',
+                                    'scan'           => 'Scan QR',
                                 ];
-                                
-                                // Remplacer les parties de la route
-                                $parts = explode('.', $cleaned);
-                                $translatedParts = [];
-                                
-                                foreach ($parts as $part) {
-                                    if (isset($translations[$part])) {
-                                        $translatedParts[] = $translations[$part];
-                                    } elseif ($part === 'index' && count($parts) > 1) {
-                                        // Ignorer 'index' car c'est implicite
-                                        continue;
-                                    } else {
-                                        $translatedParts[] = ucfirst(str_replace('_', ' ', $part));
+
+                                // Nettoyer les préfixes
+                                $cleaned = preg_replace('/^(admin|web|app|student|employee)\./', '', $routeName);
+                                $parts = array_values(array_filter(explode('.', $cleaned), fn($p) => $p !== 'index'));
+
+                                if (count($parts) > 1 && $parts[0] === 'dashboard') {
+                                    array_shift($parts);
+                                }
+
+                                $breadcrumbs = [];
+
+                                if (empty($parts) || $cleaned === 'dashboard') {
+                                    $breadcrumbs[] = [
+                                        'label' => 'Tableau de bord',
+                                        'url'   => null,
+                                    ];
+                                } else {
+                                    foreach ($parts as $idx => $part) {
+                                        $isLast = ($idx === count($parts) - 1);
+                                        $label = $translations[$part] ?? ucfirst(str_replace(['_', '-'], ' ', $part));
+
+                                        $targetUrl = null;
+                                        if (!$isLast) {
+                                            if (Route::has($part . '.index')) {
+                                                $targetUrl = route($part . '.index');
+                                            } elseif (Route::has('admin.' . $part . '.index')) {
+                                                $targetUrl = route('admin.' . $part . '.index');
+                                            } elseif (Route::has($part)) {
+                                                $targetUrl = route($part);
+                                            }
+                                        }
+
+                                        $breadcrumbs[] = [
+                                            'label' => $label,
+                                            'url'   => $targetUrl,
+                                        ];
                                     }
                                 }
-                                
-                                $title = implode(' - ', array_filter($translatedParts));
-                                
-                                // Cas spéciaux
-                                if (str_contains($routeName, '.index') && count($translatedParts) === 1) {
-                                    $title = $translatedParts[0];
-                                }
-                                
-                                if (empty($title)) {
-                                    $title = 'Tableau de bord';
-                                }
-                            }
-                        @endphp
-                        {{ $title }}
-                    </h2>
+                            @endphp
 
-                        {{-- Actions desktop & Alerte Urgente --}}
-                        <div class="flex items-center gap-2 sm:gap-3">
+                            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] max-w-full overflow-hidden text-xs sm:text-sm">
+                                <a href="{{ route('dashboard') }}" class="text-[#6e6862] dark:text-[#94a3b8] hover:text-[#1c3e96] dark:hover:text-[#60a5fa] transition-colors flex items-center shrink-0" title="Tableau de bord">
+                                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                                    </svg>
+                                </a>
+
+                                @foreach($breadcrumbs as $index => $crumb)
+                                    <svg class="w-3 h-3 text-[#bfbab2] dark:text-[#4b5563] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+
+                                    @if(!empty($crumb['url']) && !$loop->last)
+                                        <a href="{{ $crumb['url'] }}" class="text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] transition-colors truncate max-w-[110px] sm:max-w-[180px]">
+                                            {{ $crumb['label'] }}
+                                        </a>
+                                    @else
+                                        <span class="{{ $loop->last ? 'text-[#241f1b] dark:text-[#f8fafc] font-semibold' : 'text-[#6e6862] dark:text-[#94a3b8]' }} truncate max-w-[130px] sm:max-w-[240px]">
+                                            {{ $crumb['label'] }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </nav>
+
+                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0"
+                             x-data="{ isDark: document.documentElement.classList.contains('dark'), toggleTheme() { this.isDark = !this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('theme', this.isDark ? 'dark' : 'light'); window.dispatchEvent(new CustomEvent('theme-changed', { detail: { dark: this.isDark } })); } }"
+                             @theme-changed.window="isDark = $event.detail.dark">
                             {{-- Dropdown d'Alerte Urgente dans le Header --}}
                             <x-urgent-alert />
 
-                            <div class="hidden lg:flex items-center gap-2" x-data="{ isDark: document.documentElement.classList.contains('dark'), toggleTheme() { this.isDark = !this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('theme', this.isDark ? 'dark' : 'light'); } }">
-                                <button @click="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                    <svg x-show="!isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                            {{-- Bouton changement de mode (clair / sombre) --}}
+                            <button @click="toggleTheme()"
+                                    type="button"
+                                    title="Changer de thème"
+                                    class="h-8 w-8 sm:h-9 sm:w-9 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] hover:border-[#bfbab2] dark:hover:border-[#383e4d] transition-colors flex items-center justify-center shrink-0">
+                                <svg x-show="!isDark" class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                                </svg>
+                                <svg x-show="isDark" x-cloak class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                                </svg>
+                            </button>
+
+                            {{-- Dropdown notifications desktop --}}
+                            <div class="hidden lg:block relative" x-data="{ open: false, count: {{ $notificationCount ?? 0 }} }">
+                                <button @click="open = !open"
+                                        type="button"
+                                        title="Notifications"
+                                        class="relative h-8 w-8 sm:h-9 sm:w-9 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] hover:border-[#bfbab2] dark:hover:border-[#383e4d] transition-colors flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                                     </svg>
-                                    <svg x-show="isDark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" />
-                                    </svg>
+                                    <span x-show="count > 0" x-text="count > 9 ? '9+' : count" class="badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold"></span>
                                 </button>
 
-                                {{-- Dropdown notifications desktop --}}
-                                <div class="relative" x-data="{ open: false, count: {{ $notificationCount ?? 0 }} }">
-                                    <button @click="open = !open" class="relative p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                        </svg>
-                                        <span x-show="count > 0" x-text="count > 9 ? '9+' : count" class="badge-pulse absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold"></span>
-                                    </button>
-
-                                    <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                                        <div class="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                            <span class="font-semibold text-gray-800 dark:text-gray-200">Notifications</span>
-                                            <a href="{{ route('notifications.index') }}" @click="open = false" class="text-xs text-indigo-600 hover:underline">Tout voir</a>
+                                <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-[#fffefa] dark:bg-[#131519] rounded-[10px] shadow-xl border border-[#dcdad2] dark:border-[#222630] overflow-hidden z-50">
+                                    <div class="p-3 border-b border-[#ecebe3] dark:border-[#222630] flex justify-between items-center bg-[#f8f7f4] dark:bg-[#181b22]">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-sm text-[#241f1b] dark:text-[#f8fafc]">Notifications</span>
+                                            <span x-show="count > 0" x-text="count" class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1c3e96] text-white"></span>
                                         </div>
-                                        <div class="max-h-96 overflow-y-auto">
-                                            @php
-                                            $latestNotifs = \App\Models\AppNotification::where('user_id', Auth::id())->latest()->limit(5)->get();
-                                            @endphp
-                                            @forelse($latestNotifs as $notif)
-                                            <a href="{{ route('notifications.markRead', $notif->id) }}" @click="open = false"
-                                                class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 {{ !$notif->read_at ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
-                                                <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $notif->title }}</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $notif->message }}</p>
-                                                <p class="text-xs text-gray-400 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
-                                            </a>
-                                            @empty
-                                            <div class="px-4 py-6 text-center text-gray-500">Aucune notification</div>
-                                            @endforelse
-                                        </div>
+                                        <a href="{{ route('notifications.index') }}" @click="open = false" class="text-xs text-[#1c3e96] dark:text-[#60a5fa] font-semibold hover:underline">Tout voir</a>
+                                    </div>
+                                    <div class="max-h-96 overflow-y-auto custom-scrollbar">
+                                        @php
+                                        $latestNotifs = \App\Models\AppNotification::where('user_id', Auth::id())->latest()->limit(5)->get();
+                                        @endphp
+                                        @forelse($latestNotifs as $notif)
+                                        <a href="{{ route('notifications.markRead', $notif->id) }}" @click="open = false"
+                                            class="block px-4 py-3 hover:bg-[#f8f7f4] dark:hover:bg-[#181b22] border-b border-[#ecebe3] dark:border-[#222630] last:border-0 transition-colors {{ !$notif->read_at ? 'bg-[#eef1fb]/40 dark:bg-[rgba(28,62,150,0.15)]' : '' }}">
+                                            <p class="text-sm font-medium text-[#241f1b] dark:text-[#f8fafc] truncate">{{ $notif->title }}</p>
+                                            <p class="text-xs text-[#6e6862] dark:text-[#a89f93] mt-1">{{ $notif->message }}</p>
+                                            <p class="text-[11px] text-[#bfbab2] dark:text-[#64748b] mt-1">{{ $notif->created_at->diffForHumans() }}</p>
+                                        </a>
+                                        @empty
+                                        <div class="px-4 py-6 text-center text-xs text-[#6e6862] dark:text-[#a89f93]">Aucune notification</div>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Bouton mobile menu --}}
-                            <button onclick="window.dispatchEvent(new CustomEvent('open-mobile-panel', { detail: { tab: 'notifs' } }))" class="lg:hidden relative p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition flex-shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                            {{-- Bouton notifications mobile --}}
+                            <button onclick="window.dispatchEvent(new CustomEvent('open-mobile-panel'))"
+                                    type="button"
+                                    title="Notifications"
+                                    class="lg:hidden relative h-8 w-8 rounded-[8px] bg-[#f8f7f4] dark:bg-[#181b22] border border-[#dcdad2] dark:border-[#262a34] text-[#6e6862] dark:text-[#94a3b8] hover:text-[#241f1b] dark:hover:text-[#f8fafc] hover:border-[#bfbab2] dark:hover:border-[#383e4d] transition-colors flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                                 </svg>
                                 @if(isset($notificationCount) && $notificationCount > 0)
-                                <span class="badge-pulse absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{{ $notificationCount > 9 ? '9+' : $notificationCount }}</span>
+                                <span class="badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">{{ $notificationCount > 9 ? '9+' : $notificationCount }}</span>
                                 @endif
                             </button>
                         </div>
@@ -440,9 +700,13 @@
                 </div>
             </header>
 
-            <main class="p-3 sm:p-4 md:p-6">
-                {{ $slot }}
+            <main class="px-3 sm:px-4 lg:px-5 pt-2.5 sm:pt-3.5 pb-6 flex-1 flex flex-col min-w-0 relative">
+                <x-page-skeleton />
+                <div id="real-page-content" class="w-full flex-1 flex flex-col min-w-0" style="display: none; opacity: 0;">
+                    {{ $slot }}
+                </div>
             </main>
+            </div>
         </div>
     </div>
 
@@ -450,8 +714,6 @@
         function mobilePanel() {
             return {
                 isOpen: false,
-                tab: 'notifs',
-                isDark: document.documentElement.classList.contains('dark'),
                 notifications: [],
                 notifCount: @json($notificationCount ?? 0),
                 loadingNotifs: false,
@@ -461,8 +723,8 @@
                     try {
                         const r = await fetch('/notifications/unread-json');
                         const d = await r.json();
-                        this.notifications = d.notifications;
-                        this.notifCount = d.count;
+                        this.notifications = Array.isArray(d.notifications) ? d.notifications : [];
+                        this.notifCount = d.count ?? 0;
                     } catch (e) {
                         console.error(e);
                     } finally {
@@ -490,13 +752,6 @@
                     });
                     this.notifications = [];
                     this.notifCount = 0;
-                },
-
-                setTheme(theme) {
-                    const isDark = theme === 'dark';
-                    this.isDark = isDark;
-                    document.documentElement.classList.toggle('dark', isDark);
-                    localStorage.setItem('theme', theme);
                 }
             }
         }
@@ -586,6 +841,87 @@
                 });
             }
         });
+
+        // === GESTION DU SKELETON RÉEL MON-STAGE ===
+        (function() {
+            const skeleton = document.getElementById('page-skeleton-overlay');
+            const content = document.getElementById('real-page-content');
+            if (!skeleton || !content) return;
+
+            let revealed = false;
+            function revealContent() {
+                if (revealed) return;
+                revealed = true;
+                skeleton.style.transition = 'opacity 0.18s ease-out';
+                skeleton.style.opacity = '0';
+                content.style.display = 'flex';
+                requestAnimationFrame(function() {
+                    content.style.transition = 'opacity 0.2s ease-in';
+                    content.style.opacity = '1';
+                    setTimeout(function() {
+                        skeleton.style.display = 'none';
+                    }, 180);
+                });
+            }
+
+            // Écouter Alpine ou load
+            if (window.Alpine) {
+                document.addEventListener('alpine:initialized', function() {
+                    setTimeout(revealContent, 80);
+                });
+            }
+            if (document.readyState === 'complete') {
+                setTimeout(revealContent, 80);
+            } else {
+                window.addEventListener('load', function() {
+                    setTimeout(revealContent, 80);
+                });
+            }
+            // Sécurité anti-blocage (maximum 300ms)
+            setTimeout(revealContent, 300);
+
+            // Gestion du retour arrière navigateur (bfcache)
+            window.addEventListener('pageshow', function(e) {
+                if (e.persisted) {
+                    skeleton.style.display = 'none';
+                    content.style.display = 'flex';
+                    content.style.opacity = '1';
+                }
+            });
+
+            // Bascule instantanée du skeleton réel lors des clics sur les liens
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a[href]');
+                if (!link || link.target === '_blank' || link.hasAttribute('download') || e.ctrlKey || e.metaKey || e.shiftKey) return;
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+                let tplId = null;
+                if (href.includes('/mon-stage')) tplId = 'sk-tpl-mon-stage';
+                else if (href.includes('/presence/pointage') || href.includes('/pointage')) tplId = 'sk-tpl-pointage';
+                else if (href.includes('/presence/historique') || href.includes('/historique')) tplId = 'sk-tpl-historique';
+                else if (href.includes('/tasks')) tplId = 'sk-tpl-tasks';
+                else if (href.includes('/permissions')) tplId = 'sk-tpl-permissions';
+                else if (href.includes('/reports')) tplId = 'sk-tpl-reports';
+                else if (href.includes('/summaries')) tplId = 'sk-tpl-summaries';
+                else if (href.includes('/profile')) tplId = 'sk-tpl-profile';
+                else if (href.includes('/notifications')) tplId = 'sk-tpl-notifications';
+                else if (href.includes('/admin/employes') || href.includes('/employes')) tplId = 'sk-tpl-employes';
+                else if (href.includes('/dashboard')) tplId = 'sk-tpl-dashboard';
+
+                if (tplId) {
+                    const tpl = document.getElementById(tplId);
+                    const skContent = document.getElementById('page-skeleton-content');
+                    if (tpl && skContent) {
+                        skContent.innerHTML = tpl.innerHTML;
+                        skeleton.style.display = 'block';
+                        skeleton.style.opacity = '1';
+                        content.style.opacity = '0';
+                        content.style.display = 'none';
+                    }
+                }
+            });
+        })();
     </script>
     @stack('scripts')
 </body>

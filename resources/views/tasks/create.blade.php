@@ -3,288 +3,496 @@
     @php
         $currentPriority = old('priority', 'normal');
         $priorityOptions = [
-            'low'    => ['label' => 'Basse',   'hint' => 'Suivi léger',           'dot' => 'bg-slate-400'],
-            'normal' => ['label' => 'Normale',  'hint' => 'Priorité standard',     'dot' => 'bg-cyan-500'],
-            'high'   => ['label' => 'Haute',    'hint' => 'À traiter vite',        'dot' => 'bg-amber-500'],
-            'urgent' => ['label' => 'Urgente',  'hint' => 'Attention immediate',   'dot' => 'bg-rose-500'],
+            'low'    => ['label' => 'Basse',   'hint' => 'Suivi léger',       'dot' => 'bg-slate-400'],
+            'normal' => ['label' => 'Normale',  'hint' => 'Priorité standard', 'dot' => 'bg-blue-500'],
+            'high'   => ['label' => 'Haute',    'hint' => 'À traiter vite',    'dot' => 'bg-amber-500'],
+            'urgent' => ['label' => 'Urgente',  'hint' => 'Immédiate',         'dot' => 'bg-rose-500'],
         ];
     @endphp
 
     <style>
-        @keyframes editRise {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
+        /* Fond warm beige façon Mon-Stage */
+        body { background: #f1f0ed !important; }
+        .dark body { background: #1f232d !important; }
+
+        :root {
+            --ks-ink: #241f1b;
+            --ks-blue: #1c3e96;
+            --ks-blue-dark: #162f73;
+            --ks-line: #bfbab2;
+            --ks-muted: #6e6862;
+            --ks-card: #fffefa;
+            --ks-card-bd: #dcdad2;
         }
-        .edit-rise > * { animation: editRise .5s cubic-bezier(.2,.8,.2,1) both; }
-        .edit-rise > *:nth-child(2) { animation-delay: .06s; }
+
+        .ks-btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            background: #1c3e96;
+            color: #fff;
+            border: 1px solid #1c3e96;
+            border-radius: 6px;
+            font-size: .85rem;
+            font-weight: 600;
+            padding: .45rem .9rem;
+            transition: all .15s ease;
+        }
+        .ks-btn-primary:hover { background: #162f73; border-color: #162f73; }
+        .ks-btn-primary:active { transform: scale(.98); }
+
+        .ks-btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            background: #fff;
+            color: #241f1b;
+            border: 1px solid #bfbab2;
+            border-radius: 6px;
+            font-size: .85rem;
+            font-weight: 500;
+            padding: .45rem .9rem;
+            transition: all .15s ease;
+        }
+        .dark .ks-btn-secondary { background: #131519; color: #fff; border-color: #222630; }
+        .ks-btn-secondary:hover { border-color: #1c3e96; color: #1c3e96; }
+
+        .ks-btn-xs {
+            min-height: 28px !important;
+            padding: .25rem .6rem !important;
+            font-size: .75rem !important;
+            font-weight: 600;
+            border-radius: 6px !important;
+            white-space: nowrap;
+        }
+
+        .ks-sec {
+            background: #fffefa;
+            border: 1px solid #dcdad2;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(36,31,27,.04);
+            transition: border-color .15s ease;
+        }
+        .dark .ks-sec {
+            background: #131519 !important;
+            border-color: #222630 !important;
+            box-shadow: none;
+        }
+
+        .ks-sec-head {
+            padding: .65rem .85rem;
+            border-bottom: 1px solid #dcdad2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+        }
+        .dark .ks-sec-head { border-bottom-color: #222630 !important; }
+
         .edit-choice input:checked + span {
-            border-color: rgb(15 23 42 / .9);
-            background: rgb(15 23 42);
-            color: white;
-            box-shadow: 0 18px 42px rgb(15 23 42 / .18);
-            transform: translateY(-1px);
+            border-color: #1c3e96;
+            background: #eef1fb;
+            color: #1c3e96;
+            font-weight: 600;
+            box-shadow: 0 1px 4px rgba(28,62,150,.1);
         }
         .dark .edit-choice input:checked + span {
-            border-color: rgb(255 255 255 / .9);
-            background: white;
-            color: rgb(15 23 42);
+            border-color: #3b82f6;
+            background: #17233d;
+            color: #93c5fd;
         }
+
+        /* Cartes de sélection de priorité avec couleur propre à chaque priorité */
+        .prio-choice span.prio-card {
+            border-radius: 8px;
+            border-width: 1px;
+            border-style: solid;
+            transition: all .15s ease;
+        }
+
+        /* 1. Basse (gris ardoise) */
+        .prio-choice--low span.prio-card {
+            border-color: #cbd5e1;
+            background-color: rgba(241, 245, 249, 0.75);
+            color: #475569;
+        }
+        .dark .prio-choice--low span.prio-card {
+            border-color: #334155;
+            background-color: rgba(30, 41, 59, 0.35);
+            color: #94a3b8;
+        }
+        .prio-choice--low:hover span.prio-card {
+            border-color: #94a3b8;
+        }
+        .dark .prio-choice--low:hover span.prio-card {
+            border-color: #64748b;
+        }
+        .prio-choice--low input:checked + span.prio-card {
+            border-color: #64748b !important;
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.25) !important;
+        }
+        .dark .prio-choice--low input:checked + span.prio-card {
+            border-color: #94a3b8 !important;
+            background-color: rgba(51, 65, 85, 0.75) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3) !important;
+        }
+
+        /* 2. Normale (bleu cobalt / Mon-Stage) */
+        .prio-choice--normal span.prio-card {
+            border-color: #bfdbfe;
+            background-color: rgba(239, 246, 255, 0.75);
+            color: #1e40af;
+        }
+        .dark .prio-choice--normal span.prio-card {
+            border-color: #1e3a8a;
+            background-color: rgba(30, 58, 138, 0.3);
+            color: #93c5fd;
+        }
+        .prio-choice--normal:hover span.prio-card {
+            border-color: #60a5fa;
+        }
+        .dark .prio-choice--normal:hover span.prio-card {
+            border-color: #3b82f6;
+        }
+        .prio-choice--normal input:checked + span.prio-card {
+            border-color: #1c3e96 !important;
+            background-color: #dbeafe !important;
+            color: #1c3e96 !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(28, 62, 150, 0.25) !important;
+        }
+        .dark .prio-choice--normal input:checked + span.prio-card {
+            border-color: #3b82f6 !important;
+            background-color: rgba(28, 62, 150, 0.55) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35) !important;
+        }
+
+        /* 3. Haute (ambre chaud) */
+        .prio-choice--high span.prio-card {
+            border-color: #fde68a;
+            background-color: rgba(254, 243, 199, 0.75);
+            color: #92400e;
+        }
+        .dark .prio-choice--high span.prio-card {
+            border-color: #78350f;
+            background-color: rgba(120, 53, 15, 0.3);
+            color: #fcd34d;
+        }
+        .prio-choice--high:hover span.prio-card {
+            border-color: #f59e0b;
+        }
+        .dark .prio-choice--high:hover span.prio-card {
+            border-color: #b45309;
+        }
+        .prio-choice--high input:checked + span.prio-card {
+            border-color: #d97706 !important;
+            background-color: #fef3c7 !important;
+            color: #b45309 !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25) !important;
+        }
+        .dark .prio-choice--high input:checked + span.prio-card {
+            border-color: #f59e0b !important;
+            background-color: rgba(180, 83, 9, 0.55) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35) !important;
+        }
+
+        /* 4. Urgente (rouge / rose vif) */
+        .prio-choice--urgent span.prio-card {
+            border-color: #fecdd3;
+            background-color: rgba(255, 228, 230, 0.75);
+            color: #9f1239;
+        }
+        .dark .prio-choice--urgent span.prio-card {
+            border-color: #881337;
+            background-color: rgba(136, 19, 55, 0.3);
+            color: #fda4af;
+        }
+        .prio-choice--urgent:hover span.prio-card {
+            border-color: #fb7185;
+        }
+        .dark .prio-choice--urgent:hover span.prio-card {
+            border-color: #e11d48;
+        }
+        .prio-choice--urgent input:checked + span.prio-card {
+            border-color: #e11d48 !important;
+            background-color: #ffe4e6 !important;
+            color: #be123c !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25) !important;
+        }
+        .dark .prio-choice--urgent input:checked + span.prio-card {
+            border-color: #f43f5e !important;
+            background-color: rgba(225, 29, 72, 0.5) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.35) !important;
+        }
+
+        @keyframes editRise {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .edit-rise > * { animation: editRise .35s cubic-bezier(.2,.8,.2,1) both; }
+        .edit-rise > *:nth-child(2) { animation-delay: .05s; }
     </style>
 
-    <div class="-m-3 sm:-m-4 md:-m-6 min-h-[calc(100vh-4rem)] bg-zinc-50 text-slate-950 dark:bg-[#090d12] dark:text-white"
+    <div class="w-full space-y-3 pb-6"
          x-data="subtaskForm()">
-        <div class="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-6 lg:px-7">
-            <div class="edit-rise grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
 
-                {{-- ── SIDEBAR ── --}}
-                <aside class="space-y-4">
-                    <a href="{{ route('tasks.index') }}"
-                       class="inline-flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19 8 12l7-7"/></svg>
-                        Retour aux tâches
-                    </a>
+        <div class="edit-rise grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] items-start">
 
-                    <section class="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/90 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-950/[0.03] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-                        <div class="h-1 bg-gradient-to-r from-cyan-500 via-emerald-500 to-slate-950 dark:to-white"></div>
-                        <div class="p-5">
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Création</p>
-                            <h1 class="mt-2 text-2xl font-semibold leading-tight tracking-tight text-slate-950 dark:text-white">Créer une tâche</h1>
-                            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Remplis le formulaire et ajoute au moins une sous-tâche pour définir les étapes de travail.</p>
+            {{-- ── COLONNE GAUCHE (SIDEBAR) ── --}}
+            <aside class="space-y-3">
+                <a href="{{ route('tasks.index') }}"
+                   class="ks-btn-secondary ks-btn-xs !text-[12px] !px-3 !py-1.5 w-full justify-start">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19 8 12l7-7"/></svg>
+                    Retour aux tâches
+                </a>
 
-                            {{-- Barre de progression (toujours 0 à la création) --}}
-                            <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                                <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                    <span>Progression</span>
-                                    <span class="tabular-nums">0%</span>
-                                </div>
-                                <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
-                                    <div class="h-full w-0 rounded-full bg-slate-950 transition-all duration-700 dark:bg-white"></div>
-                                </div>
-                                <p class="mt-2 text-xs text-slate-400">Calculée automatiquement depuis les sous-tâches</p>
+                <section class="ks-sec overflow-hidden">
+                    <div class="h-1 bg-[#1c3e96]"></div>
+                    <div class="p-4 space-y-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-[#1c3e96] dark:text-blue-400">Nouvelle tâche</span>
+                            <h1 class="text-lg font-bold text-[#241f1b] dark:text-white mt-0.5">Création</h1>
+                            <p class="text-xs text-[#6e6862] dark:text-slate-400 mt-1 leading-relaxed">
+                                Définis les détails et au moins une sous-tâche pour suivre les étapes de travail.
+                            </p>
+                        </div>
+
+                        {{-- Barre de progression --}}
+                        <div class="rounded-lg border border-[#ecebe3] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] p-3">
+                            <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">
+                                <span>Progression</span>
+                                <span class="font-mono font-bold text-[#241f1b] dark:text-white">0%</span>
+                            </div>
+                            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[#ecebe3] dark:bg-[#222630]">
+                                <div class="h-full w-0 rounded-full bg-[#1c3e96] transition-all duration-500"></div>
+                            </div>
+                            <p class="mt-1.5 text-[10px] text-[#6e6862] dark:text-slate-400">Calculée automatiquement depuis les sous-tâches</p>
+                        </div>
+
+                        <dl class="space-y-2 text-xs pt-1 border-t border-[#ecebe3] dark:border-[#222630]">
+                            <div class="flex items-center justify-between gap-2">
+                                <dt class="text-[#6e6862] dark:text-slate-400">Créateur</dt>
+                                <dd class="truncate font-semibold text-[#241f1b] dark:text-slate-200">{{ auth()->user()->name }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <dt class="text-[#6e6862] dark:text-slate-400">Sous-tâches</dt>
+                                <dd class="font-mono font-bold text-[#241f1b] dark:text-slate-200" x-text="subtasks.length"></dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <dt class="text-[#6e6862] dark:text-slate-400">Date</dt>
+                                <dd class="font-mono font-semibold text-[#241f1b] dark:text-slate-200">{{ now()->format('d/m/Y') }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+            </aside>
+
+            {{-- ── FORMULAIRE PRINCIPAL ── --}}
+            <main class="min-w-0 space-y-3.5">
+
+                {{-- Erreurs globales --}}
+                @if($errors->any())
+                <div class="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 px-3.5 py-2.5 text-xs text-red-700 dark:text-red-300">
+                    <ul class="space-y-0.5">@foreach($errors->all() as $e)<li>• {{ $e }}</li>@endforeach</ul>
+                </div>
+                @endif
+
+                <form method="POST" action="{{ route('tasks.store') }}" enctype="multipart/form-data" class="space-y-3.5">
+                    @csrf
+
+                    {{-- §1 Informations principales --}}
+                    <section class="ks-sec overflow-hidden">
+                        <div class="ks-sec-head">
+                            <span class="text-xs font-bold uppercase tracking-wider text-[#241f1b] dark:text-white">Informations principales</span>
+                            <span class="text-[11px] text-[#6e6862] dark:text-slate-400">* Champs obligatoires</span>
+                        </div>
+
+                        <div class="p-4 space-y-4">
+
+                            {{-- Titre --}}
+                            <div>
+                                <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">Titre <span class="text-red-500">*</span></label>
+                                <input type="text" name="title" required value="{{ old('title') }}" placeholder="Ex : Intégration du portail d'évaluation…"
+                                    class="h-9 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-3 text-xs font-medium text-[#241f1b] dark:text-white placeholder-[#6e6862] dark:placeholder-slate-500 transition focus:border-[#1c3e96] focus:outline-none">
                             </div>
 
-                            <dl class="mt-5 space-y-3 text-sm">
-                                <div class="flex items-center justify-between gap-4">
-                                    <dt class="text-slate-400">Propriétaire</dt>
-                                    <dd class="max-w-[170px] truncate font-semibold text-slate-700 dark:text-slate-200">{{ auth()->user()->name }}</dd>
+                            {{-- Description --}}
+                            <div>
+                                <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">Description <span class="text-red-500">*</span></label>
+                                <textarea name="description" rows="4" required placeholder="Décrivez les objectifs, contraintes et périmètre de la tâche…"
+                                    class="w-full resize-none rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-3 py-2 text-xs leading-5 text-[#241f1b] dark:text-white placeholder-[#6e6862] dark:placeholder-slate-500 transition focus:border-[#1c3e96] focus:outline-none">{{ old('description') }}</textarea>
+                            </div>
+
+                            {{-- Priorité --}}
+                            <div>
+                                <div class="mb-2 flex items-center justify-between gap-4">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">Priorité</label>
+                                    <span class="text-[11px] text-[#6e6862] dark:text-slate-400">Affecte le tri et les alertes</span>
                                 </div>
-                                <div class="flex items-center justify-between gap-4">
-                                    <dt class="text-slate-400">Sous-tâches</dt>
-                                    <dd class="font-semibold text-slate-700 dark:text-slate-200" x-text="subtasks.length"></dd>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    @foreach($priorityOptions as $value => $option)
+                                    <label class="prio-choice prio-choice--{{ $value }} cursor-pointer block">
+                                        <input type="radio" name="priority" value="{{ $value }}" class="sr-only" {{ $currentPriority === $value ? 'checked' : '' }}>
+                                        <span class="prio-card flex h-full min-h-[66px] flex-col justify-between p-2.5">
+                                            <span class="flex items-center justify-between">
+                                                <span class="text-xs font-bold">{{ $option['label'] }}</span>
+                                                <span class="h-2 w-2 rounded-full {{ $option['dot'] }}"></span>
+                                            </span>
+                                            <span class="text-[10.5px] opacity-80">{{ $option['hint'] }}</span>
+                                        </span>
+                                    </label>
+                                    @endforeach
                                 </div>
-                                <div class="flex items-center justify-between gap-4">
-                                    <dt class="text-slate-400">Création</dt>
-                                    <dd class="font-semibold text-slate-700 dark:text-slate-200">{{ now()->format('d/m/Y') }}</dd>
+                            </div>
+
+                            {{-- Période --}}
+                            <div>
+                                <div class="mb-2 flex items-center justify-between gap-4">
+                                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">Période d'exécution</label>
+                                    <span class="text-[11px] text-[#6e6862] dark:text-slate-400">Cadre temporel de la tâche</span>
                                 </div>
-                            </dl>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="mb-1 block text-[11px] font-semibold text-[#6e6862] dark:text-slate-400">Date de début</label>
+                                        <input type="date" name="start_date" id="task_start_date" value="{{ old('start_date') }}"
+                                            x-model="taskStartDate"
+                                            @change="validateSubtaskDates()"
+                                            class="h-9 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-3 text-xs text-[#241f1b] dark:text-white transition focus:border-[#1c3e96] focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-[11px] font-semibold text-[#6e6862] dark:text-slate-400">Date de fin <span class="opacity-70">(échéance)</span></label>
+                                        <input type="date" name="due_date" id="task_due_date" value="{{ old('due_date') }}"
+                                            x-model="taskEndDate"
+                                            @change="validateSubtaskDates()"
+                                            class="h-9 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-3 text-xs text-[#241f1b] dark:text-white transition focus:border-[#1c3e96] focus:outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Cahier des charges PDF --}}
+                            <div>
+                                <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6e6862] dark:text-slate-400">Cahier des charges <span class="opacity-70">(PDF optionnel)</span></label>
+                                <label class="flex cursor-pointer items-center gap-2.5 rounded-md border border-dashed border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] px-3 py-2 transition hover:border-[#1c3e96]">
+                                    <svg class="h-4 w-4 shrink-0 text-[#6e6862] dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                    <span class="text-xs text-[#6e6862] dark:text-slate-400 truncate" x-text="pdfName || 'Choisir un document PDF…'"></span>
+                                    <input type="file" name="pdf" accept=".pdf" class="sr-only" @change="pdfName = $event.target.files[0]?.name || ''">
+                                </label>
+                            </div>
+
                         </div>
                     </section>
-                </aside>
 
-                {{-- ── FORMULAIRE PRINCIPAL ── --}}
-                <main class="min-w-0 space-y-5">
-
-                    {{-- Erreurs globales --}}
-                    @if($errors->any())
-                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
-                        <ul class="space-y-1">@foreach($errors->all() as $e)<li>• {{ $e }}</li>@endforeach</ul>
-                    </div>
-                    @endif
-
-                    <form method="POST" action="{{ route('tasks.store') }}" enctype="multipart/form-data" class="space-y-5">
-                        @csrf
-
-                        {{-- §1 Informations principales --}}
-                        <section class="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-950/[0.03] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-                            <div class="border-b border-slate-200/70 p-5 dark:border-white/10 sm:p-6">
-                                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Formulaire</p>
-                                <h2 class="mt-1 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Informations principales</h2>
+                    {{-- §2 Sous-tâches --}}
+                    <section class="ks-sec overflow-hidden">
+                        <div class="ks-sec-head">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-[#241f1b] dark:text-white">Sous-tâches</span>
+                                <span class="text-[11px] text-[#6e6862] dark:text-slate-400 ml-2">Étapes de travail assignables</span>
                             </div>
-
-                            <div class="space-y-6 p-5 sm:p-6">
-
-                                {{-- Titre --}}
-                                <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Titre <span class="text-rose-500">*</span></label>
-                                    <input type="text" name="title" required value="{{ old('title') }}" placeholder="Nom de la tâche…"
-                                        class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-white/20">
-                                </div>
-
-                                {{-- Description (obligatoire) --}}
-                                <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Description <span class="text-rose-500">*</span></label>
-                                    <textarea name="description" rows="5" required placeholder="Décrivez les objectifs et le périmètre de la tâche…"
-                                        class="w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 text-slate-950 transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-white/20">{{ old('description') }}</textarea>
-                                </div>
-
-                                {{-- Priorité --}}
-                                <div>
-                                    <div class="mb-3 flex items-center justify-between gap-4">
-                                        <label class="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Priorité</label>
-                                        <span class="text-xs text-slate-400">Impact sur le tri visuel</span>
-                                    </div>
-                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                                        @foreach($priorityOptions as $value => $option)
-                                        <label class="edit-choice cursor-pointer">
-                                            <input type="radio" name="priority" value="{{ $value }}" class="sr-only" {{ $currentPriority === $value ? 'checked' : '' }}>
-                                            <span class="flex h-full min-h-[92px] flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-sm dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-200 dark:hover:bg-white/[0.06]">
-                                                <span class="flex items-center justify-between">
-                                                    <span class="text-sm font-semibold">{{ $option['label'] }}</span>
-                                                    <span class="h-2.5 w-2.5 rounded-full {{ $option['dot'] }}"></span>
-                                                </span>
-                                                <span class="text-xs opacity-70">{{ $option['hint'] }}</span>
-                                            </span>
-                                        </label>
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                {{-- Période --}}
-                                <div>
-                                    <div class="mb-3 flex items-center justify-between gap-4">
-                                        <label class="block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Période</label>
-                                        <span class="text-xs text-slate-400">Les dates des sous-tâches doivent s'y inscrire</span>
-                                    </div>
-                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de début</label>
-                                            <input type="date" name="start_date" id="task_start_date" value="{{ old('start_date') }}"
-                                                x-model="taskStartDate"
-                                                @change="validateSubtaskDates()"
-                                                class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
-                                        </div>
-                                        <div>
-                                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Date de fin <span class="text-slate-300 dark:text-slate-600">(échéance)</span></label>
-                                            <input type="date" name="due_date" id="task_due_date" value="{{ old('due_date') }}"
-                                                x-model="taskEndDate"
-                                                @change="validateSubtaskDates()"
-                                                class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- PDF --}}
-                                <div>
-                                    <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Cahier des charges <span class="text-slate-300 dark:text-slate-600">(PDF, optionnel)</span></label>
-                                    <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 transition hover:border-slate-400 hover:bg-white dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]">
-                                        <svg class="h-5 w-5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                        <span class="text-sm text-slate-500 dark:text-slate-400" x-text="pdfName || 'Choisir un fichier PDF…'"></span>
-                                        <input type="file" name="pdf" accept=".pdf" class="sr-only" @change="pdfName = $event.target.files[0]?.name || ''">
-                                    </label>
-                                </div>
-
-                            </div>
-                        </section>
-
-                        {{-- §2 Sous-tâches (OPTIONNELLES) --}}
-                        <section class="overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/95 shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-950/[0.03] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-                            <div class="border-b border-slate-200/70 p-5 dark:border-white/10 sm:p-6">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Étapes de travail</p>
-                                        <h2 class="mt-1 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                                            Sous-tâches
-                                        </h2>
-                                        <p class="mt-1 text-xs text-slate-500">Optionnel — Les étapes (niveau 1) seront assignées aux participants, qui ajouteront ensuite leurs items personnels.</p>
-                                    </div>
-                                    <button type="button" @click="addSubtask()"
-                                        class="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
-                                        Ajouter
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="p-5 sm:p-6 space-y-3">
-                                {{-- Message si aucune sous-tâche --}}
-                                <div x-show="subtasks.length === 0" x-cloak
-                                    class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/[0.02]">
-                                    <svg class="mx-auto mb-2 h-8 w-8 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/></svg>
-                                    <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Aucune sous-tâche ajoutée</p>
-                                    <p class="mt-1 text-xs text-slate-400">Facultatif. Vous pouvez créer la tâche puis ajouter les sous-tâches et leurs items plus tard.</p>
-                                </div>
-
-                                {{-- Liste des sous-tâches --}}
-                                <template x-for="(st, index) in subtasks" :key="st.id">
-                                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                                        <div class="mb-3 flex items-center justify-between">
-                                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400" x-text="'Sous-tâche ' + (index + 1)"></span>
-                                            <button type="button" @click="removeSubtask(index)"
-                                                class="rounded-lg p-1.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-500/10">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                                            </button>
-                                        </div>
-
-                                        <div class="space-y-3">
-                                            {{-- Titre de la sous-tâche --}}
-                                            <div>
-                                                <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Titre <span class="text-rose-500">*</span></label>
-                                                <input type="text"
-                                                    :name="'subtasks[' + index + '][title]'"
-                                                    x-model="st.title"
-                                                    required
-                                                    placeholder="Ex : Créer le modèle de données…"
-                                                    class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white">
-                                            </div>
-
-                                            {{-- Dates --}}
-                                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                                <div>
-                                                    <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Date de début</label>
-                                                    <input type="date"
-                                                        :name="'subtasks[' + index + '][start_date]'"
-                                                        x-model="st.start_date"
-                                                        :min="taskStartDate || ''"
-                                                        :max="taskEndDate || ''"
-                                                        @change="validateSubtaskDate(index)"
-                                                        class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
-                                                        :class="st.dateError ? 'border-rose-400' : ''">
-                                                </div>
-                                                <div>
-                                                    <label class="mb-1 block text-xs font-semibold text-slate-500 dark:text-slate-400">Date de fin</label>
-                                                    <input type="date"
-                                                        :name="'subtasks[' + index + '][end_date]'"
-                                                        x-model="st.end_date"
-                                                        :min="st.start_date || taskStartDate || ''"
-                                                        :max="taskEndDate || ''"
-                                                        @change="validateSubtaskDate(index)"
-                                                        class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 transition focus:border-slate-400 focus:ring-4 focus:ring-slate-950/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
-                                                        :class="st.dateError ? 'border-rose-400' : ''">
-                                                </div>
-                                            </div>
-
-                                            {{-- Erreur date --}}
-                                            <p x-show="st.dateError" x-text="st.dateError" class="text-xs text-rose-500"></p>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                {{-- Note sur la progression --}}
-                                <div x-show="subtasks.length > 0" x-cloak
-                                    class="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400">
-                                    <strong x-text="subtasks.length + ' sous-tâche(s)'"></strong> — La progression sera calculée automatiquement : chaque sous-tâche terminée = <span x-text="subtasks.length > 0 ? Math.round(100/subtasks.length) + '%' : '0%'"></span> de la tâche.
-                                </div>
-                            </div>
-                        </section>
-
-                        {{-- Actions --}}
-                        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-                            <a href="{{ route('tasks.index') }}"
-                                class="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">
-                                Annuler
-                            </a>
-                            <button type="submit"
-                                :disabled="hasDateErrors"
-                                :class="hasDateErrors ? 'opacity-40 cursor-not-allowed' : ''"
-                                class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(15,23,42,.22)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
-                                Créer la tâche
+                            <button type="button" @click="addSubtask()"
+                                class="ks-btn-primary ks-btn-xs !text-[12px] !px-2.5 !py-1">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
+                                Ajouter
                             </button>
                         </div>
-                    </form>
-                </main>
 
-            </div>
+                        <div class="p-4 space-y-3">
+                            {{-- Message si aucune sous-tâche --}}
+                            <div x-show="subtasks.length === 0" x-cloak
+                                class="rounded-lg border border-dashed border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] p-5 text-center">
+                                <p class="text-xs font-semibold text-[#241f1b] dark:text-white">Aucune sous-tâche ajoutée</p>
+                                <p class="mt-0.5 text-[11px] text-[#6e6862] dark:text-slate-400">Facultatif : vous pouvez créer la tâche puis découper les étapes et items plus tard.</p>
+                            </div>
+
+                            {{-- Liste des sous-tâches --}}
+                            <template x-for="(st, index) in subtasks" :key="st.id">
+                                <div class="rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] p-3 space-y-2.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-[#1c3e96] dark:text-blue-400" x-text="'Sous-tâche ' + (index + 1)"></span>
+                                        <button type="button" @click="removeSubtask(index)"
+                                            class="rounded p-1 text-[#6e6862] hover:text-red-600 transition" title="Supprimer cette sous-tâche">
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <label class="mb-1 block text-[11px] font-semibold text-[#6e6862] dark:text-slate-400">Titre <span class="text-red-500">*</span></label>
+                                        <input type="text"
+                                            :name="'subtasks[' + index + '][title]'"
+                                            x-model="st.title"
+                                            required
+                                            placeholder="Ex : Modélisation de la base de données…"
+                                            class="h-8 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-2.5 text-xs text-[#241f1b] dark:text-white transition focus:border-[#1c3e96] focus:outline-none">
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-[#6e6862] dark:text-slate-400">Date début</label>
+                                            <input type="date"
+                                                :name="'subtasks[' + index + '][start_date]'"
+                                                x-model="st.start_date"
+                                                :min="taskStartDate || ''"
+                                                :max="taskEndDate || ''"
+                                                @change="validateSubtaskDate(index)"
+                                                class="h-8 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-2 text-xs text-[#241f1b] dark:text-white transition focus:border-[#1c3e96] focus:outline-none"
+                                                :class="st.dateError ? '!border-red-400' : ''">
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] font-semibold text-[#6e6862] dark:text-slate-400">Date fin</label>
+                                            <input type="date"
+                                                :name="'subtasks[' + index + '][end_date]'"
+                                                x-model="st.end_date"
+                                                :min="st.start_date || taskStartDate || ''"
+                                                :max="taskEndDate || ''"
+                                                @change="validateSubtaskDate(index)"
+                                                class="h-8 w-full rounded-md border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#15181f] px-2 text-xs text-[#241f1b] dark:text-white transition focus:border-[#1c3e96] focus:outline-none"
+                                                :class="st.dateError ? '!border-red-400' : ''">
+                                        </div>
+                                    </div>
+
+                                    <p x-show="st.dateError" x-text="st.dateError" class="text-[11px] text-red-500"></p>
+                                </div>
+                            </template>
+
+                            {{-- Note sur le calcul automatique --}}
+                            <div x-show="subtasks.length > 0" x-cloak
+                                class="rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 px-3 py-2 text-xs text-emerald-800 dark:text-emerald-300">
+                                <strong x-text="subtasks.length + ' sous-tâche(s)'"></strong> — Chaque sous-tâche représentera environ <span class="font-bold" x-text="subtasks.length > 0 ? Math.round(100/subtasks.length) + '%' : '0%'"></span> de la progression totale.
+                            </div>
+                        </div>
+                    </section>
+
+                    {{-- Actions en bas --}}
+                    <div class="flex items-center justify-end gap-2 pt-1">
+                        <a href="{{ route('tasks.index') }}" class="ks-btn-secondary ks-btn-xs !text-[12px] !px-3.5 !py-1.5">
+                            Annuler
+                        </a>
+                        <button type="submit"
+                            :disabled="hasDateErrors"
+                            :class="hasDateErrors ? 'opacity-40 cursor-not-allowed' : ''"
+                            class="ks-btn-primary ks-btn-xs !text-[13px] !px-4 !py-1.5">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5"/></svg>
+                            Créer la tâche
+                        </button>
+                    </div>
+                </form>
+            </main>
+
         </div>
     </div>
 

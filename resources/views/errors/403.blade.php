@@ -19,7 +19,7 @@
         <div class="tfg-card" style="max-width: 440px;">
             <div class="tfg-card-header" style="background: linear-gradient(135deg, #7c2d12 0%, #991b1b 100%);">
                 <div class="tfg-logo-ring" style="background: linear-gradient(135deg, #991b1b, #dc2626); box-shadow: 0 8px 24px rgba(220, 38, 38, 0.25);">
-                    <img src="{{ asset('images/TFGLOGO.png') }}" alt="Logo TFG">
+                    <img src="{{ asset('images/logo_TFG_fond_transparent.png') }}" alt="Logo TFG">
                 </div>
                 <span class="tfg-card-eyebrow"><span class="tfg-live-dot" style="background: #fca5a5;"></span><span style="color: rgba(255,255,255,0.55);">Accès refusé</span></span>
                 <h2 class="tfg-card-title">TFG Sarl</h2>

@@ -7,9 +7,9 @@
         $nextStep = $task->nextStepLabel();
         $priorityOptions = [
             'low' => ['label' => 'Basse', 'hint' => 'Suivi léger', 'dot' => 'bg-slate-400'],
-            'normal' => ['label' => 'Normale', 'hint' => 'Priorité standard', 'dot' => 'bg-cyan-500'],
+            'normal' => ['label' => 'Normale', 'hint' => 'Priorité standard', 'dot' => 'bg-blue-500'],
             'high' => ['label' => 'Haute', 'hint' => 'À traiter vite', 'dot' => 'bg-amber-500'],
-            'urgent' => ['label' => 'Urgente', 'hint' => 'Attention immediate', 'dot' => 'bg-rose-500'],
+            'urgent' => ['label' => 'Urgente', 'hint' => 'Immédiate', 'dot' => 'bg-rose-500'],
         ];
         $statusOptions = [
             'pending' => ['label' => 'À faire', 'hint' => 'La tâche est planifiée', 'icon' => 'M8 7h8M8 12h8M8 17h5'],
@@ -43,9 +43,145 @@
             background: white;
             color: rgb(15 23 42);
         }
+
+        /* Cartes de sélection de priorité avec couleur propre à chaque priorité */
+        .prio-choice span.prio-card {
+            border-radius: 12px;
+            border-width: 1px;
+            border-style: solid;
+            transition: all .15s ease;
+        }
+
+        /* 1. Basse (gris ardoise) */
+        .prio-choice--low span.prio-card {
+            border-color: #cbd5e1;
+            background-color: rgba(241, 245, 249, 0.75);
+            color: #475569;
+        }
+        .dark .prio-choice--low span.prio-card {
+            border-color: #334155;
+            background-color: rgba(30, 41, 59, 0.35);
+            color: #94a3b8;
+        }
+        .prio-choice--low:hover span.prio-card {
+            border-color: #94a3b8;
+        }
+        .dark .prio-choice--low:hover span.prio-card {
+            border-color: #64748b;
+        }
+        .prio-choice--low input:checked + span.prio-card {
+            border-color: #64748b !important;
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.25) !important;
+        }
+        .dark .prio-choice--low input:checked + span.prio-card {
+            border-color: #94a3b8 !important;
+            background-color: rgba(51, 65, 85, 0.75) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.3) !important;
+        }
+
+        /* 2. Normale (bleu cobalt / Mon-Stage) */
+        .prio-choice--normal span.prio-card {
+            border-color: #bfdbfe;
+            background-color: rgba(239, 246, 255, 0.75);
+            color: #1e40af;
+        }
+        .dark .prio-choice--normal span.prio-card {
+            border-color: #1e3a8a;
+            background-color: rgba(30, 58, 138, 0.3);
+            color: #93c5fd;
+        }
+        .prio-choice--normal:hover span.prio-card {
+            border-color: #60a5fa;
+        }
+        .dark .prio-choice--normal:hover span.prio-card {
+            border-color: #3b82f6;
+        }
+        .prio-choice--normal input:checked + span.prio-card {
+            border-color: #1c3e96 !important;
+            background-color: #dbeafe !important;
+            color: #1c3e96 !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(28, 62, 150, 0.25) !important;
+        }
+        .dark .prio-choice--normal input:checked + span.prio-card {
+            border-color: #3b82f6 !important;
+            background-color: rgba(28, 62, 150, 0.55) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35) !important;
+        }
+
+        /* 3. Haute (ambre chaud) */
+        .prio-choice--high span.prio-card {
+            border-color: #fde68a;
+            background-color: rgba(254, 243, 199, 0.75);
+            color: #92400e;
+        }
+        .dark .prio-choice--high span.prio-card {
+            border-color: #78350f;
+            background-color: rgba(120, 53, 15, 0.3);
+            color: #fcd34d;
+        }
+        .prio-choice--high:hover span.prio-card {
+            border-color: #f59e0b;
+        }
+        .dark .prio-choice--high:hover span.prio-card {
+            border-color: #b45309;
+        }
+        .prio-choice--high input:checked + span.prio-card {
+            border-color: #d97706 !important;
+            background-color: #fef3c7 !important;
+            color: #b45309 !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25) !important;
+        }
+        .dark .prio-choice--high input:checked + span.prio-card {
+            border-color: #f59e0b !important;
+            background-color: rgba(180, 83, 9, 0.55) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35) !important;
+        }
+
+        /* 4. Urgente (rouge / rose vif) */
+        .prio-choice--urgent span.prio-card {
+            border-color: #fecdd3;
+            background-color: rgba(255, 228, 230, 0.75);
+            color: #9f1239;
+        }
+        .dark .prio-choice--urgent span.prio-card {
+            border-color: #881337;
+            background-color: rgba(136, 19, 55, 0.3);
+            color: #fda4af;
+        }
+        .prio-choice--urgent:hover span.prio-card {
+            border-color: #fb7185;
+        }
+        .dark .prio-choice--urgent:hover span.prio-card {
+            border-color: #e11d48;
+        }
+        .prio-choice--urgent input:checked + span.prio-card {
+            border-color: #e11d48 !important;
+            background-color: #ffe4e6 !important;
+            color: #be123c !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25) !important;
+        }
+        .dark .prio-choice--urgent input:checked + span.prio-card {
+            border-color: #f43f5e !important;
+            background-color: rgba(225, 29, 72, 0.5) !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.35) !important;
+        }
     </style>
 
-    <div class="-m-3 sm:-m-4 md:-m-6 min-h-[calc(100vh-4rem)] bg-zinc-50 text-slate-950 dark:bg-[#090d12] dark:text-white"
+    <div class="w-full space-y-3 pb-6 text-slate-950 dark:text-white"
          x-data="{
              taskStartDate: '{{ old('start_date', $task->start_date?->format('Y-m-d')) }}',
              taskDueDate: '{{ old('due_date', $task->due_date?->format('Y-m-d')) }}',
@@ -75,7 +211,7 @@
                  return true;
              }
          }">
-        <div class="mx-auto w-full max-w-6xl px-3 py-4 sm:px-5 sm:py-6 lg:px-7">
+        <div class="w-full">
             <div class="edit-rise grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
 
                 <aside class="space-y-4">
@@ -180,14 +316,14 @@
                                 </div>
                                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                                     @foreach($priorityOptions as $value => $option)
-                                    <label class="edit-choice cursor-pointer">
+                                    <label class="prio-choice prio-choice--{{ $value }} cursor-pointer block">
                                         <input type="radio" name="priority" value="{{ $value }}" class="sr-only" {{ $currentPriority === $value ? 'checked' : '' }}>
-                                        <span class="flex h-full min-h-[92px] flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-sm dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-200 dark:hover:bg-white/[0.06]">
+                                        <span class="prio-card flex h-full min-h-[84px] flex-col justify-between p-3.5 transition duration-200 hover:-translate-y-0.5">
                                             <span class="flex items-center justify-between">
                                                 <span class="text-sm font-semibold">{{ $option['label'] }}</span>
                                                 <span class="h-2.5 w-2.5 rounded-full {{ $option['dot'] }}"></span>
                                             </span>
-                                            <span class="text-xs opacity-70">{{ $option['hint'] }}</span>
+                                            <span class="text-xs opacity-80">{{ $option['hint'] }}</span>
                                         </span>
                                     </label>
                                     @endforeach

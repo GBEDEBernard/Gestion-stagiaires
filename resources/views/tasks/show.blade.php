@@ -90,13 +90,18 @@
 
         .sh-range { accent-color: #0a0a0a; }
 
-        .line-clamp-2 { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+        .dark .sh-card { background: #15181f !important; border-color: #222630 !important; color: #f8fafc !important; }
+        .dark .sh-input { background: #131519 !important; border-color: #222630 !important; color: #f8fafc !important; }
+        .dark .msg-other { background: #1c212c !important; border-color: #222630 !important; color: #f8fafc !important; }
+        .dark .msg-mine { background: #1c3e96 !important; color: #fff !important; }
+        .dark .sh-btn-ghost { border-color: #222630 !important; color: #94a3b8 !important; }
+        .dark .sh-btn-ghost:hover { background: #181c24 !important; color: #f8fafc !important; }
     </style>
 
-    <div class="show-root -m-3 sm:-m-4 md:-m-6 min-h-screen" style="background:#f7f7f6;"
+    <div class="show-root w-full space-y-3 pb-6"
          x-data="taskChat(@js($thread), @js($cfg))" x-init="init()">
 
-        <div class="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-8">
+        <div class="w-full">
 
             {{-- ── BREADCRUMB ──────────────────────────────── --}}
             <div class="sh-1 mb-5 flex items-center gap-2 text-sm" style="color:rgba(0,0,0,.4);">
