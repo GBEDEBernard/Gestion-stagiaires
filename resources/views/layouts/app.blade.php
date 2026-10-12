@@ -923,6 +923,7 @@
                 if (href.includes('/mon-stage')) tplId = 'sk-tpl-mon-stage';
                 else if (href.includes('/attendance-tracking') || href.includes('/tracking')) tplId = 'sk-tpl-attendance-tracking';
                 else if (href.includes('/anomalies')) tplId = 'sk-tpl-anomalies';
+                else if (href.includes('/corrections-depart') || href.includes('/corrections')) tplId = 'sk-tpl-corrections-depart';
                 else if (href.includes('/pointage-suivi')) tplId = 'sk-tpl-pointage-suivi';
                 else if (href.includes('/presence/pointage') || href.includes('/pointage')) tplId = 'sk-tpl-pointage';
                 else if (href.includes('/presence/historique') || href.includes('/historique')) tplId = 'sk-tpl-historique';

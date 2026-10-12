@@ -1,737 +1,266 @@
-<x-app-layout title="Corrections de pointage - Admin">
+<x-app-layout title="Corrections de pointage - Supervision">
 
+    {{-- ════════════════════════════════════════════════════════
+         STYLES IDENTITÉ « MON STAGE » (COMPACT / ZERO ERREUR)
+    ════════════════════════════════════════════════════════ --}}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
-        .cd-scope {
-            --paper: #f5f7fb;
-            --paper-strong: #edf2f8;
-            --paper-raised: rgba(255, 255, 255, 0.9);
-            --ink: #111827;
-            --ink-soft: #5f6b7a;
-            --ink-faint: #8a94a6;
-            --line: rgba(15, 23, 42, 0.08);
-            --copper: #d97706;
-            --copper-strong: #b45309;
-            --copper-soft: rgba(217, 119, 6, 0.1);
-            --teal: #0f766e;
-            --teal-soft: rgba(15, 118, 110, 0.08);
-            --green: #16a34a;
-            --green-soft: rgba(22, 163, 74, 0.08);
-            --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.06);
-            --shadow-card: 0 18px 36px rgba(15, 23, 42, 0.08);
-            min-height: 100vh;
-            font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
-            color: var(--ink);
-            letter-spacing: -0.01em;
-            padding: 24px 0 36px;
-            background: transparent;
-        }
-
-        .cd-scope .mono {
-            font-family: 'IBM Plex Mono', ui-monospace, monospace;
-            font-feature-settings: "tnum" 1;
-        }
-
-        .cd-dark .cd-scope,
-        .dark .cd-scope {
-            --paper: #0f172a;
-            --paper-strong: #111c2d;
-            --paper-raised: rgba(15, 23, 42, 0.82);
-            --ink: #e5edf9;
-            --ink-soft: #a2afc0;
-            --ink-faint: #7b8ca5;
-            --line: rgba(148, 163, 184, 0.14);
-            --copper: #f2a65a;
-            --copper-strong: #e18b35;
-            --copper-soft: rgba(242, 166, 90, 0.14);
-            --teal: #7dd3cf;
-            --teal-soft: rgba(125, 211, 207, 0.12);
-            --green: #4ade80;
-            --green-soft: rgba(74, 222, 128, 0.1);
-            --shadow-soft: 0 14px 32px rgba(2, 6, 23, 0.42);
-            --shadow-card: 0 20px 44px rgba(2, 6, 23, 0.38);
-        }
-
-        .cd-scope * {
-            box-sizing: border-box;
-        }
-
-        .cd-shell {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 28px 18px 44px;
-        }
-
-        .cd-header {
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 20px;
-            padding: 22px 22px 18px;
-            margin-bottom: 22px;
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            background: var(--paper-raised);
-            box-shadow: var(--shadow-soft);
-            overflow: hidden;
-        }
-
-        .cd-header::after {
-            content: "";
-            position: absolute;
-            inset: auto -8% -52% 52%;
-            width: 260px;
-            height: 260px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(217,119,6,0.12), rgba(217,119,6,0));
-            pointer-events: none;
-        }
-
-        .cd-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin: 0 0 8px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--ink-soft);
-        }
-
-        .cd-kicker::before {
-            content: "";
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--copper), var(--teal));
-            box-shadow: 0 0 0 5px rgba(170,91,45,0.08);
-        }
-
-        .cd-title {
-            margin: 0;
-            font-size: clamp(2rem, 3vw, 2.8rem);
-            font-weight: 800;
-            line-height: 1.06;
-            letter-spacing: -0.06em;
-        }
-
-        .cd-sub {
-            margin: 12px 0 0;
-            max-width: 58ch;
-            font-size: 14px;
-            line-height: 1.7;
-            color: var(--ink-soft);
-        }
-
-        .cd-header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .cd-count-card {
-            min-width: 110px;
-            padding: 12px 14px 10px;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-            text-align: center;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .cd-count {
-            font-size: clamp(2rem, 3vw, 2.7rem);
-            line-height: 1;
-            font-weight: 700;
-            color: var(--copper);
-            letter-spacing: -0.06em;
-        }
-
-        .cd-count-label {
-            margin-top: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: var(--ink-soft);
-        }
-
-        .cd-link {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding-bottom: 4px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--ink);
-            text-decoration: none;
-            transition: transform 0.2s ease;
-        }
-
-        .cd-link:hover {
-            transform: translateY(-1px);
-        }
-
-        .cd-link::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 1px;
-            background: linear-gradient(90deg, var(--copper), var(--teal));
-        }
-
-        .cd-panel {
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            background: var(--paper-raised);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-        }
-
-        .cd-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            padding: 16px 22px 12px;
-            border-bottom: 1px solid var(--line);
-            background: rgba(148, 163, 184, 0.02);
-        }
-
-        .cd-toolbar-left {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .cd-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 10px;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.04);
-            font-size: 12px;
-            color: var(--ink-soft);
-            font-weight: 600;
-        }
-
-        .cd-pill::before {
-            content: "";
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 0 4px rgba(42, 125, 95, 0.12);
-        }
-
-        .cd-list {
-            padding: 22px;
-        }
-
-        .cd-row {
-            position: relative;
-            display: grid;
-            grid-template-columns: minmax(0, 1.3fr) auto auto auto;
-            align-items: center;
-            gap: 18px;
-            padding: 18px 18px 18px 14px;
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            background: rgba(255,255,255,0.02);
-            box-shadow: none;
-            animation: fadeInUp 0.45s ease both;
-            animation-delay: var(--delay, 0ms);
-            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-        }
-
-        .cd-row + .cd-row {
-            margin-top: 14px;
-        }
-
-        .cd-row:hover {
-            transform: translateY(-1px);
-            border-color: rgba(217,119,6,0.28);
-            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 900px) {
-            .cd-row {
-                grid-template-columns: 1fr;
-                align-items: flex-start;
-            }
-
-            .cd-time-block {
-                text-align: left;
-            }
-
-            .cd-actions {
-                width: 100%;
-            }
-
-            .cd-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        .cd-identity {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            min-width: 0;
-        }
-
-        .cd-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(217,119,6,0.14), rgba(15, 118, 110, 0.06));
-            border: 1px solid rgba(15, 23, 42, 0.06);
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--ink);
-            flex-shrink: 0;
-        }
-
-        .cd-identity-copy {
-            min-width: 0;
-        }
-
-        .cd-person-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-            color: var(--ink-soft);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .cd-dot {
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: var(--ink-faint);
-        }
-
-        .cd-name {
-            margin: 0;
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--ink);
-            letter-spacing: -0.03em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .cd-meta {
-            margin: 4px 0 0;
-            font-size: 12.5px;
-            color: var(--ink-soft);
-            line-height: 1.5;
-        }
-
-        .cd-time-block {
-            min-width: 124px;
-            text-align: left;
-        }
-
-        .cd-time-label {
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--ink-soft);
-            font-weight: 700;
-        }
-
-        .cd-time-value {
-            display: inline-block;
-            margin-top: 4px;
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            color: var(--ink);
-        }
-
-        .cd-time-value.is-copper { color: var(--copper); }
-        .cd-time-value.is-teal { color: var(--teal); }
-
-        .cd-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .cd-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-            border-radius: 12px;
-            padding: 12px 16px;
-            background: linear-gradient(135deg, var(--copper), var(--copper-strong));
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-            box-shadow: 0 10px 20px rgba(217,119,6,0.18);
-        }
-
-        .cd-btn:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.03);
-            box-shadow: 0 12px 22px rgba(217,119,6,0.24);
-        }
-
-        .cd-btn svg {
-            width: 15px;
-            height: 15px;
-        }
-
-        .cd-note {
-            grid-column: 1 / -1;
-            margin: 4px 0 0 58px;
-            padding: 12px 14px 12px 16px;
-            border-left: 3px solid var(--teal);
-            border-radius: 0 12px 12px 0;
-            background: rgba(15, 118, 110, 0.04);
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--ink-soft);
-        }
-
-        .cd-note strong {
-            color: var(--ink);
-            font-weight: 700;
-        }
-
-        .cd-callout {
-            margin: 0;
-            padding: 16px 18px;
-            border-left: 4px solid var(--copper);
-            background: rgba(217,119,6,0.05);
-            color: var(--ink);
-            font-size: 13.5px;
-            line-height: 1.7;
-        }
-
-        .cd-empty {
-            padding: 64px 20px 52px;
-            text-align: center;
-        }
-
-        .cd-empty .cd-mark {
-            width: 54px;
-            height: 54px;
-            margin: 0 auto 18px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, var(--green-soft), rgba(255,255,255,0.5));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(42,125,95,0.2);
-            box-shadow: 0 15px 28px rgba(42,125,95,0.08);
-        }
-
-        .cd-empty .cd-mark svg {
-            width: 24px;
-            height: 24px;
-            color: var(--green);
-        }
-
-        .cd-empty-title {
-            margin: 0;
-            font-size: 17px;
-            font-weight: 700;
-        }
-
-        .cd-empty .cd-meta {
-            margin-top: 6px;
-        }
-
-        .cd-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            background: rgba(18, 23, 32, 0.58);
-            backdrop-filter: blur(8px);
-        }
-
-        .cd-modal-card {
-            width: min(100%, 620px);
-            border-radius: 24px;
-            border: 1px solid var(--line);
-            background: var(--paper-raised);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-            animation: modalIn 0.22s ease;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .cd-modal-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 24px 24px 16px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .cd-modal-body {
-            padding: 22px 24px 24px;
-        }
-
-        .cd-close-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.4);
-            color: var(--ink-soft);
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.18s ease;
-        }
-
-        .cd-close-btn:hover {
-            color: var(--ink);
-            border-color: rgba(170,91,45,0.32);
-            transform: rotate(90deg);
-        }
-
-        .cd-summary-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 14px 16px;
-            margin-top: 16px;
-            border-radius: 14px;
-            border: 1px solid var(--line);
-            background: rgba(148, 163, 184, 0.02);
-        }
-
-        .cd-summary-box strong {
-            color: var(--ink);
-        }
-
-        .cd-claim-box {
-            margin-top: 16px;
-            padding: 14px 16px;
-            border-left: 4px solid var(--teal);
-            border-radius: 12px;
-            background: var(--teal-soft);
-        }
-
-        .cd-claim-box .cd-meta {
-            margin-top: 4px;
-        }
-
-        .cd-field-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--ink);
-        }
-
-        .cd-input {
-            width: 100%;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(148, 163, 184, 0.02);
-            color: var(--ink);
-            padding: 12px 14px;
-            font-size: 14px;
-            font-family: 'IBM Plex Mono', monospace;
-            transition: border-color 0.18s ease, box-shadow 0.18s ease;
-        }
-
-        .cd-input:focus {
-            outline: none;
-            border-color: rgba(170,91,45,0.5);
-            box-shadow: 0 0 0 4px rgba(170,91,45,0.08);
-        }
-
-        textarea.cd-input {
-            font-family: 'Public Sans', sans-serif;
-            resize: vertical;
-            min-height: 110px;
-        }
-
-        .cd-input-row {
-            margin-top: 18px;
-        }
-
-        .cd-actions-row {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 22px;
-        }
-
-        .cd-btn-ghost {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.28);
-            color: var(--ink-soft);
-            padding: 11px 16px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.18s ease;
-        }
-
-        .cd-btn-ghost:hover {
-            border-color: rgba(170,91,45,0.28);
-            color: var(--ink);
-        }
-
-        .cd-btn-primary {
-            border: none;
-            border-radius: 12px;
-            padding: 11px 18px;
-            background: linear-gradient(135deg, var(--copper), var(--copper-strong));
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(217,119,6,0.18);
-            transition: transform 0.18s ease, filter 0.18s ease;
-        }
-
-        .cd-btn-primary:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.04);
-        }
+        body { background: #f1f0ed !important; }
+        .dark body { background: #1f232d !important; }
+        header { background-color: transparent !important; border-bottom: none !important; box-shadow: none !important; }
+        .dark header { background-color: #131519 !important; border-bottom: none !important; box-shadow: none !important; }
+
+        :root {
+            --ks-ink: #241f1b;
+            --ks-blue: #1c3e96;
+            --ks-blue-dark: #162f73;
+            --ks-line: #bfbab2;
+            --ks-muted: #6e6862;
+            --ks-card: #fffefa;
+            --ks-card-bd: #dcdad2;
+        }
+
+        .ks-label { font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6e6862; }
+        .dark .ks-label { color: #a89f93 !important; }
+
+        .ks-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #1c3e96; color: #fff; border: 1px solid #1c3e96; border-radius: 6px; font-size: .85rem; font-weight: 600; padding: .4rem .9rem; min-height: 34px; transition: background-color .15s ease, transform .1s ease; }
+        .ks-btn-primary:hover { background: #162f73; border-color: #162f73; }
+        .ks-btn-primary:active { transform: scale(.98); }
+
+        .ks-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #fff; color: #241f1b; border: 1px solid #bfbab2; border-radius: 6px; font-size: .85rem; font-weight: 500; padding: .4rem .9rem; min-height: 34px; transition: all .15s ease; }
+        .dark .ks-btn-secondary { background: #131519; color: #fff; border-color: #222630; }
+        .ks-btn-secondary:hover { border-color: #1c3e96; color: #1c3e96; }
+
+        .ks-btn-xs { min-height: 28px !important; padding: .25rem .65rem !important; font-size: .74rem !important; font-weight: 600; border-radius: 5px !important; flex: none; white-space: nowrap; }
+
+        .ks-sec { background: #fffefa; border: 1px solid #dcdad2; border-radius: 10px; box-shadow: 0 1px 2px rgba(36,31,27,.04); transition: border-color .15s ease, box-shadow .18s ease-out; }
+        .dark .ks-sec { background: #131519 !important; border: 1px solid #222630 !important; border-color: #222630 !important; box-shadow: none; }
+        .ks-sec-head { padding: .65rem .9rem; border-bottom: 1px solid #dcdad2; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .dark .ks-sec-head { border-bottom: 1px solid #222630 !important; border-color: #222630 !important; }
+
+        .ks-stat-card { border: 1px solid #dcdad2; border-radius: 10px; background-color: #fffefa; }
+        .dark .ks-stat-card { background: #131519 !important; border: 1px solid #222630 !important; }
+
+        .ks-stat-icon { width: 32px; height: 32px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+        .ks-stat-icon svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+        .ks-num { font-variant-numeric: tabular-nums; }
+        .ks-stat-change { font-size: .68rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+        .ks-stat-change--positive { color: #15803d; background-color: #ecfdf5; }
+        .dark .ks-stat-change--positive { color: #4ade80 !important; background-color: rgba(22,128,74,0.22) !important; }
+        .ks-stat-change--neutral { color: #475569; background-color: #f1f5f9; }
+        .dark .ks-stat-change--neutral { color: #cbd5e1 !important; background-color: #262a30 !important; }
+        .ks-stat-change--blue { color: #1c3e96; background-color: #eef1fb; }
+        .dark .ks-stat-change--blue { color: #93c5fd !important; background-color: rgba(28,62,150,0.25) !important; }
+        .ks-stat-change--amber { color: #b45309; background-color: #fffbeb; }
+        .dark .ks-stat-change--amber { color: #fbbf24 !important; background-color: rgba(180,83,9,0.22) !important; }
+        .ks-stat-change--negative { color: #b91c1c; background-color: #fef2f2; }
+        .dark .ks-stat-change--negative { color: #f87171 !important; background-color: rgba(185,28,28,0.22) !important; }
+
+        .cd-pill { font-size: .72rem; font-weight: 500; padding: .2rem .55rem; border-radius: 999px; background: #faf9f6; color: #6e6862; border: 1px solid #dcdad2; display: inline-flex; align-items: center; gap: .25rem; }
+        .dark .cd-pill { background: #181c24; color: #94a3b8; border-color: #222630; }
+        .cd-pill b { font-weight: 700; color: #241f1b; }
+        .dark .cd-pill b { color: #f8fafc; }
+
+        /* Dark mode overrides complets */
+        .dark .text-slate-900, .dark .text-slate-800, .dark .text-gray-900 { color: #f8fafc !important; }
+        .dark .text-slate-600, .dark .text-slate-500, .dark .text-gray-600 { color: #94a3b8 !important; }
+        .dark .border-slate-200, .dark .border-slate-300, .dark .border-gray-200 { border-color: #222630 !important; }
     </style>
 
-    <div class="cd-scope">
-        <div class="cd-shell">
-            <header class="cd-header">
-                <div>
-                    <p class="cd-kicker">Suivi &amp; présence</p>
-                    <h1 class="cd-title">Corrections de pointage</h1>
-                    <p class="cd-sub">
-                        Un départ non pointé reste ouvert tant qu'il n'a pas été rétabli à la main.
-                        Vérifiez chaque personne, posez l'heure réelle, puis passez à la suivante.
-                    </p>
-                </div>
+    <div class="space-y-3 sm:space-y-3.5 overflow-x-hidden"
+         x-data="{
+             outModal: false, outDayId: null, outUserId: null, outUserName: '', outLabel: '',
+             outCurrent: '', outClaimed: '', outClaimReason: '', outValue: '', outReason: ''
+         }"
+         @open-departure-correction.window="outModal = true; outDayId = $event.detail.id; outUserId = $event.detail.userId; outUserName = $event.detail.userName; outLabel = $event.detail.label; outCurrent = $event.detail.current; outClaimed = $event.detail.claimed; outClaimReason = $event.detail.claimReason; outValue = $event.detail.claimed; outReason = ''">
 
-                <div class="cd-header-right">
-                    <div class="cd-count-card">
-                        <div class="cd-count mono">{{ str_pad($pendingCorrections->count(), 2, '0', STR_PAD_LEFT) }}</div>
-                        <div class="cd-count-label">Départ{{ $pendingCorrections->count() > 1 ? 's' : '' }} en attente</div>
-                    </div>
-                    <a href="{{ route('dashboard') }}" class="cd-link">Tableau de bord</a>
-                </div>
-            </header>
-
-            <div x-data="{
-                outModal: false, outDayId: null, outUserId: null, outUserName: '', outLabel: '',
-                outCurrent: '', outClaimed: '', outClaimReason: '', outValue: '', outReason: ''
-            }" @open-departure-correction.window="outModal = true; outDayId = $event.detail.id; outUserId = $event.detail.userId; outUserName = $event.detail.userName; outLabel = $event.detail.label; outCurrent = $event.detail.current; outClaimed = $event.detail.claimed; outClaimReason = $event.detail.claimReason; outValue = $event.detail.claimed; outReason = ''">
-
-                <main class="cd-panel">
-                    <div class="cd-toolbar">
-                        <div class="cd-toolbar-left">
-                            <span class="cd-pill">File de corrections</span>
-                            <span class="cd-pill">Validation manuelle</span>
+        {{-- ════════════════════════════════════════════════════════
+             1. BANNIÈRE CORRECTIONS DÉPARTS (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="relative overflow-hidden rounded-[10px] border border-[#dcdad2] dark:border-[#222630] bg-gradient-to-r from-[#1c3e96] via-[#1a3889] to-[#162f73] dark:from-[#131519] dark:via-[#161a22] dark:to-[#131519] shadow-sm">
+            <div class="absolute inset-0 opacity-15 pointer-events-none"
+                style="background-image:url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
+            </div>
+            <div class="relative px-3.5 sm:px-4 py-2.5 sm:py-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="ks-stat-icon !w-6 !h-6 rounded bg-amber-500/20 text-amber-200 dark:bg-amber-500/30 dark:text-amber-300">
+                                <svg class="!w-3.5 !h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Corrections des Départs</h1>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold {{ $pendingCorrections->count() > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' }}">
+                                <span class="w-1.5 h-1.5 {{ $pendingCorrections->count() > 0 ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400' }} rounded-full"></span>
+                                {{ $pendingCorrections->count() }} en attente
+                            </span>
                         </div>
+                        <p class="text-[11px] sm:text-xs text-blue-100/80 dark:text-gray-400 mt-0.5">Régularisation des départs non émargés et clôturés d'office à l'heure prévue</p>
                     </div>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <a href="{{ route('admin.presence.index') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-blue-200 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            <span>Supervision</span>
+                        </a>
+                        <a href="{{ route('dashboard') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <span>Tableau de bord</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="cd-list">
-                        @forelse($pendingCorrections as $day)
-                        @php
-                            $person        = $day->etudiant?->user ?? $day->user;
-                            $personName    = $person?->name ?? ($day->etudiant?->user?->name ?? 'Utilisateur inconnu');
-                            $personRole    = $day->etudiant ? 'Stagiaire' : 'Employé';
-                            $hasClaim      = $day->departure_status === 'claimed';
-                            $missedSince   = $day->attendance_date->diffForHumans();
-                            $autoTime      = $day->last_check_out_at?->format('H:i') ?? '--:--';
-                            $claimedTime   = $day->claimed_check_out_at?->format('H:i');
-                            $userId        = $person?->id;
-                        @endphp
+        {{-- ════════════════════════════════════════════════════════
+             2. CARTES STATS KPIS (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+            {{-- KPI 1: Départs en attente --}}
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Départs à Régulariser</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold {{ $pendingCorrections->count() > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#241f1b] dark:text-[#f8fafc]' }}">
+                            {{ $pendingCorrections->count() }}
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium {{ $pendingCorrections->count() > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400' }} mt-0.5 block">
+                        {{ $pendingCorrections->count() > 0 ? 'Validation manuelle requise' : 'Aucune correction en attente' }}
+                    </span>
+                </div>
+                <span class="ks-stat-icon {{ $pendingCorrections->count() > 0 ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40' }}">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </span>
+            </div>
 
-                        <article class="cd-row" style="--delay: {{ $loop->index * 70 }}ms;">
-                            <div class="cd-identity">
-                                <div class="cd-avatar">{{ strtoupper(substr($personName, 0, 1)) }}</div>
-                                <div class="cd-identity-copy">
-                                    <div class="cd-person-meta">
-                                        <span>{{ $personRole }}</span>
-                                        <span class="cd-dot"></span>
-                                        <span>{{ $missedSince }}</span>
-                                    </div>
-                                    <h2 class="cd-name">{{ $personName }}</h2>
-                                    <p class="cd-meta">{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM') }}</p>
+            {{-- KPI 2: Déclarations stagiaires --}}
+            @php
+                $claimedCount = $pendingCorrections->where('departure_status', 'claimed')->count();
+            @endphp
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Déclarations Usagers</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold text-[#1c3e96] dark:text-blue-400">
+                            {{ $claimedCount }}
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        Heure et justificatif fournis
+                    </span>
+                </div>
+                <span class="ks-stat-icon bg-blue-50 text-[#1c3e96] dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </span>
+            </div>
+
+            {{-- KPI 3: Clôturés d'office --}}
+            @php
+                $autoClosedCount = $pendingCorrections->where('departure_status', 'auto_closed')->count();
+            @endphp
+            <div class="ks-sec p-3 flex items-center justify-between">
+                <div>
+                    <span class="ks-label">Clôturés d'Office</span>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="ks-num text-xl sm:text-2xl font-bold text-[#241f1b] dark:text-[#f8fafc]">
+                            {{ $autoClosedCount }}
+                        </span>
+                    </div>
+                    <span class="text-[11px] font-medium text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                        Clôture automatique fin prévue
+                    </span>
+                </div>
+                <span class="ks-stat-icon bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </span>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             3. FILE DES RÉGULARISATIONS (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="ks-sec overflow-hidden">
+            <div class="ks-sec-head flex-wrap">
+                <div class="flex items-center gap-2">
+                    <span class="ks-stat-icon !w-5 !h-5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+                        <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </span>
+                    <h2 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc]">File des Régularisations</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="cd-pill">
+                        <b>{{ $pendingCorrections->count() }}</b> dossier{{ $pendingCorrections->count() > 1 ? 's' : '' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-2.5 sm:p-3.5 space-y-2.5">
+                @forelse($pendingCorrections as $day)
+                @php
+                    $person        = $day->etudiant?->user ?? $day->user;
+                    $personName    = $person?->name ?? ($day->etudiant?->user?->name ?? 'Utilisateur inconnu');
+                    $personRole    = $day->etudiant ? 'Stagiaire' : 'Employé';
+                    $hasClaim      = $day->departure_status === 'claimed';
+                    $missedSince   = $day->attendance_date->diffForHumans();
+                    $autoTime      = $day->last_check_out_at?->format('H:i') ?? '--:--';
+                    $claimedTime   = $day->claimed_check_out_at?->format('H:i');
+                    $userId        = $person?->id;
+                @endphp
+
+                <article class="rounded-[8px] border border-[#dcdad2] dark:border-[#222630] bg-[#fffefa] dark:bg-[#131519] p-3 sm:p-3.5 hover:border-[#1c3e96]/40 dark:hover:border-blue-500/40 transition-colors">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        {{-- Identité --}}
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/40 text-[#1c3e96] dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
+                                {{ strtoupper(substr($personName, 0, 1)) }}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <h3 class="text-xs sm:text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] truncate">{{ $personName }}</h3>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded {{ $day->etudiant ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' }}">
+                                        {{ $personRole }}
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6e6862] dark:text-[#a89f93] mt-0.5">
+                                    <span>{{ $day->attendance_date->locale('fr')->isoFormat('dddd D MMMM YYYY') }}</span>
+                                    <span>•</span>
+                                    <span class="text-[10px]">{{ $missedSince }}</span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="cd-time-block">
-                                <div class="cd-time-label">Clôturé d'office</div>
-                                <div class="cd-time-value mono is-copper">{{ $autoTime }}</div>
+                        {{-- Heures & Actions --}}
+                        <div class="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#ecebe3] dark:border-[#222630]">
+                            {{-- Clôturé d'office --}}
+                            <div class="text-left sm:text-right">
+                                <span class="ks-label block text-[9px]">Clôturé d'office</span>
+                                <span class="ks-num text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">{{ $autoTime }}</span>
                             </div>
 
-                            @if($hasClaim)
-                                <div class="cd-time-block">
-                                    <div class="cd-time-label">Déclaré</div>
-                                    <div class="cd-time-value mono is-teal">{{ $claimedTime }}</div>
-                                </div>
-                            @else
-                                <div class="cd-time-block">
-                                    <div class="cd-time-label">Déclaré</div>
-                                    <div class="cd-time-value mono" style="color: var(--ink-faint);">—</div>
-                                </div>
-                            @endif
+                            {{-- Déclaré --}}
+                            <div class="text-left sm:text-right">
+                                <span class="ks-label block text-[9px]">Déclaré</span>
+                                @if($hasClaim)
+                                <span class="ks-num text-xs sm:text-sm font-bold text-[#1c3e96] dark:text-blue-400">{{ $claimedTime }}</span>
+                                @else
+                                <span class="text-xs text-[#a89f93]">—</span>
+                                @endif
+                            </div>
 
-                            <div class="cd-actions">
+                            {{-- Bouton Action --}}
+                            <div>
                                 <button type="button"
                                     onclick="openDepartureCorrection(
                                         {{ $day->id }},
@@ -742,98 +271,129 @@
                                         @js($claimedTime),
                                         @js($day->claimed_check_out_reason)
                                     )"
-                                    class="cd-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M12 20h9"/>
-                                        <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                                    class="ks-btn-primary ks-btn-xs w-full sm:w-auto">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    Rétablir l'heure
+                                    <span>Rétablir l'heure</span>
                                 </button>
                             </div>
-
-                            @if($hasClaim && $day->claimed_check_out_reason)
-                                <div class="cd-note">
-                                    <strong>{{ $personName }} a déclaré :</strong> {{ $day->claimed_check_out_reason }}
-                                </div>
-                            @endif
-                        </article>
-                        @empty
-                        <div class="cd-empty">
-                            <div class="cd-mark">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <p class="cd-empty-title">Aucun départ à régler</p>
-                            <p class="cd-meta">Toutes les journées clôturées d'office ont été traitées.</p>
                         </div>
-                        @endforelse
                     </div>
 
-                    <p class="cd-callout">
-                        Le motif de correction est obligatoire : le volume horaire entre dans la note de stage.
-                        Ne rétablissez l'heure qu'après avoir vu la personne ou son justificatif.
-                    </p>
-                </main>
-
-                <div x-show="outModal" x-cloak class="cd-modal-backdrop" style="display:none;" @click.self="outModal = false">
-                    <div class="cd-modal-card" role="dialog" aria-modal="true" aria-labelledby="correction-title">
-                        <div class="cd-modal-header">
-                            <div>
-                                <p class="cd-kicker" style="margin-bottom: 6px;">Rétablir l'heure de départ</p>
-                                <p class="cd-name" x-text="outUserName" id="correction-title"></p>
-                                <p class="cd-meta" x-text="outLabel"></p>
-                            </div>
-                            <button type="button" class="cd-close-btn" @click="outModal = false" aria-label="Fermer">✕</button>
-                        </div>
-
-                        <form method="POST" :action="outUserId && outDayId ? '{{ url('admin/attendance-tracking/user') }}/' + outUserId + '/days/' + outDayId + '/correction-depart' : '#'">
-                            @csrf
-
-                            <div class="cd-modal-body">
-                                <p class="cd-sub" style="margin-top: 0;">
-                                    Le départ n'a pas été pointé : la journée a été clôturée à l'heure de fin prévue,
-                                    jamais au-delà. Posez ici l'heure réelle, après avoir vu la personne.
-                                </p>
-
-                                <div class="cd-summary-box">
-                                    <span class="cd-time-label">Clôturé d'office à</span>
-                                    <strong class="mono cd-time-value is-copper" x-text="outCurrent"></strong>
-                                </div>
-
-                                <div class="cd-claim-box" x-show="outClaimed" x-cloak>
-                                    <p class="cd-meta">
-                                        Déclaré par l'intéressé : <strong class="mono" style="color: var(--ink);" x-text="outClaimed"></strong>
-                                    </p>
-                                    <p class="cd-meta" x-text="outClaimReason"></p>
-                                </div>
-                                <p class="cd-meta" style="margin-top: 14px;" x-show="!outClaimed" x-cloak>Rien n'a été déclaré pour cette journée.</p>
-
-                                <div class="cd-input-row">
-                                    <label class="cd-field-label">Heure réelle de départ</label>
-                                    <input type="time" name="time" x-model="outValue" required class="cd-input">
-                                </div>
-
-                                <div class="cd-input-row">
-                                    <label class="cd-field-label">Motif</label>
-                                    <textarea name="reason" x-model="outReason" rows="3" required minlength="5"
-                                        placeholder="Ex. départ à 18h30 confirmé par le responsable de site"
-                                        class="cd-input"></textarea>
-                                    <p class="cd-meta" style="margin-top: 8px;">
-                                        Obligatoire : le volume horaire entre dans la note de stage.
-                                    </p>
-                                </div>
-
-                                <div class="cd-actions-row">
-                                    <button type="button" class="cd-btn-ghost" @click="outModal = false">Fermer</button>
-                                    <button type="submit" class="cd-btn-primary">Rétablir l'heure</button>
-                                </div>
-                            </div>
-                        </form>
+                    {{-- Note de réclamation éventuelle --}}
+                    @if($hasClaim && $day->claimed_check_out_reason)
+                    <div class="mt-2.5 p-2 rounded-md bg-[#faf9f6] dark:bg-[#181c24] border-l-2 border-[#1c3e96] dark:border-blue-500 text-xs text-[#6e6862] dark:text-[#a89f93]">
+                        <span class="font-semibold text-[#241f1b] dark:text-[#f8fafc]">{{ $personName }} a déclaré :</span>
+                        <span class="italic">« {{ $day->claimed_check_out_reason }} »</span>
                     </div>
+                    @endif
+                </article>
+                @empty
+                <div class="text-center py-10 px-4">
+                    <span class="ks-stat-icon !w-10 !h-10 mx-auto mb-2 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40">
+                        <svg class="!w-5 !h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                    <p class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc]">Aucun départ à régler</p>
+                    <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93] mt-0.5">Toutes les journées clôturées d'office ont été traitées.</p>
                 </div>
+                @endforelse
+            </div>
+
+            {{-- Rappel réglementaire compact --}}
+            <div class="p-2.5 sm:p-3 bg-[#faf9f6] dark:bg-[#181c24] border-t border-[#dcdad2] dark:border-[#222630] flex items-center gap-2 text-[11px] text-[#6e6862] dark:text-[#a89f93]">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Le motif de correction est obligatoire : le volume horaire réel est pris en compte dans le bilan de stage et les attestations.</span>
             </div>
         </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             4. MODALE DE RÉGULARISATION (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div x-show="outModal" x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
+             style="display:none;"
+             @click.self="outModal = false">
+            <div class="w-full max-w-lg rounded-[12px] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] shadow-2xl overflow-hidden"
+                 role="dialog" aria-modal="true" aria-labelledby="correction-title">
+                
+                {{-- En-tête Modale --}}
+                <div class="p-3.5 sm:p-4 border-b border-[#dcdad2] dark:border-[#222630] flex items-start justify-between gap-3 bg-[#faf9f6] dark:bg-[#181c24]">
+                    <div>
+                        <span class="ks-label">Rétablir l'heure de départ</span>
+                        <h3 class="text-sm sm:text-base font-bold text-[#241f1b] dark:text-[#f8fafc] mt-0.5" x-text="outUserName" id="correction-title"></h3>
+                        <p class="text-xs text-[#6e6862] dark:text-[#a89f93]" x-text="outLabel"></p>
+                    </div>
+                    <button type="button" @click="outModal = false"
+                            class="p-1 rounded-md text-[#6e6862] dark:text-[#a89f93] hover:text-[#241f1b] dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition"
+                            aria-label="Fermer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Formulaire --}}
+                <form method="POST" :action="outUserId && outDayId ? '{{ url('admin/attendance-tracking/user') }}/' + outUserId + '/days/' + outDayId + '/correction-depart' : '#'">
+                    @csrf
+                    <div class="p-3.5 sm:p-4 space-y-3">
+                        <p class="text-xs text-[#6e6862] dark:text-[#a89f93]">
+                            Le départ n'a pas été pointé : la journée a été clôturée d'office à l'heure de fin prévue. Définissez ici l'heure réelle après vérification du justificatif.
+                        </p>
+
+                        {{-- Comparaison heure clôturée vs déclarée --}}
+                        <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630]">
+                            <div>
+                                <span class="ks-label block text-[10px]">Clôturé d'office à</span>
+                                <span class="ks-num font-bold text-amber-600 dark:text-amber-400 text-sm" x-text="outCurrent"></span>
+                            </div>
+                            <div>
+                                <span class="ks-label block text-[10px]">Déclaré par l'intéressé</span>
+                                <span class="ks-num font-bold text-[#1c3e96] dark:text-blue-400 text-sm" x-text="outClaimed || 'Non déclaré'"></span>
+                            </div>
+                        </div>
+
+                        <div x-show="outClaimReason" x-cloak class="p-2 rounded bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 text-xs text-blue-900 dark:text-blue-200">
+                            <span class="font-semibold">Justificatif fourni :</span>
+                            <span x-text="outClaimReason"></span>
+                        </div>
+
+                        {{-- Saisie heure --}}
+                        <div>
+                            <label class="ks-label block mb-1">Heure réelle de départ <span class="text-rose-500">*</span></label>
+                            <input type="time" name="time" x-model="outValue" required
+                                   class="w-full px-3 py-2 text-xs sm:text-sm rounded-md border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-[#241f1b] dark:text-[#f8fafc] focus:ring-1 focus:ring-[#1c3e96] focus:border-[#1c3e96] transition font-mono">
+                        </div>
+
+                        {{-- Saisie motif --}}
+                        <div>
+                            <label class="ks-label block mb-1">Motif de la régularisation <span class="text-rose-500">*</span></label>
+                            <textarea name="reason" x-model="outReason" rows="3" required minlength="5"
+                                      placeholder="Ex. départ à 18h30 validé par le responsable de site / fiche de pointage manuel"
+                                      class="w-full px-3 py-2 text-xs sm:text-sm rounded-md border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] text-[#241f1b] dark:text-[#f8fafc] focus:ring-1 focus:ring-[#1c3e96] focus:border-[#1c3e96] transition"></textarea>
+                            <span class="text-[10px] text-[#6e6862] dark:text-[#a89f93] mt-0.5 block">
+                                Minimum 5 caractères. Ce motif est archivé dans le dossier d'assiduité.
+                            </span>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#dcdad2] dark:border-[#222630]">
+                            <button type="button" class="ks-btn-secondary ks-btn-xs" @click="outModal = false">
+                                Annuler
+                            </button>
+                            <button type="submit" class="ks-btn-primary ks-btn-xs">
+                                Valider la correction
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
 
     @push('scripts')
