@@ -1,243 +1,511 @@
-<x-app-layout>
-    <div class="mb-8 ml-4">
-        <!-- En-tête -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Stagiaires</h1>
-                <p class="text-gray-500 dark:text-gray-300 mt-1">Gestion des stagiaires et génération de leurs comptes</p>
-            </div>
-            <div class="flex gap-3 flex-wrap">
-                <a href="{{ route('etudiants.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition shadow-lg font-medium">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Nouveau stagiaire
-                </a>
-                <a href="{{ route('etudiants.trash') }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Corbeille
-                </a>
+<x-app-layout title="Gestion des Stagiaires">
+    @php
+        $totalEtudiants = \App\Models\Etudiant::count();
+        $avecStageCount = \App\Models\Etudiant::has('stages')->count();
+        $sansStageCount = \App\Models\Etudiant::doesntHave('stages')->count();
+        $comptesActifsCount = \App\Models\Etudiant::whereHas('personnel.user')->count();
+    @endphp
+
+    {{-- PLEINE LARGEUR w-full SANS RESTRICTION --}}
+    <div class="w-full space-y-3.5 pb-8 text-slate-900 dark:text-[#f8fafc]">
+
+        {{-- ── 1. BANNIÈRE D'EN-TÊTE MON STAGE ── --}}
+        <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-4 sm:p-5 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-start sm:items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-[#f8fafc]">
+                                Stagiaires
+                            </h1>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                Gestion des stages
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Suivi des stagiaires, statut des stages et génération des accès utilisateurs.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <a href="{{ route('etudiants.trash') }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#f6f5f0] hover:bg-[#eeece2] dark:bg-[#1f232d] dark:hover:bg-[#282d3a] border border-[#dcdad2] dark:border-[#222630] text-xs font-semibold text-slate-700 dark:text-slate-200 transition shadow-xs">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>Corbeille</span>
+                    </a>
+                    <a href="{{ route('etudiants.create') }}"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                        <span>Nouveau stagiaire</span>
+                    </a>
+                </div>
             </div>
         </div>
 
-        <!-- Messages flash -->
+        {{-- ── Alertes Flash ── --}}
         @if(session('success'))
-        <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-xl border border-green-200 dark:border-green-800">
-            {{ session('success') }}
-        </div>
+            <div x-data="{ dismissed: false }" x-show="!dismissed" class="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[10px] bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-medium">
+                <div class="flex items-center gap-2.5 truncate">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="truncate">{{ session('success') }}</span>
+                </div>
+                <button type="button" @click="dismissed = true" class="p-1 rounded hover:bg-emerald-200/50 dark:hover:bg-emerald-800/50 text-emerald-700 dark:text-emerald-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        @endif
+        @if(session('error'))
+            <div x-data="{ dismissed: false }" x-show="!dismissed" class="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[10px] bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-medium">
+                <div class="flex items-center gap-2.5 truncate">
+                    <span class="h-2 w-2 rounded-full bg-rose-500 shrink-0"></span>
+                    <span class="truncate">{{ session('error') }}</span>
+                </div>
+                <button type="button" @click="dismissed = true" class="p-1 rounded hover:bg-rose-200/50 dark:hover:bg-rose-800/50 text-rose-700 dark:text-rose-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
         @endif
 
-        <!-- Filtres -->
-        <form method="GET" action="{{ route('etudiants.index') }}" class="mb-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
+        {{-- ── 2. CARTES KPIS (4 Indicateurs) ── --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {{-- Total stagiaires --}}
+            <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3.5 sm:p-4 flex items-center justify-between shadow-xs">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Recherche</label>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..." class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                    <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total stagiaires</span>
+                    <p class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-[#f8fafc] mt-1">{{ $totalEtudiants }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5"/>
+                    </svg>
+                </div>
+            </div>
+
+            {{-- Avec stage --}}
+            <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3.5 sm:p-4 flex items-center justify-between shadow-xs">
+                <div>
+                    <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avec stage</span>
+                    <p class="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{{ $avecStageCount }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            {{-- Sans stage --}}
+            <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3.5 sm:p-4 flex items-center justify-between shadow-xs">
+                <div>
+                    <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Sans stage</span>
+                    <p class="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{{ $sansStageCount }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+            </div>
+
+            {{-- Comptes actifs --}}
+            <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3.5 sm:p-4 flex items-center justify-between shadow-xs">
+                <div>
+                    <span class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Comptes actifs</span>
+                    <p class="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">{{ $comptesActifsCount }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── 3. BARRE DE FILTRES ── --}}
+        <form method="GET" action="{{ route('etudiants.index') }}"
+              class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3.5 sm:p-4 shadow-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Recherche</label>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Nom, email, téléphone..."
+                           class="w-full h-8 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#131519] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-600" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">École</label>
-                    <input type="text" name="ecole" value="{{ request('ecole') }}" placeholder="Nom de l'école" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500" />
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">École</label>
+                    <input type="text" name="ecole" value="{{ request('ecole') }}" placeholder="Nom de l'école..."
+                           class="w-full h-8 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#131519] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-600" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Stage</label>
-                    <select name="stage_status" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
-                        <option value="all" {{ request('stage_status') === 'all' ? 'selected' : '' }}>Tous</option>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Statut stage</label>
+                    <select name="stage_status" class="w-full h-8 px-2 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#131519] text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-600">
+                        <option value="all" {{ request('stage_status') === 'all' ? 'selected' : '' }}>Tous les stagiaires</option>
                         <option value="none" {{ request('stage_status') === 'none' ? 'selected' : '' }}>Sans stage</option>
                         <option value="has" {{ request('stage_status') === 'has' ? 'selected' : '' }}>Avec stage</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Statut du compte</label>
-                    <select name="account_status" class="mt-2 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-sky-500">
-                        <option value="all" {{ request('account_status') === 'all' ? 'selected' : '' }}>Tous</option>
-                        <option value="with" {{ request('account_status') === 'with' ? 'selected' : '' }}>Avec compte</option>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Statut compte</label>
+                    <select name="account_status" class="w-full h-8 px-2 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#131519] text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-600">
+                        <option value="all" {{ request('account_status') === 'all' ? 'selected' : '' }}>Tous les comptes</option>
+                        <option value="with" {{ request('account_status') === 'with' ? 'selected' : '' }}>Avec compte actif</option>
                         <option value="without" {{ request('account_status') === 'without' ? 'selected' : '' }}>Sans compte</option>
                     </select>
                 </div>
-                <div class="flex items-end">
-                    <div class="flex gap-2 w-full">
-                        <button type="submit" class="flex-1 inline-flex justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition">Appliquer</button>
-                        <a href="{{ route('etudiants.index') }}" class="flex-1 inline-flex justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Réinitialiser</a>
-                    </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-[#dcdad2] dark:border-[#222630] flex items-center justify-between gap-2">
+                <span class="text-xs text-slate-500 dark:text-slate-400">
+                    <strong class="text-slate-800 dark:text-slate-200">{{ $etudiants->total() }}</strong> stagiaire(s) trouvé(s)
+                </span>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('etudiants.index') }}"
+                       class="px-3 py-1.5 rounded-lg bg-[#f6f5f0] hover:bg-[#eeece2] dark:bg-[#1f232d] dark:hover:bg-[#282d3a] border border-[#dcdad2] dark:border-[#222630] text-xs font-semibold text-slate-700 dark:text-slate-200 transition">
+                        Réinitialiser
+                    </a>
+                    <button type="submit"
+                            class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs">
+                        Filtrer
+                    </button>
                 </div>
             </div>
         </form>
 
+        {{-- Alerte filtre sans stage --}}
         @if(request('stage_status') === 'none')
-        <div class="mb-4 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex-shrink-0">
-                    <svg class="w-5 h-5 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-[10px] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2.5">
+                <div class="p-1.5 bg-amber-100 dark:bg-amber-900/40 rounded-lg text-amber-700 dark:text-amber-300">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm font-semibold text-rose-800 dark:text-rose-200">Liste filtrée : stagiaires sans stage</p>
-                    <p class="text-xs text-rose-600 dark:text-rose-300">{{ $etudiants->total() }} stagiaire(s) n'ayant aucun stage. Supprimez, modifiez ou générez leur compte directement ci-dessous.</p>
+                    <p class="font-bold text-amber-900 dark:text-amber-200">Filtre actif : Stagiaires sans stage</p>
+                    <p class="text-[11px] text-amber-700 dark:text-amber-300">{{ $etudiants->total() }} stagiaire(s) n'ayant pas encore de sujet ou encadrant rattaché.</p>
                 </div>
             </div>
             <a href="{{ route('etudiants.index') }}"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-gray-800 border border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+               class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#131519] border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 Retirer le filtre
             </a>
         </div>
         @endif
 
-        <!-- Tableau -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 dark:bg-gray-900/50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">N°</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Identité</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">École</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stage</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Compte</th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+        {{-- ── 4. TABLEAU DES STAGIAIRES (PLEINE LARGEUR) ── --}}
+        <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] overflow-hidden shadow-xs">
+            
+            {{-- Vue Desktop md+ --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="bg-[#f6f5f0] dark:bg-[#131519] border-b border-[#dcdad2] dark:border-[#222630] text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <th class="px-3.5 py-3 w-10 text-center">N°</th>
+                            <th class="px-4 py-3">Identité</th>
+                            <th class="px-4 py-3">Contact</th>
+                            <th class="px-4 py-3">École</th>
+                            <th class="px-4 py-3">Stage</th>
+                            <th class="px-4 py-3">Compte</th>
+                            <th class="px-4 py-3 text-right w-32">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody class="divide-y divide-[#dcdad2] dark:divide-[#222630]">
                         @forelse($etudiants as $etudiant)
-                        @php $personnel = $etudiant->personnel; @endphp
-                        @if(!$personnel)
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-red-500 dark:text-red-400">Erreur : personnel introuvable pour le stagiaire #{{ $etudiant->id }}</td>
-                        </tr>
-                        @continue
-                        @endif
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
-                            <td class="px-6 py-4">
-                                <div class="font-semibold text-gray-900 dark:text-white">{{ $personnel->prenom }} {{ $personnel->nom }}</div>
-                                @if($personnel->genre)
-                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ $personnel->genre }}</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="text-gray-900 dark:text-white">{{ $personnel->email }}</div>
-                                <div class="text-gray-500 dark:text-gray-400">{{ $personnel->telephone ?? '-' }}</div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{{ $etudiant->ecole ?? '-' }}</td>
-                            <td class="px-6 py-4">
-                                @if($etudiant->stages_count > 0)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                    Avec stage
-                                </span>
-                                @else
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs font-medium">
-                                    <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-                                    Sans stage
-                                </span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($personnel->user)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                    Compte actif
-                                </span>
-                                @else
-                                <button type="button" class="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline" onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'generate')">
-                                    Générer le compte
-                                </button>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                @if($personnel->user)
-                                <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition" onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'resend')">
-                                    Renvoyer email
-                                </button>
-                                @endif
-                                <a href="{{ route('etudiants.show', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Voir">
-                                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </a>
-                                <a href="{{ route('etudiants.edit', $etudiant) }}" class="inline-flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800/50 transition" title="Modifier" data-confirm-edit>
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </a>
-                                <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline" data-confirm-delete>
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center justify-center w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/50 transition" title="Supprimer">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
+                            @php
+                                $personnel = $etudiant->personnel;
+                                $initiales = $personnel ? strtoupper(mb_substr($personnel->prenom, 0, 1) . mb_substr($personnel->nom, 0, 1)) : 'ST';
+                            @endphp
+
+                            @if(!$personnel)
+                                <tr class="bg-rose-50/50 dark:bg-rose-950/20">
+                                    <td colspan="7" class="px-4 py-2.5 text-xs text-rose-700 dark:text-rose-400">
+                                        ⚠️ Stagiaire #{{ $etudiant->id }} — fiche personnel introuvable.
+                                    </td>
+                                </tr>
+                                @continue
+                            @endif
+
+                            <tr class="hover:bg-[#faf9f5] dark:hover:bg-[#1a1e27] transition">
+                                <td class="px-3.5 py-3 text-center font-mono text-[11px] text-slate-400">
+                                    {{ $loop->iteration + ($etudiants->currentPage() - 1) * $etudiants->perPage() }}
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs flex items-center justify-center shrink-0">
+                                            {{ $initiales }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <a href="{{ route('etudiants.show', $etudiant) }}"
+                                               class="font-bold text-slate-900 dark:text-[#f8fafc] hover:text-emerald-600 dark:hover:text-emerald-400 truncate block">
+                                                {{ $personnel->prenom }} {{ $personnel->nom }}
+                                            </a>
+                                            @if($personnel->genre)
+                                                <span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-[#1f232d] dark:text-slate-300">
+                                                    {{ $personnel->genre }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <div class="text-slate-800 dark:text-slate-200 font-mono text-[11px]">{{ $personnel->email }}</div>
+                                    <div class="text-[11px] text-slate-400">{{ $personnel->telephone ?? '—' }}</div>
+                                </td>
+
+                                <td class="px-4 py-3 text-slate-700 dark:text-slate-300">
+                                    {{ $etudiant->ecole ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if($etudiant->stages_count > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Avec stage
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            Sans stage
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if($personnel->user)
+                                        <div class="space-y-0.5">
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                                Actif
+                                            </span>
+                                            <button type="button"
+                                                    onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'resend')"
+                                                    class="block text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline">
+                                                Renvoyer accès
+                                            </button>
+                                        </div>
+                                    @else
+                                        <button type="button"
+                                                onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'generate')"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-[#dcdad2] dark:border-[#222630] bg-[#f6f5f0] dark:bg-[#1f232d] hover:bg-[#eeece2] dark:hover:bg-[#282d3a] text-emerald-700 dark:text-emerald-400 transition">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                            Créer compte
+                                        </button>
+                                    @endif
+                                </td>
+
+                                <td class="px-4 py-3 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1">
+                                        <a href="{{ route('etudiants.show', $etudiant) }}"
+                                           class="p-1.5 rounded-md text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-[#f6f5f0] dark:hover:bg-[#1f232d] transition"
+                                           title="Consulter la fiche">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        </a>
+                                        <a href="{{ route('etudiants.edit', $etudiant) }}"
+                                           class="p-1.5 rounded-md text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 hover:bg-[#f6f5f0] dark:hover:bg-[#1f232d] transition"
+                                           title="Modifier">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                                        </a>
+                                        <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline" onsubmit="return confirm('Mettre ce stagiaire à la corbeille ?');">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    class="p-1.5 rounded-md text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-[#f6f5f0] dark:hover:bg-[#1f232d] transition"
+                                                    title="Mettre à la corbeille">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
                         @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun stagiaire trouvé.</td>
-                        </tr>
+                            <tr>
+                                <td colspan="7" class="px-5 py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+                                    Aucun stagiaire trouvé pour ces critères.
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="p-5 border-t border-gray-100 dark:border-gray-700">
-                {{ $etudiants->links() }}
+
+            {{-- Vue Mobile (< md / 375px) --}}
+            <div class="block md:hidden divide-y divide-[#dcdad2] dark:divide-[#222630]">
+                @forelse($etudiants as $etudiant)
+                    @php
+                        $personnel = $etudiant->personnel;
+                        $initiales = $personnel ? strtoupper(mb_substr($personnel->prenom, 0, 1) . mb_substr($personnel->nom, 0, 1)) : 'ST';
+                    @endphp
+
+                    @if(!$personnel)
+                        <div class="p-3 text-xs text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20">
+                            ⚠️ Stagiaire #{{ $etudiant->id }} — personnel introuvable.
+                        </div>
+                        @continue
+                    @endif
+
+                    <div class="p-3.5 space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-xs flex items-center justify-center shrink-0">
+                                    {{ $initiales }}
+                                </div>
+                                <div class="min-w-0">
+                                    <a href="{{ route('etudiants.show', $etudiant) }}" class="font-bold text-xs text-slate-900 dark:text-[#f8fafc] truncate block">
+                                        {{ $personnel->prenom }} {{ $personnel->nom }}
+                                    </a>
+                                    <p class="text-[11px] text-slate-400 font-mono truncate">{{ $personnel->email }}</p>
+                                </div>
+                            </div>
+                            @if($etudiant->stages_count > 0)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Avec stage
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                                    Sans stage
+                                </span>
+                            @endif
+                        </div>
+
+                        <div class="text-[11px] text-slate-600 dark:text-slate-300 bg-[#f6f5f0] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] rounded-lg p-2.5 space-y-0.5">
+                            <div><span class="text-slate-400 font-medium">École :</span> {{ $etudiant->ecole ?? 'Non précisée' }}</div>
+                            @if($personnel->telephone)
+                                <div><span class="text-slate-400 font-medium">Tél :</span> {{ $personnel->telephone }}</div>
+                            @endif
+                            @if($personnel->genre)
+                                <div><span class="text-slate-400 font-medium">Genre :</span> {{ $personnel->genre }}</div>
+                            @endif
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-1">
+                            @if(!$personnel->user)
+                                <button type="button"
+                                        onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'generate')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-600 text-white shadow-xs">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                    Créer compte
+                                </button>
+                            @else
+                                <button type="button"
+                                        onclick="openPasswordModal({{ $etudiant->id }}, '{{ route('etudiants.generate-account', $etudiant) }}', 'resend')"
+                                        class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+                                    Renvoyer accès
+                                </button>
+                            @endif
+
+                            <div class="inline-flex items-center gap-1">
+                                <a href="{{ route('etudiants.show', $etudiant) }}"
+                                   class="p-1.5 rounded-md bg-[#f6f5f0] dark:bg-[#1f232d] border border-[#dcdad2] dark:border-[#222630] text-slate-700 dark:text-slate-200 text-xs font-medium">
+                                    Détails
+                                </a>
+                                <a href="{{ route('etudiants.edit', $etudiant) }}"
+                                   class="p-1.5 rounded-md bg-[#f6f5f0] dark:bg-[#1f232d] border border-[#dcdad2] dark:border-[#222630] text-amber-600 dark:text-amber-400 text-xs font-medium">
+                                    Modifier
+                                </a>
+                                <form action="{{ route('etudiants.destroy', $etudiant) }}" method="POST" class="inline" onsubmit="return confirm('Mettre ce stagiaire à la corbeille ?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                            class="p-1.5 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                        Aucun stagiaire trouvé.
+                    </div>
+                @endforelse
+            </div>
+
+            @if($etudiants->hasPages())
+                <div class="px-4 py-3 border-t border-[#dcdad2] dark:border-[#222630] bg-[#faf9f5] dark:bg-[#181c24]">
+                    {{ $etudiants->links() }}
+                </div>
+            @endif
+        </div>
+
+    </div>
+
+    {{-- ── Modale Génération Mot de passe (Style Mon-Stage) ── --}}
+    <div id="passwordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/70 backdrop-blur-xs">
+        <div class="bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] rounded-[12px] shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-4 py-3 border-b border-[#dcdad2] dark:border-[#222630] bg-[#faf9f5] dark:bg-[#181c24] flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg>
+                    </div>
+                    <h2 id="passwordModalTitle" class="text-xs font-bold text-slate-900 dark:text-[#f8fafc]">Générer un compte</h2>
+                </div>
+                <button type="button" onclick="closePasswordModal()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="p-4">
+                <p id="passwordModalDescription" class="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                    Définissez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré et envoyé automatiquement par email.
+                </p>
+
+                <form id="passwordForm" method="POST" action="" class="space-y-3">
+                    @csrf
+                    <div>
+                        <label for="customPassword" class="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">
+                            Mot de passe personnalisé <span class="text-[10px] lowercase font-normal text-slate-400">(optionnel)</span>
+                        </label>
+                        <input type="password" id="customPassword" name="custom_password"
+                               placeholder="Laisser vide pour génération automatique"
+                               class="w-full h-8 px-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-white dark:bg-[#131519] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-600">
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t border-[#dcdad2] dark:border-[#222630]">
+                        <button type="button" onclick="closePasswordModal()"
+                                class="flex-1 py-1.5 rounded-lg bg-[#f6f5f0] hover:bg-[#eeece2] dark:bg-[#1f232d] dark:hover:bg-[#282d3a] border border-[#dcdad2] dark:border-[#222630] text-xs font-semibold text-slate-700 dark:text-slate-200 transition">
+                            Annuler
+                        </button>
+                        <button type="submit" id="passwordSubmitBtn"
+                                class="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs">
+                            Générer
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal pour mot de passe personnalisé -->
-    <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h2 id="passwordModalTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Générer un compte</h2>
-            <p id="passwordModalDescription" class="text-gray-600 dark:text-gray-300 mb-6">Entrez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré.</p>
-
-            <form id="passwordForm" method="POST" action="">
-                @csrf
-                <div class="mb-6">
-                    <label for="customPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Mot de passe temporaire (optionnel)</label>
-                    <input type="password" id="customPassword" name="custom_password" placeholder="Laisser vide pour générer aléatoirement" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-sky-500 focus:border-transparent">
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closePasswordModal()" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">Annuler</button>
-                    <button type="submit" id="passwordSubmitBtn" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 transition">Générer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        function openPasswordModal(etudiantId, actionUrl, mode = 'generate') {
-            document.getElementById('passwordModal').classList.remove('hidden');
-            document.getElementById('passwordForm').action = actionUrl;
-            document.getElementById('customPassword').value = '';
+    function openPasswordModal(etudiantId, actionUrl, mode = 'generate') {
+        const modal = document.getElementById('passwordModal');
+        modal.classList.remove('hidden');
+        document.getElementById('passwordForm').action = actionUrl;
+        document.getElementById('customPassword').value = '';
 
-            var resend = mode === 'resend';
-            document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'email d'activation" : 'Générer un compte';
-            document.getElementById('passwordModalDescription').textContent = resend
-                ? "Un compte existe déjà pour ce stagiaire. Vous pouvez définir un nouveau mot de passe temporaire qui sera envoyé par email."
-                : "Entrez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré.";
-            document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
-        }
+        const resend = (mode === 'resend');
+        document.getElementById('passwordModalTitle').textContent = resend ? "Renvoyer l'accès" : 'Générer un compte';
+        document.getElementById('passwordModalDescription').textContent = resend
+            ? "Un compte existe déjà pour ce stagiaire. Vous pouvez définir un nouveau mot de passe temporaire qui lui sera notifié par email."
+            : "Entrez un mot de passe temporaire pour ce stagiaire. Si laissé vide, un mot de passe aléatoire sera généré et envoyé par email.";
+        document.getElementById('passwordSubmitBtn').textContent = resend ? 'Renvoyer' : 'Générer';
+    }
 
-        function closePasswordModal() {
-            document.getElementById('passwordModal').classList.add('hidden');
-        }
+    function closePasswordModal() {
+        document.getElementById('passwordModal').classList.add('hidden');
+    }
 
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closePasswordModal();
-            }
-        });
-
-        document.getElementById('passwordModal')?.addEventListener('click', function(event) {
-            if (event.target === this) {
-                closePasswordModal();
-            }
-        });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePasswordModal(); });
+    document.getElementById('passwordModal')?.addEventListener('click', function(e) { if (e.target === this) closePasswordModal(); });
     </script>
 </x-app-layout>

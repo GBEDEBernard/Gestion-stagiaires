@@ -939,6 +939,9 @@
                 else if (href.includes('/profile')) tplId = 'sk-tpl-profile';
                 else if (href.includes('/notifications')) tplId = 'sk-tpl-notifications';
                 else if (href.includes('/admin/employes') || href.includes('/employes')) tplId = 'sk-tpl-employes';
+                else if (href.includes('/admin/etudiants') || href.includes('/etudiants')) tplId = 'sk-tpl-etudiants';
+                else if (href.includes('/admin/personnels') || href.includes('/personnels')) tplId = 'sk-tpl-personnels';
+                else if (href.includes('/admin/badges') || href.includes('/badges')) tplId = 'sk-tpl-badges';
                 else if (href.includes('/dashboard')) tplId = 'sk-tpl-dashboard';
 
                 if (tplId) {

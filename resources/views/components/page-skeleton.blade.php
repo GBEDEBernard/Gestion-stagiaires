@@ -43,6 +43,12 @@
             <x-skeletons.notifications />
         @elseif(request()->routeIs('employes.*'))
             <x-skeletons.employes-index />
+        @elseif(request()->routeIs('etudiants.*') || $r === 'etudiants.index')
+            <x-skeletons.etudiants />
+        @elseif(request()->routeIs('personnels.*') || $r === 'personnels.index')
+            <x-skeletons.personnels />
+        @elseif(request()->routeIs('badges.*') || $r === 'badges.index')
+            <x-skeletons.badges />
         @elseif(request()->routeIs('dashboard'))
             @if(auth()->user()?->hasRole('employe'))
                 <x-skeletons.employe-dashboard />
@@ -77,4 +83,7 @@
 <template id="sk-tpl-dashboard"><x-skeletons.dashboard /></template>
 <template id="sk-tpl-employe-dashboard"><x-skeletons.employe-dashboard /></template>
 <template id="sk-tpl-employes"><x-skeletons.employes-index /></template>
+<template id="sk-tpl-etudiants"><x-skeletons.etudiants /></template>
+<template id="sk-tpl-personnels"><x-skeletons.personnels /></template>
+<template id="sk-tpl-badges"><x-skeletons.badges /></template>
 <template id="sk-tpl-generic"><x-skeletons.generic /></template>
