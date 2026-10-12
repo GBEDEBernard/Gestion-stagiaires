@@ -925,6 +925,7 @@
                 else if (href.includes('/anomalies')) tplId = 'sk-tpl-anomalies';
                 else if (href.includes('/corrections-depart') || href.includes('/corrections')) tplId = 'sk-tpl-corrections-depart';
                 else if (href.includes('/pointage-suivi')) tplId = 'sk-tpl-pointage-suivi';
+                else if (href.includes('/horaire')) tplId = 'sk-tpl-horaire';
                 else if (href.includes('/admin/presence')) tplId = 'sk-tpl-admin-presence';
                 else if (href.includes('/holidays')) tplId = 'sk-tpl-holidays';
                 else if (href.includes('/presence/pointage') || href.includes('/pointage')) tplId = 'sk-tpl-pointage';
