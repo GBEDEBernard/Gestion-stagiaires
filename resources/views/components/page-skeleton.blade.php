@@ -17,6 +17,8 @@
             <x-skeletons.corrections-depart />
         @elseif(request()->routeIs('admin.presence.index*') || $r === 'admin.presence.index')
             <x-skeletons.admin-presence />
+        @elseif(request()->routeIs('admin.holidays*') || $r === 'admin.holidays.index')
+            <x-skeletons.holidays />
         @elseif(request()->routeIs('presence.pointage') || request()->routeIs('presence.index'))
             <x-skeletons.pointage />
         @elseif(request()->routeIs('presence.historique'))
@@ -54,6 +56,7 @@
 <template id="sk-tpl-anomalies"><x-skeletons.anomalies /></template>
 <template id="sk-tpl-corrections-depart"><x-skeletons.corrections-depart /></template>
 <template id="sk-tpl-admin-presence"><x-skeletons.admin-presence /></template>
+<template id="sk-tpl-holidays"><x-skeletons.holidays /></template>
 <template id="sk-tpl-pointage"><x-skeletons.pointage /></template>
 <template id="sk-tpl-historique"><x-skeletons.historique /></template>
 <template id="sk-tpl-tasks"><x-skeletons.tasks /></template>
