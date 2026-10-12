@@ -9,6 +9,8 @@
             <x-skeletons.mon-stage />
         @elseif(request()->routeIs('attendance.tracking.*') || $r === 'attendance.tracking.index')
             <x-skeletons.attendance-tracking />
+        @elseif(request()->routeIs('admin.presence.pointage-suivi*') || $r === 'admin.presence.pointage-suivi')
+            <x-skeletons.pointage-suivi />
         @elseif(request()->routeIs('admin.presence.anomalies*') || $r === 'admin.presence.anomalies')
             <x-skeletons.anomalies />
         @elseif(request()->routeIs('presence.pointage') || request()->routeIs('presence.index'))
@@ -44,6 +46,7 @@
 {{-- ── TEMPLATES CLIENTS POUR TRANSITION INSTANTANÉE AU CLIC ── --}}
 <template id="sk-tpl-mon-stage"><x-skeletons.mon-stage /></template>
 <template id="sk-tpl-attendance-tracking"><x-skeletons.attendance-tracking /></template>
+<template id="sk-tpl-pointage-suivi"><x-skeletons.pointage-suivi /></template>
 <template id="sk-tpl-anomalies"><x-skeletons.anomalies /></template>
 <template id="sk-tpl-pointage"><x-skeletons.pointage /></template>
 <template id="sk-tpl-historique"><x-skeletons.historique /></template>
