@@ -30,7 +30,7 @@
         }
     </style>
 
-    <div class="w-full max-w-6xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 pb-8 space-y-4">
+    <div class="w-full space-y-3.5 pb-8 text-slate-900 dark:text-[#f8fafc]">
 
         {{-- ── En-tête Compact ── --}}
         <div class="flex items-center justify-between pb-1 border-b border-[#dcdad2] dark:border-[#222630]">
