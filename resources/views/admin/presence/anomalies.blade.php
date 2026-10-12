@@ -1,310 +1,340 @@
-<x-app-layout title="Anomalies de Présence - Admin">
+<x-app-layout title="Anomalies de Présence - Supervision">
 
-    <x-slot name="header">
-        <div class="an-header">
-            <div>
-                <div class="an-header-badge">Supervision</div>
-                <h1 class="an-header-title">Anomalies de Présence</h1>
-                <p class="an-header-sub">Incidents détectés à reviewer</p>
-            </div>
-            <a href="{{ route('admin.presence.index') }}" class="an-btn-back">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-                Tableau de bord
-            </a>
-        </div>
-    </x-slot>
-
+    {{-- ════════════════════════════════════════════════════════
+         STYLES IDENTITÉ « MON STAGE » (COMPACT / ZERO ERREUR)
+    ════════════════════════════════════════════════════════ --}}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        body { background: #f1f0ed !important; }
+        .dark body { background: #1f232d !important; }
+        header { background-color: transparent !important; border-bottom: none !important; box-shadow: none !important; }
+        .dark header { background-color: #131519 !important; border-bottom: none !important; box-shadow: none !important; }
 
         :root {
-            --bg: #ffffff;
-            --bg2: #f8fafc;
-            --bg3: #f1f5f9;
-            --border: rgba(0,0,0,0.08);
-            --border-hi: rgba(0,0,0,0.14);
-            --text: #0f172a;
-            --muted: #64748b;
-            --emerald: #10b981;
-            --emerald-d: #059669;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
-            --blue: #3b82f6;
-            --purple: #8b5cf6;
-            --font: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
-        }
-        .dark {
-            --bg: #0f1117; --bg2: #161b27; --bg3: #1c2333;
-            --border: rgba(255,255,255,0.07); --border-hi: rgba(255,255,255,0.14);
-            --text: #e8eaf0; --muted: #8b93a3;
+            --ks-ink: #241f1b;
+            --ks-blue: #1c3e96;
+            --ks-blue-dark: #162f73;
+            --ks-line: #bfbab2;
+            --ks-muted: #6e6862;
+            --ks-card: #fffefa;
+            --ks-card-bd: #dcdad2;
         }
 
-        .an-wrap * { box-sizing: border-box; }
-        .an-wrap { font-family: var(--font); color: var(--text); background: var(--bg); min-height: 100vh; }
+        .ks-label { font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6e6862; }
+        .dark .ks-label { color: #a89f93 !important; }
 
-        .an-header { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem; padding:1rem 1.5rem 0; }
-        .an-header-badge {
-            display:inline-block; font-size:.7rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
-            color:var(--rose); background:rgba(244,63,94,.1); border:1px solid rgba(244,63,94,.2);
-            border-radius:999px; padding:.25rem .75rem; margin-bottom:.5rem;
-        }
-        .an-header-title { font-size:1.75rem; font-weight:700; color:var(--text); margin:0; }
-        .an-header-sub { font-size:.88rem; color:var(--muted); margin:.2rem 0 0; }
-        .an-btn-back {
-            display:flex; align-items:center; gap:.5rem; padding:.55rem 1.1rem;
-            background:var(--bg2); border:1px solid var(--border); color:var(--text);
-            font-size:.83rem; font-weight:500; border-radius:.65rem; text-decoration:none; transition:all .2s;
-        }
-        .an-btn-back:hover { border-color:var(--border-hi); background:var(--bg3); }
+        .ks-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #1c3e96; color: #fff; border: 1px solid #1c3e96; border-radius: 6px; font-size: .85rem; font-weight: 600; padding: .4rem .9rem; min-height: 34px; transition: background-color .15s ease, transform .1s ease; }
+        .ks-btn-primary:hover { background: #162f73; border-color: #162f73; }
+        .ks-btn-primary:active { transform: scale(.98); }
 
-        .an-page { max-width:1200px; margin:0 auto; padding:1.5rem 1.5rem 3rem; }
+        .ks-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; background: #fff; color: #241f1b; border: 1px solid #bfbab2; border-radius: 6px; font-size: .85rem; font-weight: 500; padding: .4rem .9rem; min-height: 34px; transition: all .15s ease; }
+        .dark .ks-btn-secondary { background: #131519; color: #fff; border-color: #222630; }
+        .ks-btn-secondary:hover { border-color: #1c3e96; color: #1c3e96; }
 
-        .an-empty {
-            background:var(--bg2); border:1px solid var(--border); border-radius:1.25rem;
-            padding:5rem 2rem; text-align:center;
-        }
-        .an-empty-icon { font-size:3rem; margin-bottom:1rem; }
-        .an-empty-title { font-size:1.1rem; font-weight:600; color:var(--text); margin-bottom:.5rem; }
-        .an-empty-sub { font-size:.85rem; color:var(--muted); }
+        .ks-btn-xs { min-height: 28px !important; padding: .25rem .65rem !important; font-size: .74rem !important; font-weight: 600; border-radius: 5px !important; flex: none; white-space: nowrap; }
 
-        /* SUMMARY BAR */
-        .an-summary {
-            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
-            background:var(--bg2); border:1px solid var(--border); border-radius:1rem;
-            padding:1.1rem 1.5rem; margin-bottom:1.25rem;
+        .ks-sec { background: #fffefa; border: 1px solid #dcdad2; border-radius: 10px; box-shadow: 0 1px 2px rgba(36,31,27,.04); transition: border-color .15s ease, box-shadow .18s ease-out; }
+        .dark .ks-sec { background: #131519 !important; border: 1px solid #222630 !important; border-color: #222630 !important; box-shadow: none; }
+        .ks-sec-head { padding: .65rem .9rem; border-bottom: 1px solid #dcdad2; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+        .dark .ks-sec-head { border-bottom: 1px solid #222630 !important; border-color: #222630 !important; }
+
+        .ks-stat-card { border: 1px solid #dcdad2; border-radius: 10px; background-color: #fffefa; }
+        .dark .ks-stat-card { background: #131519 !important; border: 1px solid #222630 !important; }
+
+        .ks-stat-icon { width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+        .ks-stat-icon svg { width: 15px; height: 15px; stroke-width: 1.75; }
+
+        .ks-num { font-variant-numeric: tabular-nums; }
+        .ks-stat-change { font-size: .68rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+        .ks-stat-change--positive { color: #15803d; background-color: #ecfdf5; }
+        .dark .ks-stat-change--positive { color: #4ade80 !important; background-color: rgba(22,128,74,0.22) !important; }
+        .ks-stat-change--neutral { color: #475569; background-color: #f1f5f9; }
+        .dark .ks-stat-change--neutral { color: #cbd5e1 !important; background-color: #262a30 !important; }
+        .ks-stat-change--amber { color: #b45309; background-color: #fffbeb; }
+        .dark .ks-stat-change--amber { color: #fbbf24 !important; background-color: rgba(180,83,9,0.22) !important; }
+        .ks-stat-change--negative { color: #b91c1c; background-color: #fef2f2; }
+        .dark .ks-stat-change--negative { color: #f87171 !important; background-color: rgba(185,28,28,0.22) !important; }
+
+        .an-pill { font-size: .72rem; font-weight: 500; padding: .2rem .55rem; border-radius: 999px; background: #faf9f6; color: #6e6862; border: 1px solid #dcdad2; display: inline-flex; align-items: center; gap: .25rem; }
+        .dark .an-pill { background: #181c24; color: #94a3b8; border-color: #222630; }
+        .an-pill b { font-weight: 700; color: #241f1b; }
+        .dark .an-pill b { color: #f8fafc; }
+
+        @media (max-width: 639px) {
+            .an-desktop-table { display: none !important; }
+            .an-mobile-list { display: block !important; }
         }
-        .an-summary-count { display:flex; align-items:baseline; gap:.5rem; }
-        .an-summary-num { font-size:1.9rem; font-weight:700; color:var(--rose); font-family:var(--mono); }
-        .an-summary-label { font-size:.85rem; color:var(--muted); }
-        .an-summary-filters { display:flex; gap:.5rem; flex-wrap:wrap; }
-        .an-filter-chip {
-            padding:.4rem 1rem; border-radius:999px; font-size:.8rem; font-weight:600;
-            background:var(--bg3); color:var(--muted); border:1px solid var(--border);
-            text-decoration:none; transition:all .2s; cursor:pointer;
-        }
-        .an-filter-chip:hover { border-color:var(--border-hi); color:var(--text); }
-        .an-filter-chip.active {
-            background:rgba(244,63,94,.1); color:var(--rose); border-color:rgba(244,63,94,.3);
+        @media (min-width: 640px) {
+            .an-desktop-table { display: block !important; }
+            .an-mobile-list { display: none !important; }
         }
 
-        /* USER GROUP TABLE */
-        .an-card { background:var(--bg2); border:1px solid var(--border); border-radius:1rem; overflow:hidden; }
-        table.an-table { width:100%; border-collapse:collapse; }
-        table.an-table thead tr { background:var(--bg3); }
-        table.an-table th {
-            padding:.75rem 1.2rem; text-align:left; font-size:.71rem; font-weight:600;
-            letter-spacing:.09em; text-transform:uppercase; color:var(--muted);
-            border-bottom:1px solid var(--border);
-        }
-        table.an-table td { padding:1rem 1.2rem; font-size:.86rem; border-bottom:1px solid var(--border); vertical-align:middle; }
-        table.an-table tbody tr:last-child td { border-bottom:none; }
-        table.an-table tbody tr { transition:background .15s; }
-        table.an-table tbody tr:hover td { background:var(--bg3); }
-
-        .an-user { display:flex; align-items:center; gap:.75rem; }
-        .an-avatar {
-            width:38px; height:38px; border-radius:.65rem; display:flex; align-items:center; justify-content:center;
-            font-size:.82rem; font-weight:700; flex-shrink:0;
-            background:linear-gradient(135deg, rgba(139,92,246,.18), rgba(139,92,246,.06));
-            color:var(--purple); border:1px solid rgba(139,92,246,.18);
-        }
-        .an-user-name { font-weight:600; color:var(--text); font-size:.9rem; }
-        .an-user-sub { font-size:.75rem; color:var(--muted); margin-top:.1rem; }
-
-        .an-count-badge {
-            display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px;
-            padding:0 .5rem; border-radius:999px; font-size:.8rem; font-weight:700; font-family:var(--mono);
-            background:rgba(244,63,94,.1); color:var(--rose); border:1px solid rgba(244,63,94,.2);
-        }
-        .an-count-badge.low-sev { background:rgba(107,114,128,.1); color:var(--muted); border-color:var(--border); }
-        .an-count-badge.med-sev { background:rgba(245,158,11,.1); color:var(--amber); border-color:rgba(245,158,11,.2); }
-
-        .an-type-pills { display:flex; flex-wrap:wrap; gap:.35rem; }
-        .an-type-pill {
-            font-size:.73rem; font-weight:500; padding:.2rem .6rem; border-radius:999px;
-            background:var(--bg3); color:var(--muted); border:1px solid var(--border);
-        }
-        .an-type-pill b { color:var(--text); font-weight:700; }
-
-        .an-sev-badge {
-            display:inline-flex; align-items:center; gap:.35rem; padding:.22rem .65rem;
-            border-radius:999px; font-size:.72rem; font-weight:600;
-        }
-        .sev-high  { background:rgba(244,63,94,.1); color:var(--rose); }
-        .sev-medium{ background:rgba(245,158,11,.1); color:var(--amber); }
-        .sev-low   { background:rgba(107,114,128,.1); color:var(--muted); }
-        .an-sev-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:currentColor; }
-
-        .an-date { font-size:.8rem; font-family:var(--mono); color:var(--muted); }
-
-        .an-detail-btn {
-            display:inline-flex; align-items:center; gap:.4rem; padding:.45rem 1.1rem;
-            background:var(--bg); border:1px solid var(--border-hi); color:var(--text);
-            font-size:.8rem; font-weight:600; border-radius:.6rem; cursor:pointer; transition:all .2s;
-        }
-        .an-detail-btn:hover { background:var(--purple); border-color:var(--purple); color:#fff; transform:translateY(-1px); }
-
-        /* MODAL */
-        .an-modal-backdrop {
-            display:none; position:fixed; inset:0; background:rgba(15,23,42,.55);
-            backdrop-filter:blur(3px); z-index:999; align-items:center; justify-content:center; padding:1rem;
-        }
-        .an-modal-backdrop.active { display:flex; }
-        .an-modal {
-            background:var(--bg); border:1px solid var(--border-hi); border-radius:1.25rem;
-            max-width:680px; width:100%; max-height:88vh; overflow-y:auto;
-            box-shadow:0 24px 70px rgba(0,0,0,.25);
-        }
-        .an-modal-head {
-            display:flex; align-items:center; justify-content:space-between;
-            padding:1.25rem 1.5rem; border-bottom:1px solid var(--border);
-            position:sticky; top:0; background:var(--bg); z-index:2;
-        }
-        .an-modal-head-info { display:flex; align-items:center; gap:.85rem; }
-        .an-modal-head h2 { margin:0; font-size:1.05rem; font-weight:700; color:var(--text); }
-        .an-modal-head-sub { font-size:.78rem; color:var(--muted); margin-top:.1rem; }
-        .an-modal-close { background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; padding:0; line-height:1; }
-        .an-modal-close:hover { color:var(--text); }
-        .an-modal-body { padding:1.25rem 1.5rem 1.5rem; }
-
-        .an-type-group {
-            border:1px solid var(--border); border-radius:.85rem; margin-bottom:.9rem; overflow:hidden;
-        }
-        .an-type-group-head {
-            display:flex; align-items:center; justify-content:space-between; gap:.75rem;
-            padding:.85rem 1.1rem; background:var(--bg2);
-        }
-        .an-type-group-title { display:flex; align-items:center; gap:.6rem; }
-        .an-type-group-name { font-weight:600; font-size:.88rem; color:var(--text); }
-        .an-type-group-desc { font-size:.78rem; color:var(--muted); margin-top:.15rem; }
-        .an-type-group-actions { display:flex; align-items:center; gap:.5rem; }
-
-        .an-btn-mini {
-            padding:.35rem .8rem; border-radius:.5rem; border:1px solid var(--border-hi);
-            background:var(--bg); color:var(--text); font-size:.75rem; font-weight:600; cursor:pointer; transition:all .2s;
-        }
-        .an-btn-mini:hover { background:var(--emerald); border-color:var(--emerald); color:#fff; }
-
-        .an-type-group-items { padding:.5rem 1.1rem 1rem; display:flex; flex-direction:column; gap:.5rem; }
-        .an-occurrence {
-            display:flex; align-items:center; justify-content:space-between; gap:.75rem;
-            padding:.6rem .85rem; background:var(--bg2); border-radius:.6rem; font-size:.8rem;
-        }
-        .an-occurrence-obs { color:var(--amber); font-size:.75rem; margin-top:.15rem; }
-
-        .an-btn-resolve-one {
-            padding:.3rem .7rem; border-radius:.45rem; border:1px solid rgba(16,185,129,.3);
-            background:rgba(16,185,129,.08); color:var(--emerald); font-size:.72rem; font-weight:600; cursor:pointer;
-        }
-        .an-btn-resolve-one:hover { background:var(--emerald); color:#fff; }
-
-        .an-empty-inline { text-align:center; padding:3rem 1rem; color:var(--muted); }
+        /* Dark mode overrides complets */
+        .dark .text-slate-900, .dark .text-slate-800, .dark .text-gray-900 { color: #f8fafc !important; }
+        .dark .text-slate-600, .dark .text-slate-500, .dark .text-gray-600 { color: #94a3b8 !important; }
+        .dark .border-slate-200, .dark .border-slate-300, .dark .border-gray-200 { border-color: #222630 !important; }
     </style>
 
-    <div class="an-wrap">
-    <div class="an-page">
-
-        @if($grouped->isEmpty())
-            <div class="an-empty">
-                <div class="an-empty-icon">✅</div>
-                <div class="an-empty-title">Aucune anomalie ouverte</div>
-                <div class="an-empty-sub">Toutes les anomalies de présence ont été résolues.</div>
+    <div class="space-y-3 sm:space-y-3.5 overflow-x-hidden">
+        {{-- ════════════════════════════════════════════════════════
+             BANNER ANOMALIES (STYLE MON STAGE COMPACT)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="relative overflow-hidden rounded-[10px] border border-[#dcdad2] dark:border-[#222630] bg-gradient-to-r from-[#1c3e96] via-[#1a3889] to-[#162f73] dark:from-[#131519] dark:via-[#161a22] dark:to-[#131519] shadow-sm">
+            <div class="absolute inset-0 opacity-15 pointer-events-none"
+                style="background-image:url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
             </div>
-        @else
-            <div class="an-summary">
-                <div class="an-summary-count">
-                    <span class="an-summary-num">{{ $anomalies->count() }}</span>
-                    <span class="an-summary-label">anomalie{{ $anomalies->count()>1?'s':'' }} · {{ $grouped->count() }} utilisateur{{ $grouped->count()>1?'s':'' }}</span>
-                </div>
-                <div class="an-summary-filters">
-                    <a href="?filter=all" class="an-filter-chip {{ $filter==='all'?'active':'' }}">Toutes</a>
-                    <a href="?filter=today" class="an-filter-chip {{ $filter==='today'?'active':'' }}">Aujourd'hui</a>
-                    <a href="?filter=week" class="an-filter-chip {{ $filter==='week'?'active':'' }}">Semaine</a>
-                </div>
-            </div>
-
-            <div class="an-card">
-                <table class="an-table">
-                    <thead>
-                        <tr>
-                            <th>Utilisateur</th>
-                            <th>Types d'anomalies</th>
-                            <th>Sévérité max</th>
-                            <th>Dernière détection</th>
-                            <th style="text-align:right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($grouped as $i => $g)
-                            @php
-                                $initial = strtoupper(substr($g['user'], 0, 2));
-                                $sevMax = $g['max_severity'];
-                                $sevClass = $sevMax >= 3 ? 'sev-high' : ($sevMax === 2 ? 'sev-medium' : 'sev-low');
-                                $sevLabel = $sevMax >= 3 ? 'Élevée' : ($sevMax === 2 ? 'Moyenne' : 'Faible');
-                                $badgeClass = $sevMax >= 3 ? '' : ($sevMax === 2 ? 'med-sev' : 'low-sev');
-                            @endphp
-                            <tr>
-                                <td>
-                                    <div class="an-user">
-                                        <div class="an-avatar">{{ $initial }}</div>
-                                        <div>
-                                            <div class="an-user-name">{{ $g['user'] }}</div>
-                                            <div class="an-user-sub">{{ $g['types']->count() }} type(s) d'incident</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="an-type-pills">
-                                        @foreach($g['types']->take(3) as $t)
-                                            <span class="an-type-pill">{{ $t['label'] }} <b>×{{ $t['count'] }}</b></span>
-                                        @endforeach
-                                        @if($g['types']->count() > 3)
-                                            <span class="an-type-pill">+{{ $g['types']->count() - 3 }}</span>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="an-sev-badge {{ $sevClass }}">
-                                        <span class="an-sev-dot"></span>{{ $sevLabel }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="an-date" style="color:var(--text);">{{ \Carbon\Carbon::parse($g['last_detected'])->format('d/m/Y') }}</div>
-                                    <div class="an-date">{{ \Carbon\Carbon::parse($g['last_detected'])->format('H:i') }}</div>
-                                </td>
-                                <td style="text-align:right;">
-                                    <span class="an-count-badge {{ $badgeClass }}" style="margin-right:.6rem;">{{ $g['total'] }}</span>
-                                    <button type="button" class="an-detail-btn" onclick="openUserModal({{ $i }})">
-                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                        Détails
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
-    </div>
-    </div>
-
-    {{-- MODAL — détail utilisateur groupé par type --}}
-    <div id="userModalBackdrop" class="an-modal-backdrop">
-        <div class="an-modal">
-            <div class="an-modal-head">
-                <div class="an-modal-head-info">
-                    <div class="an-avatar" id="modalAvatar" style="width:42px;height:42px;">--</div>
-                    <div>
-                        <h2 id="modalUserName">—</h2>
-                        <div class="an-modal-head-sub" id="modalUserSub">—</div>
+            <div class="relative px-3.5 sm:px-4 py-2.5 sm:py-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="ks-stat-icon !w-6 !h-6 rounded bg-rose-500/20 text-rose-300 dark:bg-rose-500/30 dark:text-rose-400">
+                                <svg class="!w-3.5 !h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </span>
+                            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Anomalies de Présence</h1>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-blue-200 dark:text-gray-400 mt-0.5">Incidents détectés et écarts de pointage à examiner</p>
+                    </div>
+                    <div class="flex items-center gap-2 self-start sm:self-auto">
+                        <a href="{{ route('admin.presence.index') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 dark:bg-white/5 hover:bg-white/15 border border-white/15 dark:border-[#222630] text-xs font-semibold text-white transition-all whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5 text-blue-200 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            <span>Tableau de bord</span>
+                        </a>
                     </div>
                 </div>
-                <button type="button" class="an-modal-close" onclick="closeUserModal()">&times;</button>
             </div>
-            <div class="an-modal-body" id="modalBody">
-                {{-- injecté en JS --}}
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             BARRE DE PÉRIODE & FILTRES (COMPACTE STYLE MON STAGE)
+        ════════════════════════════════════════════════════════ --}}
+        <div class="ks-sec p-2.5 sm:p-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                {{-- Onglets Période segmentés --}}
+                <div class="inline-flex items-center p-0.5 rounded-lg bg-[#faf9f6] dark:bg-[#181c24] border border-[#dcdad2] dark:border-[#222630] self-start sm:self-auto">
+                    @foreach([
+                        ['all', 'Toutes'],
+                        ['today', "Aujourd'hui"],
+                        ['week', 'Semaine']
+                    ] as [$val, $label])
+                    <a href="?filter={{ $val }}"
+                       class="px-3 py-1 text-xs font-semibold rounded-md transition-all {{ $filter === $val ? 'bg-[#1c3e96] text-white shadow-sm' : 'text-[#6e6862] dark:text-[#a89f93] hover:text-[#241f1b] dark:hover:text-white' }}">
+                        {{ $label }}
+                    </a>
+                    @endforeach
+                </div>
+
+                {{-- Synthèse compacte --}}
+                <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <span class="badge ks-stat-change {{ $anomalies->count() > 0 ? 'ks-stat-change--negative' : 'ks-stat-change--positive' }} !text-xs !px-2.5 !py-1">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $anomalies->count() > 0 ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
+                        {{ $anomalies->count() }} anomalie{{ $anomalies->count() > 1 ? 's' : '' }}
+                    </span>
+                    <span class="text-xs font-medium text-[#6e6862] dark:text-[#a89f93]">
+                        sur {{ $grouped->count() }} utilisateur{{ $grouped->count() > 1 ? 's' : '' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {{-- ════════════════════════════════════════════════════════
+             CONTENU : ÉTAT VIDE OU TABLEAU / CARTES PAR COLLABORATEUR
+        ════════════════════════════════════════════════════════ --}}
+        @if($grouped->isEmpty())
+            <div class="ks-sec p-8 sm:p-12 text-center">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </span>
+                <h3 class="mt-3 text-sm sm:text-base font-semibold text-[#241f1b] dark:text-[#f8fafc]">Aucune anomalie ouverte</h3>
+                <p class="mt-1 text-xs text-[#6e6862] dark:text-[#a89f93] max-w-sm mx-auto">Toutes les anomalies de présence ont été résolues ou aucun incident n'a été détecté pour cette période.</p>
+                <a href="{{ route('admin.presence.index') }}" class="ks-btn-secondary ks-btn-xs mt-3 inline-flex">
+                    Retour aux pointages
+                </a>
+            </div>
+        @else
+            {{-- ── SECTION PRINCIPALE DES ANOMALIES ── --}}
+            <div class="ks-sec overflow-hidden">
+                <div class="ks-sec-head">
+                    <div class="flex items-center gap-2">
+                        <span class="ks-stat-icon bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 !w-6 !h-6 rounded border border-rose-200 dark:border-rose-900">
+                            <svg class="!w-3.5 !h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </span>
+                        <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc]">Incidents groupés par collaborateur</h3>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#faf9f6] dark:bg-[#181c24] text-[#6e6862] dark:text-[#a89f93] border border-[#dcdad2] dark:border-[#222630]">
+                        {{ $grouped->count() }} dossier{{ $grouped->count() > 1 ? 's' : '' }}
+                    </span>
+                </div>
+
+                {{-- VUE TABLETTE / DESKTOP (>= 640px) --}}
+                <div class="an-desktop-table overflow-x-auto">
+                    <table class="w-full text-left text-xs tracking-table">
+                        <thead>
+                            <tr class="border-b border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]/80 text-[#6e6862] dark:text-[#a89f93] text-[10px] font-semibold uppercase tracking-wider">
+                                <th class="px-3.5 py-2">Utilisateur</th>
+                                <th class="px-3.5 py-2">Types d'anomalies</th>
+                                <th class="px-3.5 py-2">Sévérité max</th>
+                                <th class="px-3.5 py-2">Dernière détection</th>
+                                <th class="px-3.5 py-2 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#ecebe3] dark:divide-[#222630]">
+                            @foreach($grouped as $i => $g)
+                                @php
+                                    $initial = strtoupper(substr($g['user'], 0, 2));
+                                    $sevMax = $g['max_severity'];
+                                    $sevClass = $sevMax >= 3 ? 'ks-stat-change--negative' : ($sevMax === 2 ? 'ks-stat-change--amber' : 'ks-stat-change--neutral');
+                                    $sevDot = $sevMax >= 3 ? 'bg-rose-500' : ($sevMax === 2 ? 'bg-amber-500' : 'bg-slate-400');
+                                    $sevLabel = $sevMax >= 3 ? 'Élevée' : ($sevMax === 2 ? 'Moyenne' : 'Faible');
+                                @endphp
+                                <tr class="hover:bg-[#faf9f6] dark:hover:bg-[#181c24] transition-colors">
+                                    <td class="px-3.5 py-2.5">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-7 h-7 rounded-md bg-[#eef1fb] text-[#1c3e96] dark:bg-[rgba(28,62,150,0.25)] dark:text-[#60a5fa] font-bold text-xs flex items-center justify-center flex-shrink-0 border border-[#1c3e96]/15 dark:border-[#60a5fa]/20">
+                                                {{ $initial }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="font-semibold text-xs text-[#241f1b] dark:text-[#f8fafc] truncate">{{ $g['user'] }}</p>
+                                                <p class="text-[10px] text-[#6e6862] dark:text-[#a89f93]">{{ $g['types']->count() }} type{{ $g['types']->count() > 1 ? 's' : '' }} d'incident</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-2.5">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            @foreach($g['types']->take(3) as $t)
+                                                <span class="an-pill">
+                                                    <span>{{ $t['label'] }}</span>
+                                                    <b>×{{ $t['count'] }}</b>
+                                                </span>
+                                            @endforeach
+                                            @if($g['types']->count() > 3)
+                                                <span class="an-pill !font-bold">+{{ $g['types']->count() - 3 }}</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-2.5">
+                                        <span class="badge ks-stat-change {{ $sevClass }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $sevDot }}"></span>
+                                            {{ $sevLabel }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3.5 py-2.5">
+                                        <p class="font-semibold text-xs text-[#241f1b] dark:text-[#f8fafc] ks-num">{{ \Carbon\Carbon::parse($g['last_detected'])->format('d/m/Y') }}</p>
+                                        <p class="text-[10px] text-[#6e6862] dark:text-[#a89f93] ks-num">{{ \Carbon\Carbon::parse($g['last_detected'])->format('H:i') }}</p>
+                                    </td>
+                                    <td class="px-3.5 py-2.5 text-right whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ks-num bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                                {{ $g['total'] }}
+                                            </span>
+                                            <button type="button" class="ks-btn-secondary ks-btn-xs" onclick="openUserModal({{ $i }})">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                                <span>Détails</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- VUE MOBILE (< 640px) --}}
+                <div class="an-mobile-list divide-y divide-[#ecebe3] dark:divide-[#222630]">
+                    @foreach($grouped as $i => $g)
+                        @php
+                            $initial = strtoupper(substr($g['user'], 0, 2));
+                            $sevMax = $g['max_severity'];
+                            $sevClass = $sevMax >= 3 ? 'ks-stat-change--negative' : ($sevMax === 2 ? 'ks-stat-change--amber' : 'ks-stat-change--neutral');
+                            $sevDot = $sevMax >= 3 ? 'bg-rose-500' : ($sevMax === 2 ? 'bg-amber-500' : 'bg-slate-400');
+                            $sevLabel = $sevMax >= 3 ? 'Élevée' : ($sevMax === 2 ? 'Moyenne' : 'Faible');
+                        @endphp
+                        <div class="p-3 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 rounded-md bg-[#eef1fb] text-[#1c3e96] dark:bg-[rgba(28,62,150,0.25)] dark:text-[#60a5fa] font-bold text-xs flex items-center justify-center flex-shrink-0 border border-[#1c3e96]/15 dark:border-[#60a5fa]/20">
+                                        {{ $initial }}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-semibold text-xs text-[#241f1b] dark:text-[#f8fafc] truncate">{{ $g['user'] }}</p>
+                                        <p class="text-[10px] text-[#6e6862] dark:text-[#a89f93]">{{ $g['types']->count() }} type(s) d'incident</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <span class="badge ks-stat-change {{ $sevClass }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $sevDot }}"></span>
+                                        {{ $sevLabel }}
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ks-num bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                        {{ $g['total'] }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                @foreach($g['types']->take(3) as $t)
+                                    <span class="an-pill">
+                                        <span>{{ $t['label'] }}</span>
+                                        <b>×{{ $t['count'] }}</b>
+                                    </span>
+                                @endforeach
+                                @if($g['types']->count() > 3)
+                                    <span class="an-pill !font-bold">+{{ $g['types']->count() - 3 }}</span>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <span class="text-[11px] text-[#6e6862] dark:text-[#a89f93] ks-num">
+                                    Dernier : {{ \Carbon\Carbon::parse($g['last_detected'])->format('d/m/Y H:i') }}
+                                </span>
+                                <button type="button" class="ks-btn-secondary ks-btn-xs" onclick="openUserModal({{ $i }})">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    <span>Détails</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════
+         MODALE DÉTAIL & RÉSOLUTION (STYLE MON STAGE COMPACT)
+    ════════════════════════════════════════════════════════ --}}
+    <div id="userModalBackdrop" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm items-center justify-center p-3 sm:p-4">
+        <div class="w-full max-w-2xl max-h-[88vh] flex flex-col rounded-[10px] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] shadow-2xl overflow-hidden transition-all">
+            {{-- En-tête de modale --}}
+            <div class="px-4 py-3 border-b border-[#dcdad2] dark:border-[#222630] flex items-center justify-between bg-[#faf9f6] dark:bg-[#181c24]">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div id="modalAvatar" class="w-8 h-8 rounded-md bg-[#eef1fb] text-[#1c3e96] dark:bg-[rgba(28,62,150,0.25)] dark:text-[#60a5fa] font-bold text-xs flex items-center justify-center flex-shrink-0 border border-[#1c3e96]/15 dark:border-[#60a5fa]/20">
+                        --
+                    </div>
+                    <div class="min-w-0">
+                        <h2 id="modalUserName" class="text-sm font-bold text-[#241f1b] dark:text-[#f8fafc] truncate">—</h2>
+                        <p id="modalUserSub" class="text-[11px] text-[#6e6862] dark:text-[#a89f93] truncate">—</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUserModal()" class="w-7 h-7 rounded-md flex items-center justify-center text-[#6e6862] hover:text-[#241f1b] dark:text-[#a89f93] dark:hover:text-white hover:bg-[#ecebe3] dark:hover:bg-[#222630] transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            {{-- Corps scrollable de modale --}}
+            <div class="p-3 sm:p-4 overflow-y-auto space-y-3 flex-1" id="modalBody">
+                {{-- Injecté en JS --}}
+            </div>
+
+            {{-- Pied de modale --}}
+            <div class="px-4 py-2.5 border-t border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24] flex items-center justify-end">
+                <button type="button" onclick="closeUserModal()" class="ks-btn-secondary ks-btn-xs">
+                    Fermer
+                </button>
             </div>
         </div>
     </div>
@@ -315,9 +345,13 @@
         const csrfToken = '{{ csrf_token() }}';
 
         function sevBadge(sev) {
-            const map = { high: ['sev-high','Élevée'], medium: ['sev-medium','Moyenne'], low: ['sev-low','Faible'] };
-            const [cls, label] = map[sev] || map.low;
-            return `<span class="an-sev-badge ${cls}"><span class="an-sev-dot"></span>${label}</span>`;
+            const map = {
+                high: ['ks-stat-change--negative', 'bg-rose-500', 'Élevée'],
+                medium: ['ks-stat-change--amber', 'bg-amber-500', 'Moyenne'],
+                low: ['ks-stat-change--neutral', 'bg-slate-400', 'Faible']
+            };
+            const [cls, dot, label] = map[sev] || map.low;
+            return `<span class="badge ks-stat-change ${cls}"><span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${label}</span>`;
         }
 
         function openUserModal(index) {
@@ -326,42 +360,49 @@
 
             document.getElementById('modalAvatar').textContent = g.user.substring(0,2).toUpperCase();
             document.getElementById('modalUserName').textContent = g.user;
-            document.getElementById('modalUserSub').textContent = `${g.total} anomalie(s) ouverte(s)`;
+            document.getElementById('modalUserSub').textContent = `${g.total} anomalie(s) ouverte(s) · ${g.types.length} catégorie(s)`;
 
             const body = document.getElementById('modalBody');
             body.innerHTML = g.types.map(t => `
-                <div class="an-type-group">
-                    <div class="an-type-group-head">
-                        <div class="an-type-group-title">
+                <div class="rounded-lg border border-[#dcdad2] dark:border-[#222630] overflow-hidden bg-white dark:bg-[#131519]">
+                    <div class="px-3 py-2 bg-[#faf9f6] dark:bg-[#181c24] border-b border-[#dcdad2] dark:border-[#222630] flex items-center justify-between gap-2 flex-wrap">
+                        <div class="flex items-center gap-2 min-w-0">
                             ${sevBadge(t.severity)}
-                            <div>
-                                <div class="an-type-group-name">${t.label} ${t.count > 1 ? `<span style="color:var(--muted);font-weight:500;">(×${t.count})</span>` : ''}</div>
-                                <div class="an-type-group-desc">${t.description}</div>
+                            <div class="min-w-0">
+                                <span class="font-semibold text-xs text-[#241f1b] dark:text-[#f8fafc]">${t.label}</span>
+                                ${t.count > 1 ? `<span class="text-[11px] text-[#6e6862] dark:text-[#a89f93] font-medium ml-1">(×${t.count})</span>` : ''}
+                                <p class="text-[10px] text-[#6e6862] dark:text-[#a89f93]">${t.description}</p>
                             </div>
                         </div>
-                        <div class="an-type-group-actions">
-                            ${t.count > 1 ? `<button type="button" class="an-btn-mini" onclick="resolveBulk([${t.ids.join(',')}])">Tout résoudre</button>` : ''}
+                        <div>
+                            ${t.count > 1 ? `<button type="button" class="ks-btn-secondary ks-btn-xs !text-[11px]" onclick="resolveBulk([${t.ids.join(',')}])">Tout résoudre (${t.count})</button>` : ''}
                         </div>
                     </div>
-                    <div class="an-type-group-items">
+                    <div class="p-2 sm:p-2.5 space-y-1.5">
                         ${t.items.map(item => `
-                            <div class="an-occurrence">
-                                <div>
-                                    <div class="an-date" style="color:var(--text);">${item.date}</div>
-                                    ${item.observation ? `<div class="an-occurrence-obs">"${item.observation}"</div>` : ''}
+                            <div class="p-2 rounded-md bg-[#faf9f6] dark:bg-[#181c24]/60 border border-[#ecebe3] dark:border-[#222630] flex items-center justify-between gap-2 text-xs">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-[#241f1b] dark:text-[#f8fafc] ks-num">${item.date}</p>
+                                    ${item.observation ? `<p class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 truncate">"${item.observation}"</p>` : ''}
                                 </div>
-                                <button type="button" class="an-btn-resolve-one" onclick="resolveOne(${item.id})">Résoudre</button>
+                                <button type="button" class="ks-btn-primary ks-btn-xs !bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600" onclick="resolveOne(${item.id})">
+                                    Résoudre
+                                </button>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `).join('');
 
-            document.getElementById('userModalBackdrop').classList.add('active');
+            const backdrop = document.getElementById('userModalBackdrop');
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
         }
 
         function closeUserModal() {
-            document.getElementById('userModalBackdrop').classList.remove('active');
+            const backdrop = document.getElementById('userModalBackdrop');
+            backdrop.classList.add('hidden');
+            backdrop.classList.remove('flex');
         }
 
         function resolveOne(id) {
