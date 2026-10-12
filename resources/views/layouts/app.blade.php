@@ -933,6 +933,7 @@
                 else if (href.includes('/tasks-tracking')) tplId = 'sk-tpl-tasks-tracking';
                 else if (href.includes('/tasks')) tplId = 'sk-tpl-tasks';
                 else if (href.includes('/permissions')) tplId = 'sk-tpl-permissions';
+                else if (href.includes('/admin/reports')) tplId = 'sk-tpl-admin-reports';
                 else if (href.includes('/reports')) tplId = 'sk-tpl-reports';
                 else if (href.includes('/summaries')) tplId = 'sk-tpl-summaries';
                 else if (href.includes('/profile')) tplId = 'sk-tpl-profile';

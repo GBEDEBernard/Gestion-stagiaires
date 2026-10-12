@@ -31,6 +31,8 @@
             <x-skeletons.tasks />
         @elseif(request()->routeIs('permissions.*'))
             <x-skeletons.permissions />
+        @elseif(request()->routeIs('admin.reports*') || $r === 'admin.reports.index' || $r === 'admin.reports.all')
+            <x-skeletons.admin-reports />
         @elseif(request()->routeIs('reports.*'))
             <x-skeletons.reports />
         @elseif(request()->routeIs('summaries.*'))
@@ -67,6 +69,7 @@
 <template id="sk-tpl-tasks-tracking"><x-skeletons.tasks-tracking /></template>
 <template id="sk-tpl-tasks"><x-skeletons.tasks /></template>
 <template id="sk-tpl-permissions"><x-skeletons.permissions /></template>
+<template id="sk-tpl-admin-reports"><x-skeletons.admin-reports /></template>
 <template id="sk-tpl-reports"><x-skeletons.reports /></template>
 <template id="sk-tpl-summaries"><x-skeletons.summaries /></template>
 <template id="sk-tpl-profile"><x-skeletons.profile /></template>

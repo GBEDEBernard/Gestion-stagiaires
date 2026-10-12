@@ -1,0 +1,111 @@
+{{-- Squelette réel de la page Suivi des Rapports Admin (/admin/reports) --}}
+<div class="w-full space-y-3">
+    {{-- 1. Bannière d'en-tête --}}
+    <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg ks-sk-block ks-sk-shimmer shrink-0"></div>
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <div class="h-4 w-40 ks-sk-block ks-sk-shimmer"></div>
+                    <div class="h-4 w-14 ks-sk-block ks-sk-shimmer rounded-full"></div>
+                </div>
+                <div class="h-3 w-64 ks-sk-block ks-sk-shimmer"></div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="h-8 w-36 ks-sk-block ks-sk-shimmer rounded-lg"></div>
+        </div>
+    </div>
+
+    {{-- 2. 4 Cartes KPIs --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        @for($k = 0; $k < 4; $k++)
+        <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3 sm:p-4 flex items-center justify-between">
+            <div class="space-y-1.5">
+                <div class="h-3 w-20 ks-sk-block ks-sk-shimmer"></div>
+                <div class="h-6 w-12 ks-sk-block ks-sk-shimmer"></div>
+            </div>
+            <div class="w-8 h-8 rounded-lg ks-sk-block ks-sk-shimmer"></div>
+        </div>
+        @endfor
+    </div>
+
+    {{-- 3. Barre de filtres (Période & Date) --}}
+    <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center gap-1.5 p-1 rounded-lg bg-[#f6f5f0] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] w-fit">
+            <div class="h-7 w-20 ks-sk-block ks-sk-shimmer rounded-md"></div>
+            <div class="h-7 w-24 ks-sk-block ks-sk-shimmer rounded-md"></div>
+            <div class="h-7 w-20 ks-sk-block ks-sk-shimmer rounded-md"></div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="h-8 w-36 ks-sk-block ks-sk-shimmer rounded-lg"></div>
+            <div class="h-8 w-20 ks-sk-block ks-sk-shimmer rounded-lg"></div>
+        </div>
+    </div>
+
+    {{-- 4. Section 1 : Stagiaires --}}
+    <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] overflow-hidden">
+        <div class="px-4 py-3 border-b border-[#dcdad2] dark:border-[#222630] bg-[#faf9f5] dark:bg-[#181c24] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="h-4 w-24 ks-sk-block ks-sk-shimmer"></div>
+                <div class="h-4 w-8 ks-sk-block ks-sk-shimmer rounded-full"></div>
+            </div>
+            <div class="h-3 w-40 ks-sk-block ks-sk-shimmer hidden sm:block"></div>
+        </div>
+        <div class="p-3 sm:p-4 space-y-2.5">
+            @for($i = 0; $i < 3; $i++)
+            <div class="flex items-center justify-between py-2 border-b border-[#dcdad2]/60 dark:border-[#222630]/60 last:border-b-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full ks-sk-block ks-sk-shimmer shrink-0"></div>
+                    <div class="space-y-1">
+                        <div class="h-3.5 w-32 ks-sk-block ks-sk-shimmer"></div>
+                        <div class="h-2.5 w-44 ks-sk-block ks-sk-shimmer"></div>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center gap-3">
+                    <div class="h-5 w-20 ks-sk-block ks-sk-shimmer rounded-full"></div>
+                    <div class="h-3.5 w-20 ks-sk-block ks-sk-shimmer"></div>
+                    <div class="h-3.5 w-12 ks-sk-block ks-sk-shimmer"></div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="h-7 w-16 ks-sk-block ks-sk-shimmer rounded-md"></div>
+                    <div class="h-7 w-16 ks-sk-block ks-sk-shimmer rounded-md"></div>
+                </div>
+            </div>
+            @endfor
+        </div>
+    </div>
+
+    {{-- 5. Section 2 : Employés --}}
+    <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#161a22] border border-[#dcdad2] dark:border-[#222630] overflow-hidden">
+        <div class="px-4 py-3 border-b border-[#dcdad2] dark:border-[#222630] bg-[#faf9f5] dark:bg-[#181c24] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="h-4 w-24 ks-sk-block ks-sk-shimmer"></div>
+                <div class="h-4 w-8 ks-sk-block ks-sk-shimmer rounded-full"></div>
+            </div>
+            <div class="h-3 w-40 ks-sk-block ks-sk-shimmer hidden sm:block"></div>
+        </div>
+        <div class="p-3 sm:p-4 space-y-2.5">
+            @for($i = 0; $i < 2; $i++)
+            <div class="flex items-center justify-between py-2 border-b border-[#dcdad2]/60 dark:border-[#222630]/60 last:border-b-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full ks-sk-block ks-sk-shimmer shrink-0"></div>
+                    <div class="space-y-1">
+                        <div class="h-3.5 w-32 ks-sk-block ks-sk-shimmer"></div>
+                        <div class="h-2.5 w-36 ks-sk-block ks-sk-shimmer"></div>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center gap-3">
+                    <div class="h-5 w-20 ks-sk-block ks-sk-shimmer rounded-full"></div>
+                    <div class="h-3.5 w-20 ks-sk-block ks-sk-shimmer"></div>
+                    <div class="h-3.5 w-12 ks-sk-block ks-sk-shimmer"></div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <div class="h-7 w-16 ks-sk-block ks-sk-shimmer rounded-md"></div>
+                    <div class="h-7 w-16 ks-sk-block ks-sk-shimmer rounded-md"></div>
+                </div>
+            </div>
+            @endfor
+        </div>
+    </div>
+</div>
