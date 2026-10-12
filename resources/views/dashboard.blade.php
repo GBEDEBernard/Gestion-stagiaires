@@ -98,6 +98,50 @@
         .dark .text-secondary { color: #94a3b8 !important; }
         .dark .text-muted { color: #94a3b8 !important; }
         .dark .border, .dark [class*="border-[#dcdad2]"], .dark [class*="border-[#ecebe3]"], .dark [class*="border-[#bfbab2]"], .dark [class*="border-[#d8d4cc]"] { border-color: #222630 !important; }
+
+        /* Barre de défilement discrète et professionnelle */
+        .custom-scrollbar, .ks-sec [class*="overflow-y-auto"], .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar,
+        .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar,
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track,
+        .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar-track,
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb,
+        .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar-thumb,
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.35);
+            border-radius: 9999px;
+            transition: background .2s ease;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+        .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover,
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.55);
+        }
+        .dark .custom-scrollbar,
+        .dark .ks-sec [class*="overflow-y-auto"],
+        .dark .overflow-y-auto {
+            scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb,
+        .dark .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar-thumb,
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.22);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+        .dark .ks-sec [class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover,
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.45);
+        }
     </style>
 
     {{-- ════════════════════════════════════════════════════════
@@ -631,7 +675,7 @@
                         <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-white">Activités récentes</h3>
                     </div>
                 </div>
-                <div class="divide-y divide-[#ecebe3] dark:divide-[#222630] max-h-56 sm:max-h-60 overflow-y-auto">
+                <div class="divide-y divide-[#ecebe3] dark:divide-[#222630] max-h-56 sm:max-h-60 overflow-y-auto custom-scrollbar pr-0.5">
                     @forelse($dernieresActivites as $activity)
                     <div class="px-3 sm:px-3.5 py-2 hover:bg-[#faf9f6] dark:hover:bg-[#181c24] transition">
                         <div class="flex items-start gap-2.5">
@@ -825,7 +869,7 @@
                     <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Aucune inscription sur cette période.</p>
                 </div>
 
-                <div x-show="!loading && !error && rows.length > 0" class="overflow-x-auto max-h-[55vh] overflow-y-auto rounded-xl border border-[#dcdad2] dark:border-[#222630]">
+                <div x-show="!loading && !error && rows.length > 0" class="overflow-x-auto max-h-[55vh] overflow-y-auto custom-scrollbar rounded-xl border border-[#dcdad2] dark:border-[#222630]">
                     <table class="w-full text-sm min-w-[860px]">
                         <thead class="bg-[#faf9f6] dark:bg-[#181c24] border-b border-[#dcdad2] dark:border-[#222630] sticky top-0">
                             <tr>
@@ -1012,7 +1056,7 @@
                         </div>
 
                         {{-- Cards grid --}}
-                        <div x-show="filteredRows().length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-h-[55vh] overflow-y-auto pr-1">
+                        <div x-show="filteredRows().length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1">
                             <template x-for="r in filteredRows()" :key="r.id">
                                 <a :href="r.url"
                                     class="group relative block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-violet-300 dark:hover:border-violet-600 transition-all duration-300">

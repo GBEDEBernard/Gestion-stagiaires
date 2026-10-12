@@ -214,8 +214,14 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
+            height: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -223,8 +229,25 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.4);
-            border-radius: 10px;
+            background: rgba(148, 163, 184, 0.35);
+            border-radius: 9999px;
+            transition: background 0.2s ease;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.55);
+        }
+
+        .dark .custom-scrollbar {
+            scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.22);
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.45);
         }
 
         .badge-pulse {
