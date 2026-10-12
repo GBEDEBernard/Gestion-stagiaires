@@ -44,6 +44,17 @@
         .ks-stat-icon svg { width: 15px; height: 15px; stroke-width: 1.75; }
 
         .ks-num { font-variant-numeric: tabular-nums; }
+        .ks-stat-change { font-size: .68rem; font-weight: 600; padding: .15rem .45rem; border-radius: 4px; display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+        .ks-stat-change--positive { color: #15803d; background-color: #ecfdf5; }
+        .dark .ks-stat-change--positive { color: #4ade80 !important; background-color: rgba(22,128,74,0.22) !important; }
+        .ks-stat-change--neutral { color: #475569; background-color: #f1f5f9; }
+        .dark .ks-stat-change--neutral { color: #cbd5e1 !important; background-color: #262a30 !important; }
+        .ks-stat-change--negative { color: #b91c1c; background-color: #fef2f2; }
+        .dark .ks-stat-change--negative { color: #f87171 !important; background-color: rgba(185,28,28,0.22) !important; }
+
+        .ks-track { background: #ecebe3; border-radius: 999px; overflow: hidden; }
+        .dark .ks-track { background: #262a30 !important; }
+
         .tracking-table th, .tracking-table td { white-space: nowrap; }
 
         /* Dark mode overrides complets */
@@ -131,65 +142,154 @@
              VUE JOUR : STATS & TABLEAUX
         ════════════════════════════════════════════════════════ --}}
         @if(request('period', 'day') === 'day')
+        @php
+            $stTotal = (int)($summary['student_total'] ?? 0);
+            $stPresent = (int)($summary['student_present'] ?? 0);
+            $stRate = $stTotal > 0 ? round(($stPresent / $stTotal) * 100, 1) : 0;
+            $stPerm = (int)($summary['student_permissioned'] ?? 0);
+
+            $empTotal = (int)($summary['employee_total'] ?? 0);
+            $empPresent = (int)($summary['employee_present'] ?? 0);
+            $empRate = $empTotal > 0 ? round(($empPresent / $empTotal) * 100, 1) : 0;
+            $empPerm = (int)($summary['employee_permissioned'] ?? 0);
+        @endphp
         <div class="space-y-3 sm:space-y-3.5">
-            {{-- 2 Blocs Résumé (Stagiaires / Employés) --}}
+            {{-- 2 Blocs Résumé (Stagiaires / Employés) - Style Mon Stage Raffiné --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {{-- Carte Stagiaires --}}
-                <div class="ks-sec">
+                <div class="ks-sec overflow-hidden">
                     <div class="ks-sec-head">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
                             <span class="ks-stat-icon bg-[#eef1fb] text-[#1c3e96] dark:bg-[rgba(28,62,150,0.25)] dark:text-[#60a5fa]">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                             </span>
-                            <div>
-                                <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc]">Stagiaires</h3>
-                                <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">Suivi des présences stagiaires</p>
+                            <div class="min-w-0">
+                                <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] truncate">Stagiaires</h3>
+                                <p class="text-[11px] text-[#6e6862] dark:text-[#94a3b8] truncate">Suivi des présences stagiaires</p>
                             </div>
                         </div>
-                        @if(($summary['student_permissioned'] ?? 0) > 0)
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                            {{ $summary['student_permissioned'] }} permission{{ $summary['student_permissioned'] > 1 ? 's' : '' }}
-                        </span>
-                        @endif
-                    </div>
-                    <div class="p-2.5 sm:p-3 grid grid-cols-2 gap-2">
-                        <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]">
-                            <p class="ks-label">Total inscrits</p>
-                            <p class="ks-num text-xl sm:text-2xl font-bold text-[#241f1b] dark:text-[#f8fafc] mt-0.5">{{ $summary['student_total'] }}</p>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            @if($stPerm > 0)
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                {{ $stPerm }} perm.
+                            </span>
+                            @endif
+                            <span class="badge ks-stat-change {{ $stRate > 0 ? 'ks-stat-change--positive' : 'ks-stat-change--neutral' }}">
+                                {{ $stRate }}%
+                            </span>
                         </div>
-                        <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]">
-                            <p class="ks-label">Présents</p>
-                            <p class="ks-num text-xl sm:text-2xl font-bold text-[#15803d] dark:text-emerald-400 mt-0.5">{{ $summary['student_present'] }}</p>
+                    </div>
+
+                    {{-- Jauge d'assiduité --}}
+                    <div class="px-3 pt-2.5 pb-1">
+                        <div class="flex items-center justify-between text-[11px] text-[#6e6862] dark:text-[#94a3b8] mb-1">
+                            <span class="font-medium">Taux d'assiduité du jour</span>
+                            <span class="font-semibold text-[#241f1b] dark:text-[#f8fafc] ks-num">{{ $stPresent }} / {{ $stTotal }}</span>
+                        </div>
+                        <div class="ks-track h-1.5 w-full bg-[#ecebe3] dark:bg-[#262a30] rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500 {{ $stRate > 0 ? 'bg-[#15803d] dark:bg-emerald-400' : 'bg-[#bfbab2] dark:bg-[#333948]' }}" style="width: {{ min(100, max(0, $stRate)) }}%"></div>
+                        </div>
+                    </div>
+
+                    {{-- 2 Sous-Cartes KPI « Mon Stage » --}}
+                    <div class="p-2.5 sm:p-3 grid grid-cols-2 gap-2 sm:gap-2.5">
+                        {{-- Total inscrits --}}
+                        <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] flex flex-col justify-between transition-all hover:border-[#1c3e96]/40">
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="ks-label truncate">Total inscrits</span>
+                                <span class="ks-stat-icon !w-5 !h-5 !rounded bg-[#eef1fb] text-[#1c3e96] dark:bg-[rgba(28,62,150,0.25)] dark:text-[#60a5fa]">
+                                    <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                </span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-1 mt-0.5">
+                                <p class="ks-num text-xl sm:text-2xl font-bold text-[#241f1b] dark:text-[#f8fafc]">{{ $stTotal }}</p>
+                                <span class="text-[10px] sm:text-[11px] font-medium text-[#6e6862] dark:text-[#94a3b8]">inscrits</span>
+                            </div>
+                        </div>
+
+                        {{-- Présents --}}
+                        <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] flex flex-col justify-between transition-all hover:border-emerald-500/40">
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="ks-label text-[#15803d] dark:text-emerald-400 truncate">Présents</span>
+                                <span class="ks-stat-icon !w-5 !h-5 !rounded bg-[#ecfdf5] text-[#15803d] dark:bg-[rgba(22,128,74,0.22)] dark:text-[#4ade80]">
+                                    <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-1 mt-0.5">
+                                <p class="ks-num text-xl sm:text-2xl font-bold text-[#15803d] dark:text-emerald-400">{{ $stPresent }}</p>
+                                <span class="badge ks-stat-change {{ $stRate > 0 ? 'ks-stat-change--positive' : 'ks-stat-change--neutral' }} !text-[10px] !px-1.5 !py-0.5">
+                                    {{ $stRate }}%
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {{-- Carte Employés --}}
-                <div class="ks-sec">
+                <div class="ks-sec overflow-hidden">
                     <div class="ks-sec-head">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
                             <span class="ks-stat-icon bg-[#ecfdf5] text-[#15803d] dark:bg-[rgba(22,128,74,0.22)] dark:text-[#4ade80]">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             </span>
-                            <div>
-                                <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc]">Employés</h3>
-                                <p class="text-[11px] text-[#6e6862] dark:text-[#a89f93]">Suivi des présences du personnel</p>
+                            <div class="min-w-0">
+                                <h3 class="text-xs sm:text-sm font-semibold text-[#241f1b] dark:text-[#f8fafc] truncate">Employés</h3>
+                                <p class="text-[11px] text-[#6e6862] dark:text-[#94a3b8] truncate">Suivi des présences du personnel</p>
                             </div>
                         </div>
-                        @if(($summary['employee_permissioned'] ?? 0) > 0)
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                            {{ $summary['employee_permissioned'] }} permission{{ $summary['employee_permissioned'] > 1 ? 's' : '' }}
-                        </span>
-                        @endif
-                    </div>
-                    <div class="p-2.5 sm:p-3 grid grid-cols-2 gap-2">
-                        <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]">
-                            <p class="ks-label">Total effectif</p>
-                            <p class="ks-num text-xl sm:text-2xl font-bold text-[#241f1b] dark:text-[#f8fafc] mt-0.5">{{ $summary['employee_total'] }}</p>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            @if($empPerm > 0)
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                {{ $empPerm }} perm.
+                            </span>
+                            @endif
+                            <span class="badge ks-stat-change {{ $empRate > 0 ? 'ks-stat-change--positive' : 'ks-stat-change--neutral' }}">
+                                {{ $empRate }}%
+                            </span>
                         </div>
-                        <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#181c24]">
-                            <p class="ks-label">Présents</p>
-                            <p class="ks-num text-xl sm:text-2xl font-bold text-[#15803d] dark:text-emerald-400 mt-0.5">{{ $summary['employee_present'] }}</p>
+                    </div>
+
+                    {{-- Jauge d'assiduité --}}
+                    <div class="px-3 pt-2.5 pb-1">
+                        <div class="flex items-center justify-between text-[11px] text-[#6e6862] dark:text-[#94a3b8] mb-1">
+                            <span class="font-medium">Taux d'assiduité du personnel</span>
+                            <span class="font-semibold text-[#241f1b] dark:text-[#f8fafc] ks-num">{{ $empPresent }} / {{ $empTotal }}</span>
+                        </div>
+                        <div class="ks-track h-1.5 w-full bg-[#ecebe3] dark:bg-[#262a30] rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500 {{ $empRate > 0 ? 'bg-[#15803d] dark:bg-emerald-400' : 'bg-[#bfbab2] dark:bg-[#333948]' }}" style="width: {{ min(100, max(0, $empRate)) }}%"></div>
+                        </div>
+                    </div>
+
+                    {{-- 2 Sous-Cartes KPI « Mon Stage » --}}
+                    <div class="p-2.5 sm:p-3 grid grid-cols-2 gap-2 sm:gap-2.5">
+                        {{-- Total effectif --}}
+                        <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] flex flex-col justify-between transition-all hover:border-[#4338ca]/40">
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="ks-label truncate">Total effectif</span>
+                                <span class="ks-stat-icon !w-5 !h-5 !rounded bg-[#eef2ff] text-[#4338ca] dark:bg-[rgba(67,56,202,0.25)] dark:text-[#818cf8]">
+                                    <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-1 mt-0.5">
+                                <p class="ks-num text-xl sm:text-2xl font-bold text-[#241f1b] dark:text-[#f8fafc]">{{ $empTotal }}</p>
+                                <span class="text-[10px] sm:text-[11px] font-medium text-[#6e6862] dark:text-[#94a3b8]">salariés</span>
+                            </div>
+                        </div>
+
+                        {{-- Présents --}}
+                        <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] flex flex-col justify-between transition-all hover:border-emerald-500/40">
+                            <div class="flex items-center justify-between gap-1 mb-1">
+                                <span class="ks-label text-[#15803d] dark:text-emerald-400 truncate">Présents</span>
+                                <span class="ks-stat-icon !w-5 !h-5 !rounded bg-[#ecfdf5] text-[#15803d] dark:bg-[rgba(22,128,74,0.22)] dark:text-[#4ade80]">
+                                    <svg class="!w-3 !h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </span>
+                            </div>
+                            <div class="flex items-baseline justify-between gap-1 mt-0.5">
+                                <p class="ks-num text-xl sm:text-2xl font-bold text-[#15803d] dark:text-emerald-400">{{ $empPresent }}</p>
+                                <span class="badge ks-stat-change {{ $empRate > 0 ? 'ks-stat-change--positive' : 'ks-stat-change--neutral' }} !text-[10px] !px-1.5 !py-0.5">
+                                    {{ $empRate }}%
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

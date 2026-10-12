@@ -28,20 +28,39 @@
     </div>
 
     {{-- 3. 2 Cartes Résumé (Stagiaires & Employés) --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
         @for($k = 0; $k < 2; $k++)
-        <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] p-3.5 space-y-3">
-            <div class="flex items-center justify-between">
-                <div class="h-4 w-28 ks-sk-block ks-sk-shimmer"></div>
-                <div class="w-7 h-7 rounded-md ks-sk-block ks-sk-shimmer"></div>
+        <div class="rounded-[10px] bg-[#fffefa] dark:bg-[#131519] border border-[#dcdad2] dark:border-[#222630] overflow-hidden space-y-2">
+            <div class="px-3 py-2.5 border-b border-[#dcdad2] dark:border-[#222630] flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md ks-sk-block ks-sk-shimmer"></div>
+                    <div class="space-y-1">
+                        <div class="h-3.5 w-24 ks-sk-block ks-sk-shimmer"></div>
+                        <div class="h-2.5 w-32 ks-sk-block ks-sk-shimmer"></div>
+                    </div>
+                </div>
+                <div class="h-4 w-12 rounded ks-sk-block ks-sk-shimmer"></div>
             </div>
-            <div class="grid grid-cols-2 gap-2.5">
-                <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#161a22] space-y-1.5">
-                    <div class="h-3 w-12 ks-sk-block ks-sk-shimmer"></div>
+            <div class="px-3 pt-1 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <div class="h-2.5 w-32 ks-sk-block ks-sk-shimmer"></div>
+                    <div class="h-2.5 w-12 ks-sk-block ks-sk-shimmer"></div>
+                </div>
+                <div class="h-1.5 w-full rounded-full ks-sk-block ks-sk-shimmer"></div>
+            </div>
+            <div class="p-2.5 sm:p-3 grid grid-cols-2 gap-2 sm:gap-2.5">
+                <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="h-3 w-14 ks-sk-block ks-sk-shimmer"></div>
+                        <div class="w-4 h-4 rounded ks-sk-block ks-sk-shimmer"></div>
+                    </div>
                     <div class="h-6 w-10 ks-sk-block ks-sk-shimmer"></div>
                 </div>
-                <div class="p-2.5 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#161a22] space-y-1.5">
-                    <div class="h-3 w-16 ks-sk-block ks-sk-shimmer"></div>
+                <div class="p-2.5 sm:p-3 rounded-lg border border-[#dcdad2] dark:border-[#222630] bg-[#faf9f6] dark:bg-[#15181f] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="h-3 w-12 ks-sk-block ks-sk-shimmer"></div>
+                        <div class="w-4 h-4 rounded ks-sk-block ks-sk-shimmer"></div>
+                    </div>
                     <div class="h-6 w-10 ks-sk-block ks-sk-shimmer"></div>
                 </div>
             </div>
